@@ -661,6 +661,58 @@ const server = http.createServer(async (req, res) => {
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
+    /* Заявка на вывод средств (минимум 50 ₽ = 500 токенов) */
+    if (url.pathname === '/api/withdraw' && req.method === 'POST') {
+      const rub = Math.floor(Number(body.rub || 0));
+      const method = String(body.method || 'СБП / Карта').trim();
+      const details = String(body.details || '').trim();
+
+      if (isNaN(rub) || rub < 50) {
+        return send(400, { error: 'Минимальная сумма вывода — 50 ₽ (500 ⬦)' });
+      }
+      const neededTokens = rub * TOKENS_PER_RUB;
+      if (u.tokens < neededTokens) {
+        return send(400, { error: `Недостаточно токенов. Для вывода ${rub} ₽ требуется ${neededTokens} ⬦ (у вас ${Math.floor(u.tokens)} ⬦)` });
+      }
+      if (!details || details.length < 3) {
+        return send(400, { error: 'Укажите корректные реквизиты для вывода (номер карты, телефон СБП или кошелёк)' });
+      }
+
+      u.tokens -= neededTokens;
+      const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+      orders.set(orderId, {
+        type: 'withdraw',
+        userId: u.id,
+        rub,
+        tokens: neededTokens,
+        method,
+        details,
+        createdAt: Date.now(),
+        status: 'pending'
+      });
+
+      if (ADMIN_ID) {
+        bot.api.sendMessage(
+          ADMIN_ID,
+          `💸 <b>Заявка на вывод средств</b>\n` +
+          `├ ID: <code>${orderId}</code>\n` +
+          `├ Пользователь: <b>${u.name}</b> (id: <code>${u.id}</code>)\n` +
+          `├ Сумма: <b>${rub} ₽</b> (${neededTokens} ⬦)\n` +
+          `├ Способ: <b>${method}</b>\n` +
+          `└ Реквизиты: <code>${details}</code>`,
+          { parse_mode: 'HTML' }
+        ).catch(e => console.error('Не удалось уведомить админа о выводе:', e.message));
+      }
+
+      return send(200, {
+        success: true,
+        orderId,
+        rub,
+        tokens: neededTokens,
+        remaining: u.tokens
+      });
+    }
+
     /* стейкинг */
     if (url.pathname === '/api/stake' && req.method === 'POST') {
       const r = stakeAdd(u, body.tokens);

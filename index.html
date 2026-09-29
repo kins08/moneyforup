@@ -187,6 +187,30 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <button class="control" id="payGo">Пополнить</button>
   <div class="result" id="payMsg" style="display:none"></div>
 </div>
+<div class="section"><b>Вывод средств</b><span class="muted small">мин. 50 ₽ (500 ⬦)</span></div>
+<div class="item">
+  <div class="muted small" style="margin-bottom:8px">Способ получения</div>
+  <div class="chips" id="withdrawMethods">
+    <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
+    <button class="chip" data-wm="crypto">₿ CryptoBot</button>
+  </div>
+  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 50 ₽)</div>
+  <div class="chips" id="withdrawAmounts">
+    <button class="chip on" data-wa="50">50 ₽</button>
+    <button class="chip" data-wa="100">100 ₽</button>
+    <button class="chip" data-wa="300">300 ₽</button>
+    <button class="chip" data-wa="500">500 ₽</button>
+    <button class="chip" data-wa="all">Все</button>
+  </div>
+  <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
+    <input class="betinput" id="withdrawRub" type="number" min="50" step="10" inputmode="numeric" value="50" aria-label="Сумма вывода в рублях">
+    <span class="muted small">₽</span></div>
+  <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / @CryptoBot username)</div>
+  <input class="betinput" id="withdrawDetails" type="text" placeholder="+7 999 123-45-67 (Сбер/Т-Банк)" style="width:100%;box-sizing:border-box;text-align:left;padding:10px 12px;font-size:14px" aria-label="Реквизиты вывода">
+  <div class="muted small" id="withdrawPreview" style="margin-top:8px"></div>
+  <button class="control" id="withdrawGo" style="margin-top:12px">Запросить вывод</button>
+  <div class="result" id="withdrawMsg" style="display:none;margin-top:8px"></div>
+</div>
 <div class="section"><b>Стейкинг</b><span class="muted small">1 % в сутки</span></div>
 <div class="item">
   <div class="row"><span class="muted small">В стейкинге</span><b><span id="stakeAmt">0</span> ⬦</b></div>
@@ -631,6 +655,7 @@ function syncUI(){
   const re=q('#refEarned');if(re)re.textContent=fmt(S.refEarned||0)+' ⬦';
   syncStake();
   syncBonusUI();
+  withdrawSync();
   if(onBetChange)onBetChange();
 }
 let onBetChange=null,cleanup=null;
@@ -694,6 +719,123 @@ async function startPayment(){
 }
 q('#payGo').addEventListener('click',startPayment);
 
+/* ---------- вывод средств (профиль) ---------- */
+const WITHDRAW={m:'sbp',amt:50,names:{'sbp':'СБП / Карта','crypto':'CryptoBot'}};
+function withdrawSync(){
+  const wMeth=q('#withdrawMethods');
+  if(!wMeth)return;
+  qa('#withdrawMethods .chip').forEach(c=>c.classList.toggle('on',c.dataset.wm===WITHDRAW.m));
+  qa('#withdrawAmounts .chip').forEach(c=>c.classList.toggle('on',c.dataset.wa===String(WITHDRAW.amt)));
+  const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
+  const neededTk=rub*RATE;
+  const canAfford = S.balance >= neededTk;
+  const validMin = rub >= 50;
+  const prev=q('#withdrawPreview');
+  if(prev){
+    prev.innerHTML='Спишется: <b>'+fmt(neededTk)+' ⬦</b> · к получению: <b>'+rub+' ₽</b> · способ: '+WITHDRAW.names[WITHDRAW.m];
+  }
+  const btn=q('#withdrawGo');
+  if(btn){
+    if(!validMin){
+      btn.textContent='Минимум 50 ₽ (500 ⬦)';
+      btn.disabled=true;
+    }else if(!canAfford){
+      btn.textContent='Недостаточно токенов ('+fmt(neededTk)+' ⬦)';
+      btn.disabled=true;
+    }else{
+      btn.textContent='Вывести '+rub+' ₽ ('+fmt(neededTk)+' ⬦)';
+      btn.disabled=false;
+    }
+  }
+}
+const wMethEl=q('#withdrawMethods');
+if(wMethEl){
+  wMethEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-wm]');if(!b)return;
+    WITHDRAW.m=b.dataset.wm;
+    const det=q('#withdrawDetails');
+    if(det){
+      if(WITHDRAW.m==='crypto'){
+        det.placeholder='Ваш @username в Telegram или ID';
+      }else{
+        det.placeholder='+7 999 123-45-67 (Сбер/Т-Банк)';
+      }
+    }
+    withdrawSync();
+  });
+}
+const wAmtEl=q('#withdrawAmounts');
+if(wAmtEl){
+  wAmtEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-wa]');if(!b)return;
+    if(b.dataset.wa==='all'){
+      WITHDRAW.amt=Math.max(0,Math.floor(S.balance/RATE));
+    }else{
+      WITHDRAW.amt=+b.dataset.wa;
+    }
+    const inp=q('#withdrawRub');if(inp)inp.value=WITHDRAW.amt;
+    withdrawSync();
+  });
+}
+const wRubEl=q('#withdrawRub');
+if(wRubEl){
+  wRubEl.addEventListener('input',()=>{
+    WITHDRAW.amt=Math.floor(+wRubEl.value||0);
+    withdrawSync();
+  });
+}
+
+async function startWithdrawal(){
+  const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
+  const detEl=q('#withdrawDetails');
+  const details=(detEl?detEl.value:'').trim();
+  const m=q('#withdrawMsg');
+  if(!m)return;
+  m.style.display='block';m.className='result';
+  if(rub<50){
+    m.className='result bad';m.textContent='Минимальная сумма вывода — 50 ₽ (500 ⬦).';
+    return;
+  }
+  const neededTk=rub*RATE;
+  if(S.balance<neededTk){
+    m.className='result bad';m.textContent='Недостаточно токенов на балансе. Для вывода '+rub+' ₽ нужно '+fmt(neededTk)+' ⬦.';
+    return;
+  }
+  if(!details||details.length<3){
+    m.className='result bad';m.textContent='Пожалуйста, укажите реквизиты для выплаты.';
+    return;
+  }
+
+  if(IS_TG&&API_BASE){
+    m.textContent='Отправка заявки на вывод…';
+    try{
+      const d=await tgCall('/api/withdraw',{rub,method:WITHDRAW.names[WITHDRAW.m],details});
+      if(d&&d.error)throw new Error(d.error);
+      if(typeof d.remaining==='number')S.balance=d.remaining;else S.balance-=neededTk;
+      addHist('Вывод · заявка '+rub+' ₽',-neededTk);
+      save();syncUI();withdrawSync();
+      tgHaptic('win');
+      m.className='result good';
+      m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> принята (ID: '+(d.orderId||'')+'). Токены списаны, средства поступят на указанные реквизиты.';
+    }catch(e){
+      m.className='result bad';
+      m.textContent='Ошибка вывода: '+(e&&e.message?e.message:e);
+      tgHaptic('lose');
+    }
+    return;
+  }
+
+  // демо-режим (без сервера)
+  S.balance-=neededTk;
+  addHist('Вывод · заявка '+rub+' ₽',-neededTk);
+  save();syncUI();withdrawSync();
+  m.className='result good';
+  m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> ('+fmt(neededTk)+' ⬦) создана на реквизиты: '+details+' <span class="muted">(демо-режим)</span>';
+}
+const wGoEl=q('#withdrawGo');
+if(wGoEl)wGoEl.addEventListener('click',startWithdrawal);
+
+
 /* ---------- стейкинг: интерфейс ---------- */
 q('#stakeChips').addEventListener('click',e=>{
   const b=e.target.closest('[data-sk]');if(!b)return;
@@ -719,6 +861,7 @@ q('#stakeOut').addEventListener('click',()=>{
   if(typeof r==='string')stakeMsg(r,false);else stakeMsg('Снято <b>'+r.toFixed(2)+' ⬦</b> (тело + проценты)',true);
 });
 paySync();
+withdrawSync();
 
 /* ---------- Бонусы и Кэшбэк ---------- */
 function syncBonusUI(){
