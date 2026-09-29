@@ -1,0 +1,17 @@
+# Секреты — только в переменных окружения хостинга (Render/VPS), не в репозитории
+.env
+bot/.env
+*.env.local
+
+# Зависимости и служебное
+node_modules/
+npm-debug.log*
+*.log
+
+# Python-мусор
+__pycache__/
+*.pyc
+
+# Системное
+.DS_Store
+Thumbs.db
