@@ -19,7 +19,7 @@ const { Bot, InlineKeyboard } = require('grammy');
 
 const BOT_TOKEN     = process.env.BOT_TOKEN;
 const APP_URL       = process.env.APP_URL || 'https://example.com/moneyforup-tg.html';
-const API_PORT      = +(process.env.API_PORT || 3000);
+const API_PORT      = +(process.env.PORT || process.env.API_PORT || 3000);
 const ADMIN_ID      = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
 const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_TOKEN || '';      // токен из @CryptoBot → My Apps
 const CRYPTOBOT_API = process.env.CRYPTOBOT_API || 'https://pay.crypt.bot/api';
@@ -44,7 +44,7 @@ const BOT_USERNAME    = (process.env.BOT_USERNAME || '').replace(/^@/, '');   //
 
 const TOKENS_PER_RUB  = 10;     // 10 ⬦ = 1 ₽
 const STARS_TO_TOKENS = 20;     // 1 звезда ≈ 2 ₽ ⇒ 20 ⬦
-const START_TOKENS    = 1000;
+const START_TOKENS    = 50;
 const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
@@ -99,8 +99,10 @@ function setRef(u, param) {
 function user(id, name, username) {
   if (!users.has(id)) {
     const code = makeCode();
-    users.set(id, { id, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
-                    ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0 });
+users.set(id, { id, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
+                ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
+                lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
+                easycashClaimed: false });
     byCode.set(code, id);
   }
   const u = users.get(id);
@@ -151,6 +153,8 @@ function stakeRemove(u, all) {
 async function creditDeposit(userId, tokens, source) {
   const u = user(userId);
   u.tokens += tokens;
+    u.lastDeposit = tokens;
+  u.lastDepositId = (u.lastDepositId || 0) + 1;
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
   if (refId) {
@@ -601,7 +605,16 @@ const server = http.createServer(async (req, res) => {
 
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
-    const who = { tokens: u.tokens, staked: u.staked, accrued: stakeAccrued(u), refCode: u.code };
+    const who = {
+      tokens: u.tokens,
+      staked: u.staked,
+      accrued: stakeAccrued(u),
+      refCode: u.code,
+      lastDeposit: u.lastDeposit || 0,
+      lastCashbackAt: u.lastCashbackAt || 0,
+      cashbackClaimed: (u.cashbackClaimedDepositId === u.lastDepositId && u.lastDepositId > 0),
+      easycashClaimed: !!u.easycashClaimed
+    };
 
     /* регистрация/синхронизация: реф-код из start_param, принятие соглашения */
     if (url.pathname === '/api/register' && req.method === 'POST') {
@@ -616,6 +629,36 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/terms' && req.method === 'POST') {
       u.termsAt = Date.now();
       return send(200, { termsAt: u.termsAt });
+    }
+
+    /* Бонус за подписку на канал @tooeasycash (+50 токенов, единоразово) */
+    if (url.pathname === '/api/claim-channel' && req.method === 'POST') {
+      if (u.easycashClaimed) return send(400, { error: 'Бонус за подписку уже получен' });
+      u.tokens += 50;
+      u.easycashClaimed = true;
+      return send(200, { success: true, bonus: 50, tokens: u.tokens });
+    }
+
+    /* Еженедельный кэшбэк 5 % от последнего пополнения */
+    if (url.pathname === '/api/claim-cashback' && req.method === 'POST') {
+      if (!u.lastDeposit || u.lastDeposit <= 0) {
+        return send(400, { error: 'У вас ещё не было пополнений для начисления кэшбэка' });
+      }
+      if (u.cashbackClaimedDepositId === u.lastDepositId) {
+        return send(400, { error: 'Кэшбэк с последнего пополнения уже получен' });
+      }
+      const WEEK_MS = 7 * 24 * 3600 * 1000;
+      const now = Date.now();
+      if (u.lastCashbackAt && (now - u.lastCashbackAt < WEEK_MS)) {
+        const daysLeft = Math.ceil((WEEK_MS - (now - u.lastCashbackAt)) / (24 * 3600 * 1000));
+        return send(400, { error: `Кэшбэк доступен раз в неделю. Осталось дней: ${daysLeft}` });
+      }
+
+      const cashback = Math.max(1, Math.floor(u.lastDeposit * 0.05));
+      u.tokens += cashback;
+      u.cashbackClaimedDepositId = u.lastDepositId;
+      u.lastCashbackAt = now;
+      return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
     /* стейкинг */

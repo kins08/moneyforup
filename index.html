@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head <script>
-  window.MONEYFORUP_API = 'https://moneyforup-api.onrender.com';
-</script>>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  window.MONEYFORUP_API = 'https://moneyforup.onrender.com';
+</script>
 <title>MoneyForUp</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b92ff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b195ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2241%22%20text-anchor%3D%22middle%22%20font-family%3D%22Inter%2CArial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22900%22%20fill%3D%22%230d1017%22%20letter-spacing%3D%221%22%3EMUP%3C%2Ftext%3E%3C%2Fsvg%3E">
 <style>
@@ -106,14 +107,14 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="app" id="app">
 <div class="top">
   <button class="brand" data-nav="games"><div class="logo">MUP</div><div><b>MoneyForUp</b></div></button>
-  <button class="pillbtn" data-nav="tokens"><b class="js-bal">1 000</b> ⬦</button>
+  <button class="pillbtn" data-nav="tokens"><b class="js-bal">50</b> ⬦</button>
 </div>
 
 <!-- ======== ИГРЫ ======== -->
 <section class="screen active" id="games">
 <div class="hero">
-<div class="eyebrow">Баланс токенов</div><div class="balance js-bal">1 000</div>
-<div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">100,00 ₽</b></div>
+<div class="eyebrow">Баланс токенов</div><div class="balance js-bal">50</div>
+<div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
 <div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
 </div>
 <div class="section"><b>Игры</b><span class="muted small">4 игры</span></div>
@@ -158,8 +159,8 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <section class="screen" id="profile">
 <div class="hero">
 <div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">Гость</b><div class="muted small" id="psub">В Telegram здесь будет ваш @username</div></div></div>
-<div class="section"><span>Баланс</span><b><span class="js-bal">1 000</span> ⬦</b></div>
-<div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">100,00 ₽</b></div>
+<div class="section"><span>Баланс</span><b><span class="js-bal">50</span> ⬦</b></div>
+<div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
 <div class="section"><b>Пополнение</b><span class="muted small">10 ⬦ = 1 ₽</span></div>
 <div class="item">
@@ -212,6 +213,25 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
   <div class="result" id="stakeMsg" style="display:none"></div>
 </div>
+<div class="section"><b>Бонусы и Кэшбэк</b></div>
+<div class="item">
+  <div>
+    <b>Подписка на канал EASYCASH</b>
+    <div class="muted small" style="margin:3px 0 8px">Получите +50 токенов за подписку на канал @tooeasycash</div>
+    <div class="actions">
+      <button class="secondary" id="btnOpenChannel" style="flex:1">Канал @tooeasycash</button>
+      <button class="primary" id="btnClaimChannel" style="flex:1">Забрать +50 ⬦</button>
+    </div>
+    <div class="result" id="msgChannel" style="display:none;margin-top:8px"></div>
+  </div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <div>
+    <b>Кэшбэк 5 %</b>
+    <div class="muted small" style="margin:3px 0 8px" id="cashbackDesc">5 % от последнего пополнения (1 раз в неделю с последнего депозита).</div>
+    <button class="control" id="btnClaimCashback" style="margin-top:4px">Забрать кэшбэк</button>
+    <div class="result" id="msgCashback" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
 <div class="section"><b>Последняя активность</b></div>
 <div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
 </section>
@@ -254,12 +274,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 
 <!-- ======== ТОКЕНЫ ======== -->
 <section class="screen" id="tokens">
-<div class="hero"><div class="eyebrow">Экономика игры</div><div class="big">Токены</div><div class="balance js-bal">1 000</div>
-<div class="muted small" style="margin:-8px 0 12px">10 ⬦ = 1 ₽ · ≈ <b class="js-rub">100,00 ₽</b></div>
+<div class="hero"><div class="eyebrow">Экономика игры</div><div class="big">Токены</div><div class="balance js-bal">50</div>
+<div class="muted small" style="margin:-8px 0 12px">10 ⬦ = 1 ₽ · ≈ <b class="js-rub">5,00 ₽</b></div>
 <p class="muted">Курс: 10 токенов = 1 ₽. Токены — баллы для игры и не являются денежными средствами.</p>
 <div class="actions"><button class="primary" data-faucet="100">+100</button><button class="secondary" data-faucet="500">+500</button></div></div>
 <div class="section"><b>История операций</b></div>
-<div class="list" id="hist"><div class="item row"><div><b>Стартовый баланс</b><div class="muted small">Система</div></div><strong>+1 000</strong></div></div>
+<div class="list" id="hist"><div class="item row"><div><b>Стартовый баланс</b><div class="muted small">Система</div></div><strong>+50</strong></div></div>
 </section>
 
 <!-- ======== ИГРА ======== -->
@@ -327,6 +347,10 @@ function tgApplyServer(d){
   if(typeof d.refInvited==='number')S.refInvited=d.refInvited;
   if(typeof d.refEarned==='number')S.refEarned=d.refEarned;
   if(d.termsAt){S.termsAt=d.termsAt;}
+  if(typeof d.lastDeposit==='number')S.lastDeposit=d.lastDeposit;
+  if(typeof d.lastCashbackAt==='number')S.lastCashbackAt=d.lastCashbackAt;
+  if(typeof d.cashbackClaimed==='boolean')S.cashbackClaimed=d.cashbackClaimed;
+  if(typeof d.easycashClaimed==='boolean')S.easycashClaimed=d.easycashClaimed;
   save();syncUI();paySync();
 }
 async function tgLoadBalance(){
@@ -461,7 +485,7 @@ function tgInit(){
   if(info)info.textContent=TGSTART?('Вас пригласил пользователь '+TGSTART+' · за его пополнения он получает 15 %'):'';
   if(share)share.onclick=()=>{
     const link='https://t.me/share/url?url='+encodeURIComponent(refLinkFor(ensureRefCode()))
-      +'&text='+encodeURIComponent('MoneyForUp — математические игры. Держи 1000 токенов на старт');
+      +'&text='+encodeURIComponent('MoneyForUp — математические игры. Держи 50 токенов на старт');
     try{(IS_TG&&TG.openTelegramLink)?TG.openTelegramLink(link):window.open(link,'_blank','noopener')}catch(e){}
   };
   window.__tgSendTerms=()=>{if(IS_TG&&API_BASE)tgCall('/api/terms',{}).then(tgLoadBalance).catch(()=>{})};
@@ -469,7 +493,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:1000,plays:0,wagered:0,net:0,bet:50,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -605,6 +629,7 @@ function syncUI(){
   const ri=q('#refInvited');if(ri)ri.textContent=S.refInvited||0;
   const re=q('#refEarned');if(re)re.textContent=fmt(S.refEarned||0)+' ⬦';
   syncStake();
+  syncBonusUI();
   if(onBetChange)onBetChange();
 }
 let onBetChange=null,cleanup=null;
@@ -694,6 +719,125 @@ q('#stakeOut').addEventListener('click',()=>{
 });
 paySync();
 
+/* ---------- Бонусы и Кэшбэк ---------- */
+function syncBonusUI(){
+  const btnCh=q('#btnClaimChannel');
+  if(btnCh){
+    if(S.easycashClaimed){
+      btnCh.textContent='Получено ✓';
+      btnCh.disabled=true;
+    }else{
+      btnCh.textContent='Забрать +50 ⬦';
+      btnCh.disabled=false;
+    }
+  }
+  const btnCb=q('#btnClaimCashback'), descCb=q('#cashbackDesc');
+  if(btnCb&&descCb){
+    const WEEK_MS=7*24*3600*1000;
+    const now=Date.now();
+    const lastDep=S.lastDeposit||0;
+    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
+    if(!lastDep){
+      descCb.textContent='Кэшбэк 5 % станет доступен после первого пополнения.';
+      btnCb.disabled=true;
+      btnCb.textContent='Пополните баланс для кэшбэка';
+    }else if(S.cashbackClaimed){
+      descCb.textContent='Кэшбэк 5 % с последнего пополнения уже получен. Сделайте новое пополнение через 7 дней.';
+      btnCb.disabled=true;
+      btnCb.textContent='Кэшбэк получен ✓';
+    }else if(S.lastCashbackAt&&(now-S.lastCashbackAt<WEEK_MS)){
+      const daysLeft=Math.ceil((WEEK_MS-(now-S.lastCashbackAt))/(24*3600*1000));
+      descCb.textContent=`Кэшбэк доступен раз в неделю. Доступно через ${daysLeft} дн.`;
+      btnCb.disabled=true;
+      btnCb.textContent=`Ожидание (${daysLeft} дн.)`;
+    }else{
+      descCb.innerHTML=`Доступен кэшбэк 5 % от последнего пополнения (${fmt(lastDep)} ⬦): <b style="color:var(--good)">+${fmt(cbAmt)} ⬦</b>`;
+      btnCb.disabled=false;
+      btnCb.textContent=`Забрать кэшбэк (+${fmt(cbAmt)} ⬦)`;
+    }
+  }
+}
+
+const btnOpCh=q('#btnOpenChannel');
+if(btnOpCh)btnOpCh.addEventListener('click',()=>{
+  const url='https://t.me/tooeasycash';
+  try{(TG&&TG.openTelegramLink)?TG.openTelegramLink(url):window.open(url,'_blank','noopener')}catch(e){}
+});
+
+const btnClCh=q('#btnClaimChannel');
+if(btnClCh)btnClCh.addEventListener('click',async()=>{
+  const btn=q('#btnClaimChannel'), msg=q('#msgChannel');
+  if(S.easycashClaimed)return;
+  btn.disabled=true;
+  if(IS_TG&&API_BASE){
+    try{
+      const res=await tgCall('/api/claim-channel',{});
+      if(res&&res.success){
+        S.easycashClaimed=true;
+        S.balance=res.tokens;
+        save();syncUI();
+        msg.className='result good';msg.style.display='block';
+        msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+      }else{
+        btn.disabled=false;
+        msg.className='result bad';msg.style.display='block';
+        msg.textContent=(res&&res.error)||'Не удалось начислить бонус';
+      }
+    }catch(e){
+      btn.disabled=false;
+      msg.className='result bad';msg.style.display='block';msg.textContent='Ошибка соединения';
+    }
+  }else{
+    S.easycashClaimed=true;
+    win(50,'Бонус канала','@tooeasycash');
+    save();syncUI();
+    msg.className='result good';msg.style.display='block';
+    msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+  }
+  syncBonusUI();
+});
+
+const btnClCb=q('#btnClaimCashback');
+if(btnClCb)btnClCb.addEventListener('click',async()=>{
+  const btn=q('#btnClaimCashback'), msg=q('#msgCashback');
+  btn.disabled=true;
+  if(IS_TG&&API_BASE){
+    try{
+      const res=await tgCall('/api/claim-cashback',{});
+      if(res&&res.success){
+        S.cashbackClaimed=true;
+        S.lastCashbackAt=Date.now();
+        S.balance=res.tokens;
+        save();syncUI();
+        msg.className='result good';msg.style.display='block';
+        msg.textContent=`Кэшбэк +${fmt(res.cashback)} ⬦ успешно зачислен!`;
+      }else{
+        btn.disabled=false;
+        msg.className='result bad';msg.style.display='block';
+        msg.textContent=(res&&res.error)||'Кэшбэк пока недоступен';
+      }
+    }catch(e){
+      btn.disabled=false;
+      msg.className='result bad';msg.style.display='block';msg.textContent='Ошибка соединения';
+    }
+  }else{
+    const lastDep=S.lastDeposit||0;
+    if(!lastDep){
+      msg.className='result bad';msg.style.display='block';msg.textContent='Сначала пополните баланс';
+      btn.disabled=false;
+      return;
+    }
+    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
+    S.cashbackClaimed=true;
+    S.lastCashbackAt=Date.now();
+    win(cbAmt,'Кэшбэк','5 %');
+    save();syncUI();
+    msg.className='result good';msg.style.display='block';
+    msg.textContent=`Кэшбэк +${fmt(cbAmt)} ⬦ успешно зачислен!`;
+  }
+  syncBonusUI();
+});
+
 function copyText(text,btn,label){
   try{navigator.clipboard&&navigator.clipboard.writeText(text)}catch(e){}
   btn.textContent=label;
@@ -708,11 +852,11 @@ q('#copyLink').addEventListener('click',()=>copyText(refLinkFor(ensureRefCode())
 function betHTML(){
   return `<div class="betrow"><span class="muted small">Ставка</span>
   <div class="chips" id="betchips">${BETS.map(b=>`<button class="chip ${b===S.bet?'on':''}" data-bet="${b}">${b}</button>`).join('')}<button class="chip" data-bet="max">макс</button></div>
-  <input class="betinput" id="betInput" type="number" min="1" step="1" inputmode="numeric" value="${S.bet}" aria-label="Своя ставка"></div>
+  <input class="betinput" id="betInput" type="number" min="10" step="1" inputmode="numeric" value="${S.bet}" aria-label="Своя ставка"></div>
   <div class="muted small" id="betRub" style="margin:-6px 0 2px"></div>`;
 }
 function setBet(v,updateInput){
-  S.bet=Math.max(1,Math.min(100000000,Math.floor(v)||1));save();
+  S.bet=Math.max(10,Math.min(100000000,Math.floor(v)||10));save();
   const inp=q('#betInput');if(inp&&updateInput!==false)inp.value=S.bet;
   qa('#betchips .chip').forEach(c=>c.classList.toggle('on',c.dataset.bet===String(S.bet)));
   betRubLine();
@@ -721,7 +865,7 @@ function wireBet(area,cb){
   const wrap=q('#betchips',area),inp=q('#betInput',area);
   if(wrap)wrap.addEventListener('click',e=>{
     const b=e.target.closest('[data-bet]');if(!b)return;
-    setBet(b.dataset.bet==='max'?Math.max(1,S.balance):+b.dataset.bet);
+    setBet(b.dataset.bet==='max'?Math.max(10,S.balance):+b.dataset.bet);
     if(cb)cb();
   });
   if(inp){
