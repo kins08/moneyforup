@@ -158,7 +158,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <!-- ======== ПРОФИЛЬ ======== -->
 <section class="screen" id="profile">
 <div class="hero">
-<div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">Гость</b><div class="muted small" id="psub">В Telegram здесь будет ваш @username</div></div></div>
+<div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">—</b></div></div>
 <div class="section"><span>Баланс</span><b><span class="js-bal">50</span> ⬦</b></div>
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
@@ -166,10 +166,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="item">
   <div class="muted small" style="margin-bottom:8px">Способ оплаты</div>
   <div class="chips" id="payMethods">
-    <button class="chip on" data-pm="0">💳 Карта / СБП</button>
-    <button class="chip" data-pm="1">⭐ Telegram Stars</button>
-    <button class="chip" data-pm="2">₿ CryptoBot</button>
-    <button class="chip" data-pm="3">🪙 Heleket</button>
+    <button class="chip on" data-pm="2">₿ CryptoBot</button>
     <button class="chip" data-pm="4">🎟 Промокод</button>
   </div>
   <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
@@ -234,6 +231,9 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 </div>
 <div class="section"><b>Последняя активность</b></div>
 <div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
+<div class="muted small" style="text-align:center;margin-top:22px;padding:12px 6px;border-top:1px solid var(--line);line-height:1.5">
+  По вопросам пополнений — писать <a href="https://t.me/lev_god" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:700">@lev_god</a>
+</div>
 </section>
 
 <!-- ======== РЕФЕРАЛЫ ======== -->
@@ -605,18 +605,19 @@ function addHist(label,delta){
 function tgProfile(){
   const t=window.Telegram&&window.Telegram.WebApp;
   const u=(t&&t.initDataUnsafe&&t.initDataUnsafe.user)||null;
-  if(!u)return {name:'Гость',sub:'В Telegram здесь будет ваш @username',avatar:"MUP"};
+  if(!u)return {name:'Игрок',sub:'',avatar:"MUP"};
   const full=[u.first_name,u.last_name].filter(Boolean).join(' ');
   const un=u.username?('@'+u.username):'';
-  const src=(full||u.username||'M').trim();
+  const name=un||full||'Игрок';
+  const src=(u.username||full||'M').replace(/^@/,'').trim();
   const parts=full.split(' ');
-  let av=(src[0]||'M')+((parts[1]&&parts[1][0])||(!full&&u.username&&u.username[1])||'');
-  return {name:un||full||'Игрок',sub:(un&&full)?full:(un?'Telegram-профиль':'Профиль Telegram'),avatar:av.toUpperCase()};
+  let av=((parts[0]&&parts[0][0])||src[0]||'M')+((parts[1]&&parts[1][0])||(src[1])||'');
+  return {name,sub:'',avatar:av.toUpperCase()};
 }
 function syncUI(){
   const pr=tgProfile();
   const pn=q('#pname');if(pn)pn.textContent=pr.name;
-  const ps=q('#psub');if(ps)ps.textContent=pr.sub;
+  const ps=q('#psub');if(ps){ps.textContent=pr.sub;if(!pr.sub)ps.style.display='none';}
   const pa=q('#pavatar');if(pa)pa.textContent=pr.avatar;
   qa('.js-bal').forEach(e=>e.textContent=fmt(S.balance));
   qa('.js-rub').forEach(e=>e.textContent=fmtRub(S.balance));
@@ -647,7 +648,7 @@ qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)
 q('#back').addEventListener('click',()=>screen('games'));
 qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
 /* ---------- пополнение (профиль) ---------- */
-const PAY={m:0,amt:300,names:['Карта / СБП · Platega','Telegram Stars','CryptoBot · крипта','Heleket · крипта','Промокод']};
+const PAY={m:2,amt:300,names:['Карта / СБП','Telegram Stars','CryptoBot · крипта','Heleket','Промокод']};
 function paySync(){
   qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
   qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
