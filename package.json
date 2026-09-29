@@ -1,0 +1,14 @@
+{
+  "name": "moneyforup-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telegram-бот + API для MoneyForUp Mini App: Platega, Heleket, Stars, CryptoBot, стейкинг и рефералы",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node --env-file=.env bot.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "grammy": "^1.30.0"
+  }
+}
