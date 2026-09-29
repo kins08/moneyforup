@@ -240,13 +240,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <section class="screen" id="ref">
 <div class="hero"><div class="eyebrow">Приглашения</div><div class="big">Реферальная программа</div>
 <p class="muted">Получай <b>15 % от каждого пополнения</b> приглашённых — токенами на свой баланс.</p>
-<div class="code" id="refCode">MF-XXXXXX</div>
+<div class="code" id="refCode">—</div>
 <div class="muted small" style="margin:-4px 0 6px">Ваш уникальный код приглашения</div>
-<div class="code refLinkBox" id="refLink">https://t.me/your_bot?startapp=MF-XXXXXX</div>
+<div class="code refLinkBox" id="refLink">—</div>
 <div class="muted small" style="margin:-4px 0 10px">Ссылка для приглашения — открывает игру сразу с вашим кодом</div>
 <button class="primary" id="copy" style="width:100%">Скопировать код</button>
 <button class="secondary" id="copyLink" style="width:100%;margin-top:8px">Скопировать ссылку</button>
-<button class="secondary" id="tgShare" style="width:100%;margin-top:8px">Поделиться в Telegram</button>
 <div class="muted small" id="tgRefInfo" style="margin-top:9px"></div></div>
 <div class="section"><b>Ваша статистика</b></div>
 <div class="statgrid">
@@ -274,9 +273,9 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 
 <!-- ======== ТОКЕНЫ ======== -->
 <section class="screen" id="tokens">
-<div class="hero"><div class="eyebrow">Экономика игры</div><div class="big">Токены</div><div class="balance js-bal">50</div>
+<div class="hero"><div class="eyebrow">Экономика вашего баланса</div><div class="big">Токены</div><div class="balance js-bal">50</div>
 <div class="muted small" style="margin:-8px 0 12px">10 ⬦ = 1 ₽ · ≈ <b class="js-rub">5,00 ₽</b></div>
-<p class="muted">Курс: 10 токенов = 1 ₽. Токены — баллы для игры и не являются денежными средствами.</p>
+<p class="muted">Курс: 10 токенов = 1 ₽. Токены — баллы для игры.</p>
 <div class="actions"><button class="primary" data-faucet="100">+100</button><button class="secondary" data-faucet="500">+500</button></div></div>
 <div class="section"><b>История операций</b></div>
 <div class="list" id="hist"><div class="item row"><div><b>Стартовый баланс</b><div class="muted small">Система</div></div><strong>+50</strong></div></div>
@@ -344,6 +343,7 @@ function tgApplyServer(d){
   if(typeof d.tokens==='number'){S.balance=d.tokens;S.tgBalance=d.tokens;}
   if(typeof d.staked==='number')S.stake={amount:d.staked,since:Date.now(),accruedBase:d.accrued||0};
   if(d.refCode){S.refCode=String(d.refCode);S.refServer=true;}
+  if(d.link){S.refLink=String(d.link);}
   if(typeof d.refInvited==='number')S.refInvited=d.refInvited;
   if(typeof d.refEarned==='number')S.refEarned=d.refEarned;
   if(d.termsAt){S.termsAt=d.termsAt;}
@@ -625,7 +625,7 @@ function syncUI(){
   q('#pactiv').innerHTML=S.hist.length?S.hist.slice(0,4).map(it=>`<div class="item row"><span>${it.label}</span><span class="muted small">${sgn(it.delta)}</span></div>`).join(''):'<div class="item muted small">Пока нет операций</div>';
   const code=ensureRefCode();
   const rc=q('#refCode');if(rc)rc.textContent=code;
-  const rl=q('#refLink');if(rl)rl.textContent=refLinkFor(code);
+  const rl=q('#refLink');if(rl)rl.textContent=S.refLink||refLinkFor(code);
   const ri=q('#refInvited');if(ri)ri.textContent=S.refInvited||0;
   const re=q('#refEarned');if(re)re.textContent=fmt(S.refEarned||0)+' ⬦';
   syncStake();
@@ -846,7 +846,7 @@ function copyText(text,btn,label){
 q('#copy').dataset.label='Скопировать код';
 q('#copy').addEventListener('click',()=>copyText(ensureRefCode(),q('#copy'),'Код скопирован ✓'));
 q('#copyLink').dataset.label='Скопировать ссылку';
-q('#copyLink').addEventListener('click',()=>copyText(refLinkFor(ensureRefCode()),q('#copyLink'),'Ссылка скопирована ✓'));
+q('#copyLink').addEventListener('click',()=>copyText(S.refLink||refLinkFor(ensureRefCode()),q('#copyLink'),'Ссылка скопирована ✓'));
 
 /* ---------- ставка (пресеты + своя сумма) ---------- */
 function betHTML(){
