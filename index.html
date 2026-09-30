@@ -88,8 +88,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .spinwrap{position:relative;width:100%;display:flex;justify-content:center;padding-top:14px}
 .wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;overflow:hidden;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.45);transition:transform 3.4s cubic-bezier(.12,.72,.2,1)}
 .wheel span{position:absolute;transform:translate(-50%,-50%);font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);white-space:nowrap}
-.wheel-line{position:absolute;top:0;left:50%;width:2px;height:50%;margin-left:-1px;background:linear-gradient(180deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,.25) 55%,rgba(0,0,0,.7) 100%);box-shadow:0 0 2px rgba(0,0,0,.8);transform-origin:50% 100%;pointer-events:none;z-index:2}
-.wheel-hub{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4d5872 0%,#191d28 85%);border:3px solid #7380a0;box-shadow:0 3px 8px rgba(0,0,0,.85);z-index:4;pointer-events:none}
 .pointer{position:absolute;top:6px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #fff;z-index:5;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6))}
 .legend{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
 .lg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 5px;text-align:center;font-size:11.5px;color:var(--muted);transition:border-color .25s,background .25s}
@@ -1592,7 +1590,7 @@ function gameSpin(){
     <div class="legend" id="sleg">${curM.pay.map((v,i)=>`<div class="lg" id="lg${i}"><span class="dot" style="background:${curM.col[i]}"></span><b style="color:${band(v)}">${lbl(v)}</b>сектор ${i+1}</div>`).join('')}</div>
     ${betHTML()}
     <button class="control" id="sgo">КРУТИТЬ · ${S.bet} ⬦</button>
-    <div class="result" id="sr">Все 8 секторов внешне одинаковые (по 45°). Режим: ${curM.name}.</div>`;
+    <div class="result" id="sr">Нажмите «КРУТИТЬ», чтобы запустить колесо.</div>`;
 
     const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
     wheel.innerHTML='';
@@ -1603,12 +1601,34 @@ function gameSpin(){
       return {v,a0,a1,size:segAngle,col:curM.col[i]};
     });
     wheel.style.background='conic-gradient('+segs.map(sg=>`${sg.col} ${sg.a0}deg ${sg.a1}deg`).join(',')+')';
-    segs.forEach((sg, i)=>{
-      const line=document.createElement('div');
-      line.className='wheel-line';
-      line.style.transform='rotate('+sg.a0+'deg)';
-      wheel.appendChild(line);
 
+    // Аккуратный контур секторов колеса (8 радиальных линий от центра)
+    const svgContour = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgContour.setAttribute('viewBox', '0 0 100 100');
+    svgContour.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+    for(let i=0; i<N; i++){
+      const rad = i * segAngle * Math.PI / 180;
+      const x2 = +(50 + 50 * Math.sin(rad)).toFixed(3);
+      const y2 = +(50 - 50 * Math.cos(rad)).toFixed(3);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50');
+      line.setAttribute('y1', '50');
+      line.setAttribute('x2', String(x2));
+      line.setAttribute('y2', String(y2));
+      line.setAttribute('stroke', '#161b28');
+      line.setAttribute('stroke-width', '1.6');
+      line.setAttribute('stroke-linecap', 'round');
+      svgContour.appendChild(line);
+    }
+    const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerDot.setAttribute('cx', '50');
+    centerDot.setAttribute('cy', '50');
+    centerDot.setAttribute('r', '2.2');
+    centerDot.setAttribute('fill', '#161b28');
+    svgContour.appendChild(centerDot);
+    wheel.appendChild(svgContour);
+
+    segs.forEach(sg=>{
       const cen=(sg.a0+sg.a1)/2, el=document.createElement('span');
       el.textContent=lbl(sg.v);
       const rad=35;
@@ -1617,9 +1637,6 @@ function gameSpin(){
       el.style.zIndex='3';
       wheel.appendChild(el);
     });
-    const hub=document.createElement('div');
-    hub.className='wheel-hub';
-    wheel.appendChild(hub);
 
     const smEl=q('#spinModes');
     if(smEl){
@@ -1778,7 +1795,7 @@ function gameDrop(){
     draw(new Array(curM.rows+1).fill(0),0);
   }
 
-  renderDropContent();
+  renderDrop();
   return ()=>{dead=true;cancelAnimationFrame(raf)};
 }
 
