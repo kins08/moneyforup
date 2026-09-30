@@ -96,16 +96,22 @@ function setRef(u, param) {
   return refId;
 }
 
+let nextPlayerId = 10000;
+
 function user(id, name, username) {
   if (!users.has(id)) {
     const code = makeCode();
-users.set(id, { id, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
-                ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
-                lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-                easycashClaimed: false });
+    const numId = nextPlayerId++;
+    users.set(id, { id, numId, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
+                    ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
+                    lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
+                    easycashClaimed: false });
     byCode.set(code, id);
   }
   const u = users.get(id);
+  if (!u.numId) {
+    u.numId = nextPlayerId++;
+  }
   if (name) u.name = name;
   if (username) u.username = username;      // @username из Telegram — для привязки профиля
   return u;
@@ -645,6 +651,8 @@ const server = http.createServer(async (req, res) => {
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
     const who = {
+      id: u.id,
+      numId: u.numId,
       username: tgUser.username || u.username || '',
       name: tgUser.first_name || u.name || '',
       tokens: u.tokens,
@@ -661,7 +669,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/register' && req.method === 'POST') {
       setRef(u, body.startParam);          // код пригласившего: MF... или старый числовой id
       if (body.termsAcceptedAt) u.termsAt = Number(body.termsAcceptedAt) || Date.now();
-      return send(200, { ...who, refCode: u.code, link: refLink(u.code), refInvited: countInvited(u.id), refEarned: Math.round(u.refEarned || 0),
+      return send(200, { ...who, numId: u.numId, refCode: u.code, link: refLink(u.code), refInvited: countInvited(u.id), refEarned: Math.round(u.refEarned || 0),
                          referredBy: u.ref || null, termsAt: u.termsAt });
     }
 
@@ -672,9 +680,35 @@ const server = http.createServer(async (req, res) => {
       return send(200, { termsAt: u.termsAt });
     }
 
-    /* Бонус за подписку на канал @tooeasycash (+50 токенов, единоразово) */
+    /* Бонус за подписку на канал @tooeasycash (+50 токенов, единоразово) с реальной проверкой и КД 30с */
     if (url.pathname === '/api/claim-channel' && req.method === 'POST') {
       if (u.easycashClaimed) return send(400, { error: 'Бонус за подписку уже получен' });
+
+      const COOLDOWN_MS = 30 * 1000;
+      const now = Date.now();
+      if (u.channelCheckAt && (now - u.channelCheckAt < COOLDOWN_MS)) {
+        const secLeft = Math.ceil((COOLDOWN_MS - (now - u.channelCheckAt)) / 1000);
+        return send(429, { error: `Повторная проверка доступна через ${secLeft} сек.`, cooldown: secLeft });
+      }
+      u.channelCheckAt = now;
+
+      try {
+        const member = await bot.api.getChatMember('@tooeasycash', u.id);
+        const isSub = ['creator', 'administrator', 'member', 'restricted'].includes(member.status);
+        if (!isSub) {
+          return send(400, {
+            error: 'Вы не подписаны на канал @tooeasycash. Подпишитесь и нажмите кнопку снова.',
+            cooldown: 30
+          });
+        }
+      } catch (e) {
+        console.error('Ошибка проверки подписки на @tooeasycash:', e.message);
+        return send(400, {
+          error: 'Бот не может проверить подписку: добавьте бота администратором в канал @tooeasycash.',
+          cooldown: 30
+        });
+      }
+
       u.tokens += 50;
       u.easycashClaimed = true;
       return send(200, { success: true, bonus: 50, tokens: u.tokens });

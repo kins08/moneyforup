@@ -86,9 +86,11 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .ball2{position:absolute;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:linear-gradient(135deg,#8f95ff,#c39bff);box-shadow:0 0 8px rgba(140,150,255,.45)}
 /* спин */
 .spinwrap{position:relative;width:100%;display:flex;justify-content:center;padding-top:14px}
-.wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;transition:transform 3.4s cubic-bezier(.12,.72,.2,1)}
-.wheel span{position:absolute;transform:translate(-50%,-50%);font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.75);white-space:nowrap}
-.pointer{position:absolute;top:6px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #fff;z-index:3;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6))}
+.wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;overflow:hidden;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.45);transition:transform 3.4s cubic-bezier(.12,.72,.2,1)}
+.wheel span{position:absolute;transform:translate(-50%,-50%);font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);white-space:nowrap}
+.wheel-line{position:absolute;top:0;left:50%;width:2px;height:50%;margin-left:-1px;background:linear-gradient(180deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,.25) 55%,rgba(0,0,0,.7) 100%);box-shadow:0 0 2px rgba(0,0,0,.8);transform-origin:50% 100%;pointer-events:none;z-index:2}
+.wheel-hub{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4d5872 0%,#191d28 85%);border:3px solid #7380a0;box-shadow:0 3px 8px rgba(0,0,0,.85);z-index:4;pointer-events:none}
+.pointer{position:absolute;top:6px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #fff;z-index:5;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6))}
 .legend{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
 .lg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 5px;text-align:center;font-size:11.5px;color:var(--muted);transition:border-color .25s,background .25s}
 .lg b{display:block;font-size:13.5px;color:#fff;margin-bottom:3px}
@@ -158,7 +160,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <!-- ======== ПРОФИЛЬ ======== -->
 <section class="screen" id="profile">
 <div class="hero">
-<div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">—</b></div></div>
+<div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">—</b><div class="muted small" id="pnumid" style="margin-top:2px;font-weight:600;color:#94a1b8">ID: #10000</div></div></div>
 <div class="section"><span>Баланс</span><b><span class="js-bal">50</span> ⬦</b></div>
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
@@ -387,6 +389,7 @@ async function tgCall(path,body){
 }
 function tgApplyServer(d){
   if(!d)return;
+  if(d.numId){S.numId=d.numId;}
   if(d.username){S.username=String(d.username);}
   if(d.name){S.name=String(d.name);}
   if(typeof d.tokens==='number'){S.balance=d.tokens;S.tgBalance=d.tokens;}
@@ -524,7 +527,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:''};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:'',numId:10000,channelCooldownUntil:0};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -538,7 +541,7 @@ function ensureRefCode(){
   S.refCode=code;save();return code;
 }
 const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
-try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d);}catch(e){}
+try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){}}
 function place(bet,game){
   S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
@@ -677,6 +680,7 @@ function tgProfile(){
 function syncUI(){
   const pr=tgProfile();
   const pn=q('#pname');if(pn)pn.textContent=pr.name;
+  const pnum=q('#pnumid');if(pnum)pnum.textContent='ID: #'+(S.numId||10000);
   const ps=q('#psub');if(ps){ps.textContent=pr.sub;if(!pr.sub)ps.style.display='none';}
   const pa=q('#pavatar');if(pa)pa.textContent=pr.avatar;
   qa('.js-bal').forEach(e=>e.textContent=fmt(S.balance));
@@ -936,14 +940,42 @@ paySync();
 withdrawSync();
 
 /* ---------- Бонусы и Кэшбэк ---------- */
+let chTimer = null;
+function startChannelCooldownTimer(){
+  if(chTimer) clearInterval(chTimer);
+  function tick(){
+    const btn = q('#btnClaimChannel');
+    if(!btn) return;
+    if(S.easycashClaimed){
+      btn.textContent = 'Получено ✓';
+      btn.disabled = true;
+      if(chTimer){ clearInterval(chTimer); chTimer = null; }
+      return;
+    }
+    const rem = Math.max(0, Math.ceil(((S.channelCooldownUntil || 0) - Date.now()) / 1000));
+    if(rem > 0){
+      btn.disabled = true;
+      btn.textContent = `Повторить через ${rem} с`;
+    }else{
+      btn.disabled = false;
+      btn.textContent = 'Проверить снова (+50 ⬦)';
+      if(chTimer){ clearInterval(chTimer); chTimer = null; }
+    }
+  }
+  tick();
+  chTimer = setInterval(tick, 1000);
+}
+
 function syncBonusUI(){
   const btnCh=q('#btnClaimChannel');
   if(btnCh){
     if(S.easycashClaimed){
       btnCh.textContent='Получено ✓';
       btnCh.disabled=true;
+    }else if(S.channelCooldownUntil && Date.now() < S.channelCooldownUntil){
+      startChannelCooldownTimer();
     }else{
-      btnCh.textContent='Забрать +50 ⬦';
+      btnCh.textContent='Проверить подписку (+50 ⬦)';
       btnCh.disabled=false;
     }
   }
@@ -984,7 +1016,9 @@ const btnClCh=q('#btnClaimChannel');
 if(btnClCh)btnClCh.addEventListener('click',async()=>{
   const btn=q('#btnClaimChannel'), msg=q('#msgChannel');
   if(S.easycashClaimed)return;
+  if(S.channelCooldownUntil && Date.now() < S.channelCooldownUntil)return;
   btn.disabled=true;
+  btn.textContent='Проверка…';
   if(IS_TG&&API_BASE){
     try{
       const res=await tgCall('/api/claim-channel',{});
@@ -994,23 +1028,31 @@ if(btnClCh)btnClCh.addEventListener('click',async()=>{
         save();syncUI();
         msg.className='result good';msg.style.display='block';
         msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+        btn.textContent='Получено ✓';
+        btn.disabled=true;
       }else{
-        btn.disabled=false;
+        const cdSec=(res&&res.cooldown)||30;
+        S.channelCooldownUntil=Date.now() + cdSec*1000;
+        save();
         msg.className='result bad';msg.style.display='block';
-        msg.textContent=(res&&res.error)||'Не удалось начислить бонус';
+        msg.textContent=(res&&res.error)||'Вы не подписаны на канал @tooeasycash';
+        startChannelCooldownTimer();
       }
     }catch(e){
-      btn.disabled=false;
-      msg.className='result bad';msg.style.display='block';msg.textContent='Ошибка соединения';
+      S.channelCooldownUntil=Date.now() + 30000;
+      save();
+      msg.className='result bad';msg.style.display='block';
+      msg.textContent='Ошибка связи с сервером при проверке';
+      startChannelCooldownTimer();
     }
   }else{
-    S.easycashClaimed=true;
-    win(50,'Бонус канала','@tooeasycash');
-    save();syncUI();
-    msg.className='result good';msg.style.display='block';
-    msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+    // Демо-режим без Telegram WebApp
+    S.channelCooldownUntil=Date.now() + 30000;
+    save();
+    msg.className='result bad';msg.style.display='block';
+    msg.textContent='Для реальной проверки откройте бота в Telegram и подпишитесь на @tooeasycash. Кулдаун 30 секунд включён.';
+    startChannelCooldownTimer();
   }
-  syncBonusUI();
 });
 
 const btnClCb=q('#btnClaimCashback');
@@ -1371,7 +1413,7 @@ function gameJumper(){
   const a=q('#gameArea');
   let level=0,phase='idle',busy=false,t1=0,t2=0,raf=0,dead=false;
   let curP=JP_MODES[curJumpMode].p;
-  const xn=n=>Math.pow(1/curP,n);
+  const xn=n=>+(0.93*Math.pow(1/curP,n)).toFixed(2);
 
   a.innerHTML=`
   <div class="chips" id="jumpModes" style="margin-bottom:10px;justify-content:center">
@@ -1514,21 +1556,21 @@ function gameJumper(){
 const SP_MODES = {
   lite: {
     name: 'Лайт',
-    pay: [2.5, 1.8, 1.2, 0.9, 0.8, 0.5, 1.5, 1.0],
-    w: [5, 15, 20, 20, 15, 5, 10, 10], // повышенные шансы
-    col: ['#ffcf6b','#ff7386','#3ddc96','#5c6885','#5c6885','#39415a','#a175ff','#3ddc96']
+    pay: [2.0, 1.3, 1.0, 0.8, 0.6, 0.2, 1.2, 0.7],
+    w:   [4,   12,  18,  24,  20,  8,   6,   8], // RTP 87.2% (House Edge 12.8%)
+    col: ['#ffcf6b','#ff7386','#3ddc96','#687699','#4c5670','#323a4e','#a175ff','#2dc284']
   },
   med: {
     name: 'Средний',
     pay: [5, 3, 0.75, 0.5, 0.25, 0, 2, 1],
-    w: [2, 8, 21, 23, 21, 9, 8, 8],
-    col: ['#ffcf6b','#ff7386','#5c6885','#5c6885','#5c6885','#39415a','#a175ff','#3ddc96']
+    w:   [2, 8, 21, 23, 21, 9, 8, 8], // RTP 90.5% (House Edge 9.5%)
+    col: ['#ffcf6b','#ff7386','#6e7b9e','#515b74','#394154','#212634','#a175ff','#3ddc96']
   },
   crit: {
     name: 'Критический',
     pay: [15, 8, 0.5, 0.2, 0, 0, 4, 1.5],
-    w: [1, 3, 16, 20, 30, 20, 5, 5],
-    col: ['#ffcf6b','#ff7386','#5c6885','#39415a','#242a3a','#242a3a','#a175ff','#3ddc96']
+    w:   [1, 3, 16, 20, 30, 20, 5, 5], // RTP 78.5% (House Edge 21.5%)
+    col: ['#ffcf6b','#ff7386','#606c8b','#41495e','#292f3f','#191d27','#a175ff','#3ddc96']
   }
 };
 let curSpinMode = 'med';
@@ -1553,6 +1595,7 @@ function gameSpin(){
     <div class="result" id="sr">Все 8 секторов внешне одинаковые (по 45°). Режим: ${curM.name}.</div>`;
 
     const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
+    wheel.innerHTML='';
     const N=curM.pay.length;
     const segAngle=360/N;   // строго 45 градусов — внешне одинаковые!
     const segs=curM.pay.map((v,i)=>{
@@ -1560,14 +1603,23 @@ function gameSpin(){
       return {v,a0,a1,size:segAngle,col:curM.col[i]};
     });
     wheel.style.background='conic-gradient('+segs.map(sg=>`${sg.col} ${sg.a0}deg ${sg.a1}deg`).join(',')+')';
-    segs.forEach(sg=>{
+    segs.forEach((sg, i)=>{
+      const line=document.createElement('div');
+      line.className='wheel-line';
+      line.style.transform='rotate('+sg.a0+'deg)';
+      wheel.appendChild(line);
+
       const cen=(sg.a0+sg.a1)/2, el=document.createElement('span');
       el.textContent=lbl(sg.v);
       const rad=35;
       el.style.left=(50+rad*Math.sin(cen*Math.PI/180))+'%';
       el.style.top=(50-rad*Math.cos(cen*Math.PI/180))+'%';
+      el.style.zIndex='3';
       wheel.appendChild(el);
     });
+    const hub=document.createElement('div');
+    hub.className='wheel-hub';
+    wheel.appendChild(hub);
 
     const smEl=q('#spinModes');
     if(smEl){
@@ -1616,19 +1668,19 @@ const DP_MODES = {
     name: 'Лайт',
     slots: 8,
     rows: 7,
-    pay: [4.0, 1.8, 1.2, 0.8, 0.8, 1.2, 1.8, 4.0]
+    pay: [3.5, 1.5, 1.0, 0.7, 0.7, 1.0, 1.5, 3.5] // RTP 92.97% (House Edge 7.03%)
   },
   med: {
     name: 'Средний',
     slots: 10,
     rows: 9,
-    pay: [10.0, 4.0, 2.0, 1.2, 0.5, 0.5, 1.2, 2.0, 4.0, 10.0]
+    pay: [8.0, 3.0, 1.6, 1.0, 0.45, 0.45, 1.0, 1.6, 3.0, 8.0] // RTP 91.13% (House Edge 8.87%)
   },
   crit: {
     name: 'Критический',
     slots: 12,
     rows: 11,
-    pay: [35.0, 15.0, 6.0, 2.0, 0.4, 0.2, 0.2, 0.4, 2.0, 6.0, 15.0, 35.0]
+    pay: [30.0, 12.0, 5.0, 1.8, 0.35, 0.15, 0.15, 0.35, 1.8, 5.0, 12.0, 30.0] // RTP 89.73% (House Edge 10.27%)
   }
 };
 let curDropMode = 'med';
