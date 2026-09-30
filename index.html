@@ -97,10 +97,10 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 /* дроп */
 .dropwrap{position:relative;height:300px;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#252c3e,#191e2a);border:1px solid var(--line)}
 .dropwrap canvas{width:100%;height:100%;display:block}
-.slots{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:9px}
-.slot{border-radius:10px;padding:8px 2px;text-align:center;font-size:11.5px;font-weight:700;background:#2a3142;border:1px solid var(--line);color:var(--muted);transition:outline-color .2s,transform .2s}
+.slots{display:grid;grid-template-columns:repeat(var(--slot-cols,8),1fr);gap:3px;margin-top:9px}
+.slot{border-radius:9px;padding:7px 1px;text-align:center;font-size:11px;font-weight:700;background:#2a3142;border:1px solid var(--line);color:var(--muted);transition:outline-color .2s,transform .2s}
 .slot.hit{outline:2px solid #7c82ff;outline-offset:1px;transform:translateY(-2px)}
-@media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:10.5px;padding:7px 1px}.xbig{font-size:29px}.betinput{width:84px}}
+@media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}}
 </style>
 </head>
 <body>
@@ -166,8 +166,27 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="item">
   <div class="muted small" style="margin-bottom:8px">Способ оплаты</div>
   <div class="chips" id="payMethods">
-    <button class="chip on" data-pm="2">₿ CryptoBot</button>
+    <button class="chip on" data-pm="0">📱 СБП / Карты</button>
+    <button class="chip" data-pm="2">₿ CryptoBot</button>
     <button class="chip" data-pm="4">🎟 Промокод</button>
+  </div>
+  <div id="sbpRequisites" style="margin:12px 0 6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)">
+    <div class="muted small" style="margin-bottom:8px">Выберите банк или СБП для перевода:</div>
+    <div class="chips" id="sbpBanks">
+      <button class="chip on" data-bank="tinkoff">🟡 Т-Банк</button>
+      <button class="chip" data-bank="sber">🟢 Сбер</button>
+      <button class="chip" data-bank="ozon">🔵 Озон</button>
+      <button class="chip" data-bank="sbp">📲 СБП (телефон)</button>
+    </div>
+    <div style="margin-top:10px;background:rgba(0,0,0,.28);padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.07)">
+      <div class="muted small" id="sbpTargetLabel">Номер карты Т-Банк:</div>
+      <div class="row" style="margin-top:4px;align-items:center;justify-content:space-between">
+        <code style="font-size:15px;letter-spacing:1px;font-weight:700;color:var(--text)" id="sbpTargetVal">5536 9177 1899 1380</code>
+        <button type="button" class="chip" id="sbpCopyBtn" style="margin:0;padding:4px 10px;font-size:12px">Копировать</button>
+      </div>
+      <div class="muted small" style="margin-top:6px">Получатель: <b style="color:var(--text)">Лев К.</b></div>
+    </div>
+    <div class="muted small" style="margin-top:10px;line-height:1.4">Переведите точную сумму на указанные реквизиты, затем нажмите <b>«Я перевёл»</b> — заявка сразу уйдёт администратору на проверку.</div>
   </div>
   <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
   <div class="chips" id="payAmounts">
@@ -287,9 +306,13 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <p class="muted small" style="margin-top:10px;line-height:1.5">Самоприглашение, мультиаккаунты и накрутка запрещены — такие начисления отменяются.</p>
 </section>
 
-<!-- ======== СОГЛАШЕНИЕ ======== -->
+<!-- ======== СОГЛАШЕНИЕ И КОНФИДЕНЦИАЛЬНОСТЬ ======== -->
 <section class="screen" id="terms">
-<div class="gameTop"><button class="back" id="termsBack">‹</button><div><div class="eyebrow">ДОКУМЕНТ</div><div class="gameTitle">Пользовательское соглашение</div></div></div>
+<div class="gameTop"><button class="back" id="termsBack">‹</button><div><div class="eyebrow">ДОКУМЕНТЫ</div><div class="gameTitle" id="docTitle">Пользовательское соглашение</div></div></div>
+<div class="chips" id="docTabs" style="margin-bottom:12px">
+  <button class="chip on" data-doc="terms">Соглашение</button>
+  <button class="chip" data-doc="privacy">Конфиденциальность</button>
+</div>
 <div class="list" id="termsList"></div>
 <div class="result" style="text-align:left" id="termsFoot"></div>
 <button class="control" id="termsAccept">Принять соглашение</button>
@@ -364,6 +387,8 @@ async function tgCall(path,body){
 }
 function tgApplyServer(d){
   if(!d)return;
+  if(d.username){S.username=String(d.username);}
+  if(d.name){S.name=String(d.name);}
   if(typeof d.tokens==='number'){S.balance=d.tokens;S.tgBalance=d.tokens;}
   if(typeof d.staked==='number')S.stake={amount:d.staked,since:Date.now(),accruedBase:d.accrued||0};
   if(d.refCode){S.refCode=String(d.refCode);S.refServer=true;}
@@ -415,34 +440,14 @@ if(IS_TG&&API_BASE){
       return 'pending';
     }
     if(methodId===0){
-      /* Platega: карта или СБП, плательщик выбирает способ на странице оплаты */
-      msg.className='result';msg.textContent='Создаём платёжную ссылку…';
-      const d=await tgCall('/api/platega-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
-      if(d&&d.pay_url){
-        try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
-        msg.className='result';
-        msg.innerHTML='Открыта оплата на '+rub+' ₽ ('+fmt(d.tokens||tk)+' ⬦).<br>После оплаты токены зачислятся автоматически.';
-        for(let i=0;i<40;i++){
-          await sleep(3000);
-          const st=await tgCall('/api/check-platega',{invoice_id:d.invoice_id});
-          if(st&&st.paid){
-            await tgLoadBalance();
-            msg.className='result good';
-            msg.innerHTML='Оплачено: зачислено <b>'+fmt(st.tokens||d.tokens||tk)+' ⬦</b>';
-            tgHaptic('win');
-            return 'paid';
-          }
-        }
-        msg.className='result';
-        msg.innerHTML='Платёж пока не подтверждён. Баланс обновится автоматически после оплаты.';
-        return 'pending';
-      }
-      /* фолбэк: ручная заявка, если Platega не настроена или недоступна */
-      if(d&&d.error)msg.textContent='Платёжный сервис недоступен, создаём заявку вручную…';
-      const o=await tgCall('/api/order-sbp',{rub,termsAcceptedAt:S.termsAt});
-      if(!o||!o.order_id)throw new Error((o&&o.error)||'не удалось создать заявку');
-      msg.className='result';
-      msg.innerHTML='Заявка <b>№'+o.order_id+'</b> на '+rub+' ₽ ('+fmt(o.tokens)+' ⬦) создана.<br>Переведите по СБП и дождитесь подтверждения — токены зачислятся автоматически.';
+      /* Прямой перевод на карту / СБП (заявка администратору) */
+      msg.className='result';msg.textContent='Отправляем заявку на проверку…';
+      const curB = window.__curBankInfo ? window.__curBankInfo() : { name: 'СБП / Карта', val: '' };
+      const o = await tgCall('/api/order-sbp', { rub, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
+      if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
+      msg.className='result good';
+      msg.innerHTML='Заявка <b>№'+o.order_id+'</b> на '+rub+' ₽ ('+fmt(o.tokens)+' ⬦) создана!<br>Администратор проверит поступление на <b>'+curB.name+'</b>, и токены сразу зачислятся на баланс.';
+      tgHaptic('win');
       return 'sbp';
     }
     if(methodId===3){
@@ -502,6 +507,8 @@ function tgInit(){
     TG.BackButton&&TG.BackButton.onClick(()=>screen('games'));
   }catch(e){}
   if(TGU){
+    if(TGU.username) S.username = String(TGU.username).replace(/^@/, '');
+    if(TGU.first_name) S.name = [TGU.first_name, TGU.last_name].filter(Boolean).join(' ');
     ensureRefCode();                       // локальный уникальный код; сервер вернёт канонический в /api/register
     save();syncUI();                       // имя и аватар профиля заполняет база: @username из initDataUnsafe
   }
@@ -517,7 +524,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:''};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -552,21 +559,44 @@ function deposit(tk,label,refBonus){
   if(refBonus&&refBonus>0)S.refEarned=(S.refEarned||0)+refBonus;   // сервер начисляет рефереру 15 %
   save();syncUI();
 }
-/* ---------- соглашение (единый источник текста) ---------- */
+/* ---------- соглашение и политика конфиденциальности ---------- */
 const TERMS=[
-  ['1. О сервисе и токенах','MoneyForUp — развлекательное приложение с играми на токены. Токены (⬦) — баллы, которые начисляются за игру и пополнения и не являются деньгами, ценной бумагой или средством платежа. Курс 10 ⬦ = 1 ₽ используется только для отображения размера пополнения. Участие в сервисе добровольное: вы играете по желанию и в любой момент можете прекратить. Сервис не является азартной игрой на деньги и не проводит денежных выплат.'],
-  ['2. Аккаунт и правила','Используя приложение, вы соглашаетесь с этими условиями. Вы отвечаете за сохранность доступа к своему аккаунту Telegram. Запрещено создавать несколько аккаунтов для обхода лимитов и получать реферальные начисления с себя самого.'],
-  ['3. Пополнение и курс','Пополнение — добровольное пожертвование на поддержку и развитие сервиса; оно совершается по вашему желанию и не является условием участия. За пожертвование начисляются токены по курсу 10 ⬦ = 1 ₽. Зачисление происходит после подтверждения платежа платёжным сервисом (Platega — карта и СБП, Telegram Stars, CryptoBot, Heleket). Внесённое пожертвование возврату не подлежит, кроме случаев, когда платёж не был зачислен по технической причине. Токены не сгорают, но могут быть списаны при нарушении соглашения.'],
-  ['4. Стейкинг 1 % в сутки','Проценты начисляются на сумму стейкинга в размере 1 % в сутки (простые проценты, с точностью до секунды). Проценты и тело стейкинга можно забрать в любой момент. Стейкинг — не инвестиция и не финансовый инструмент: доходность не гарантирована, ставка и условия могут быть изменены или приостановлены.'],
-  ['5. Реферальная программа и ответственность','За каждого приглашённого вы получаете 15 % от суммы его пополнений токенами. Начисления происходят автоматически после успешного платежа. Накрутка, самоприглашение и мультиаккаунты запрещены — такие начисления отменяются, доступ может быть ограничен. Сервис предоставляется «как есть»: возможны сбои и приостановки; ответственность ограничена суммой токенов на вашем балансе. Соглашение может обновляться — актуальная версия всегда доступна в приложении.'],
+  ['1. Общие положения и статус сервиса','MoneyForUp — развлекательно-математический симулятор и программная платформа для досуга. Платформа НЕ является азартной игрой, букмекерской конторой, тотализатором, лотереей или финансовым институтом. Сервис не проводит азартных игр на реальные деньги в понимании Федерального закона № 244-ФЗ. Участие в симуляциях носит исключительно добровольный характер.'],
+  ['2. Виртуальные токены платформы','Токены (⬦) представляют собой внутрипрограммные условные расчётные единицы (баллы) симулятора. Токены не имеют реальной денежной стоимости, не являются платёжным средством, валютой, криптовалютой или финансовым активом и не могут обмениваться на реальные деньги за пределами сервиса. Условное соотношение 10 ⬦ = 1 ₽ используется лишь для наглядности отображения баланса.'],
+  ['3. Добровольные пожертвования (донаты)','Любые переводы и пополнения на платформе совершаются пользователем исключительно в качестве добровольного безвозмездного пожертвования (ст. 582 ГК РФ) на техническое обслуживание серверов, хостинг и развитие программного комплекса. Пожертвование не является возмездной сделкой или оплатой товаров/услуг и возврату не подлежит. В благодарность за добровольную поддержку проекта пользователю начисляются бонусные токены симулятора.'],
+  ['4. Правила аккаунта и безопасность','Пользователь обязуется добросовестно использовать функционал платформы, не использовать вредоносное ПО, баги кода, читы и автоматизированные скрипты. Создание мультиаккаунтов для накрутки бонусов запрещено — при выявлении нарушений начисленные баллы аннулируются.'],
+  ['5. Стейкинг и реферальная программа','Механики накопления (стейкинг 1 % в сутки) и реферальные поощрения (15 % токенами) являются элементами геймификации симулятора и не являются банковским вкладом, инвестиционной деятельностью или гарантированным доходом.'],
+  ['6. Ограничение ответственности','Сервис предоставляется по принципу «КАК ЕСТЬ» («AS IS»). Администрация не несет ответственности за возможные перебои в работе сети Интернет, действия Telegram или сторонних сервисов. Соглашение может обновляться без специального уведомления.']
 ];
+
+const PRIVACY=[
+  ['1. Какие данные мы собираем','Платформа собирает только общедоступные технические данные вашего профиля Telegram, передаваемые интерфейсом Telegram WebApp:\n• Ваш числовой Telegram ID — для авторизации и сохранения баланса;\n• Имя пользователя (@username) и имя профиля — для корректного отображения в интерфейсе;\n• Внутрисистемную историю начислений и активности в симуляторе.\nПлатформа НЕ собирает, НЕ запрашивает и НЕ имеет доступа к вашим паролям, номерам банковских карт, CVC/CVV кодам и паспортным данным.'],
+  ['2. Цели сбора данных','Сбор указанных сведений производится исключительно для:\n• Обеспечения быстрой работы Mini App без необходимости ввода почты и паролей;\n• Сохранения баланса токенов, настроек и реферальных связей;\n• Предотвращения мошенничества, спама и создания мультиаккаунтов.'],
+  ['3. Защита и передача информации','Все запросы между клиентом и сервером защищены шифрованием HTTPS и криптографической подписью Telegram HMAC-SHA256. Мы никогда не продаём, не передаём и не раскрываем данные пользователей третьим лицам или рекламным сетям.'],
+  ['4. Удаление данных','Вы можете в любой момент прекратить использование приложения. Для полного удаления вашего профиля и истории операций достаточно написать администратору @lev_god.']
+];
+
+let curDoc = 'terms';
 function renderTerms(){
   const list=q('#termsList');
-  if(list)list.innerHTML=TERMS.map(([t,b])=>`<div class="item"><b>${t}</b><div class="muted small" style="margin-top:6px;line-height:1.55">${b}</div></div>`).join('');
+  const tit=q('#docTitle');
+  const items = curDoc === 'privacy' ? PRIVACY : TERMS;
+  if(tit) tit.textContent = curDoc === 'privacy' ? 'Политика конфиденциальности' : 'Пользовательское соглашение';
+  if(list) list.innerHTML=items.map(([t,b])=>`<div class="item"><b>${t}</b><div class="muted small" style="margin-top:6px;line-height:1.55;white-space:pre-line">${b}</div></div>`).join('');
   const f=q('#termsFoot');
-  if(f)f.innerHTML='Редакция от '+new Date().toLocaleDateString('ru-RU')+'. Принимая соглашение, вы соглашаетесь с условиями выше.';
+  if(f) f.innerHTML='Редакция от '+new Date().toLocaleDateString('ru-RU')+'. '+(curDoc==='privacy'?'Ознакомьтесь с правилами обработки данных.':'Принимая соглашение, вы соглашаетесь с условиями выше.');
 }
 renderTerms();
+
+const docTabsEl = q('#docTabs');
+if(docTabsEl){
+  docTabsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-doc]'); if(!b) return;
+    curDoc = b.dataset.doc;
+    qa('#docTabs .chip').forEach(c => c.classList.toggle('on', c === b));
+    renderTerms();
+  });
+}
 
 function faucet(n){
   S.balance+=n;S.hist.unshift({label:'Бонус · пополнение',delta:n,t:Date.now()});
@@ -627,16 +657,22 @@ function addHist(label,delta){
 /* ---------- UI ---------- */
 /* Профиль берём из Telegram: основное имя — @username */
 function tgProfile(){
-  const t=window.Telegram&&window.Telegram.WebApp;
-  const u=(t&&t.initDataUnsafe&&t.initDataUnsafe.user)||null;
-  if(!u)return {name:'Игрок',sub:'',avatar:"MUP"};
-  const full=[u.first_name,u.last_name].filter(Boolean).join(' ');
-  const un=u.username?('@'+u.username):'';
-  const name=un||full||'Игрок';
-  const src=(u.username||full||'M').replace(/^@/,'').trim();
-  const parts=full.split(' ');
-  let av=((parts[0]&&parts[0][0])||src[0]||'M')+((parts[1]&&parts[1][0])||(src[1])||'');
-  return {name,sub:'',avatar:av.toUpperCase()};
+  let un = '';
+  let full = '';
+  const t = window.Telegram && window.Telegram.WebApp;
+  const u = (t && t.initDataUnsafe && t.initDataUnsafe.user) || null;
+  if(u){
+    if(u.username) un = '@' + String(u.username).replace(/^@/, '');
+    full = [u.first_name, u.last_name].filter(Boolean).join(' ');
+  }
+  if(!un && S.username) un = '@' + String(S.username).replace(/^@/, '');
+  if(!full && S.name) full = S.name;
+
+  const name = un || full || 'Пользователь';
+  const src = (un || full || 'M').replace(/^@/,'').trim();
+  const parts = full ? full.split(' ') : [src];
+  let av = ((parts[0] && parts[0][0]) || src[0] || 'M') + ((parts[1] && parts[1][0]) || src[1] || '');
+  return { name, sub: un && full && un !== full ? full : '', avatar: av.toUpperCase() };
 }
 function syncUI(){
   const pr=tgProfile();
@@ -673,20 +709,56 @@ qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)
 q('#back').addEventListener('click',()=>screen('games'));
 qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
 /* ---------- пополнение (профиль) ---------- */
-const PAY={m:2,amt:300,names:['Карта / СБП','Telegram Stars','CryptoBot · крипта','Heleket','Промокод']};
+const SBP_DATA = {
+  tinkoff: { name: 'Т-Банк (Тинькофф)', label: 'Номер карты Т-Банк:', val: '5536 9177 1899 1380', clean: '5536917718991380' },
+  sber: { name: 'Сбербанк', label: 'Номер карты Сбербанк:', val: '2202 2083 6349 7083', clean: '2202208363497083' },
+  ozon: { name: 'Озон Банк', label: 'Номер карты Озон Банк:', val: '2204 3209 1303 5251', clean: '2204320913035251' },
+  sbp: { name: 'СБП (телефон)', label: 'Телефон СБП (любой банк):', val: '+7 905 476-05-59', clean: '+79054760559' }
+};
+let curBank = 'tinkoff';
+window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
+
+const PAY={m:0,amt:300,names:['СБП / Карты','Telegram Stars','CryptoBot · крипта','Heleket','Промокод']};
 function paySync(){
   qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
   qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
+  const sbpBox=q('#sbpRequisites');
+  if(sbpBox)sbpBox.style.display=PAY.m===0?'block':'none';
   const rub=Math.max(0,Math.floor(PAY.amt)||0),tk=rub*RATE,accepted=!!S.termsAt;
   const chk=q('#termsChk');if(chk)chk.checked=accepted;
   q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]
     +(PAY.m===2?' <span class="muted">(USDT, TON, BTC)</span>':(PAY.m===3?' <span class="muted">(USDT, BTC, ETH)</span>':''));
-  q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
+  if(PAY.m===0){
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(tk)+' ⬦)');
+  }else{
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
+  }
   q('#payGo').disabled=tk<1||!accepted;
 }
 q('#payMethods').addEventListener('click',e=>{const b=e.target.closest('[data-pm]');if(!b)return;PAY.m=+b.dataset.pm;paySync()});
 q('#payAmounts').addEventListener('click',e=>{const b=e.target.closest('[data-pa]');if(!b)return;PAY.amt=+b.dataset.pa;q('#payRub').value=PAY.amt;paySync()});
 q('#payRub').addEventListener('input',()=>{const v=Math.floor(+q('#payRub').value||0);PAY.amt=v;paySync()});
+
+const sbpBanksEl=q('#sbpBanks');
+if(sbpBanksEl){
+  sbpBanksEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-bank]');if(!b)return;
+    curBank=b.dataset.bank;
+    qa('#sbpBanks .chip').forEach(c=>c.classList.toggle('on',c===b));
+    const d=SBP_DATA[curBank];
+    const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
+    if(lbl)lbl.textContent=d.label;
+    if(val)val.textContent=d.val;
+  });
+}
+const sbpCopyEl=q('#sbpCopyBtn');
+if(sbpCopyEl){
+  sbpCopyEl.addEventListener('click',()=>{
+    const d=SBP_DATA[curBank];
+    copyText(d.clean,sbpCopyEl,'Скопировано ✓');
+  });
+}
+
 q('#termsChk').addEventListener('change',e=>{
   S.termsAt=e.target.checked?Date.now():0;save();paySync();
 });
@@ -1288,39 +1360,67 @@ function gameRacket(){
 /* =======================================================================
    ПОПРЫГУН — черта и шарик: прыгнул на неё или сорвался
    ======================================================================= */
-const JP={max:12,p:0.84,base:45};
+const JP_MODES = {
+  lite: { name: 'Лайт', p: 0.90, desc: 'Низкий риск: прыжки надежнее, мягкие множители' },
+  med:  { name: 'Средний', p: 0.84, desc: 'Стандарт: сбалансированный риск и выигрыш' },
+  crit: { name: 'Критический', p: 0.72, desc: 'Высокий риск: больше срывов, огромные коэффициенты' }
+};
+let curJumpMode = 'med';
 
 function gameJumper(){
   const a=q('#gameArea');
   let level=0,phase='idle',busy=false,t1=0,t2=0,raf=0,dead=false;
-  const xn=n=>Math.pow(1/JP.p,n);
+  let curP=JP_MODES[curJumpMode].p;
+  const xn=n=>Math.pow(1/curP,n);
 
   a.innerHTML=`
+  <div class="chips" id="jumpModes" style="margin-bottom:10px;justify-content:center">
+    <button class="chip ${curJumpMode==='lite'?'on':''}" data-jm="lite">🟢 Лайт</button>
+    <button class="chip ${curJumpMode==='med'?'on':''}" data-jm="med">🟡 Средний</button>
+    <button class="chip ${curJumpMode==='crit'?'on':''}" data-jm="crit">🔴 Критический</button>
+  </div>
   <div class="jumpstage" id="js"><div class="ground"></div><div class="ball2" id="jb" style="bottom:10px"></div></div>
   ${betHTML()}
   <div class="actions" style="margin-top:11px"><button class="control" id="jj" style="margin:0">ПРЫЖОК</button><button class="control ghost" id="jt2" style="margin:0" disabled>ЗАБРАТЬ</button></div>
-  <div class="result" id="jr">Жми «ПРЫЖОК»: шарик либо запрыгнет на черту, либо сорвётся.</div>`;
+  <div class="result" id="jr">${JP_MODES[curJumpMode].desc}</div>`;
 
   const stage=q('#js'),ball=q('#jb'),jj=q('#jj'),jt=q('#jt2'),jr=q('#jr');
   const stageH=stage.clientHeight||330;
   const DASH_H=3;                                            // толщина черты
-  const step=Math.max(15,Math.floor((stageH-JP.base-16-DASH_H)/JP.max));  // шаг черты под высоту экрана
+  const step=Math.max(15,Math.floor((stageH-45-16-DASH_H)/12));  // шаг черты под высоту экрана
   const ballH=Math.max(11,Math.min(16,step-DASH_H-2));       // шарик стоит на черте и не задевает следующую
   ball.style.width=ballH+'px';ball.style.height=ballH+'px';ball.style.marginLeft=(-ballH/2)+'px';
   const dashes=[];
-  for(let n=1;n<=JP.max;n++){
+  for(let n=1;n<=12;n++){
     const d=document.createElement('div');
-    d.className='dash';d.style.bottom=(JP.base+n*step)+'px';
+    d.className='dash';d.style.bottom=(45+n*step)+'px';
     d.innerHTML='<span>×'+fx(xn(n))+'</span>';
     stage.appendChild(d);dashes.push(d);
   }
-  const ballTop=n=>n?JP.base+n*step+DASH_H:10;               // низ шарика — ровно на поверхности черты
+  const ballTop=n=>n?45+n*step+DASH_H:10;               // низ шарика — ровно на поверхности черты
+  function updateDashLabels(){
+    dashes.forEach((d,i)=>{
+      const n=i+1;
+      const sp=d.querySelector('span');if(sp)sp.textContent='×'+fx(xn(n));
+    });
+  }
+  const jmEl=q('#jumpModes');
+  if(jmEl){
+    jmEl.addEventListener('click',e=>{
+      const b=e.target.closest('[data-jm]');if(!b||busy||phase==='run')return;
+      curJumpMode=b.dataset.jm;
+      curP=JP_MODES[curJumpMode].p;
+      qa('#jumpModes .chip').forEach(c=>c.classList.toggle('on',c===b));
+      updateDashLabels();refresh();
+      jr.className='result';jr.textContent=JP_MODES[curJumpMode].desc;
+    });
+  }
   function refresh(){
     dashes.forEach((d,i)=>{
       const n=i+1,c=band(xn(n)),on=n<=level,next=(n===level+1&&phase==='run');
       d.style.background=on||next?c:hexA(c,.26);
       d.style.boxShadow=on?'0 0 10px '+hexA(c,.45):(next?'0 0 16px '+hexA(c,.7):'none');
-      d.querySelector('span').style.color=on||next?c:hexA(c,.7);
+      const sp=d.querySelector('span');if(sp)sp.style.color=on||next?c:hexA(c,.7);
     });
     jj.disabled=busy;
     jt.disabled=!(level>0&&phase==='run')||busy;
@@ -1341,7 +1441,7 @@ function gameJumper(){
       if(S.balance<S.bet){jr.className='result bad';jr.textContent='Недостаточно токенов — пополни баланс.';return}
       place(S.bet,'Попрыгун');phase='run';
     }
-    if(level>=JP.max)return;
+    if(level>=12)return;
     busy=true;refresh();
     const from=ballTop(level),to=ballTop(level+1);
     const dur=380,st=performance.now(),sway=Math.random()<.5?-1:1;
@@ -1356,10 +1456,10 @@ function gameJumper(){
   }
   function land(from){
     ball.style.transform='translateX(0)';
-    if(Math.random()<JP.p){
+    if(Math.random()<curP){
       level++;
       positionBall();
-      if(level>=JP.max){busy=false;auto();return}
+      if(level>=12){busy=false;auto();return}
       busy=false;phase='run';
       jr.className='result good';
       jr.innerHTML='Уровень '+level+' пройден · множитель <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b>';
@@ -1385,11 +1485,11 @@ function gameJumper(){
     }
   }
   function auto(){
-    const amount=Math.floor(S.bet*xn(JP.max));
-    win(amount,'Попрыгун','предел ×'+fx(xn(JP.max)));
+    const amount=Math.floor(S.bet*xn(12));
+    win(amount,'Попрыгун','предел ×'+fx(xn(12)));
     phase='done';
     jr.className='result good';
-    jr.innerHTML='Верхний уровень — авто-забор <b style="color:'+band(xn(JP.max))+'">×'+fx(xn(JP.max))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
+    jr.innerHTML='Верхний уровень — авто-забор <b style="color:'+band(xn(12))+'">×'+fx(xn(12))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
     refresh();
   }
   function take(){
@@ -1409,149 +1509,224 @@ function gameJumper(){
 }
 
 /* =======================================================================
-   СПИН — 8 равных секторов
+   СПИН — 8 внешне одинаковых секторов с градацией по режимам
    ======================================================================= */
-/* 8 секторов, размер сектора равен его шансу:
-   ×0 — 9 %, ×0.25 — 21 %, ×0.5 — 23 %, ×0.75 — 21 %, ×1 — 8 %, ×2 — 8 %,
-   ×3 — 8 %, ×5 — 2 % (самый маленький шанс). Сумма 100 %.
-   Отдача круга: 0.21*0.25+0.23*0.5+0.21*0.75+0.08*1+0.08*2+0.08*3+0.02*5 = 90,5 %. */
-const SP={pay:[5,3,0.75,0.5,0.25,0,2,1],
-  w:[2,8,21,23,21,9,8,8],
-  col:['#ffcf6b','#ff7386','#5c6885','#5c6885','#5c6885','#39415a','#a175ff','#3ddc96']};
+const SP_MODES = {
+  lite: {
+    name: 'Лайт',
+    pay: [2.5, 1.8, 1.2, 0.9, 0.8, 0.5, 1.5, 1.0],
+    w: [5, 15, 20, 20, 15, 5, 10, 10], // повышенные шансы
+    col: ['#ffcf6b','#ff7386','#3ddc96','#5c6885','#5c6885','#39415a','#a175ff','#3ddc96']
+  },
+  med: {
+    name: 'Средний',
+    pay: [5, 3, 0.75, 0.5, 0.25, 0, 2, 1],
+    w: [2, 8, 21, 23, 21, 9, 8, 8],
+    col: ['#ffcf6b','#ff7386','#5c6885','#5c6885','#5c6885','#39415a','#a175ff','#3ddc96']
+  },
+  crit: {
+    name: 'Критический',
+    pay: [15, 8, 0.5, 0.2, 0, 0, 4, 1.5],
+    w: [1, 3, 16, 20, 30, 20, 5, 5],
+    col: ['#ffcf6b','#ff7386','#5c6885','#39415a','#242a3a','#242a3a','#a175ff','#3ddc96']
+  }
+};
+let curSpinMode = 'med';
 
 function gameSpin(){
   const a=q('#gameArea');
   let rot=0,busy=false,timer=0,dead=false;
-  const lbl=v=>'×'+fx(v,v%1?(Math.round(v*100)%10?2:1):0);   // ×0.25 и ×0.75 — с двумя знаками
+  const lbl=v=>'×'+fx(v,v%1?(Math.round(v*100)%10?2:1):0);
 
-  a.innerHTML=`
-  <div class="spinwrap"><div class="pointer"></div><div class="wheel" id="sw"></div></div>
-  <div class="legend">${SP.pay.map((v,i)=>`<div class="lg" id="lg${i}"><span class="dot" style="background:${SP.col[i]}"></span><b style="color:${band(v)}">${lbl(v)}</b>сектор ${i+1}</div>`).join('')}</div>
-  ${betHTML()}
-  <button class="control" id="sgo">КРУТИТЬ · ${S.bet} ⬦</button>
-  <div class="result" id="sr">Все сектора одинакового размера — круг решает, какой выпадет.</div>`;
+  function renderSpin(){
+    const curM = SP_MODES[curSpinMode];
+    a.innerHTML=`
+    <div class="chips" id="spinModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curSpinMode==='lite'?'on':''}" data-sm="lite">🟢 Лайт</button>
+      <button class="chip ${curSpinMode==='med'?'on':''}" data-sm="med">🟡 Средний</button>
+      <button class="chip ${curSpinMode==='crit'?'on':''}" data-sm="crit">🔴 Критический</button>
+    </div>
+    <div class="spinwrap"><div class="pointer"></div><div class="wheel" id="sw"></div></div>
+    <div class="legend" id="sleg">${curM.pay.map((v,i)=>`<div class="lg" id="lg${i}"><span class="dot" style="background:${curM.col[i]}"></span><b style="color:${band(v)}">${lbl(v)}</b>сектор ${i+1}</div>`).join('')}</div>
+    ${betHTML()}
+    <button class="control" id="sgo">КРУТИТЬ · ${S.bet} ⬦</button>
+    <div class="result" id="sr">Все 8 секторов внешне одинаковые (по 45°). Режим: ${curM.name}.</div>`;
 
-  const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
-  let acc=0;
-  const segs=SP.pay.map((v,i)=>{                    // сектор = доля круга по шансу
-    const a0=acc,a1=acc+SP.w[i]*3.6;acc=a1;
-    return {v,a0,a1,size:SP.w[i]*3.6,col:SP.col[i]};
-  });
-  wheel.style.background='conic-gradient('+segs.map(sg=>
-    `${sg.col} ${sg.a0}deg ${sg.a1}deg`).join(',')+')';
-  segs.forEach(sg=>{
-    const cen=(sg.a0+sg.a1)/2,el=document.createElement('span');
-    el.textContent=lbl(sg.v);
-    const rad=sg.size<20?40:33;                     // тонкий сектор — подпись дальше от центра
-    el.style.left=(50+rad*Math.sin(cen*Math.PI/180))+'%';
-    el.style.top=(50-rad*Math.cos(cen*Math.PI/180))+'%';
-    wheel.appendChild(el);
-  });
-  function spin(){
-    if(busy)return;
-    if(S.balance<S.bet){sr.className='result bad';sr.textContent='Недостаточно токенов — пополни баланс.';return}
-    busy=true;place(S.bet,'Спин');
-    let pick=Math.random()*100,idx=0,cum=0;          // выбор по шансам
-    for(let i=0;i<SP.w.length;i++){cum+=SP.w[i];if(pick<cum){idx=i;break}}
-    const sg=segs[idx];
-    const cen=sg.a0+sg.size*(0.2+Math.random()*0.6);  // стрелка встаёт в середину сектора
-    const curMod=((rot%360)+360)%360;
-    rot+=((-cen-curMod)%360+360)%360+360*4;
-    wheel.style.transform='rotate('+rot+'deg)';
-    sr.className='result';sr.textContent='Колесо вращается…';
-    qa('.lg').forEach(e=>e.classList.remove('hit'));
-    timer=setTimeout(()=>{
-      if(dead)return;
-      busy=false;
-      const v=SP.pay[idx],amount=Math.floor(S.bet*v);
-      q('#lg'+idx).classList.add('hit');
-      if(amount>0)win(amount,'Спин',lbl(v));
-      sr.className='result '+(amount>=S.bet?'good':'bad');
-      sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается');
-    },3500);
+    const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
+    const N=curM.pay.length;
+    const segAngle=360/N;   // строго 45 градусов — внешне одинаковые!
+    const segs=curM.pay.map((v,i)=>{
+      const a0=i*segAngle, a1=(i+1)*segAngle;
+      return {v,a0,a1,size:segAngle,col:curM.col[i]};
+    });
+    wheel.style.background='conic-gradient('+segs.map(sg=>`${sg.col} ${sg.a0}deg ${sg.a1}deg`).join(',')+')';
+    segs.forEach(sg=>{
+      const cen=(sg.a0+sg.a1)/2, el=document.createElement('span');
+      el.textContent=lbl(sg.v);
+      const rad=35;
+      el.style.left=(50+rad*Math.sin(cen*Math.PI/180))+'%';
+      el.style.top=(50-rad*Math.cos(cen*Math.PI/180))+'%';
+      wheel.appendChild(el);
+    });
+
+    const smEl=q('#spinModes');
+    if(smEl){
+      smEl.addEventListener('click',e=>{
+        const b=e.target.closest('[data-sm]');if(!b||busy)return;
+        curSpinMode=b.dataset.sm;
+        renderSpin();
+      });
+    }
+
+    function spin(){
+      if(busy)return;
+      if(S.balance<S.bet){sr.className='result bad';sr.textContent='Недостаточно токенов — пополни баланс.';return}
+      busy=true;place(S.bet,'Спин');
+      let pick=Math.random()*100,idx=0,cum=0;
+      for(let i=0;i<curM.w.length;i++){cum+=curM.w[i];if(pick<cum){idx=i;break}}
+      const cen=(idx+0.5)*segAngle;
+      const curMod=((rot%360)+360)%360;
+      rot+=((-cen-curMod)%360+360)%360+360*5;
+      wheel.style.transform='rotate('+rot+'deg)';
+      sr.className='result';sr.textContent='Колесо вращается…';
+      qa('.lg').forEach(e=>e.classList.remove('hit'));
+      timer=setTimeout(()=>{
+        if(dead)return;
+        busy=false;
+        const v=curM.pay[idx],amount=Math.floor(S.bet*v);
+        const lg=q('#lg'+idx);if(lg)lg.classList.add('hit');
+        if(amount>0)win(amount,'Спин',lbl(v));
+        sr.className='result '+(amount>=S.bet?'good':'bad');
+        sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается');
+      },3500);
+    }
+    go.addEventListener('click',spin);
+    wireBet(a,()=>{go.textContent='КРУТИТЬ · '+S.bet+' ⬦'});
   }
-  go.addEventListener('click',spin);
-  wireBet(a,()=>{go.textContent='КРУТИТЬ · '+S.bet+' ⬦'});
+
+  renderSpin();
   return ()=>{dead=true;clearTimeout(timer)};
 }
 
 /* =======================================================================
-   ДРОП — шарик по развилкам падает в одну из 8 лунок
+   ДРОП — шарик по развилкам падает в лунки (8, 10 или 12 лунок)
    ======================================================================= */
-const DP={rows:7,pay:[10.5,2,1.1,0.4,0.6,1.4,2,10.5]};
+const DP_MODES = {
+  lite: {
+    name: 'Лайт',
+    slots: 8,
+    rows: 7,
+    pay: [4.0, 1.8, 1.2, 0.8, 0.8, 1.2, 1.8, 4.0]
+  },
+  med: {
+    name: 'Средний',
+    slots: 10,
+    rows: 9,
+    pay: [10.0, 4.0, 2.0, 1.2, 0.5, 0.5, 1.2, 2.0, 4.0, 10.0]
+  },
+  crit: {
+    name: 'Критический',
+    slots: 12,
+    rows: 11,
+    pay: [35.0, 15.0, 6.0, 2.0, 0.4, 0.2, 0.2, 0.4, 2.0, 6.0, 15.0, 35.0]
+  }
+};
+let curDropMode = 'med';
 
 function gameDrop(){
   const a=q('#gameArea');
   let raf=0,busy=false,dead=false;
 
-  a.innerHTML=`
-  <div class="dropwrap"><canvas id="dcv"></canvas></div>
-  <div class="slots">${DP.pay.map((v,k)=>{
-    const c=band(v);
-    return `<div class="slot" id="ds${k}" style="background:${hexA(c,.13)};border-color:${hexA(c,.4)};color:${c}">×${fx(v,v%1?1:0)}</div>`;
-  }).join('')}</div>
-  ${betHTML()}
-  <button class="control" id="dgo">СДЕЛАТЬ ДРОП · ${S.bet} ⬦</button>
-  <div class="result" id="dr">Шарик падает от вершины и на каждой развилке уходит влево или вправо.</div>`;
+  function renderDrop(){
+    const curM = DP_MODES[curDropMode];
+    a.innerHTML=`
+    <div class="chips" id="dropModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curDropMode==='lite'?'on':''}" data-dm="lite">🟢 Лайт (8)</button>
+      <button class="chip ${curDropMode==='med'?'on':''}" data-dm="med">🟡 Средний (10)</button>
+      <button class="chip ${curDropMode==='crit'?'on':''}" data-dm="crit">🔴 Критический (12)</button>
+    </div>
+    <div class="dropwrap"><canvas id="dcv"></canvas></div>
+    <div class="slots" style="--slot-cols:${curM.slots}">${curM.pay.map((v,k)=>{
+      const c=band(v);
+      return `<div class="slot" id="ds${k}" style="background:${hexA(c,.13)};border-color:${hexA(c,.4)};color:${c}">×${fx(v,v%1?1:0)}</div>`;
+    }).join('')}</div>
+    ${betHTML()}
+    <button class="control" id="dgo">СДЕЛАТЬ ДРОП · ${S.bet} ⬦</button>
+    <div class="result" id="dr">Шарик падает по развилкам (${curM.slots} лунок). Режим: ${curM.name}.</div>`;
 
-  const cvs=q('#dcv'),go=q('#dgo'),dr=q('#dr');
-  function draw(path,prog){
-    const {g,W,H}=fitCanvas(cvs);
-    const cx=W/2,unit=W/16,yTop=26,yBot=H-58,rowH=(yBot-yTop)/DP.rows;
-    for(let i=1;i<=DP.rows;i++){
-      const y=yTop+(i-1)*rowH;
-      for(let j=0;j<i;j++){
-        const x=cx+(2*j-i+1)*unit;
-        g.beginPath();g.arc(x,y,3.2,0,7);g.fillStyle='#4b5675';g.fill();
+    const cvs=q('#dcv'),go=q('#dgo'),dr=q('#dr');
+    const dmEl=q('#dropModes');
+    if(dmEl){
+      dmEl.addEventListener('click',e=>{
+        const b=e.target.closest('[data-dm]');if(!b||busy)return;
+        curDropMode=b.dataset.dm;
+        renderDrop();
+      });
+    }
+
+    function draw(path,prog){
+      const {g,W,H}=fitCanvas(cvs);
+      const rows=curM.rows;
+      const cx=W/2, unit=W/(rows*2+2), yTop=22, yBot=H-52, rowH=(yBot-yTop)/rows;
+      for(let i=1;i<=rows;i++){
+        const y=yTop+(i-1)*rowH;
+        for(let j=0;j<i;j++){
+          const x=cx+(2*j-i+1)*unit;
+          g.beginPath();g.arc(x,y,3,0,7);g.fillStyle='#4b5675';g.fill();
+        }
       }
+      const tt=Math.min(prog,1)*rows*1.09;
+      let x=cx,y=yTop;
+      if(tt<rows){
+        const i=Math.floor(tt),f=tt-i;
+        const from=2*path[i]-i,to=2*path[i+1]-(i+1),e=f*f*(3-2*f);
+        x=cx+(from+(to-from)*e)*unit;
+        y=yTop+tt*rowH;
+      }else{
+        const f=Math.min(1,(tt-rows)/0.09);
+        x=cx+(2*path[rows]-rows)*unit;
+        y=yBot+f*(H-28-yBot);
+      }
+      g.setLineDash([2,4]);g.strokeStyle='rgba(152,160,255,.42)';g.beginPath();
+      const lim=Math.min(rows,tt*1.02);
+      for(let i=0;i<=lim;i++){const px=cx+(2*path[i]-i)*unit,py=yTop+i*rowH;i?g.lineTo(px,py):g.moveTo(px,py-22)}
+      g.stroke();g.setLineDash([]);
+      g.save();g.shadowColor='rgba(255,255,255,.85)';g.shadowBlur=16;
+      g.beginPath();g.arc(x,y,6.5,0,7);g.fillStyle='#fff';g.fill();g.restore();
     }
-    const tt=Math.min(prog,1)*DP.rows*1.09;
-    let x=cx,y=yTop;
-    if(tt<DP.rows){
-      const i=Math.floor(tt),f=tt-i;
-      const from=2*path[i]-i,to=2*path[i+1]-(i+1),e=f*f*(3-2*f);
-      x=cx+(from+(to-from)*e)*unit;
-      y=yTop+tt*rowH;
-    }else{
-      const f=Math.min(1,(tt-DP.rows)/0.09);
-      x=cx+(2*path[DP.rows]-DP.rows)*unit;
-      y=yBot+f*(H-30-yBot);
+
+    function run(){
+      if(busy)return;
+      if(S.balance<S.bet){dr.className='result bad';dr.textContent='Недостаточно токенов — пополни баланс.';return}
+      busy=true;place(S.bet,'Дроп');
+      qa('.slot').forEach(e=>e.classList.remove('hit'));
+      const rows=curM.rows;
+      const path=[0];let r=0;
+      for(let i=1;i<=rows;i++){r+=Math.random()<0.5?0:1;path.push(r)}
+      const slot=path[rows];
+      dr.className='result';dr.textContent='Шарик проходит развилки…';
+      const dur=1350,st=performance.now();
+      (function anim(now){
+        if(dead)return;
+        const pr=Math.min(1,(now-st)/dur);
+        draw(path,pr);
+        if(pr<1){raf=requestAnimationFrame(anim)}else{land(slot)}
+      })(st);
     }
-    g.setLineDash([2,4]);g.strokeStyle='rgba(152,160,255,.42)';g.beginPath();
-    const lim=Math.min(DP.rows,tt*1.02);
-    for(let i=0;i<=lim;i++){const px=cx+(2*path[i]-i)*unit,py=yTop+i*rowH;i?g.lineTo(px,py):g.moveTo(px,py-26)}
-    g.stroke();g.setLineDash([]);
-    g.save();g.shadowColor='rgba(255,255,255,.85)';g.shadowBlur=16;
-    g.beginPath();g.arc(x,y,7,0,7);g.fillStyle='#fff';g.fill();g.restore();
+    function land(k){
+      busy=false;
+      const sl=q('#ds'+k);if(sl)sl.classList.add('hit');
+      const v=curM.pay[k],amount=Math.floor(S.bet*v);
+      if(amount>0)win(amount,'Дроп','лунка '+(k+1)+' ×'+fx(v,v%1?1:0));
+      dr.className='result '+(amount>=S.bet?'good':'bad');
+      dr.innerHTML='Шарик упал в лунку '+(k+1)+': <b style="color:'+band(v)+'">×'+fx(v,v%1?1:0)+'</b> → '+(amount>0?'<b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'возврат 0 ⬦ (ставка '+S.bet+' ⬦ ≈ '+fmtRub(S.bet)+')');
+    }
+    go.addEventListener('click',run);
+    wireBet(a,()=>{go.textContent='СДЕЛАТЬ ДРОП · '+S.bet+' ⬦'});
+    draw(new Array(curM.rows+1).fill(0),0);
   }
-  function run(){
-    if(busy)return;
-    if(S.balance<S.bet){dr.className='result bad';dr.textContent='Недостаточно токенов — пополни баланс.';return}
-    busy=true;place(S.bet,'Дроп');
-    qa('.slot').forEach(e=>e.classList.remove('hit'));
-    const path=[0];let r=0;
-    for(let i=1;i<=DP.rows;i++){r+=Math.random()<0.5?0:1;path.push(r)}
-    const slot=path[DP.rows];
-    dr.className='result';dr.textContent='Шарик проходит развилки…';
-    const dur=1350,st=performance.now();
-    (function anim(now){
-      if(dead)return;
-      const pr=Math.min(1,(now-st)/dur);
-      draw(path,pr);
-      if(pr<1){raf=requestAnimationFrame(anim)}else{land(slot)}
-    })(st);
-  }
-  function land(k){
-    busy=false;
-    q('#ds'+k).classList.add('hit');
-    const v=DP.pay[k],amount=Math.floor(S.bet*v);
-    if(amount>0)win(amount,'Дроп','лунка '+(k+1)+' ×'+fx(v,v%1?1:0));
-    dr.className='result '+(amount>=S.bet?'good':'bad');
-    dr.innerHTML='Шарик упал в лунку '+(k+1)+': <b style="color:'+band(v)+'">×'+fx(v,v%1?1:0)+'</b> → '+(amount>0?'<b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'возврат 0 ⬦ (ставка '+S.bet+' ⬦ ≈ '+fmtRub(S.bet)+')');
-  }
-  go.addEventListener('click',run);
-  wireBet(a,()=>{go.textContent='СДЕЛАТЬ ДРОП · '+S.bet+' ⬦'});
-  draw([0,0,0,0,0,0,0,0],0);
+
+  renderDropContent();
   return ()=>{dead=true;cancelAnimationFrame(raf)};
 }
 
@@ -1568,7 +1743,7 @@ function play(type){
 qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)));
 
 /* отладочные хуки для автотестов (не влияют на игру) */
-window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP};
+window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,SP:SP_MODES.med};
 window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
 
 tgInit();tgRegister();syncUI();screen('games');

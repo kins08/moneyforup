@@ -502,11 +502,30 @@ bot.command('sbp', async ctx => {
   if (!ADMIN_ID) return ctx.reply('Оплата по СБП не настроена (нет ADMIN_ID).');
   const rub = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
   const id = String(orderSeq++);
-  orders.set(id, { userId: ctx.from.id, tokens: rub * TOKENS_PER_RUB, rub, status: 'pending', source: 'СБП' });
-  await ctx.reply(`Заявка №${id} на ${rub} ₽ (${rub * TOKENS_PER_RUB} ⬦).\nПереведите по СБП и дождитесь подтверждения администратора.`);
+  const tokens = rub * TOKENS_PER_RUB;
+  orders.set(id, { userId: ctx.from.id, tokens, rub, status: 'pending', source: 'СБП / Карта' });
+  await ctx.reply(
+    `💳 <b>Заявка №${id} на ${rub} ₽ (${tokens} ⬦)</b>\n\n` +
+    `<b>Реквизиты для оплаты:</b>\n` +
+    `• Телефон СБП: <code>+79054760559</code> (Лев К.)\n` +
+    `• Банки СБП: Тинькофф (Т-Банк), Сбербанк, Озон Банк\n` +
+    `• Или прямой перевод на карту:\n` +
+    `  — Тинькофф: <code>5536917718991380</code>\n` +
+    `  — Сбербанк: <code>2202208363497083</code>\n` +
+    `  — Озон Банк: <code>2204320913035251</code>\n\n` +
+    `После перевода администратор проверит платёж и токены сразу зачислятся на баланс.`,
+    { parse_mode: 'HTML' }
+  );
   await bot.api.sendMessage(ADMIN_ID,
-    `Заявка №${id}: ${rub} ₽ → ${rub * TOKENS_PER_RUB} ⬦\nОт: ${ctx.from.first_name} (id ${ctx.from.id})`,
-    { reply_markup: new InlineKeyboard().text('✅ Подтвердить оплату', 'ok:' + id) });
+    `💳 <b>Заявка №${id} по СБП:</b> ${rub} ₽ → <b>+${tokens} ⬦</b>\n` +
+    `От: <b>${ctx.from.username ? '@' + ctx.from.username : ctx.from.first_name}</b> (id: <code>${ctx.from.id}</code>)`,
+    {
+      parse_mode: 'HTML',
+      reply_markup: new InlineKeyboard()
+        .text('✅ Подтвердить', 'ok:' + id)
+        .text('❌ Отклонить', 'no:' + id)
+    }
+  );
 });
 
 bot.callbackQuery(/^ok:(\d+)$/, async ctx => {
@@ -514,11 +533,31 @@ bot.callbackQuery(/^ok:(\d+)$/, async ctx => {
   if (!order) return ctx.answerCallbackQuery('Заявка не найдена');
   if (order.status === 'paid') return ctx.answerCallbackQuery('Уже зачислено');
   order.status = 'paid';
-  const r = await creditDeposit(order.userId, order.tokens, 'СБП');
+  const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
   await ctx.answerCallbackQuery('Зачислено ✅');
-  await ctx.editMessageReplyMarkup({ reply_markup: new InlineKeyboard() });
+  await ctx.editMessageText(
+    (ctx.callbackQuery.message.text || '') + '\n\n✅ <b>Оплата подтверждена! Зачислено +' + order.tokens + ' ⬦</b>',
+    { parse_mode: 'HTML' }
+  );
   await bot.api.sendMessage(order.userId,
-    `Оплата получена: +${order.tokens} ⬦${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}`);
+    `🎉 Оплата получена: <b>+${order.tokens} ⬦</b> (${order.rub} ₽)${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}!\nБаланс успешно пополнен.`,
+    { parse_mode: 'HTML' }
+  ).catch(() => {});
+});
+
+bot.callbackQuery(/^no:(\d+)$/, async ctx => {
+  const order = orders.get(ctx.match[1]);
+  if (!order) return ctx.answerCallbackQuery('Заявка не найдена');
+  if (order.status !== 'pending') return ctx.answerCallbackQuery('Заявка уже обработана');
+  order.status = 'rejected';
+  await ctx.answerCallbackQuery('Отклонено ❌');
+  await ctx.editMessageText(
+    (ctx.callbackQuery.message.text || '') + '\n\n❌ <b>Заявка отклонена администратором</b>',
+    { parse_mode: 'HTML' }
+  );
+  await bot.api.sendMessage(order.userId,
+    `⚠️ Заявка №${ctx.match[1]} на ${order.rub} ₽ отклонена. Если возник вопрос — напишите администратору @lev_god.`
+  ).catch(() => {});
 });
 
 bot.on('pre_checkout_query', ctx => ctx.answerPreCheckoutQuery(true));
@@ -606,6 +645,8 @@ const server = http.createServer(async (req, res) => {
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
     const who = {
+      username: tgUser.username || u.username || '',
+      name: tgUser.first_name || u.name || '',
       tokens: u.tokens,
       staked: u.staked,
       accrued: stakeAccrued(u),
@@ -803,13 +844,29 @@ const server = http.createServer(async (req, res) => {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
       const id = String(orderSeq++);
-      orders.set(id, { userId: u.id, tokens: rub * TOKENS_PER_RUB, rub, status: 'pending', source: 'СБП' });
+      const tokens = rub * TOKENS_PER_RUB;
+      const bank = String(body.bank || 'СБП / Карта').trim();
+      const card = String(body.card || '').trim();
+      const sender = String(body.sender || '').trim();
+      orders.set(id, { userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта' });
       if (ADMIN_ID) {
-        await bot.api.sendMessage(ADMIN_ID,
-          `Заявка №${id} (приложение): ${rub} ₽ → ${rub * TOKENS_PER_RUB} ⬦\nОт: ${tgUser.first_name} (id ${u.id})`,
-          { reply_markup: new InlineKeyboard().text('✅ Подтвердить оплату', 'ok:' + id) });
+        const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
+        const msg =
+          `💳 <b>Новая заявка на пополнение №${id}</b>\n` +
+          `├ Пользователь: <b>${uLabel}</b> (ID: <code>${u.id}</code>)\n` +
+          `├ Сумма: <b>${rub} ₽</b> (к зачислению: <b>+${tokens} ⬦</b>)\n` +
+          `├ Способ / Банк: <b>${bank}</b>\n` +
+          (card ? `├ Реквизит: <code>${card}</code>\n` : '') +
+          (sender ? `├ Отправитель / примечание: <code>${sender}</code>\n` : '') +
+          `└ Статус: <i>Ожидает подтверждения</i>`;
+        await bot.api.sendMessage(ADMIN_ID, msg, {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard()
+            .text('✅ Подтвердить', 'ok:' + id)
+            .text('❌ Отклонить', 'no:' + id)
+        }).catch(e => console.error('Не удалось отправить админу заявку СБП:', e.message));
       }
-      return send(200, { order_id: id, tokens: rub * TOKENS_PER_RUB });
+      return send(200, { order_id: id, tokens, rub });
     }
 
     send(404, { error: 'not found' });
