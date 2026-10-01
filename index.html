@@ -99,8 +99,18 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .dropwrap canvas{width:100%;height:100%;display:block}
 .slots{display:grid;grid-template-columns:repeat(var(--slot-cols,8),1fr);gap:3px;margin-top:9px}
 .slot{border-radius:9px;padding:7px 1px;text-align:center;font-size:11px;font-weight:700;background:#2a3142;border:1px solid var(--line);color:var(--muted);transition:outline-color .2s,transform .2s}
-.slot.hit{outline:2px solid #7c82ff;outline-offset:1px;transform:translateY(-2px)}
-@media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}}
+.skuf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
+.skuf-cell{aspect-ratio:1/1;border-radius:13px;background:#232a3a;border:1px solid var(--line);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s,border-color .2s;user-select:none}
+.skuf-cell:hover:not(:disabled){transform:scale(1.04);background:#2c3549;border-color:rgba(143,151,255,.45)}
+.skuf-cell.open-good{background:linear-gradient(135deg,rgba(255,115,182,.22),rgba(143,151,255,.2));border-color:#ff73b6}
+.skuf-cell.open-bad{background:linear-gradient(135deg,rgba(255,80,80,.32),rgba(180,40,40,.2));border-color:#ff5555}
+.avito-box{background:linear-gradient(145deg,#232b3c,#181e2b);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;text-align:center}
+.avito-icon{font-size:46px;margin-bottom:6px}
+.avito-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.avito-step{padding:8px 5px;border-radius:10px;background:#1e2433;border:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
+.avito-step.on{border-color:#8f97ff;color:#fff;background:rgba(143,151,255,.16)}
+.avito-step.done{border-color:#3ddc96;color:#3ddc96;background:rgba(61,220,150,.12)}
+@media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
 </style>
 </head>
 <body>
@@ -120,7 +130,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
 <div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
 </div>
-<div class="section"><b>Игры</b><span class="muted small">4 игры</span></div>
+<div class="section"><b>Игры</b><span class="muted small">6 игр</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -155,6 +165,8 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <circle cx="20" cy="21" r="14.5" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1"/>
 <ellipse cx="15" cy="15.5" rx="4.6" ry="3.4" fill="#ffffff" opacity=".75" transform="rotate(-28 15 15.5)"/>
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
+<button class="game" data-game="skuf"><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
+<button class="game" data-game="avito"><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -1831,9 +1843,342 @@ function gameDrop(){
   return ()=>{dead=true;cancelAnimationFrame(raf)};
 }
 
+/* =======================================================================
+   СКУФ VS АЛЬТУШКА (🎀🖤 vs 🍺) — Сапёр с пониженными шансами и минусовым RTP
+   ======================================================================= */
+const SKUF_MODES = {
+  lite: { name: 'Лайт', skufs: 3, desc: '3 Скуфа на 25 плиток. Шансы выше, мягкие коэффициенты.' },
+  med:  { name: 'Средний', skufs: 5, desc: '5 Скуфов на 25 плиток. Сбалансированный риск и выигрыш.' },
+  crit: { name: 'Критический', skufs: 8, desc: '8 Скуфов на 25 плиток. Экстремальный риск, огромные множители.' }
+};
+let curSkufMode = 'med';
+
+function gameSkuf(){
+  const a = q('#gameArea');
+  let phase = 'idle';
+  let opened = 0;
+  const skufIndices = new Set();
+  const openedSet = new Set();
+  let busy = false;
+
+  function comb(n, k){
+    if(k < 0 || k > n) return 0;
+    if(k === 0 || k === n) return 1;
+    let c = 1;
+    for(let i = 1; i <= k; i++) c = c * (n - (k - i)) / i;
+    return c;
+  }
+
+  // Расчет множителя со строгим минусовым матожиданием (RTP 85%):
+  function getMult(k){
+    const M = SKUF_MODES[curSkufMode].skufs;
+    if(k <= 0) return 1;
+    const prob = comb(25 - M, k) / comb(25, k);
+    return +(0.85 / prob).toFixed(2);
+  }
+
+  function render(){
+    const curM = SKUF_MODES[curSkufMode];
+    const mult = opened > 0 ? getMult(opened) : 1;
+    const curWin = Math.floor(S.bet * mult);
+
+    a.innerHTML = `
+    <div class="chips" id="skufModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curSkufMode==='lite'?'on':''}" data-skm="lite">🟢 Лайт (3 🍺)</button>
+      <button class="chip ${curSkufMode==='med'?'on':''}" data-skm="med">🟡 Средний (5 🍺)</button>
+      <button class="chip ${curSkufMode==='crit'?'on':''}" data-skm="crit">🔴 Критический (8 🍺)</button>
+    </div>
+    <div class="skuf-grid" id="skufGrid">
+      ${Array.from({length:25}).map((_,i)=>`<button class="skuf-cell" data-idx="${i}">?</button>`).join('')}
+    </div>
+    ${betHTML()}
+    <div class="actions" style="margin-top:10px">
+      <button class="control" id="skufGo" style="margin:0">${phase==='run'?'ИГРА ИДЁТ':'НАЧАТЬ · '+S.bet+' ⬦'}</button>
+      <button class="control ghost" id="skufTake" style="margin:0" ${phase!=='run'||opened===0?'disabled':''}>ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ⬦)</button>
+    </div>
+    <div class="result" id="skufRes">${curM.desc}</div>`;
+
+    const grid = q('#skufGrid'), go = q('#skufGo'), take = q('#skufTake'), res = q('#skufRes');
+
+    openedSet.forEach(idx => {
+      const cell = grid.children[idx];
+      if(cell){
+        cell.classList.add('open-good');
+        cell.textContent = idx % 2 ? '🎀' : '🖤';
+        cell.disabled = true;
+      }
+    });
+
+    const mEl = q('#skufModes');
+    if(mEl){
+      mEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-skm]'); if(!b || phase === 'run') return;
+        curSkufMode = b.dataset.skm;
+        render();
+      });
+    }
+
+    grid.addEventListener('click', e => {
+      const cell = e.target.closest('.skuf-cell');
+      if(!cell || busy || phase !== 'run') return;
+      const idx = +cell.dataset.idx;
+      if(openedSet.has(idx)) return;
+
+      if(skufIndices.has(idx)){
+        busy = true;
+        cell.classList.add('open-bad');
+        cell.textContent = '🍺';
+        tgHaptic('lose');
+        skufIndices.forEach(sIdx => {
+          const sc = grid.children[sIdx];
+          if(sc){ sc.classList.add('open-bad'); sc.textContent = '🍺'; }
+        });
+        phase = 'done';
+        busy = false;
+        res.className = 'result bad';
+        res.innerHTML = `🍺 <b>Скуф затянул в танки!</b> Ставка ${S.bet} ⬦ сгорела. Жмите «НАЧАТЬ» для нового захода.`;
+        go.disabled = false;
+        go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+        take.disabled = true;
+      } else {
+        openedSet.add(idx);
+        opened++;
+        cell.classList.add('open-good');
+        cell.textContent = idx % 2 ? '🎀' : '🖤';
+        tgHaptic('light');
+        const nextMult = getMult(opened);
+        const winAmt = Math.floor(S.bet * nextMult);
+        res.className = 'result good';
+        res.innerHTML = `🎀 Альтушка найдена #${opened}! Множитель <b style="color:${band(nextMult)}">×${fx(nextMult)}</b> (<b>+${fmt(winAmt)} ⬦</b>).`;
+        take.disabled = false;
+        take.textContent = `ЗАБРАТЬ ×${fx(nextMult)} (+${fmt(winAmt)} ⬦)`;
+
+        const safeTotal = 25 - SKUF_MODES[curSkufMode].skufs;
+        if(opened >= safeTotal){
+          win(winAmt, 'Скуф vs Альтушка', 'все Альтушки найдены');
+          phase = 'done';
+          res.innerHTML = `👑 <b>ВСЕ АЛЬТУШКИ НАЙДЕНЫ!</b> Выигрыш <b>+${fmt(winAmt)} ⬦</b>!`;
+          take.disabled = true;
+          go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+        }
+      }
+    });
+
+    go.addEventListener('click', () => {
+      if(phase === 'run') return;
+      if(S.balance < S.bet){
+        res.className = 'result bad';
+        res.textContent = 'Недостаточно токенов — пополните баланс.';
+        return;
+      }
+      place(S.bet, 'Скуф vs Альтушка');
+      phase = 'run';
+      opened = 0;
+      openedSet.clear();
+      skufIndices.clear();
+
+      const M = SKUF_MODES[curSkufMode].skufs;
+      while(skufIndices.size < M){
+        skufIndices.add(Math.floor(Math.random() * 25));
+      }
+      render();
+      const rEl = q('#skufRes');
+      if(rEl){
+        rEl.className = 'result';
+        rEl.textContent = `Поле заряжено (${M} Скуфов 🍺). Ищите Альтушек 🎀🖤!`;
+      }
+    });
+
+    take.addEventListener('click', () => {
+      if(phase !== 'run' || opened === 0) return;
+      const finalMult = getMult(opened);
+      const amount = Math.floor(S.bet * finalMult);
+      win(amount, 'Скуф vs Альтушка', `кэшаут ×${fx(finalMult)}`);
+      phase = 'done';
+      skufIndices.forEach(sIdx => {
+        const sc = grid.children[sIdx];
+        if(sc && !openedSet.has(sIdx)){ sc.style.opacity = '0.5'; sc.textContent = '🍺'; }
+      });
+      res.className = 'result good';
+      res.innerHTML = `Забрано: <b style="color:${band(finalMult)}">×${fx(finalMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
+      go.disabled = false;
+      go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+      take.disabled = true;
+    });
+
+    wireBet(a, () => {
+      if(phase !== 'run') go.textContent = 'НАЧАТЬ · ' + S.bet + ' ⬦';
+    });
+  }
+
+  render();
+  return () => { phase = 'done'; };
+}
+
+/* =======================================================================
+   ПЕРЕКУП НА АВИТО (🏎️📦) — Ступенчатые торги с пониженными шансами
+   ======================================================================= */
+const AVITO_LOTS = {
+  lite: {
+    name: 'Лайт',
+    item: 'Дропнутый iPhone 15 Pro',
+    icon: '📱',
+    desc: 'Торгуемся за разбитый айфон: шансы чуть мягче',
+    steps: [
+      { name: '1. Сбить цену на Авито', p: 0.60, mult: 1.40 },
+      { name: '2. Поменять экран на Горбушке', p: 0.40, mult: 3.50 },
+      { name: '3. Продать школьнику как новый', p: 0.25, mult: 14.0 }
+    ]
+  },
+  med: {
+    name: 'Средний',
+    item: 'Приора 2011 «не бит не крашен»',
+    icon: '🏎️',
+    desc: 'Классика перекупа: высокий риск встрять на СТО',
+    steps: [
+      { name: '1. Сбить цену у деда в деревне', p: 0.52, mult: 1.60 },
+      { name: '2. Подкрасить из баллончика и смотать пробег', p: 0.32, mult: 5.00 },
+      { name: '3. Слить мажору под фонк в Telegram', p: 0.18, mult: 28.0 }
+    ]
+  },
+  crit: {
+    name: 'Критический',
+    item: 'Кроссовки Stone Island из Гуанчжоу',
+    icon: '👟',
+    desc: 'Суровый перекуп: сорваться легко, коэффициенты гигантские',
+    steps: [
+      { name: '1. Выбить оптовую партию на Садоводе', p: 0.44, mult: 1.90 },
+      { name: '2. Нашить фирменные патчи и сделать чек', p: 0.22, mult: 8.50 },
+      { name: '3. Продать моднику на Патриках', p: 0.12, mult: 72.0 }
+    ]
+  }
+};
+let curAvitoMode = 'med';
+
+function gameAvito(){
+  const a = q('#gameArea');
+  let phase = 'idle';
+  let step = 0;
+  let busy = false;
+
+  function render(){
+    const curLot = AVITO_LOTS[curAvitoMode];
+    const curStepObj = curLot.steps[step - 1];
+    const mult = step > 0 ? curStepObj.mult : 1;
+    const curWin = Math.floor(S.bet * mult);
+
+    a.innerHTML = `
+    <div class="chips" id="avitoModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curAvitoMode==='lite'?'on':''}" data-avm="lite">🟢 Лайт</button>
+      <button class="chip ${curAvitoMode==='med'?'on':''}" data-avm="med">🟡 Средний</button>
+      <button class="chip ${curAvitoMode==='crit'?'on':''}" data-avm="crit">🔴 Критический</button>
+    </div>
+    <div class="avito-box">
+      <div class="avito-icon">${curLot.icon}</div>
+      <b style="font-size:16.5px;color:#fff">${curLot.item}</b>
+      <div class="muted small" style="margin-top:4px">${curLot.desc}</div>
+      <div class="avito-steps">
+        ${curLot.steps.map((st, i) => {
+          const isDone = step > i + 1;
+          const isOn = step === i + 1;
+          return `<div class="avito-step ${isDone?'done':(isOn?'on':'')}"><b>×${fx(st.mult)}</b><br><span style="font-size:9.5px">${st.name.split('.')[0]} этап</span></div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${betHTML()}
+    <div class="actions" style="margin-top:10px">
+      <button class="control" id="avitoDeal" style="margin:0">${phase==='run'?(step<3?'ТОРГОВАТЬСЯ → ЭТАП '+(step+1):'ФИНАЛ'):'КУПИТЬ ЛОТ · '+S.bet+' ⬦'}</button>
+      <button class="control ghost" id="avitoTake" style="margin:0" ${phase!=='run'||step===0?'disabled':''}>ПРОДАТЬ И ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ⬦)</button>
+    </div>
+    <div class="result" id="avitoRes">Купите лот, чтобы начать торг и перепродажу.</div>`;
+
+    const dealBtn = q('#avitoDeal'), takeBtn = q('#avitoTake'), res = q('#avitoRes');
+
+    const mEl = q('#avitoModes');
+    if(mEl){
+      mEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-avm]'); if(!b || phase === 'run') return;
+        curAvitoMode = b.dataset.avm;
+        render();
+      });
+    }
+
+    dealBtn.addEventListener('click', () => {
+      if(busy) return;
+      if(phase === 'idle' || phase === 'done'){
+        if(S.balance < S.bet){
+          res.className = 'result bad';
+          res.textContent = 'Недостаточно токенов — пополните баланс.';
+          return;
+        }
+        place(S.bet, 'Перекуп на Авито');
+        phase = 'run';
+        step = 0;
+      }
+
+      if(step >= 3) return;
+      busy = true;
+      const targetStep = step;
+      const stepData = curLot.steps[targetStep];
+      res.className = 'result';
+      res.textContent = `${stepData.name}… Идут торги…`;
+
+      setTimeout(() => {
+        busy = false;
+        if(Math.random() < stepData.p){
+          step++;
+          tgHaptic('light');
+          const curMult = curLot.steps[step - 1].mult;
+          const winAmt = Math.floor(S.bet * curMult);
+          res.className = 'result good';
+          res.innerHTML = `Успешная сделка! <b>${stepData.name}</b> пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ⬦).`;
+          render();
+
+          if(step >= 3){
+            win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult));
+            phase = 'done';
+            const r2 = q('#avitoRes');
+            if(r2) r2.innerHTML = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Лот продан мажору: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ⬦</b>!`;
+            const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
+            const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
+          }
+        } else {
+          phase = 'done';
+          tgHaptic('lose');
+          res.className = 'result bad';
+          res.innerHTML = `💥 <b>Сделка сорвалась на этапе:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${S.bet} ⬦ сгорела.`;
+          render();
+          const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
+          const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
+        }
+      }, 420);
+    });
+
+    takeBtn.addEventListener('click', () => {
+      if(phase !== 'run' || step === 0) return;
+      const curMult = curLot.steps[step - 1].mult;
+      const amount = Math.floor(S.bet * curMult);
+      win(amount, 'Перекуп на Авито', `кэшаут ×${fx(curMult)}`);
+      phase = 'done';
+      res.className = 'result good';
+      res.innerHTML = `Лот перепродан: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
+      render();
+      const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
+      const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
+    });
+
+    wireBet(a, () => {
+      if(phase !== 'run') dealBtn.textContent = 'КУПИТЬ ЛОТ · ' + S.bet + ' ⬦';
+    });
+  }
+
+  render();
+  return () => { phase = 'done'; };
+}
+
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп'};
-const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop};
+const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито'};
+const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
