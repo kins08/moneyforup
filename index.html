@@ -107,7 +107,10 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="app" id="app">
 <div class="top">
   <button class="brand" data-nav="games"><div class="logo">MUP</div><div><b>MoneyForUp</b></div></button>
-  <button class="pillbtn" data-nav="tokens"><b class="js-bal">50</b> ⬦</button>
+  <div style="display:flex;gap:7px;align-items:center">
+    <button class="pillbtn" id="topSupport" style="padding:8px 12px;font-size:12px;background:rgba(143,151,255,.12);border-color:rgba(143,151,255,.3);color:#d9ddff;cursor:pointer">💬 Поддержка</button>
+    <button class="pillbtn" data-nav="tokens"><b class="js-bal">50</b> ⬦</button>
+  </div>
 </div>
 
 <!-- ======== ИГРЫ ======== -->
@@ -274,8 +277,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 </div>
 <div class="section"><b>Последняя активность</b></div>
 <div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
-<div class="muted small" style="text-align:center;margin-top:22px;padding:12px 6px;border-top:1px solid var(--line);line-height:1.5">
-  По вопросам пополнений — писать <a href="https://t.me/lev_god" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:700">@lev_god</a>
+<div class="item row" style="margin-top:16px;background:rgba(143,151,255,.09);border:1px solid rgba(143,151,255,.28);border-radius:14px;padding:12px 14px">
+  <div>
+    <b style="color:#fff;font-size:14.5px">Служба поддержки</b>
+    <div class="muted small" style="margin-top:2px">Вопросы по играм, выводу и балансу (@lev_god)</div>
+  </div>
+  <button class="pillbtn" id="btnSupportProfile" style="background:var(--accent);color:#0d1017;font-weight:800;border:none;padding:9px 14px;cursor:pointer">💬 Написать</button>
 </div>
 </section>
 
@@ -1104,6 +1111,15 @@ q('#copy').addEventListener('click',()=>copyText(ensureRefCode(),q('#copy'),'К�
 q('#copyLink').dataset.label='Скопировать ссылку';
 q('#copyLink').addEventListener('click',()=>copyText(S.refLink||refLinkFor(ensureRefCode()),q('#copyLink'),'Ссылка скопирована ✓'));
 
+/* ---------- поддержка @lev_god ---------- */
+function openSupport(){
+  const url='https://t.me/lev_god';
+  try{(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.openTelegramLink)?window.Telegram.WebApp.openTelegramLink(url):window.open(url,'_blank','noopener')}catch(e){}
+}
+const s1=q('#topSupport'), s2=q('#btnSupportProfile');
+if(s1)s1.addEventListener('click',openSupport);
+if(s2)s2.addEventListener('click',openSupport);
+
 /* ---------- ставка (пресеты + своя сумма) ---------- */
 function betHTML(){
   return `<div class="betrow"><span class="muted small">Ставка</span>
@@ -1398,20 +1414,35 @@ function gameRacket(){
 }
 
 /* =======================================================================
-   ПОПРЫГУН — черта и шарик: прыгнул на неё или сорвался
+   ПОПРЫГУН — черта и шарик: 1 ступень надежнее, дальше риск стремительно растет
    ======================================================================= */
 const JP_MODES = {
-  lite: { name: 'Лайт', p: 0.90, desc: 'Низкий риск: прыжки надежнее, мягкие множители' },
-  med:  { name: 'Средний', p: 0.84, desc: 'Стандарт: сбалансированный риск и выигрыш' },
-  crit: { name: 'Критический', p: 0.72, desc: 'Высокий риск: больше срывов, огромные коэффициенты' }
+  lite: {
+    name: 'Лайт',
+    desc: '1-й прыжок надежный (75%), 2-й сложнее (45%), выше 3-го — колоссальная редкость',
+    p: [0.75, 0.45, 0.25, 0.16, 0.12, 0.10, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04],
+    pay: [1.20, 2.60, 10.5, 65, 540, 5400, 68000, 970000, 16000000, 320000000, 6500000000, 160000000000]
+  },
+  med: {
+    name: 'Средний',
+    desc: 'Высокий риск: 1-й прыжок (68%), 2-й (38%), дойти до 4-5 ступени — настоящая сенсация',
+    p: [0.68, 0.38, 0.18, 0.12, 0.09, 0.07, 0.06, 0.05, 0.04, 0.04, 0.03, 0.02],
+    pay: [1.30, 3.40, 19.0, 160, 1750, 25000, 420000, 8400000, 210000000, 5200000000, 170000000000, 8500000000000]
+  },
+  crit: {
+    name: 'Критический',
+    desc: 'Экстремальный риск: 1-й прыжок (58%), 2-й (28%), выше 3-й — почти невозможно',
+    p: [0.58, 0.28, 0.14, 0.08, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02, 0.02, 0.015],
+    pay: [1.45, 5.20, 37.0, 460, 7700, 150000, 3800000, 120000000, 4200000000, 210000000000, 10000000000000, 700000000000000]
+  }
 };
 let curJumpMode = 'med';
 
 function gameJumper(){
   const a=q('#gameArea');
   let level=0,phase='idle',busy=false,t1=0,t2=0,raf=0,dead=false;
-  let curP=JP_MODES[curJumpMode].p;
-  const xn=n=>+(0.93*Math.pow(1/curP,n)).toFixed(2);
+  const curM=()=>JP_MODES[curJumpMode];
+  const xn=n=>{ const m=curM(); return (m.pay&&m.pay[n-1])?m.pay[n-1]:+(1.2*n).toFixed(2); };
 
   a.innerHTML=`
   <div class="chips" id="jumpModes" style="margin-bottom:10px;justify-content:center">
@@ -1422,7 +1453,7 @@ function gameJumper(){
   <div class="jumpstage" id="js"><div class="ground"></div><div class="ball2" id="jb" style="bottom:10px"></div></div>
   ${betHTML()}
   <div class="actions" style="margin-top:11px"><button class="control" id="jj" style="margin:0">ПРЫЖОК</button><button class="control ghost" id="jt2" style="margin:0" disabled>ЗАБРАТЬ</button></div>
-  <div class="result" id="jr">${JP_MODES[curJumpMode].desc}</div>`;
+  <div class="result" id="jr">${curM().desc}</div>`;
 
   const stage=q('#js'),ball=q('#jb'),jj=q('#jj'),jt=q('#jt2'),jr=q('#jr');
   const stageH=stage.clientHeight||330;
@@ -1449,10 +1480,9 @@ function gameJumper(){
     jmEl.addEventListener('click',e=>{
       const b=e.target.closest('[data-jm]');if(!b||busy||phase==='run')return;
       curJumpMode=b.dataset.jm;
-      curP=JP_MODES[curJumpMode].p;
       qa('#jumpModes .chip').forEach(c=>c.classList.toggle('on',c===b));
       updateDashLabels();refresh();
-      jr.className='result';jr.textContent=JP_MODES[curJumpMode].desc;
+      jr.className='result';jr.textContent=curM().desc;
     });
   }
   function refresh(){
@@ -1496,7 +1526,9 @@ function gameJumper(){
   }
   function land(from){
     ball.style.transform='translateX(0)';
-    if(Math.random()<curP){
+    const m=curM();
+    const stepP = (m.p && m.p[level]) ? m.p[level] : 0.03;
+    if(Math.random()<stepP){
       level++;
       positionBall();
       if(level>=12){busy=false;auto();return}
@@ -1685,19 +1717,19 @@ const DP_MODES = {
     name: 'Лайт',
     slots: 8,
     rows: 7,
-    pay: [3.5, 1.5, 1.0, 0.7, 0.7, 1.0, 1.5, 3.5] // RTP 92.97% (House Edge 7.03%)
+    pay: [3.5, 1.5, 1.0, 0.75, 0.4, 0, 1.5, 3.5] // заменены 4 внутренних слота на 1x, 0.75x, 0.4x, 0x
   },
   med: {
     name: 'Средний',
     slots: 10,
     rows: 9,
-    pay: [8.0, 3.0, 1.6, 1.0, 0.45, 0.45, 1.0, 1.6, 3.0, 8.0] // RTP 91.13% (House Edge 8.87%)
+    pay: [8.0, 3.0, 1.2, 0.75, 0.4, 0, 1.0, 1.6, 3.0, 8.0] // заменены 0.5x на 0.4x и 0x, один 1.6x заменен на 1.2x
   },
   crit: {
     name: 'Критический',
     slots: 12,
     rows: 11,
-    pay: [30.0, 12.0, 5.0, 1.8, 0.35, 0.15, 0.15, 0.35, 1.8, 5.0, 12.0, 30.0] // RTP 89.73% (House Edge 10.27%)
+    pay: [18.0, 8.0, 4.0, 0.6, 0.3, 0.1, 0.1, 0.3, 0.6, 4.0, 8.0, 18.0] // уменьшены крупные коэффициенты (18x и 8x вместо 30x и 12x), оба 1.8x заменены на 0.6x
   }
 };
 let curDropMode = 'med';
