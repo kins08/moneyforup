@@ -104,7 +104,11 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .skuf-cell:hover:not(:disabled){transform:scale(1.04);background:#2c3549;border-color:rgba(143,151,255,.45)}
 .skuf-cell.open-good{background:linear-gradient(135deg,rgba(255,115,182,.22),rgba(143,151,255,.2));border-color:#ff73b6}
 .skuf-cell.open-bad{background:linear-gradient(135deg,rgba(255,80,80,.32),rgba(180,40,40,.2));border-color:#ff5555}
-.avito-box{background:linear-gradient(145deg,#232b3c,#181e2b);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;text-align:center}
+.avito-box{background:linear-gradient(145deg,#232b3c,#181e2b);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;text-align:center;transition:border-color .3s,box-shadow .3s,transform .2s}
+.avito-box.win{border-color:#3ddc96;animation:avitoPulseWin .6s ease;background:linear-gradient(145deg,#1c332c,#152520);box-shadow:0 0 24px rgba(61,220,150,.35)}
+.avito-box.lose{border-color:#ff5555;animation:avitoShake .45s ease;background:linear-gradient(145deg,#382025,#26151a);box-shadow:0 0 24px rgba(255,85,85,.35)}
+@keyframes avitoShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes avitoPulseWin{0%{transform:scale(1);box-shadow:0 0 10px rgba(61,220,150,.3)}50%{transform:scale(1.025);box-shadow:0 0 28px rgba(61,220,150,.7)}100%{transform:scale(1);box-shadow:0 0 20px rgba(61,220,150,.35)}}
 .avito-icon{font-size:46px;margin-bottom:6px}
 .avito-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
 .avito-step{padding:8px 5px;border-radius:10px;background:#1e2433;border:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
@@ -1431,20 +1435,20 @@ function gameRacket(){
 const JP_MODES = {
   lite: {
     name: 'Лайт',
-    desc: '1-й прыжок надежный (75%), 2-й сложнее (45%), выше 3-го — колоссальная редкость',
-    p: [0.75, 0.45, 0.25, 0.16, 0.12, 0.10, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04],
+    desc: '1-й прыжок (70%), 2-й сложнее (40%), выше 3-го — колоссальная редкость',
+    p: [0.70, 0.40, 0.22, 0.14, 0.10, 0.08, 0.07, 0.06, 0.05, 0.04, 0.04, 0.03],
     pay: [1.20, 2.60, 10.5, 65, 540, 5400, 68000, 970000, 16000000, 320000000, 6500000000, 160000000000]
   },
   med: {
     name: 'Средний',
-    desc: 'Высокий риск: 1-й прыжок (68%), 2-й (38%), дойти до 4-5 ступени — настоящая сенсация',
-    p: [0.68, 0.38, 0.18, 0.12, 0.09, 0.07, 0.06, 0.05, 0.04, 0.04, 0.03, 0.02],
+    desc: 'Высокий риск: 1-й прыжок (62%), 2-й (33%), дойти до 4-5 ступени — сенсация',
+    p: [0.62, 0.33, 0.15, 0.10, 0.08, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02, 0.015],
     pay: [1.30, 3.40, 19.0, 160, 1750, 25000, 420000, 8400000, 210000000, 5200000000, 170000000000, 8500000000000]
   },
   crit: {
     name: 'Критический',
-    desc: 'Экстремальный риск: 1-й прыжок (58%), 2-й (28%), выше 3-й — почти невозможно',
-    p: [0.58, 0.28, 0.14, 0.08, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02, 0.02, 0.015],
+    desc: 'Экстремальный риск: 1-й прыжок (52%), 2-й (24%), выше 3-й — почти невозможно',
+    p: [0.52, 0.24, 0.11, 0.07, 0.05, 0.04, 0.03, 0.025, 0.02, 0.015, 0.015, 0.01],
     pay: [1.45, 5.20, 37.0, 460, 7700, 150000, 3800000, 120000000, 4200000000, 210000000000, 10000000000000, 700000000000000]
   }
 };
@@ -1869,12 +1873,12 @@ function gameSkuf(){
     return c;
   }
 
-  // Расчет множителя со строгим минусовым матожиданием (RTP 85%):
+  // Расчет множителя со строгим минусовым матожиданием (RTP 80%, House Edge 20%):
   function getMult(k){
     const M = SKUF_MODES[curSkufMode].skufs;
     if(k <= 0) return 1;
     const prob = comb(25 - M, k) / comb(25, k);
-    return +(0.85 / prob).toFixed(2);
+    return +(0.80 / prob).toFixed(2);
   }
 
   function render(){
@@ -2025,9 +2029,9 @@ const AVITO_LOTS = {
     icon: '📱',
     desc: 'Торгуемся за разбитый айфон: шансы чуть мягче',
     steps: [
-      { name: '1. Сбить цену на Авито', p: 0.60, mult: 1.40 },
-      { name: '2. Поменять экран на Горбушке', p: 0.40, mult: 3.50 },
-      { name: '3. Продать школьнику как новый', p: 0.25, mult: 14.0 }
+      { name: '1. Сбить цену на Авито', p: 0.54, mult: 1.40 },
+      { name: '2. Поменять экран на Горбушке', p: 0.35, mult: 3.50 },
+      { name: '3. Продать школьнику как новый', p: 0.20, mult: 14.0 }
     ]
   },
   med: {
@@ -2036,9 +2040,9 @@ const AVITO_LOTS = {
     icon: '🏎️',
     desc: 'Классика перекупа: высокий риск встрять на СТО',
     steps: [
-      { name: '1. Сбить цену у деда в деревне', p: 0.52, mult: 1.60 },
-      { name: '2. Подкрасить из баллончика и смотать пробег', p: 0.32, mult: 5.00 },
-      { name: '3. Слить мажору под фонк в Telegram', p: 0.18, mult: 28.0 }
+      { name: '1. Сбить цену у деда в деревне', p: 0.46, mult: 1.60 },
+      { name: '2. Подкрасить из баллончика и смотать пробег', p: 0.27, mult: 5.00 },
+      { name: '3. Слить мажору под фонк в Telegram', p: 0.14, mult: 28.0 }
     ]
   },
   crit: {
@@ -2047,9 +2051,9 @@ const AVITO_LOTS = {
     icon: '👟',
     desc: 'Суровый перекуп: сорваться легко, коэффициенты гигантские',
     steps: [
-      { name: '1. Выбить оптовую партию на Садоводе', p: 0.44, mult: 1.90 },
-      { name: '2. Нашить фирменные патчи и сделать чек', p: 0.22, mult: 8.50 },
-      { name: '3. Продать моднику на Патриках', p: 0.12, mult: 72.0 }
+      { name: '1. Выбить оптовую партию на Садоводе', p: 0.38, mult: 1.90 },
+      { name: '2. Нашить фирменные патчи и сделать чек', p: 0.17, mult: 8.50 },
+      { name: '3. Продать моднику на Патриках', p: 0.09, mult: 72.0 }
     ]
   }
 };
@@ -2060,6 +2064,9 @@ function gameAvito(){
   let phase = 'idle';
   let step = 0;
   let busy = false;
+  let boxState = '';
+  let resMsg = 'Купите лот, чтобы начать торг и перепродажу.';
+  let resClass = 'result';
 
   function render(){
     const curLot = AVITO_LOTS[curAvitoMode];
@@ -2073,7 +2080,7 @@ function gameAvito(){
       <button class="chip ${curAvitoMode==='med'?'on':''}" data-avm="med">🟡 Средний</button>
       <button class="chip ${curAvitoMode==='crit'?'on':''}" data-avm="crit">🔴 Критический</button>
     </div>
-    <div class="avito-box">
+    <div class="avito-box ${boxState}">
       <div class="avito-icon">${curLot.icon}</div>
       <b style="font-size:16.5px;color:#fff">${curLot.item}</b>
       <div class="muted small" style="margin-top:4px">${curLot.desc}</div>
@@ -2090,15 +2097,18 @@ function gameAvito(){
       <button class="control" id="avitoDeal" style="margin:0">${phase==='run'?(step<3?'ТОРГОВАТЬСЯ → ЭТАП '+(step+1):'ФИНАЛ'):'КУПИТЬ ЛОТ · '+S.bet+' ⬦'}</button>
       <button class="control ghost" id="avitoTake" style="margin:0" ${phase!=='run'||step===0?'disabled':''}>ПРОДАТЬ И ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ⬦)</button>
     </div>
-    <div class="result" id="avitoRes">Купите лот, чтобы начать торг и перепродажу.</div>`;
+    <div class="${resClass}" id="avitoRes">${resMsg}</div>`;
 
-    const dealBtn = q('#avitoDeal'), takeBtn = q('#avitoTake'), res = q('#avitoRes');
+    const dealBtn = q('#avitoDeal'), takeBtn = q('#avitoTake');
 
     const mEl = q('#avitoModes');
     if(mEl){
       mEl.addEventListener('click', e => {
         const b = e.target.closest('[data-avm]'); if(!b || phase === 'run') return;
         curAvitoMode = b.dataset.avm;
+        boxState = '';
+        resMsg = 'Купите лот, чтобы начать торг и перепродажу.';
+        resClass = 'result';
         render();
       });
     }
@@ -2107,49 +2117,49 @@ function gameAvito(){
       if(busy) return;
       if(phase === 'idle' || phase === 'done'){
         if(S.balance < S.bet){
-          res.className = 'result bad';
-          res.textContent = 'Недостаточно токенов — пополните баланс.';
+          resClass = 'result bad';
+          resMsg = 'Недостаточно токенов — пополните баланс.';
+          render();
           return;
         }
         place(S.bet, 'Перекуп на Авито');
         phase = 'run';
         step = 0;
+        boxState = '';
       }
 
       if(step >= 3) return;
       busy = true;
       const targetStep = step;
       const stepData = curLot.steps[targetStep];
-      res.className = 'result';
-      res.textContent = `${stepData.name}… Идут торги…`;
+      resClass = 'result';
+      resMsg = `${stepData.name}… Идут торги…`;
+      render();
 
       setTimeout(() => {
         busy = false;
         if(Math.random() < stepData.p){
           step++;
           tgHaptic('light');
+          boxState = 'win';
           const curMult = curLot.steps[step - 1].mult;
           const winAmt = Math.floor(S.bet * curMult);
-          res.className = 'result good';
-          res.innerHTML = `Успешная сделка! <b>${stepData.name}</b> пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ⬦).`;
-          render();
+          resClass = 'result good';
+          resMsg = `🤝 <b>Сделка успешна!</b> ${stepData.name} пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ⬦).`;
 
           if(step >= 3){
             win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult));
             phase = 'done';
-            const r2 = q('#avitoRes');
-            if(r2) r2.innerHTML = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Лот продан мажору: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ⬦</b>!`;
-            const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
-            const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
+            resMsg = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Товар продан с максимальной наценкой: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ⬦</b>!`;
           }
+          render();
         } else {
           phase = 'done';
           tgHaptic('lose');
-          res.className = 'result bad';
-          res.innerHTML = `💥 <b>Сделка сорвалась на этапе:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${S.bet} ⬦ сгорела.`;
+          boxState = 'lose';
+          resClass = 'result bad';
+          resMsg = `💥 <b>Сделка сорвалась:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${S.bet} ⬦ сгорела.`;
           render();
-          const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
-          const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
         }
       }, 420);
     });
@@ -2160,11 +2170,10 @@ function gameAvito(){
       const amount = Math.floor(S.bet * curMult);
       win(amount, 'Перекуп на Авито', `кэшаут ×${fx(curMult)}`);
       phase = 'done';
-      res.className = 'result good';
-      res.innerHTML = `Лот перепродан: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
+      boxState = 'win';
+      resClass = 'result good';
+      resMsg = `💰 <b>Успешный кэшаут!</b> Лот перепродан: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
       render();
-      const d2 = q('#avitoDeal'); if(d2) d2.textContent = 'КУПИТЬ НОВЫЙ ЛОТ · ' + S.bet + ' ⬦';
-      const t2 = q('#avitoTake'); if(t2) t2.disabled = true;
     });
 
     wireBet(a, () => {
