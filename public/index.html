@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  window.MONEYFORUP_API = 'https://moneyforup.onrender.com';
+</script>
+<title>MoneyForUp</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b92ff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b195ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2241%22%20text-anchor%3D%22middle%22%20font-family%3D%22Inter%2CArial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22900%22%20fill%3D%22%230d1017%22%20letter-spacing%3D%221%22%3EMUP%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+:root{--tgSafe:env(safe-area-inset-bottom,0px);--bg:#161b28;--panel:#1e2433;--panel2:#272e40;--line:rgba(255,255,255,.10);--text:#f6f7fb;--muted:#9aa4ba;--accent:#8f97ff;--good:#3ddc96;--bad:#ff738c;--gold:#ffcf6b;--cta1:#2bd8b6;--cta2:#1fa5ea;--ctaText:#08262c}
+*{box-sizing:border-box}
+body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,sans-serif}
+.app{max-width:736px;min-height:100vh;margin:auto;padding:16px 15px 94px;background:radial-gradient(circle at 85% 0%,rgba(143,151,255,.17),transparent 34%),var(--bg);position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
+.brand{display:flex;gap:10px;align-items:center;background:none;border:0;padding:0;color:#fff;cursor:pointer;text-align:left;font-family:inherit}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#8b92ff,#b195ff);display:grid;place-items:center;font-weight:900;font-size:15px;letter-spacing:.06em;color:#0d1017}
+.brand b{font-size:17px}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.pillbtn{background:var(--panel2);border:1px solid var(--line);color:#fff;cursor:pointer;border-radius:13px;padding:10px 13px;font-size:13px;font-weight:700;font-family:inherit}
+.screen{display:none;animation:enter .28s ease}.screen.active{display:block}
+@keyframes enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.hero{padding:20px;border-radius:22px;background:linear-gradient(145deg,#272f44,#1d2432);border:1px solid var(--line)}
+.eyebrow{font-size:11px;color:#9ca4ff;text-transform:uppercase;letter-spacing:.12em}
+.big{font-size:30px;line-height:1.05;font-weight:850;letter-spacing:-.045em;margin-top:6px}
+.muted{color:var(--muted)}.small{font-size:12px}
+.balance{font-size:34px;font-weight:850;margin:7px 0 15px}
+.actions{display:flex;gap:8px}
+.primary,.secondary{padding:12px 15px;border-radius:14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
+.primary{background:linear-gradient(135deg,#878dff,#a893ff);color:#fff;border:0}
+.secondary{background:rgba(255,255,255,.055);border:1px solid var(--line);color:#fff}
+.section{display:flex;align-items:center;justify-content:space-between;margin:21px 2px 10px}
+.section b{font-size:16px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.game{min-height:168px;padding:15px;text-align:left;border-radius:20px;background:var(--panel);border:1px solid var(--line);color:#fff;cursor:pointer;position:relative;font-family:inherit}
+.game .gi{font-size:31px;height:34px;margin-bottom:22px;display:flex;align-items:center}.game .gi svg{display:block}.game strong{display:block;font-size:16px}.game span{font-size:11px;color:var(--muted);display:block;margin-top:4px;line-height:1.4}
+.game .arrow{position:absolute;right:13px;bottom:13px;width:28px;height:28px;border-radius:10px;background:#343c53;display:grid;place-items:center;font-style:normal}
+.wide{grid-column:1/-1}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:13px}.stat b{font-size:18px;display:block;margin-top:5px}
+.list{display:flex;flex-direction:column;gap:8px}.item{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:17px}
+.avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#868cff,#ab92ff);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#0d1017}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.profileHead{display:flex;gap:13px;align-items:center}
+.pill{padding:6px 9px;border-radius:9px;background:rgba(124,130,255,.13);color:#aab0ff;font-size:11px}
+.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(33,39,54,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
+.nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit}
+.nav button .ni{font-size:20px;display:block;margin-bottom:3px}
+.nav button.active{background:#3b4463;color:#fff}
+.gameTop{display:flex;align-items:center;gap:10px;margin-bottom:15px}.back{width:42px;height:42px;border-radius:14px;font-size:28px;background:var(--panel2);border:1px solid var(--line);color:#fff;cursor:pointer}
+.gameTitle{font-size:24px;font-weight:850}
+.control{margin-top:10px;width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,var(--cta1),var(--cta2));font-weight:850;border:0;color:var(--ctaText);cursor:pointer;font-family:inherit;font-size:14.5px;box-shadow:0 12px 26px -14px rgba(31,165,234,.9);transition:transform .12s,box-shadow .2s,filter .2s}
+.control:hover{filter:brightness(1.06)}
+.control:active{transform:translateY(1px);box-shadow:0 6px 16px -12px rgba(31,165,234,.9)}
+.control:disabled{opacity:.45;cursor:default;box-shadow:none}
+.control.ghost{background:rgba(43,216,182,.10);border:1px solid rgba(43,216,182,.45);color:#8bf0dd;box-shadow:none;font-weight:800}
+.result{margin-top:10px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:12px;color:var(--muted);font-size:13px;line-height:1.5}
+.result.good{color:#8ff0bf;border-color:rgba(61,220,150,.3)}.result.bad{color:#ff9db1;border-color:rgba(255,107,139,.3)}
+.progress{height:8px;background:#333b52;border-radius:8px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#8b92ff,#b195ff)}
+.code{font-size:21px;font-weight:800;letter-spacing:.08em;text-align:center;padding:17px;background:#1b212e;border-radius:15px;margin:13px 0}
+.refLinkBox{font-size:13px;letter-spacing:0;word-break:break-all;padding:12px}
+.hstrip{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px}
+.hstrip .hitem{font-size:12px;font-weight:800;padding:6px 9px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04)}
+.hstrip .hitem.new{animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.7);opacity:.4}to{transform:scale(1);opacity:1}}
+/* ставка */
+.betrow{display:flex;align-items:center;gap:9px;margin:11px 0;flex-wrap:wrap}
+.betinput{width:92px;background:#1b212e;border:1px solid var(--line);color:#fff;border-radius:11px;padding:9px 10px;font-family:inherit;font-size:13.5px;font-weight:700;outline:none}
+.betinput:focus{border-color:rgba(43,216,182,.55)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:8px 11px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit}
+.chip.on{background:rgba(143,151,255,.22);border-color:rgba(143,151,255,.55);color:#d6d9ff}
+.linkbtn{background:none;border:0;padding:0;color:#8bf0dd;text-decoration:underline;cursor:pointer;font:inherit}
+.termsline{display:flex;gap:9px;align-items:flex-start;margin-top:11px;font-size:12px;color:var(--muted);line-height:1.45}
+.termsline input{width:16px;height:16px;margin-top:1px;flex:0 0 auto;accent-color:#2bd8b6}
+.actions .control{flex:1}
+/* ракетка */
+.crashbox{position:relative;height:310px;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#252c3e,#191e2a);border:1px solid var(--line)}
+.crashbox canvas{width:100%;height:100%;display:block}
+.overlay{position:absolute;left:16px;top:13px;pointer-events:none}
+.xbig{font-size:33px;font-weight:850;letter-spacing:-.03em;margin-top:2px;text-shadow:0 6px 24px rgba(0,0,0,.6)}
+.xbig.bad{color:var(--bad)}
+/* попрыгун */
+.jumpstage{position:relative;height:330px;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#252c3e,#191e2a);border:1px solid var(--line)}
+.ground{position:absolute;left:14px;right:14px;bottom:8px;height:4px;border-radius:4px;background:#4c5776}
+.dash{position:absolute;left:50%;width:132px;margin-left:-66px;height:3px;border-radius:3px;background:#3a4460;transition:background .3s,box-shadow .3s}
+.dash span{position:absolute;left:141px;top:-7px;font-size:10.5px;color:#6f7a95;white-space:nowrap;transition:color .3s}
+.ball2{position:absolute;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:linear-gradient(135deg,#8f95ff,#c39bff);box-shadow:0 0 8px rgba(140,150,255,.45)}
+/* спин */
+.spinwrap{position:relative;width:100%;display:flex;justify-content:center;padding-top:14px}
+.wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;overflow:hidden;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.45);transition:transform 4.5s cubic-bezier(.08,.88,.14,1)}
+.wheel span{position:absolute;transform:translate(-50%,-50%);font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);white-space:nowrap}
+.pointer{position:absolute;top:6px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #fff;z-index:5;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));transition:transform .12s ease;transform-origin:50% 0}
+.legend{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.lg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 5px;text-align:center;font-size:11.5px;color:var(--muted);transition:border-color .25s,background .25s}
+.lg b{display:block;font-size:13.5px;color:#fff;margin-bottom:3px}
+.lg .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+.lg.hit{border-color:#8f97ff;background:#2b3457;box-shadow:0 0 0 1px rgba(143,151,255,.5)}
+.lg.tease-flash{border-color:#ffcf6b !important;background:rgba(255,207,107,.18) !important;box-shadow:0 0 16px rgba(255,207,107,.7) !important;animation:pulseTease .35s ease-in-out infinite alternate}
+.wheel span.tease-flash{color:#ffcf6b !important;text-shadow:0 0 10px #ffcf6b, 0 0 20px #ffcf6b !important;transform:translate(-50%,-50%) scale(1.35) !important;transition:transform .2s,color .2s}
+.pointer.tease-flutter{border-top-color:#ffcf6b !important;filter:drop-shadow(0 0 10px #ffcf6b) !important;animation:ptrFlutter .14s ease-in-out infinite alternate}
+@keyframes ptrFlutter{from{transform:rotate(-14deg)}to{transform:rotate(5deg)}}
+@keyframes pulseTease{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+/* дроп */
+.dropwrap{position:relative;height:300px;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#252c3e,#191e2a);border:1px solid var(--line)}
+.dropwrap canvas{width:100%;height:100%;display:block}
+.slots{display:grid;grid-template-columns:repeat(var(--slot-cols,8),1fr);gap:3px;margin-top:9px}
+.slot{border-radius:9px;padding:7px 1px;text-align:center;font-size:11px;font-weight:700;background:#2a3142;border:1px solid var(--line);color:var(--muted);transition:outline-color .2s,transform .2s}
+.skuf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
+.skuf-cell{aspect-ratio:1/1;border-radius:13px;background:#232a3a;border:1px solid var(--line);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s,border-color .2s;user-select:none}
+.skuf-cell:hover:not(:disabled){transform:scale(1.04);background:#2c3549;border-color:rgba(143,151,255,.45)}
+.skuf-cell.open-good{background:linear-gradient(135deg,rgba(255,115,182,.22),rgba(143,151,255,.2));border-color:#ff73b6}
+.skuf-cell.open-bad{background:linear-gradient(135deg,rgba(255,80,80,.32),rgba(180,40,40,.2));border-color:#ff5555}
+.avito-box{background:linear-gradient(145deg,#232b3c,#181e2b);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;text-align:center;transition:border-color .3s,box-shadow .3s,transform .2s}
+.avito-box.win{border-color:#3ddc96;animation:avitoPulseWin .6s ease;background:linear-gradient(145deg,#1c332c,#152520);box-shadow:0 0 24px rgba(61,220,150,.35)}
+.avito-box.lose{border-color:#ff5555;animation:avitoShake .45s ease;background:linear-gradient(145deg,#382025,#26151a);box-shadow:0 0 24px rgba(255,85,85,.35)}
+@keyframes avitoShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes avitoPulseWin{0%{transform:scale(1);box-shadow:0 0 10px rgba(61,220,150,.3)}50%{transform:scale(1.025);box-shadow:0 0 28px rgba(61,220,150,.7)}100%{transform:scale(1);box-shadow:0 0 20px rgba(61,220,150,.35)}}
+.avito-icon{font-size:46px;margin-bottom:6px}
+.avito-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.avito-step{padding:8px 5px;border-radius:10px;background:#1e2433;border:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
+.avito-step.on{border-color:#8f97ff;color:#fff;background:rgba(143,151,255,.16)}
+.avito-step.done{border-color:#3ddc96;color:#3ddc96;background:rgba(61,220,150,.12)}
+/* кейсы */
+.case-roulette{position:relative;height:128px;border-radius:18px;background:linear-gradient(180deg,#191f2c,#10141d);border:1px solid var(--line);overflow:hidden;margin:12px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.7)}
+.case-pointer{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#ffcf6b;z-index:10;box-shadow:0 0 12px #ffcf6b;transition:box-shadow .2s}
+.case-pointer.teaser{box-shadow:0 0 24px #ffcf6b, 0 0 45px #ffcf6b !important}
+.case-pointer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ffcf6b}
+.case-pointer::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:10px solid #ffcf6b}
+.case-strip{display:flex;position:absolute;left:0;top:0;bottom:0;will-change:transform}
+.case-card{flex:0 0 104px;width:104px;min-width:104px;max-width:104px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;position:relative;user-select:none;transition:box-shadow .3s,background .3s}
+.case-card.win-picked{box-shadow:inset 0 0 24px var(--tier-col,#ffcf6b);background:rgba(255,255,255,.06)}
+.case-card.case-card-teaser::before{content:'★ ТОП';position:absolute;top:4px;right:4px;font-size:8px;font-weight:800;color:#ffcf6b;background:rgba(255,207,107,.18);border:1px solid rgba(255,207,107,.45);padding:1px 4px;border-radius:4px;z-index:2}
+.case-card.tease-flash{box-shadow:inset 0 0 32px #ffcf6b, 0 0 24px rgba(255,207,107,.7) !important;border:1px solid #ffcf6b !important;animation:pulseTease .35s ease-in-out infinite alternate}
+.case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
+.case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px}
+.case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.case-card .ci-val{font-size:10px;color:var(--tier-col,#8f97ff);font-weight:700;margin-top:2px}
+.case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:240px;overflow-y:auto;padding-right:4px;margin-top:10px}
+.case-grid-item{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:12px;background:#1e2434;border:1px solid var(--line);font-size:11px}
+.case-grid-item .cgi-col{width:4px;height:24px;border-radius:2px;background:var(--tier-col,#8f97ff);flex-shrink:0}
+.case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
+.case-boost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,207,107,.15);border:1px solid #ffcf6b;color:#ffcf6b;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;margin-top:6px;animation:pulseTease .8s ease-in-out infinite alternate}
+@media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<div class="top">
+  <button class="brand" data-nav="games"><div class="logo">MUP</div><div><b>MoneyForUp</b></div></button>
+  <div style="display:flex;gap:7px;align-items:center">
+    <button class="pillbtn" id="topSupport" style="padding:8px 12px;font-size:12px;background:rgba(143,151,255,.12);border-color:rgba(143,151,255,.3);color:#d9ddff;cursor:pointer">💬 Поддержка</button>
+    <button class="pillbtn" data-nav="tokens"><b class="js-bal">50</b> ⬦</button>
+  </div>
+</div>
+
+<!-- ======== ИГРЫ ======== -->
+<section class="screen active" id="games">
+<div class="hero">
+<div class="eyebrow">Баланс токенов</div><div class="balance js-bal">50</div>
+<div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
+<div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
+</div>
+<div class="section"><b>Игры</b><span class="muted small">7 игр</span></div>
+<div class="cards">
+<button class="game" data-game="racket"><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
+<button class="game" data-game="jumper"><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
+<button class="game" data-game="spin"><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<circle cx="20" cy="20" r="19" fill="#1e2433"/>
+<path d="M20 20 L20 3 A17 17 0 0 1 32 7.98 Z" fill="#69748f"/>
+<path d="M20 20 L32 7.98 A17 17 0 0 1 37 20 Z" fill="#3ddc96"/>
+<path d="M20 20 L37 20 A17 17 0 0 1 32 32.02 Z" fill="#a175ff"/>
+<path d="M20 20 L32 32.02 A17 17 0 0 1 20 37 Z" fill="#b98cff"/>
+<path d="M20 20 L20 37 A17 17 0 0 1 7.98 32.02 Z" fill="#ff7386"/>
+<path d="M20 20 L7.98 32.02 A17 17 0 0 1 3 20 Z" fill="#e8544f"/>
+<path d="M20 20 L3 20 A17 17 0 0 1 7.98 7.98 Z" fill="#ffcf6b"/>
+<path d="M20 20 L7.98 7.98 A17 17 0 0 1 20 3 Z" fill="#39415a"/>
+<circle cx="20" cy="20" r="17" fill="none" stroke="#2a3142" stroke-width="2.5"/>
+<circle cx="20" cy="20" r="4.6" fill="#8f97ff"/>
+<circle cx="20" cy="20" r="1.7" fill="#ffffff" opacity=".85"/>
+</svg></div><strong>Спин</strong><span>8 равных секторов с разной выдачей</span><i class="arrow">→</i></button>
+<button class="game" data-game="drop"><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<defs>
+<radialGradient id="dropBall" cx="34%" cy="28%" r="78%">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="52%" stop-color="#d5daf3"/>
+<stop offset="100%" stop-color="#8b94c9"/>
+</radialGradient>
+<radialGradient id="dropHalo" cx="50%" cy="50%" r="50%">
+<stop offset="60%" stop-color="rgba(143,151,255,.35)"/>
+<stop offset="100%" stop-color="rgba(143,151,255,0)"/>
+</radialGradient>
+</defs>
+<circle cx="20" cy="20" r="19" fill="url(#dropHalo)"/>
+<circle cx="20" cy="21" r="14.5" fill="url(#dropBall)"/>
+<circle cx="20" cy="21" r="14.5" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1"/>
+<ellipse cx="15" cy="15.5" rx="4.6" ry="3.4" fill="#ffffff" opacity=".75" transform="rotate(-28 15 15.5)"/>
+</svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
+<button class="game" data-game="skuf"><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
+<button class="game" data-game="avito"><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
+</div>
+</section>
+
+<!-- ======== ПРОФИЛЬ ======== -->
+<section class="screen" id="profile">
+<div class="hero">
+<div class="profileHead"><div class="avatar" id="pavatar">MUP</div><div><b style="font-size:18px" id="pname">—</b><div class="muted small" id="pnumid" style="margin-top:2px;font-weight:600;color:#94a1b8">ID: #10000</div></div></div>
+<div class="section"><span>Баланс</span><b><span class="js-bal">50</span> ⬦</b></div>
+<div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
+</div>
+<div class="section"><b>Пополнение</b><span class="muted small">10 ⬦ = 1 ₽</span></div>
+<div class="item">
+  <div class="muted small" style="margin-bottom:8px">Способ оплаты</div>
+  <div class="chips" id="payMethods">
+    <button class="chip on" data-pm="0">📱 СБП / Карты</button>
+    <button class="chip" data-pm="2">₿ CryptoBot</button>
+    <button class="chip" data-pm="4">🎟 Промокод</button>
+  </div>
+  <div id="sbpRequisites" style="margin:12px 0 6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)">
+    <div class="muted small" style="margin-bottom:8px">Выберите банк или СБП для перевода:</div>
+    <div class="chips" id="sbpBanks">
+      <button class="chip on" data-bank="tinkoff">🟡 Т-Банк</button>
+      <button class="chip" data-bank="sber">🟢 Сбер</button>
+      <button class="chip" data-bank="ozon">🔵 Озон</button>
+      <button class="chip" data-bank="sbp">📲 СБП (телефон)</button>
+    </div>
+    <div style="margin-top:10px;background:rgba(0,0,0,.28);padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.07)">
+      <div class="muted small" id="sbpTargetLabel">Номер карты Т-Банк:</div>
+      <div class="row" style="margin-top:4px;align-items:center;justify-content:space-between">
+        <code style="font-size:15px;letter-spacing:1px;font-weight:700;color:var(--text)" id="sbpTargetVal">5536 9177 1899 1380</code>
+        <button type="button" class="chip" id="sbpCopyBtn" style="margin:0;padding:4px 10px;font-size:12px">Копировать</button>
+      </div>
+      <div class="muted small" style="margin-top:6px">Получатель: <b style="color:var(--text)">Лев К.</b></div>
+    </div>
+    <div class="muted small" style="margin-top:10px;line-height:1.4">Переведите точную сумму на указанные реквизиты, затем нажмите <b>«Я перевёл»</b> — заявка сразу уйдёт администратору на проверку.</div>
+  </div>
+  <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
+  <div class="chips" id="payAmounts">
+    <button class="chip" data-pa="100">100 ₽</button>
+    <button class="chip on" data-pa="300">300 ₽</button>
+    <button class="chip" data-pa="500">500 ₽</button>
+    <button class="chip" data-pa="1000">1000 ₽</button>
+  </div>
+  <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
+    <input class="betinput" id="payRub" type="number" min="1" step="10" inputmode="numeric" value="300" aria-label="Сумма в рублях">
+    <span class="muted small">₽</span></div>
+  <div class="muted small" id="payPreview" style="margin-top:8px"></div>
+  <label class="termsline" for="termsChk">
+    <input type="checkbox" id="termsChk">
+    <span>Я принимаю <button type="button" class="linkbtn" id="termsOpen">пользовательское соглашение</button></span>
+  </label>
+  <button class="control" id="payGo">Пополнить</button>
+  <div class="result" id="payMsg" style="display:none"></div>
+</div>
+<div class="section"><b>Вывод средств</b><span class="muted small">мин. 50 ₽ (500 ⬦)</span></div>
+<div class="item">
+  <div class="muted small" style="margin-bottom:8px">Способ получения</div>
+  <div class="chips" id="withdrawMethods">
+    <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
+    <button class="chip" data-wm="crypto">₿ CryptoBot</button>
+  </div>
+  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 50 ₽)</div>
+  <div class="chips" id="withdrawAmounts">
+    <button class="chip on" data-wa="50">50 ₽</button>
+    <button class="chip" data-wa="100">100 ₽</button>
+    <button class="chip" data-wa="300">300 ₽</button>
+    <button class="chip" data-wa="500">500 ₽</button>
+    <button class="chip" data-wa="all">Все</button>
+  </div>
+  <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
+    <input class="betinput" id="withdrawRub" type="number" min="50" step="10" inputmode="numeric" value="50" aria-label="Сумма вывода в рублях">
+    <span class="muted small">₽</span></div>
+  <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / @CryptoBot username)</div>
+  <input class="betinput" id="withdrawDetails" type="text" placeholder="+7 999 123-45-67 (Сбер/Т-Банк)" style="width:100%;box-sizing:border-box;text-align:left;padding:10px 12px;font-size:14px" aria-label="Реквизиты вывода">
+  <div class="muted small" id="withdrawPreview" style="margin-top:8px"></div>
+  <button class="control" id="withdrawGo" style="margin-top:12px">Запросить вывод</button>
+  <div class="result" id="withdrawMsg" style="display:none;margin-top:8px"></div>
+</div>
+<div class="section"><b>Стейкинг</b><span class="muted small">1 % в сутки</span></div>
+<div class="item">
+  <div class="row"><span class="muted small">В стейкинге</span><b><span id="stakeAmt">0</span> ⬦</b></div>
+  <div class="row" style="margin-top:6px"><span class="muted small">Начислено процентов</span><b style="color:var(--good)">+<span id="stakeAcc">0.00</span> ⬦</b></div>
+  <div class="row" style="margin-top:6px"><span class="muted small">Приносит в сутки</span><b>+<span id="stakePerDay">0.00</span> ⬦</b></div>
+  <div class="muted small" style="margin-top:9px;line-height:1.5">Ставка 1 % в сутки на сумму стейкинга. Проценты копятся по секундам, забирать можно когда угодно, тело стейкинга снимается в любой момент.</div>
+  <div class="betrow" style="margin-top:10px"><span class="muted small">Сумма</span>
+    <div class="chips" id="stakeChips">
+      <button class="chip" data-sk="100">100</button>
+      <button class="chip" data-sk="500">500</button>
+      <button class="chip" data-sk="1000">1000</button>
+      <button class="chip" data-sk="half">50 %</button>
+      <button class="chip" data-sk="all">макс</button>
+    </div>
+    <input class="betinput" id="stakeInput" type="number" min="1" step="1" inputmode="numeric" value="100" aria-label="Сумма стейкинга">
+  </div>
+  <div class="actions" style="margin-top:11px">
+    <button class="control" id="stakeAdd" style="margin:0">В стейкинг</button>
+    <button class="control ghost" id="stakeClaim" style="margin:0">Забрать проценты</button>
+    <button class="control ghost" id="stakeOut" style="margin:0">Снять всё</button>
+  </div>
+  <div class="result" id="stakeMsg" style="display:none"></div>
+</div>
+<div class="section"><b>Бонусы и Кэшбэк</b></div>
+<div class="item">
+  <div>
+    <b>Подписка на канал EASYCASH</b>
+    <div class="muted small" style="margin:3px 0 8px">Получите +50 токенов за подписку на канал @tooeasycash</div>
+    <div class="actions">
+      <button class="secondary" id="btnOpenChannel" style="flex:1">Канал @tooeasycash</button>
+      <button class="primary" id="btnClaimChannel" style="flex:1">Забрать +50 ⬦</button>
+    </div>
+    <div class="result" id="msgChannel" style="display:none;margin-top:8px"></div>
+  </div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <div>
+    <b>Кэшбэк 5 %</b>
+    <div class="muted small" style="margin:3px 0 8px" id="cashbackDesc">5 % от последнего пополнения (1 раз в неделю с последнего депозита).</div>
+    <button class="control" id="btnClaimCashback" style="margin-top:4px">Забрать кэшбэк</button>
+    <div class="result" id="msgCashback" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+<div class="section"><b>Последняя активность</b></div>
+<div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
+<div class="item row" style="margin-top:16px;background:rgba(143,151,255,.09);border:1px solid rgba(143,151,255,.28);border-radius:14px;padding:12px 14px">
+  <div>
+    <b style="color:#fff;font-size:14.5px">Служба поддержки</b>
+    <div class="muted small" style="margin-top:2px">Вопросы по играм, выводу и балансу (@lev_god)</div>
+  </div>
+  <button class="pillbtn" id="btnSupportProfile" style="background:var(--accent);color:#0d1017;font-weight:800;border:none;padding:9px 14px;cursor:pointer">💬 Написать</button>
+</div>
+</section>
+
+<!-- ======== РЕФЕРАЛЫ ======== -->
+<section class="screen" id="ref">
+<div class="hero"><div class="eyebrow">Приглашения</div><div class="big">Реферальная программа</div>
+<p class="muted">Получай <b>15 % от каждого пополнения</b> приглашённых — токенами на свой баланс.</p>
+<div class="code" id="refCode">—</div>
+<div class="muted small" style="margin:-4px 0 6px">Ваш уникальный код приглашения</div>
+<div class="code refLinkBox" id="refLink">—</div>
+<div class="muted small" style="margin:-4px 0 10px">Ссылка для приглашения — открывает игру сразу с вашим кодом</div>
+<button class="primary" id="copy" style="width:100%">Скопировать код</button>
+<button class="secondary" id="copyLink" style="width:100%;margin-top:8px">Скопировать ссылку</button>
+<div class="muted small" id="tgRefInfo" style="margin-top:9px"></div></div>
+<div class="section"><b>Ваша статистика</b></div>
+<div class="statgrid">
+  <div class="stat"><span class="muted small">Приглашено</span><b id="refInvited">0</b></div>
+  <div class="stat"><span class="muted small">Заработано</span><b id="refEarned">0 ⬦</b></div>
+  <div class="stat"><span class="muted small">Ставка</span><b>15 %</b></div>
+</div>
+<div class="section"><b>Как это работает</b></div>
+<div class="list">
+  <div class="item"><b>01 · Поделись кодом или ссылкой</b><div class="muted small">Друг открывает приложение по вашей ссылке — он привязывается к вам.</div></div>
+  <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: карта или СБП (Platega), звёзды, крипта (CryptoBot, Heleket).</div></div>
+  <div class="item"><b>03 · Вы получаете 15 % токенами</b><div class="muted small">Начисление приходит сразу после успешного платежа, на баланс, без ограничений по количеству.</div></div>
+  <div class="item"><b>04 · Токены можно пустить в стейкинг</b><div class="muted small">Реферальные начисления тоже работают под 1 % в сутки.</div></div>
+</div>
+<p class="muted small" style="margin-top:10px;line-height:1.5">Самоприглашение, мультиаккаунты и накрутка запрещены — такие начисления отменяются.</p>
+</section>
+
+<!-- ======== СОГЛАШЕНИЕ И КОНФИДЕНЦИАЛЬНОСТЬ ======== -->
+<section class="screen" id="terms">
+<div class="gameTop"><button class="back" id="termsBack">‹</button><div><div class="eyebrow">ДОКУМЕНТЫ</div><div class="gameTitle" id="docTitle">Пользовательское соглашение</div></div></div>
+<div class="chips" id="docTabs" style="margin-bottom:12px">
+  <button class="chip on" data-doc="terms">Соглашение</button>
+  <button class="chip" data-doc="privacy">Конфиденциальность</button>
+</div>
+<div class="list" id="termsList"></div>
+<div class="result" style="text-align:left" id="termsFoot"></div>
+<button class="control" id="termsAccept">Принять соглашение</button>
+</section>
+
+<!-- ======== ТОКЕНЫ ======== -->
+<section class="screen" id="tokens">
+<div class="hero"><div class="eyebrow">Экономика вашего баланса</div><div class="big">Токены</div><div class="balance js-bal">50</div>
+<div class="muted small" style="margin:-8px 0 12px">10 ⬦ = 1 ₽ · ≈ <b class="js-rub">5,00 ₽</b></div>
+<p class="muted">Курс: 10 токенов = 1 ₽. Токены — баллы для игры.</p>
+<div class="actions"><button class="primary" data-faucet="100">+100</button><button class="secondary" data-faucet="500">+500</button></div></div>
+<div class="section"><b>История операций</b></div>
+<div class="list" id="hist"><div class="item row"><div><b>Стартовый баланс</b><div class="muted small">Система</div></div><strong>+50</strong></div></div>
+</section>
+
+<!-- ======== ИГРА ======== -->
+<section class="screen" id="play">
+<div class="gameTop"><button class="back" id="back">‹</button><div><div class="eyebrow" id="gameLabel">ИГРА</div><div class="gameTitle" id="gameTitle">Игра</div></div></div>
+<div id="gameArea"></div>
+</section>
+
+<div class="nav">
+<button data-nav="profile"><span class="ni">○</span>Профиль</button>
+<button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
+<button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
+</div>
+</div>
+
+<script>
+(()=>{
+const root=document.getElementById('app');
+const q=(s,el=root)=>el.querySelector(s);
+const qa=(s,el=root)=>[...el.querySelectorAll(s)];
+const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+const fx=(n,d=2)=>(Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d);
+const sgn=n=>(n>0?'+':'')+fmt(n);
+/* общая гамма по коэффициентам: 1-1.5 зелёный, 1.5-2.5 фиолетовый, 2.5-5 красный, 5+ жёлтый */
+const BANDS=[[5,'#ffcf6b'],[2.5,'#ff7386'],[1.5,'#a175ff'],[1,'#3ddc96']];
+const band=x=>{for(const b of BANDS)if(x>=b[0])return b[1];return '#8b94ab'};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'};
+const BETS=[10,25,50,100,250];
+const RATE=10;                                   // 10 токенов = 1 ₽
+const BOT_NAME='moneyforup_bot';                    // ← ЗАМЕНИТЕ на имя вашего бота (без @)
+const REF_ALPHABET='ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без I,O,L,0,1 — чтобы код не путали на слух
+const REF_PERCENT=15;              // 15 % от пополнений приглашённых
+let payProvider=null;              // задаётся в Telegram-версии (реальные платежи)
+const fmtRub=tk=>(tk/RATE).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
+function betRubLine(){
+  const el=q('#betRub');
+  if(el)el.innerHTML='Ставка '+fmt(S.bet)+' ⬦ ≈ <b>'+fmtRub(S.bet)+'</b>';
+}
+
+/* ================= Telegram Mini App ================= */
+/* BOT_NAME объявлен в базовом файле (сборщик подставляет имя бота) */
+const API_BASE=((typeof window.MONEYFORUP_API==='string'?window.MONEYFORUP_API:(typeof window.MATHPLAY_API==='string'?window.MATHPLAY_API:''))||'');   // ← URL бэкенда, '' = демо-режим
+const TG=(window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;
+const IS_TG=!!(TG&&TG.initData);
+const TGU=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user)?TG.initDataUnsafe.user:null;
+const TGSTART=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.start_param)?TG.initDataUnsafe.start_param:'';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function tgHaptic(kind){
+  try{const h=TG&&TG.HapticFeedback;if(!h)return;
+    if(kind==='win')h.notificationOccurred('success');
+    else if(kind==='lose')h.notificationOccurred('error');
+    else h.impactOccurred(kind||'light');
+  }catch(e){}
+}
+async function tgCall(path,body){
+  const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(Object.assign({initData:TG.initData},body||{}))});
+  return r.json();
+}
+function tgApplyServer(d){
+  if(!d)return;
+  if(d.numId){S.numId=d.numId;}
+  if(d.username){S.username=String(d.username);}
+  if(d.name){S.name=String(d.name);}
+  if(typeof d.tokens==='number'){S.balance=d.tokens;S.tgBalance=d.tokens;}
+  if(typeof d.staked==='number')S.stake={amount:d.staked,since:Date.now(),accruedBase:d.accrued||0};
+  if(d.refCode){S.refCode=String(d.refCode);S.refServer=true;}
+  if(d.link){S.refLink=String(d.link);}
+  if(typeof d.refInvited==='number')S.refInvited=d.refInvited;
+  if(typeof d.refEarned==='number')S.refEarned=d.refEarned;
+  if(d.termsAt){S.termsAt=d.termsAt;}
+  if(typeof d.lastDeposit==='number')S.lastDeposit=d.lastDeposit;
+  if(typeof d.lastCashbackAt==='number')S.lastCashbackAt=d.lastCashbackAt;
+  if(typeof d.cashbackClaimed==='boolean')S.cashbackClaimed=d.cashbackClaimed;
+  if(typeof d.easycashClaimed==='boolean')S.easycashClaimed=d.easycashClaimed;
+  save();syncUI();paySync();
+}
+async function tgLoadBalance(){
+  if(!IS_TG||!API_BASE)return;
+  try{tgApplyServer(await tgCall('/api/balance',{}))}catch(e){}
+}
+async function tgRegister(){
+  if(!IS_TG||!API_BASE)return;
+  try{tgApplyServer(await tgCall('/api/register',{startParam:TGSTART,termsAcceptedAt:S.termsAt||0}))}catch(e){}
+}
+/* реальные платежи: Stars, CryptoBot, заявка по СБП */
+if(IS_TG&&API_BASE){
+  payProvider=async (rub,tk,methodId,msg)=>{
+    /* 0 — карта/СБП, 1 — Telegram Stars, 2 — CryptoBot, 3 — промокод */
+    if(methodId===4){
+      msg.className='result';msg.innerHTML='Промокоды активируются администратором: отправьте код боту командой /promo.';
+      return 'promo';
+    }
+    if(methodId===2){
+      msg.className='result';msg.textContent='Создаём счёт в CryptoBot…';
+      const d=await tgCall('/api/crypto-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
+      if(!d||!d.pay_url)throw new Error((d&&d.error)||'сервер не вернул ссылку CryptoBot');
+      try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
+      msg.innerHTML='Счёт CryptoBot открыт на '+fmt(tk)+' ⬦. Ждём подтверждения платежа…';
+      for(let i=0;i<40;i++){
+        await sleep(3000);
+        const st=await tgCall('/api/check-crypto',{invoice_id:d.invoice_id});
+        if(st&&st.paid){
+          await tgLoadBalance();
+          msg.className='result good';
+          msg.innerHTML='Оплачено криптой: зачислено <b>'+fmt(st.tokens||d.tokens)+' ⬦</b>';
+          tgHaptic('win');
+          return 'paid';
+        }
+      }
+      msg.className='result';
+      msg.innerHTML='Платёж пока не подтверждён. Баланс обновится автоматически после оплаты.';
+      return 'pending';
+    }
+    if(methodId===0){
+      /* Прямой перевод на карту / СБП (заявка администратору) */
+      msg.className='result';msg.textContent='Отправляем заявку на проверку…';
+      const curB = window.__curBankInfo ? window.__curBankInfo() : { name: 'СБП / Карта', val: '' };
+      const o = await tgCall('/api/order-sbp', { rub, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
+      if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
+      msg.className='result good';
+      msg.innerHTML='Заявка <b>№'+o.order_id+'</b> на '+rub+' ₽ ('+fmt(o.tokens)+' ⬦) создана!<br>Администратор проверит поступление на <b>'+curB.name+'</b>, и токены сразу зачислятся на баланс.';
+      tgHaptic('win');
+      return 'sbp';
+    }
+    if(methodId===3){
+      /* Heleket: крипта (USDT, BTC, ETH), ссылка на оплату + опрос статуса */
+      msg.className='result';msg.textContent='Создаём счёт в Heleket…';
+      const d=await tgCall('/api/heleket-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
+      if(!d||!d.pay_url)throw new Error((d&&d.error)||'сервер не вернул ссылку Heleket');
+      try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
+      msg.className='result';
+      msg.innerHTML='Счёт Heleket открыт на '+fmt(d.tokens||tk)+' ⬦. Ждём подтверждения платежа…';
+      for(let i=0;i<40;i++){
+        await sleep(3000);
+        const st=await tgCall('/api/check-heleket',{invoice_id:d.invoice_id});
+        if(st&&st.paid){
+          await tgLoadBalance();
+          msg.className='result good';
+          msg.innerHTML='Оплачено криптой: зачислено <b>'+fmt(st.tokens||d.tokens||tk)+' ⬦</b>';
+          tgHaptic('win');
+          return 'paid';
+        }
+      }
+      msg.className='result';
+      msg.innerHTML='Платёж пока не подтверждён. Баланс обновится автоматически после оплаты.';
+      return 'pending';
+    }
+    /* Telegram Stars */
+    msg.className='result';msg.textContent='Создаём счёт в Telegram…';
+    const d=await tgCall('/api/invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
+    if(!d||!d.invoice_link)throw new Error((d&&d.error)||'сервер не вернул ссылку на оплату');
+    await new Promise(resolve=>{
+      TG.openInvoice(d.invoice_link,async st=>{
+        if(st==='paid'){
+          await tgLoadBalance();
+          msg.className='result good';
+          msg.innerHTML='Оплачено: зачислено <b>'+fmt(d.tokens||tk)+' ⬦</b>';
+          tgHaptic('win');
+        }else{
+          msg.className='result bad';
+          msg.textContent=st==='cancelled'?'Оплата отменена':'Платёж не прошёл';
+          tgHaptic('lose');
+        }
+        resolve();
+      });
+    });
+    return 'stars';
+  };
+}
+function tgInit(){
+  if(!TG)return;
+  try{
+    TG.ready();TG.expand();
+    TG.disableVerticalSwipes&&TG.disableVerticalSwipes();
+    TG.setHeaderColor&&TG.setHeaderColor('#161b28');
+    TG.setBackgroundColor&&TG.setBackgroundColor('#161b28');
+    const safe=(TG.contentSafeAreaInset&&TG.contentSafeAreaInset.bottom)||0;
+    if(safe)document.documentElement.style.setProperty('--tgSafe',safe+'px');
+    TG.BackButton&&TG.BackButton.onClick(()=>screen('games'));
+  }catch(e){}
+  if(TGU){
+    if(TGU.username) S.username = String(TGU.username).replace(/^@/, '');
+    if(TGU.first_name) S.name = [TGU.first_name, TGU.last_name].filter(Boolean).join(' ');
+    ensureRefCode();                       // локальный уникальный код; сервер вернёт канонический в /api/register
+    save();syncUI();                       // имя и аватар профиля заполняет база: @username из initDataUnsafe
+  }
+  const share=q('#tgShare'),info=q('#tgRefInfo');
+  if(info)info.textContent=TGSTART?('Вас пригласил пользователь '+TGSTART+' · за его пополнения он получает 15 %'):'';
+  if(share)share.onclick=()=>{
+    const link='https://t.me/share/url?url='+encodeURIComponent(refLinkFor(ensureRefCode()))
+      +'&text='+encodeURIComponent('MoneyForUp — математические игры. Держи 50 токенов на старт');
+    try{(IS_TG&&TG.openTelegramLink)?TG.openTelegramLink(link):window.open(link,'_blank','noopener')}catch(e){}
+  };
+  window.__tgSendTerms=()=>{if(IS_TG&&API_BASE)tgCall('/api/terms',{}).then(tgLoadBalance).catch(()=>{})};
+}
+/* ===================================================== */
+
+/* ---------- состояние ---------- */
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:'',numId:10000,channelCooldownUntil:0};
+/* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
+function genRefCode(){
+  let out='MF';
+  for(let i=0;i<6;i++)out+=REF_ALPHABET[Math.floor(Math.random()*REF_ALPHABET.length)];
+  return out;
+}
+function ensureRefCode(){
+  if(S.refCode)return S.refCode;
+  let code=genRefCode();
+  for(let i=0;i<20&&S.refTaken&&S.refTaken.includes(code);i++)code=genRefCode();
+  S.refCode=code;save();return code;
+}
+const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
+try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
+function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){}}
+function place(bet,game){
+  S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
+  tgHaptic('light');
+  S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
+  if(S.hist.length>40)S.hist=S.hist.slice(0,40);
+  save();syncUI();
+}
+function win(amount,game,note){
+  S.balance+=amount;S.net+=amount;
+  if(amount>0)S.hist.unshift({label:game+(note?' · '+note:''),delta:amount,t:Date.now()});
+  if(S.hist.length>40)S.hist=S.hist.slice(0,40);
+  if(amount>0)tgHaptic('win');
+  save();syncUI();
+}
+function deposit(tk,label,refBonus){
+  S.balance+=tk;addHist('Пополнение · '+label,tk);
+  if(refBonus&&refBonus>0)S.refEarned=(S.refEarned||0)+refBonus;   // сервер начисляет рефереру 15 %
+  save();syncUI();
+}
+/* ---------- соглашение и политика конфиденциальности ---------- */
+const TERMS=[
+  ['1. Общие положения и статус сервиса','MoneyForUp — развлекательно-математический симулятор и программная платформа для досуга. Платформа НЕ является азартной игрой, букмекерской конторой, тотализатором, лотереей или финансовым институтом. Сервис не проводит азартных игр на реальные деньги в понимании Федерального закона № 244-ФЗ. Участие в симуляциях носит исключительно добровольный характер.'],
+  ['2. Виртуальные токены платформы','Токены (⬦) представляют собой внутрипрограммные условные расчётные единицы (баллы) симулятора. Токены не имеют реальной денежной стоимости, не являются платёжным средством, валютой, криптовалютой или финансовым активом и не могут обмениваться на реальные деньги за пределами сервиса. Условное соотношение 10 ⬦ = 1 ₽ используется лишь для наглядности отображения баланса.'],
+  ['3. Добровольные пожертвования (донаты)','Любые переводы и пополнения на платформе совершаются пользователем исключительно в качестве добровольного безвозмездного пожертвования (ст. 582 ГК РФ) на техническое обслуживание серверов, хостинг и развитие программного комплекса. Пожертвование не является возмездной сделкой или оплатой товаров/услуг и возврату не подлежит. В благодарность за добровольную поддержку проекта пользователю начисляются бонусные токены симулятора.'],
+  ['4. Правила аккаунта и безопасность','Пользователь обязуется добросовестно использовать функционал платформы, не использовать вредоносное ПО, баги кода, читы и автоматизированные скрипты. Создание мультиаккаунтов для накрутки бонусов запрещено — при выявлении нарушений начисленные баллы аннулируются.'],
+  ['5. Стейкинг и реферальная программа','Механики накопления (стейкинг 1 % в сутки) и реферальные поощрения (15 % токенами) являются элементами геймификации симулятора и не являются банковским вкладом, инвестиционной деятельностью или гарантированным доходом.'],
+  ['6. Ограничение ответственности','Сервис предоставляется по принципу «КАК ЕСТЬ» («AS IS»). Администрация не несет ответственности за возможные перебои в работе сети Интернет, действия Telegram или сторонних сервисов. Соглашение может обновляться без специального уведомления.']
+];
+
+const PRIVACY=[
+  ['1. Какие данные мы собираем','Платформа собирает только общедоступные технические данные вашего профиля Telegram, передаваемые интерфейсом Telegram WebApp:\n• Ваш числовой Telegram ID — для авторизации и сохранения баланса;\n• Имя пользователя (@username) и имя профиля — для корректного отображения в интерфейсе;\n• Внутрисистемную историю начислений и активности в симуляторе.\nПлатформа НЕ собирает, НЕ запрашивает и НЕ имеет доступа к вашим паролям, номерам банковских карт, CVC/CVV кодам и паспортным данным.'],
+  ['2. Цели сбора данных','Сбор указанных сведений производится исключительно для:\n• Обеспечения быстрой работы Mini App без необходимости ввода почты и паролей;\n• Сохранения баланса токенов, настроек и реферальных связей;\n• Предотвращения мошенничества, спама и создания мультиаккаунтов.'],
+  ['3. Защита и передача информации','Все запросы между клиентом и сервером защищены шифрованием HTTPS и криптографической подписью Telegram HMAC-SHA256. Мы никогда не продаём, не передаём и не раскрываем данные пользователей третьим лицам или рекламным сетям.'],
+  ['4. Удаление данных','Вы можете в любой момент прекратить использование приложения. Для полного удаления вашего профиля и истории операций достаточно написать администратору @lev_god.']
+];
+
+let curDoc = 'terms';
+function renderTerms(){
+  const list=q('#termsList');
+  const tit=q('#docTitle');
+  const items = curDoc === 'privacy' ? PRIVACY : TERMS;
+  if(tit) tit.textContent = curDoc === 'privacy' ? 'Политика конфиденциальности' : 'Пользовательское соглашение';
+  if(list) list.innerHTML=items.map(([t,b])=>`<div class="item"><b>${t}</b><div class="muted small" style="margin-top:6px;line-height:1.55;white-space:pre-line">${b}</div></div>`).join('');
+  const f=q('#termsFoot');
+  if(f) f.innerHTML='Редакция от '+new Date().toLocaleDateString('ru-RU')+'. '+(curDoc==='privacy'?'Ознакомьтесь с правилами обработки данных.':'Принимая соглашение, вы соглашаетесь с условиями выше.');
+}
+renderTerms();
+
+const docTabsEl = q('#docTabs');
+if(docTabsEl){
+  docTabsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-doc]'); if(!b) return;
+    curDoc = b.dataset.doc;
+    qa('#docTabs .chip').forEach(c => c.classList.toggle('on', c === b));
+    renderTerms();
+  });
+}
+
+function faucet(n){
+  S.balance+=n;S.hist.unshift({label:'Бонус · пополнение',delta:n,t:Date.now()});
+  if(S.hist.length>40)S.hist=S.hist.slice(0,40);
+  save();syncUI();
+}
+
+/* ---------- стейкинг: 1 % в сутки ---------- */
+const STAKE_RATE=0.01, DAY_MS=86400000;
+function stakeAccrued(st,now){
+  st=st||S.stake; now=now||Date.now();
+  if(!st)return 0;
+  const base=st.accruedBase||0;                       // проценты, накопленные ранее
+  if(!st.amount||!st.since)return base;
+  return base+st.amount*STAKE_RATE*Math.max(0,now-st.since)/DAY_MS;
+}
+function stakeAdd(v){
+  v=Math.floor(v);
+  if(!(v>0))return 'Введите сумму';
+  if(v>S.balance)return 'Недостаточно токенов на балансе';
+  const acc=stakeAccrued();                            // сохраняем уже накопленное
+  S.balance-=v;
+  S.stake={amount:(S.stake.amount||0)+v,since:Date.now(),accruedBase:acc};
+  addHist('Стейкинг · вложено',-v);
+  save();syncUI();return null;
+}
+function stakeClaim(){
+  const acc=stakeAccrued();
+  if(acc<0.01)return 'Пока нечего забирать';
+  S.balance+=acc;S.stake.since=Date.now();S.stake.accruedBase=0;
+  addHist('Стейкинг · проценты',Math.round(acc*100)/100);
+  save();syncUI();return acc;
+}
+function stakeOut(){
+  const acc=stakeAccrued(),body=S.stake.amount||0;
+  if(!body&&acc<0.01)return 'Стейкинг пуст';
+  S.balance+=body+acc;S.stake={amount:0,since:0};
+  addHist('Стейкинг · снято',Math.round((body+acc)*100)/100);
+  save();syncUI();return body+acc;
+}
+function syncStake(){
+  const now=Date.now(),acc=stakeAccrued(null,now),body=S.stake.amount||0;
+  const set=(id,val)=>{const e=q('#'+id);if(e)e.textContent=val};
+  set('stakeAmt',fmt(body));
+  set('stakeAcc',acc.toFixed(body?2:2));
+  set('stakePerDay',(body*STAKE_RATE).toFixed(2));
+  const addB=q('#stakeAdd'),cl=q('#stakeClaim'),out=q('#stakeOut');
+  if(addB)addB.disabled=S.balance<1;
+  if(cl)cl.disabled=acc<0.01;
+  if(out)out.disabled=!body&&acc<0.01;
+}
+setInterval(syncStake,1000);
+function addHist(label,delta){
+  S.hist.unshift({label,delta,t:Date.now()});
+  if(S.hist.length>40)S.hist=S.hist.slice(0,40);
+}
+
+/* ---------- UI ---------- */
+/* Профиль берём из Telegram: основное имя — @username */
+function tgProfile(){
+  let un = '';
+  let full = '';
+  const t = window.Telegram && window.Telegram.WebApp;
+  const u = (t && t.initDataUnsafe && t.initDataUnsafe.user) || null;
+  if(u){
+    if(u.username) un = '@' + String(u.username).replace(/^@/, '');
+    full = [u.first_name, u.last_name].filter(Boolean).join(' ');
+  }
+  if(!un && S.username) un = '@' + String(S.username).replace(/^@/, '');
+  if(!full && S.name) full = S.name;
+
+  const name = un || full || 'Пользователь';
+  const src = (un || full || 'M').replace(/^@/,'').trim();
+  const parts = full ? full.split(' ') : [src];
+  let av = ((parts[0] && parts[0][0]) || src[0] || 'M') + ((parts[1] && parts[1][0]) || src[1] || '');
+  return { name, sub: un && full && un !== full ? full : '', avatar: av.toUpperCase() };
+}
+function syncUI(){
+  const pr=tgProfile();
+  const pn=q('#pname');if(pn)pn.textContent=pr.name;
+  const pnum=q('#pnumid');if(pnum)pnum.textContent='ID: #'+(S.numId||10000);
+  const ps=q('#psub');if(ps){ps.textContent=pr.sub;if(!pr.sub)ps.style.display='none';}
+  const pa=q('#pavatar');if(pa)pa.textContent=pr.avatar;
+  qa('.js-bal').forEach(e=>e.textContent=fmt(S.balance));
+  qa('.js-rub').forEach(e=>e.textContent=fmtRub(S.balance));
+  const h=q('#hist');
+  h.innerHTML=S.hist.length?S.hist.slice(0,12).map(it=>`<div class="item row"><div><b>${it.label}</b><div class="muted small">${new Date(it.t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div></div><strong style="color:${it.delta>0?'var(--good)':'var(--muted)'}">${sgn(it.delta)}</strong></div>`).join(''):'<div class="item muted small">Пока нет операций</div>';
+  q('#pactiv').innerHTML=S.hist.length?S.hist.slice(0,4).map(it=>`<div class="item row"><span>${it.label}</span><span class="muted small">${sgn(it.delta)}</span></div>`).join(''):'<div class="item muted small">Пока нет операций</div>';
+  const code=ensureRefCode();
+  const rc=q('#refCode');if(rc)rc.textContent=code;
+  const rl=q('#refLink');if(rl)rl.textContent=S.refLink||refLinkFor(code);
+  const ri=q('#refInvited');if(ri)ri.textContent=S.refInvited||0;
+  const re=q('#refEarned');if(re)re.textContent=fmt(S.refEarned||0)+' ⬦';
+  syncStake();
+  syncBonusUI();
+  withdrawSync();
+  if(onBetChange)onBetChange();
+}
+let onBetChange=null,cleanup=null;
+function screen(id){
+  if(cleanup){try{cleanup()}catch(e){}cleanup=null}
+  qa('.screen').forEach(x=>x.classList.remove('active'));
+  const el=q('#'+id);if(el)el.classList.add('active');
+  try{TG&&TG.BackButton&&(id==='play'?TG.BackButton.show():TG.BackButton.hide())}catch(e){}
+  qa('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));
+  root.scrollTop=0;
+  const se=document.scrollingElement||document.documentElement;
+  if(se)se.scrollTop=0;
+}
+qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
+q('#back').addEventListener('click',()=>screen('games'));
+qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
+/* ---------- пополнение (профиль) ---------- */
+const SBP_DATA = {
+  tinkoff: { name: 'Т-Банк (Тинькофф)', label: 'Номер карты Т-Банк:', val: '5536 9177 1899 1380', clean: '5536917718991380' },
+  sber: { name: 'Сбербанк', label: 'Номер карты Сбербанк:', val: '2202 2083 6349 7083', clean: '2202208363497083' },
+  ozon: { name: 'Озон Банк', label: 'Номер карты Озон Банк:', val: '2204 3209 1303 5251', clean: '2204320913035251' },
+  sbp: { name: 'СБП (телефон)', label: 'Телефон СБП (любой банк):', val: '+7 905 476-05-59', clean: '+79054760559' }
+};
+let curBank = 'tinkoff';
+window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
+
+const PAY={m:0,amt:300,names:['СБП / Карты','Telegram Stars','CryptoBot · крипта','Heleket','Промокод']};
+function paySync(){
+  qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
+  qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
+  const sbpBox=q('#sbpRequisites');
+  if(sbpBox)sbpBox.style.display=PAY.m===0?'block':'none';
+  const rub=Math.max(0,Math.floor(PAY.amt)||0),tk=rub*RATE,accepted=!!S.termsAt;
+  const chk=q('#termsChk');if(chk)chk.checked=accepted;
+  q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]
+    +(PAY.m===2?' <span class="muted">(USDT, TON, BTC)</span>':(PAY.m===3?' <span class="muted">(USDT, BTC, ETH)</span>':''));
+  if(PAY.m===0){
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(tk)+' ⬦)');
+  }else{
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
+  }
+  q('#payGo').disabled=tk<1||!accepted;
+}
+q('#payMethods').addEventListener('click',e=>{const b=e.target.closest('[data-pm]');if(!b)return;PAY.m=+b.dataset.pm;paySync()});
+q('#payAmounts').addEventListener('click',e=>{const b=e.target.closest('[data-pa]');if(!b)return;PAY.amt=+b.dataset.pa;q('#payRub').value=PAY.amt;paySync()});
+q('#payRub').addEventListener('input',()=>{const v=Math.floor(+q('#payRub').value||0);PAY.amt=v;paySync()});
+
+const sbpBanksEl=q('#sbpBanks');
+if(sbpBanksEl){
+  sbpBanksEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-bank]');if(!b)return;
+    curBank=b.dataset.bank;
+    qa('#sbpBanks .chip').forEach(c=>c.classList.toggle('on',c===b));
+    const d=SBP_DATA[curBank];
+    const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
+    if(lbl)lbl.textContent=d.label;
+    if(val)val.textContent=d.val;
+  });
+}
+const sbpCopyEl=q('#sbpCopyBtn');
+if(sbpCopyEl){
+  sbpCopyEl.addEventListener('click',()=>{
+    const d=SBP_DATA[curBank];
+    copyText(d.clean,sbpCopyEl,'Скопировано ✓');
+  });
+}
+
+q('#termsChk').addEventListener('change',e=>{
+  S.termsAt=e.target.checked?Date.now():0;save();paySync();
+});
+q('#termsOpen').addEventListener('click',()=>screen('terms'));
+q('#termsBack').addEventListener('click',()=>screen('profile'));
+q('#termsAccept').addEventListener('click',()=>{
+  S.termsAt=Date.now();save();paySync();
+  if(window.__tgSendTerms)try{window.__tgSendTerms()}catch(e){}
+  const m=q('#stakeMsg');
+  screen('profile');
+});
+
+async function startPayment(){
+  if(!S.termsAt)return;
+  const rub=Math.max(1,Math.floor(PAY.amt)||0),tk=rub*RATE;
+  const m=q('#payMsg');m.style.display='block';m.className='result';
+  if(payProvider){
+    m.textContent='Готовим оплату…';
+    try{
+      await payProvider(rub,tk,PAY.m,m);
+    }catch(e){
+      m.className='result bad';m.textContent='Ошибка платежа: '+(e&&e.message?e.message:e);
+    }
+    return;
+  }
+  // демонстрационный режим (без сервера)
+  deposit(tk,PAY.names[PAY.m]);
+  m.className='result good';
+  m.innerHTML='Зачислено <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(демо-режим)</span>';
+}
+q('#payGo').addEventListener('click',startPayment);
+
+/* ---------- вывод средств (профиль) ---------- */
+const WITHDRAW={m:'sbp',amt:50,names:{'sbp':'СБП / Карта','crypto':'CryptoBot'}};
+function withdrawSync(){
+  const wMeth=q('#withdrawMethods');
+  if(!wMeth)return;
+  qa('#withdrawMethods .chip').forEach(c=>c.classList.toggle('on',c.dataset.wm===WITHDRAW.m));
+  qa('#withdrawAmounts .chip').forEach(c=>c.classList.toggle('on',c.dataset.wa===String(WITHDRAW.amt)));
+  const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
+  const neededTk=rub*RATE;
+  const canAfford = S.balance >= neededTk;
+  const validMin = rub >= 50;
+  const prev=q('#withdrawPreview');
+  if(prev){
+    prev.innerHTML='Спишется: <b>'+fmt(neededTk)+' ⬦</b> · к получению: <b>'+rub+' ₽</b> · способ: '+WITHDRAW.names[WITHDRAW.m];
+  }
+  const btn=q('#withdrawGo');
+  if(btn){
+    if(!validMin){
+      btn.textContent='Минимум 50 ₽ (500 ⬦)';
+      btn.disabled=true;
+    }else if(!canAfford){
+      btn.textContent='Недостаточно токенов ('+fmt(neededTk)+' ⬦)';
+      btn.disabled=true;
+    }else{
+      btn.textContent='Вывести '+rub+' ₽ ('+fmt(neededTk)+' ⬦)';
+      btn.disabled=false;
+    }
+  }
+}
+const wMethEl=q('#withdrawMethods');
+if(wMethEl){
+  wMethEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-wm]');if(!b)return;
+    WITHDRAW.m=b.dataset.wm;
+    const det=q('#withdrawDetails');
+    if(det){
+      if(WITHDRAW.m==='crypto'){
+        det.placeholder='Ваш @username в Telegram или ID';
+      }else{
+        det.placeholder='+7 999 123-45-67 (Сбер/Т-Банк)';
+      }
+    }
+    withdrawSync();
+  });
+}
+const wAmtEl=q('#withdrawAmounts');
+if(wAmtEl){
+  wAmtEl.addEventListener('click',e=>{
+    const b=e.target.closest('[data-wa]');if(!b)return;
+    if(b.dataset.wa==='all'){
+      WITHDRAW.amt=Math.max(0,Math.floor(S.balance/RATE));
+    }else{
+      WITHDRAW.amt=+b.dataset.wa;
+    }
+    const inp=q('#withdrawRub');if(inp)inp.value=WITHDRAW.amt;
+    withdrawSync();
+  });
+}
+const wRubEl=q('#withdrawRub');
+if(wRubEl){
+  wRubEl.addEventListener('input',()=>{
+    WITHDRAW.amt=Math.floor(+wRubEl.value||0);
+    withdrawSync();
+  });
+}
+
+async function startWithdrawal(){
+  const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
+  const detEl=q('#withdrawDetails');
+  const details=(detEl?detEl.value:'').trim();
+  const m=q('#withdrawMsg');
+  if(!m)return;
+  m.style.display='block';m.className='result';
+  if(rub<50){
+    m.className='result bad';m.textContent='Минимальная сумма вывода — 50 ₽ (500 ⬦).';
+    return;
+  }
+  const neededTk=rub*RATE;
+  if(S.balance<neededTk){
+    m.className='result bad';m.textContent='Недостаточно токенов на балансе. Для вывода '+rub+' ₽ нужно '+fmt(neededTk)+' ⬦.';
+    return;
+  }
+  if(!details||details.length<3){
+    m.className='result bad';m.textContent='Пожалуйста, укажите реквизиты для выплаты.';
+    return;
+  }
+
+  if(IS_TG&&API_BASE){
+    m.textContent='Отправка заявки на вывод…';
+    try{
+      const d=await tgCall('/api/withdraw',{rub,method:WITHDRAW.names[WITHDRAW.m],details});
+      if(d&&d.error)throw new Error(d.error);
+      if(typeof d.remaining==='number')S.balance=d.remaining;else S.balance-=neededTk;
+      addHist('Вывод · заявка '+rub+' ₽',-neededTk);
+      save();syncUI();withdrawSync();
+      tgHaptic('win');
+      m.className='result good';
+      m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> принята (ID: '+(d.orderId||'')+'). Токены списаны, средства поступят на указанные реквизиты.';
+    }catch(e){
+      m.className='result bad';
+      m.textContent='Ошибка вывода: '+(e&&e.message?e.message:e);
+      tgHaptic('lose');
+    }
+    return;
+  }
+
+  // демо-режим (без сервера)
+  S.balance-=neededTk;
+  addHist('Вывод · заявка '+rub+' ₽',-neededTk);
+  save();syncUI();withdrawSync();
+  m.className='result good';
+  m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> ('+fmt(neededTk)+' ⬦) создана на реквизиты: '+details+' <span class="muted">(демо-режим)</span>';
+}
+const wGoEl=q('#withdrawGo');
+if(wGoEl)wGoEl.addEventListener('click',startWithdrawal);
+
+
+/* ---------- стейкинг: интерфейс ---------- */
+q('#stakeChips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-sk]');if(!b)return;
+  const k=b.dataset.sk,inp=q('#stakeInput');
+  inp.value=k==='all'?Math.max(1,S.balance):(k==='half'?Math.max(1,Math.floor(S.balance/2)):k);
+  qa('#stakeChips .chip').forEach(c=>c.classList.toggle('on',c===b));
+});
+function stakeMsg(text,ok){
+  const m=q('#stakeMsg');if(!m)return;
+  if(!text){m.style.display='none';return}
+  m.style.display='block';m.className='result '+(ok===false?'bad':'good');m.innerHTML=text;
+}
+q('#stakeAdd').addEventListener('click',()=>{
+  const err=stakeAdd(q('#stakeInput').value);
+  stakeMsg(err?err:'Вложено <b>'+fmt(Math.floor(q('#stakeInput').value))+' ⬦</b> в стейкинг · 1 % в сутки',!err);
+});
+q('#stakeClaim').addEventListener('click',()=>{
+  const r=stakeClaim();
+  if(typeof r==='string')stakeMsg(r,false);else stakeMsg('Забрано <b>'+r.toFixed(2)+' ⬦</b> процентов',true);
+});
+q('#stakeOut').addEventListener('click',()=>{
+  const r=stakeOut();
+  if(typeof r==='string')stakeMsg(r,false);else stakeMsg('Снято <b>'+r.toFixed(2)+' ⬦</b> (тело + проценты)',true);
+});
+paySync();
+withdrawSync();
+
+/* ---------- Бонусы и Кэшбэк ---------- */
+let chTimer = null;
+function startChannelCooldownTimer(){
+  if(chTimer) clearInterval(chTimer);
+  function tick(){
+    const btn = q('#btnClaimChannel');
+    if(!btn) return;
+    if(S.easycashClaimed){
+      btn.textContent = 'Получено ✓';
+      btn.disabled = true;
+      if(chTimer){ clearInterval(chTimer); chTimer = null; }
+      return;
+    }
+    const rem = Math.max(0, Math.ceil(((S.channelCooldownUntil || 0) - Date.now()) / 1000));
+    if(rem > 0){
+      btn.disabled = true;
+      btn.textContent = `Повторить через ${rem} с`;
+    }else{
+      btn.disabled = false;
+      btn.textContent = 'Проверить снова (+50 ⬦)';
+      if(chTimer){ clearInterval(chTimer); chTimer = null; }
+    }
+  }
+  tick();
+  chTimer = setInterval(tick, 1000);
+}
+
+function syncBonusUI(){
+  const btnCh=q('#btnClaimChannel');
+  if(btnCh){
+    if(S.easycashClaimed){
+      btnCh.textContent='Получено ✓';
+      btnCh.disabled=true;
+    }else if(S.channelCooldownUntil && Date.now() < S.channelCooldownUntil){
+      startChannelCooldownTimer();
+    }else{
+      btnCh.textContent='Проверить подписку (+50 ⬦)';
+      btnCh.disabled=false;
+    }
+  }
+  const btnCb=q('#btnClaimCashback'), descCb=q('#cashbackDesc');
+  if(btnCb&&descCb){
+    const WEEK_MS=7*24*3600*1000;
+    const now=Date.now();
+    const lastDep=S.lastDeposit||0;
+    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
+    if(!lastDep){
+      descCb.textContent='Кэшбэк 5 % станет доступен после первого пополнения.';
+      btnCb.disabled=true;
+      btnCb.textContent='Пополните баланс для кэшбэка';
+    }else if(S.cashbackClaimed){
+      descCb.textContent='Кэшбэк 5 % с последнего пополнения уже получен. Сделайте новое пополнение через 7 дней.';
+      btnCb.disabled=true;
+      btnCb.textContent='Кэшбэк получен ✓';
+    }else if(S.lastCashbackAt&&(now-S.lastCashbackAt<WEEK_MS)){
+      const daysLeft=Math.ceil((WEEK_MS-(now-S.lastCashbackAt))/(24*3600*1000));
+      descCb.textContent=`Кэшбэк доступен раз в неделю. Доступно через ${daysLeft} дн.`;
+      btnCb.disabled=true;
+      btnCb.textContent=`Ожидание (${daysLeft} дн.)`;
+    }else{
+      descCb.innerHTML=`Доступен кэшбэк 5 % от последнего пополнения (${fmt(lastDep)} ⬦): <b style="color:var(--good)">+${fmt(cbAmt)} ⬦</b>`;
+      btnCb.disabled=false;
+      btnCb.textContent=`Забрать кэшбэк (+${fmt(cbAmt)} ⬦)`;
+    }
+  }
+}
+
+const btnOpCh=q('#btnOpenChannel');
+if(btnOpCh)btnOpCh.addEventListener('click',()=>{
+  const url='https://t.me/tooeasycash';
+  try{(TG&&TG.openTelegramLink)?TG.openTelegramLink(url):window.open(url,'_blank','noopener')}catch(e){}
+});
+
+const btnClCh=q('#btnClaimChannel');
+if(btnClCh)btnClCh.addEventListener('click',async()=>{
+  const btn=q('#btnClaimChannel'), msg=q('#msgChannel');
+  if(S.easycashClaimed)return;
+  if(S.channelCooldownUntil && Date.now() < S.channelCooldownUntil)return;
+  btn.disabled=true;
+  btn.textContent='Проверка…';
+  if(IS_TG&&API_BASE){
+    try{
+      const res=await tgCall('/api/claim-channel',{});
+      if(res&&res.success){
+        S.easycashClaimed=true;
+        S.balance=res.tokens;
+        save();syncUI();
+        msg.className='result good';msg.style.display='block';
+        msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+        btn.textContent='Получено ✓';
+        btn.disabled=true;
+      }else{
+        const cdSec=(res&&res.cooldown)||30;
+        S.channelCooldownUntil=Date.now() + cdSec*1000;
+        save();
+        msg.className='result bad';msg.style.display='block';
+        msg.textContent=(res&&res.error)||'Вы не подписаны на канал @tooeasycash';
+        startChannelCooldownTimer();
+      }
+    }catch(e){
+      S.channelCooldownUntil=Date.now() + 30000;
+      save();
+      msg.className='result bad';msg.style.display='block';
+      msg.textContent='Ошибка связи с сервером при проверке';
+      startChannelCooldownTimer();
+    }
+  }else{
+    // Демо-режим без Telegram WebApp
+    S.channelCooldownUntil=Date.now() + 30000;
+    save();
+    msg.className='result bad';msg.style.display='block';
+    msg.textContent='Для реальной проверки откройте бота в Telegram и подпишитесь на @tooeasycash. Кулдаун 30 секунд включён.';
+    startChannelCooldownTimer();
+  }
+});
+
+const btnClCb=q('#btnClaimCashback');
+if(btnClCb)btnClCb.addEventListener('click',async()=>{
+  const btn=q('#btnClaimCashback'), msg=q('#msgCashback');
+  btn.disabled=true;
+  if(IS_TG&&API_BASE){
+    try{
+      const res=await tgCall('/api/claim-cashback',{});
+      if(res&&res.success){
+        S.cashbackClaimed=true;
+        S.lastCashbackAt=Date.now();
+        S.balance=res.tokens;
+        save();syncUI();
+        msg.className='result good';msg.style.display='block';
+        msg.textContent=`Кэшбэк +${fmt(res.cashback)} ⬦ успешно зачислен!`;
+      }else{
+        btn.disabled=false;
+        msg.className='result bad';msg.style.display='block';
+        msg.textContent=(res&&res.error)||'Кэшбэк пока недоступен';
+      }
+    }catch(e){
+      btn.disabled=false;
+      msg.className='result bad';msg.style.display='block';msg.textContent='Ошибка соединения';
+    }
+  }else{
+    const lastDep=S.lastDeposit||0;
+    if(!lastDep){
+      msg.className='result bad';msg.style.display='block';msg.textContent='Сначала пополните баланс';
+      btn.disabled=false;
+      return;
+    }
+    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
+    S.cashbackClaimed=true;
+    S.lastCashbackAt=Date.now();
+    win(cbAmt,'Кэшбэк','5 %');
+    save();syncUI();
+    msg.className='result good';msg.style.display='block';
+    msg.textContent=`Кэшбэк +${fmt(cbAmt)} ⬦ успешно зачислен!`;
+  }
+  syncBonusUI();
+});
+
+function copyText(text,btn,label){
+  try{navigator.clipboard&&navigator.clipboard.writeText(text)}catch(e){}
+  btn.textContent=label;
+  setTimeout(()=>btn.textContent=btn.dataset.label,1200);
+}
+q('#copy').dataset.label='Скопировать код';
+q('#copy').addEventListener('click',()=>copyText(ensureRefCode(),q('#copy'),'Код скопирован ✓'));
+q('#copyLink').dataset.label='Скопировать ссылку';
+q('#copyLink').addEventListener('click',()=>copyText(S.refLink||refLinkFor(ensureRefCode()),q('#copyLink'),'Ссылка скопирована ✓'));
+
+/* ---------- поддержка @lev_god ---------- */
+function openSupport(){
+  const url='https://t.me/lev_god';
+  try{(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.openTelegramLink)?window.Telegram.WebApp.openTelegramLink(url):window.open(url,'_blank','noopener')}catch(e){}
+}
+const s1=q('#topSupport'), s2=q('#btnSupportProfile');
+if(s1)s1.addEventListener('click',openSupport);
+if(s2)s2.addEventListener('click',openSupport);
+
+/* ---------- ставка (пресеты + своя сумма) ---------- */
+function betHTML(){
+  return `<div class="betrow"><span class="muted small">Ставка</span>
+  <div class="chips" id="betchips">${BETS.map(b=>`<button class="chip ${b===S.bet?'on':''}" data-bet="${b}">${b}</button>`).join('')}<button class="chip" data-bet="max">макс</button></div>
+  <input class="betinput" id="betInput" type="number" min="10" step="1" inputmode="numeric" value="${S.bet}" aria-label="Своя ставка"></div>
+  <div class="muted small" id="betRub" style="margin:-6px 0 2px"></div>`;
+}
+function setBet(v,updateInput){
+  S.bet=Math.max(10,Math.min(100000000,Math.floor(v)||10));save();
+  const inp=q('#betInput');if(inp&&updateInput!==false)inp.value=S.bet;
+  qa('#betchips .chip').forEach(c=>c.classList.toggle('on',c.dataset.bet===String(S.bet)));
+  betRubLine();
+}
+function wireBet(area,cb){
+  const wrap=q('#betchips',area),inp=q('#betInput',area);
+  if(wrap)wrap.addEventListener('click',e=>{
+    const b=e.target.closest('[data-bet]');if(!b)return;
+    setBet(b.dataset.bet==='max'?Math.max(10,S.balance):+b.dataset.bet);
+    if(cb)cb();
+  });
+  if(inp){
+    inp.addEventListener('input',()=>{const v=Math.floor(+inp.value||0);if(v>0){setBet(v,false);if(cb)cb()}});
+    inp.addEventListener('blur',()=>{inp.value=S.bet});
+  }
+  betRubLine();
+}
+function fitCanvas(cvs){
+  const dpr=window.devicePixelRatio||1,W=cvs.clientWidth||600,H=cvs.clientHeight||300;
+  if(cvs.width!==Math.round(W*dpr))cvs.width=Math.round(W*dpr);
+  if(cvs.height!==Math.round(H*dpr))cvs.height=Math.round(H*dpr);
+  const g=cvs.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  return {g,W,H};
+}
+
+/* =======================================================================
+   РАКЕТКА — ракета по кривой, остановка модели + авто-вывод на коэффициенте
+   ======================================================================= */
+const RK={tcap:12,k:0.18};
+const RKMAX=+Math.exp(RK.k*RK.tcap).toFixed(2);
+const MINCASH=1.01;                     // забрать можно с самого начала полёта
+/* Раскладка ракетки. Коэффициент берётся равномерно внутри широких зон, поэтому
+   выпадает всё подряд — 1.36, 1.38, 1.43, 1.47, 1.62, 1.71, 2.04 … — без «ступенек».
+   8 % раундов — мгновенный взрыв ×1.00 (без него вывод с ×1.01 был бы беспроигрышным),
+   6 % — низкий дроп 1.01-1.10 (в том числе редкие ровно ×1.01),
+   дальше 1.10-1.30 — 15 %, 1.30-1.55 — 24 %, 1.55-1.75 — 20 %, 1.75-2.00 — 6 %,
+   2.00-2.30 — 10 %, 2.30-3.00 — 9 %, редкий длинный полёт 3.50-8.67 — 2 %.
+   Полоса 3.00-3.50 вырезана. Пик отдачи — 94.6 % на ×1.10, в долгую игрок в минусе. */
+function sampleCrash(){
+  const r=Math.random();
+  if(r<0.08)return 1.00;                                   // мгновенный взрыв
+  if(r<0.14)return +(1.01+Math.random()*0.09).toFixed(2);  // 1.01-1.10 — низкий дроп
+  if(r<0.29)return +(1.10+Math.random()*0.20).toFixed(2);  // 1.10-1.30
+  if(r<0.53)return +(1.30+Math.random()*0.25).toFixed(2);  // 1.30-1.55
+  if(r<0.73)return +(1.55+Math.random()*0.20).toFixed(2);  // 1.55-1.75
+  if(r<0.79)return +(1.75+Math.random()*0.25).toFixed(2);  // 1.75-2.00
+  if(r<0.89)return +(2.00+Math.random()*0.30).toFixed(2);  // 2.00-2.30
+  if(r<0.98)return +(2.30+Math.random()*0.69).toFixed(2);  // 2.30-2.99 (3.00 отдаём вырезу)
+  const t0=Math.log(3.5)/RK.k;                             // редкий длинный полёт 3.50-8.67
+  return +Math.exp(RK.k*(t0+Math.random()*(RK.tcap-t0))).toFixed(2);
+}
+
+function gameRacket(){
+  const a=q('#gameArea');
+  let phase='idle',crash=1.01,cur=1,t0=0,tStop=0,raf=0,dead=false,cashed=false,boomT=0,cashX=0,cashAmt=0;
+  let autoOn=!!S.autoOn,autoX=Math.min(RKMAX,Math.max(MINCASH,+S.autoX||1.5));
+  if(S.autoX!==autoX){S.autoX=autoX;save()}          // старые сохранённые значения поднимаем до минимума
+
+  a.innerHTML=`
+  <div class="crashbox"><canvas id="rcv"></canvas>
+    <div class="overlay"><div class="muted small" id="rphase">готов к запуску</div><div class="xbig" id="rx">×1.00</div></div>
+  </div>
+  <div class="betrow"><span class="muted small">Авто-вывод при</span>
+    <input class="betinput" id="autoInput" type="number" min="${fx(MINCASH)}" max="${RKMAX}" step="0.05" inputmode="decimal" value="${fx(autoX)}" aria-label="Авто-вывод">
+    <button class="chip" id="autoTgl">авто: выкл</button>
+  </div>
+  ${betHTML()}
+  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов</div>
+  <div class="hstrip" id="rHist"></div>
+  <button class="control" id="rgo" style="margin-top:10px">ЗАПУСТИТЬ · ${S.bet} ⬦</button>
+  <div class="result" id="rr">Забрать можно с ×${fx(MINCASH)} в любой момент полёта — но ракета иногда взрывается мгновенно. Чем выше коэффициент, тем сильнее она разгоняется.</div>`;
+
+  const cvs=q('#rcv'),go=q('#rgo'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
+  const rHistEl=q('#rHist');
+  function renderRHist(fresh){
+    if(!rHistEl)return;
+    const list=(S.rHist||[]).slice(0,20);
+    rHistEl.innerHTML=list.length
+      ? list.map((v,i)=>`<span class="hitem${fresh&&i===0?' new':''}" style="color:${band(v)};border-color:${hexA(band(v),.45)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`).join('')
+      : '<span class="muted small">Пока нет раундов — запустите первый.</span>';
+  }
+  function pushRHist(x){
+    S.rHist=(S.rHist||[]).filter(v=>Number.isFinite(v));
+    S.rHist.unshift(+x.toFixed(2));            // в ленте — сотые доли коэффициента
+    if(S.rHist.length>20)S.rHist=S.rHist.slice(0,20);
+    save();renderRHist(true);
+  }
+  renderRHist(false);
+  const axIn=q('#autoInput'),axTg=q('#autoTgl');
+  function syncAuto(){
+    axTg.textContent='авто: '+(autoOn?'вкл':'выкл');
+    axTg.classList.toggle('on',autoOn);
+    axTg.style.borderColor=autoOn?'rgba(124,130,255,.55)':'';
+    axIn.value=fx(autoX);
+  }
+  function drawRocket(g,cx,cy,ang,bc,sp){
+    const flame=(7+Math.min(26,sp*11))*(0.82+Math.random()*0.36);
+    g.save();g.translate(cx,cy);g.rotate(ang);
+    const fg=g.createLinearGradient(-9,0,-9-flame,0);
+    fg.addColorStop(0,'rgba(255,238,170,.95)');
+    fg.addColorStop(.4,'rgba(255,160,70,.72)');
+    fg.addColorStop(1,'rgba(255,80,60,0)');
+    g.fillStyle=fg;
+    g.beginPath();g.moveTo(-9,-4.3);g.lineTo(-9,4.3);g.lineTo(-9-flame,0);g.closePath();g.fill();
+    g.fillStyle=bc;
+    g.beginPath();
+    g.moveTo(15.5,0);
+    g.quadraticCurveTo(10,-5.7,2,-5.7);
+    g.lineTo(-6,-5.7);g.lineTo(-6,5.7);g.lineTo(2,5.7);
+    g.quadraticCurveTo(10,5.7,15.5,0);
+    g.closePath();g.fill();
+    g.fillStyle=hexA(bc,.78);
+    g.beginPath();g.moveTo(-5.5,-5.5);g.lineTo(-13.5,-10);g.lineTo(-6.5,-1.6);g.closePath();g.fill();
+    g.beginPath();g.moveTo(-5.5,5.5);g.lineTo(-13.5,10);g.lineTo(-6.5,1.6);g.closePath();g.fill();
+    g.beginPath();g.arc(4.6,0,2.5,0,7);g.fillStyle='rgba(255,255,255,.92)';g.fill();
+    g.beginPath();g.arc(4.6,0,1.15,0,7);g.fillStyle=hexA(bc,.95);g.fill();
+    g.restore();
+  }
+  function drawBoom(g,cx,cy,age){
+    const k=Math.min(1,age/0.8),R=9+52*k;
+    g.save();g.globalCompositeOperation='lighter';
+    g.strokeStyle='rgba(255,'+Math.round(205-130*k)+',125,'+(1-k).toFixed(2)+')';
+    g.lineWidth=3.2*(1-k)+0.8;
+    g.beginPath();g.arc(cx,cy,R,0,7);g.stroke();
+    g.beginPath();g.arc(cx,cy,R*0.58,0,7);g.stroke();
+    for(let i=0;i<10;i++){
+      const a=(i/10)*6.2832+age*1.6,rr=R*(0.55+0.45*((i%3)/2));
+      g.beginPath();g.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,2.6*(1-k)+0.6,0,7);
+      g.fillStyle=(i%2?'rgba(255,180,90,':'rgba(255,110,110,')+(1-k).toFixed(2)+')';g.fill();
+    }
+    g.restore();
+  }
+  const ROCKET_SPEED = 0.58; // замедление полёта ракетки для приятного и драматичного нарастания
+  function flightT(){
+    const s = ((performance.now() - t0) / 1000) * ROCKET_SPEED;
+    return s * (1 + 0.05 * s);
+  }
+  function curT(){return tStop ? tStop : (phase==='flight' ? flightT() : 0)}
+  function draw(){
+    const {g,W,H}=fitCanvas(cvs);
+    const pad={l:48,r:14,t:16,b:26},kk=RK.k;
+    const xMax=Math.max(3.2,tStop?tStop*1.15:curT()*1.15+0.6);
+    const yMax=Math.max(1.8,Math.exp(kk*xMax));
+    const X=x=>pad.l+(x/xMax)*(W-pad.l-pad.r);
+    const Y=m=>H-pad.b-((m-1)/(yMax-1))*(H-pad.t-pad.b);
+    g.font='11px Inter,system-ui,sans-serif';g.textAlign='right';g.textBaseline='middle';
+    const ticks=[1,1.5,2,3,5].filter(v=>v<yMax);ticks.push(+yMax.toFixed(2));
+    ticks.forEach(v=>{const y=Y(v);
+      g.strokeStyle='rgba(255,255,255,.07)';g.beginPath();g.moveTo(pad.l,y);g.lineTo(W-pad.r,y);g.stroke();
+      g.fillStyle='#8b95ad';g.fillText('×'+(v>=10?v.toFixed(0):v.toFixed(2)),pad.l-7,y);});
+    g.textAlign='center';
+    for(let s=1;s<=Math.floor(xMax);s++){const x=X(s);
+      g.strokeStyle='rgba(255,255,255,.05)';g.beginPath();g.moveTo(x,pad.t);g.lineTo(x,H-pad.b);g.stroke();
+      g.fillStyle='#8b95ad';g.fillText(s+'с',x,H-11);}
+    const tc=curT();
+    g.setLineDash([3,4]);g.strokeStyle='rgba(152,160,255,.30)';g.beginPath();
+    for(let i=0;i<=140;i++){const x=tc+(xMax-tc)*i/140,m=Math.exp(kk*x);i?g.lineTo(X(x),Y(Math.min(m,yMax))):g.moveTo(X(x),Y(m));}
+    g.stroke();g.setLineDash([]);
+    const bc=band(cur);
+    const grad=g.createLinearGradient(0,pad.t,0,H-pad.b);
+    grad.addColorStop(0,hexA(bc,.36));grad.addColorStop(1,hexA(bc,0));
+    g.fillStyle=grad;g.beginPath();g.moveTo(X(0),Y(1));
+    for(let i=0;i<=180;i++){const x=tc*i/180;g.lineTo(X(x),Y(Math.exp(kk*x)));}
+    g.lineTo(X(tc),Y(1));g.closePath();g.fill();
+    g.strokeStyle=bc;g.lineWidth=2;g.beginPath();g.moveTo(X(0),Y(1));
+    for(let i=1;i<=180;i++){const x=tc*i/180;g.lineTo(X(x),Y(Math.exp(kk*x)));}
+    g.stroke();g.lineWidth=1;
+    const mm=Math.min(cur,yMax),cx=X(tc),cy=Y(mm);
+    if(cashed&&cashX<yMax){
+      const ky=Y(Math.min(cashX,yMax));
+      g.setLineDash([3,3]);g.strokeStyle='rgba(61,220,150,.8)';g.beginPath();g.moveTo(pad.l,ky);g.lineTo(W-pad.r,ky);g.stroke();g.setLineDash([]);
+      g.fillStyle='#3ddc96';g.textAlign='left';g.font='11px Inter,system-ui,sans-serif';
+      g.fillText('забрано ×'+fx(cashX),pad.l+2,ky-6);
+    }
+    if(autoOn&&!tStop&&!cashed){
+      const ay=Y(Math.min(autoX,yMax));
+      g.setLineDash([5,4]);g.strokeStyle='rgba(255,207,107,.7)';g.beginPath();g.moveTo(pad.l,ay);g.lineTo(W-pad.r,ay);g.stroke();g.setLineDash([]);
+      g.fillStyle='#ffcf6b';g.textAlign='right';g.font='11px Inter,system-ui,sans-serif';
+      g.fillText('авто ×'+fx(autoX),W-pad.r-2,ay-8);
+    }
+    g.setLineDash([2,4]);g.strokeStyle='rgba(255,255,255,.24)';g.beginPath();g.moveTo(pad.l,cy);g.lineTo(cx,cy);g.stroke();g.setLineDash([]);
+    if(tStop){
+      g.setLineDash([4,4]);g.strokeStyle='rgba(255,107,139,.75)';g.beginPath();g.moveTo(cx,pad.t);g.lineTo(cx,H-pad.b);g.stroke();g.setLineDash([]);
+      const right=cx>W-72;g.fillStyle='#ff9db1';g.textAlign=right?'right':'left';g.font='11px Inter,system-ui,sans-serif';
+      g.fillText('стоп ×'+fx(crash),cx+(right?-6:6),pad.t+10);
+    }
+    if(!tStop){
+      // шлейф позади ракеты
+      const seg=0.3,steps=9;
+      g.save();g.globalCompositeOperation='lighter';
+      for(let i=0;i<steps;i++){
+        const a=(i+1)/steps,t1=Math.max(0,tc-seg*(1-a)),t2=Math.max(0,t1+seg/steps);
+        g.strokeStyle=hexA(bc,.04+0.22*a);g.lineWidth=0.6+3.2*a;
+        g.beginPath();
+        g.moveTo(X(t1),Y(Math.min(Math.exp(kk*t1),yMax)));
+        g.lineTo(X(t2),Y(Math.min(Math.exp(kk*t2),yMax)));
+        g.stroke();
+      }
+      g.restore();
+      // направление полёта
+      const t2=tc+0.05;
+      const ang=Math.atan2(Y(Math.min(Math.exp(kk*t2),yMax))-cy,X(t2)-cx);
+      const sp=Math.min(2.4,(cur-1)/1.2)*(0.9+Math.random()*0.2);
+      g.save();g.shadowColor=hexA(bc,.85);g.shadowBlur=14;
+      drawRocket(g,cx,cy,ang,bc,sp);
+      g.restore();
+    }else{
+      drawBoom(g,cx,cy,(performance.now()-boomT)/1000);
+    }
+  }
+  function render(){
+    rx.textContent='×'+fx(cur);
+    const crashed=phase==='done'&&!cashed;
+    rx.classList.toggle('bad',crashed);
+    rx.style.color=crashed?'':(phase==='idle'?'':band(cur));
+    rp.textContent=phase==='flight'?'полёт':(phase==='done'?'остановка':'готов к запуску');
+    if(phase==='flight'&&cashed){
+      go.disabled=true;                                  // ракета летит до своей остановки
+      go.textContent=`ЗАБРАНО ×${fx(cashX)} · ждём остановку (×${fx(cur)})`;
+    }else if(phase==='flight'){
+      const can=cur>=MINCASH;
+      go.disabled=!can;
+      go.textContent=can?`ЗАБРАТЬ ×${fx(cur)}  (+${fmt(S.bet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)} · сейчас ×${fx(cur)}`;
+    }else{
+      go.disabled=false;
+      go.textContent=phase==='done'?'ЗАПУСТИТЬ СНОВА · '+S.bet+' ⬦':'ЗАПУСТИТЬ · '+S.bet+' ⬦';
+    }
+    draw();
+  }
+  function loop(){
+    if(dead)return;
+    const t=flightT();
+    cur=Math.exp(RK.k*t);
+    if(!cashed&&autoOn&&autoX<crash&&cur>=autoX)autoCash();   // авто-вывод; полёт продолжается
+    if(cur>=crash){cur=crash;tStop=t;stop();return}
+    render();raf=requestAnimationFrame(loop);
+  }
+  function stop(){
+    cancelAnimationFrame(raf);phase='done';cur=crash;boomT=performance.now();if(!cashed)tgHaptic('lose');   // cashed сохраняем: итог зависит от того, забрали ли
+    if(cashed){                                   // забрали раньше — итог всё равно по остановке ракеты
+      rr.className='result good';
+      rr.innerHTML=`Итог раунда: ракета остановилась на <b style="color:${band(crash)}">×${fx(crash)}</b>, ваш вывод был на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}).`;
+    }else{
+      rr.className='result bad';
+      rr.innerHTML=crash<=1
+        ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Ставка ${S.bet} ⬦ (≈ ${fmtRub(S.bet)}) сгорела.`
+        :`Ракета остановилась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Ставка ${S.bet} ⬦ (≈ ${fmtRub(S.bet)}) сгорела.`;
+    }
+    pushRHist(crash);                             // в ленте — итоговый коэффициент раунда
+    (function boom(){
+      if(dead)return;
+      render();
+      if(performance.now()-boomT<950)raf=requestAnimationFrame(boom);
+    })();
+  }
+  function start(){
+    if(S.balance<S.bet){rr.className='result bad';rr.textContent='Недостаточно токенов — пополни баланс.';return}
+    crash=sampleCrash();place(S.bet,'Ракетка');cashed=false;cashX=0;cashAmt=0;
+    tStop=0;t0=performance.now();phase='flight';cur=1;
+    rr.className='result';
+    rr.textContent=autoOn?`Полёт начат. Авто-вывод сработает на ×${fx(autoX)}.`:'Полёт начат. Забирай, пока ракета не остановилась.';
+    loop();
+  }
+  function cash(target){
+    if(phase!=='flight')return;
+    if(cashed)return;
+    if(cur<MINCASH)return;                       // раньше ×1.01 забрать нельзя
+    cashX=+((target!=null?target:cur).toFixed(2));   // округляем до сотых: сумма кэшаута совпадает с надписью
+    if(target!=null)cur=Math.max(cur,target);
+    cashAmt=Math.floor(S.bet*cashX);
+    cashed=true;                                 // ракета продолжает полёт до своей остановки
+    win(cashAmt,'Ракетка','кэшаут ×'+fx(cashX));
+    rr.className='result good';
+    rr.innerHTML=`Забрано на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}). Ракета летит дальше — итог появится, когда она остановится.`;
+    render();
+  }
+  function autoCash(){cash(autoX);}
+  go.addEventListener('click',()=>{phase==='flight'?cash():start()});
+  axTg.addEventListener('click',()=>{autoOn=!autoOn;S.autoOn=autoOn;save();syncAuto();if(phase!=='flight')render()});
+  axIn.addEventListener('input',()=>{
+    const v=Math.min(RKMAX,Math.max(MINCASH,+axIn.value.replace(',','.')||1.5));
+    autoX=v;S.autoX=v;save();if(phase!=='flight')render();
+  });
+  axIn.addEventListener('blur',()=>{axIn.value=fx(autoX)});
+  wireBet(a,render);syncAuto();render();
+  return ()=>{dead=true;cancelAnimationFrame(raf)};
+}
+
+/* =======================================================================
+   ПОПРЫГУН — черта и шарик: 1 ступень надежнее, дальше риск стремительно растет
+   ======================================================================= */
+const JP_MODES = {
+  lite: {
+    name: 'Лайт',
+    desc: 'Умеренный риск: надёжный подъём на начальных ступенях. Максимальный множитель: ×4.5',
+    p: [0.78, 0.65, 0.40, 0.20, 0.15, 0.12, 0.09, 0.07, 0.05, 0.04, 0.03, 0.02],
+    pay: [1.15, 1.30, 1.50, 1.75, 2.05, 2.40, 2.80, 3.25, 3.70, 4.05, 4.30, 4.50]
+  },
+  med: {
+    name: 'Средний',
+    desc: 'Сбалансированный риск: крутой барьер высоты после 2-й ступени. Максимальный множитель: ×7.0',
+    p: [0.70, 0.46, 0.20, 0.12, 0.08, 0.055, 0.038, 0.025, 0.018, 0.012, 0.008, 0.005],
+    pay: [1.25, 1.40, 1.68, 2.15, 2.75, 3.45, 4.25, 5.10, 5.85, 6.35, 6.75, 7.00]
+  },
+  crit: {
+    name: 'Критический',
+    desc: 'Экстремальный риск: опасный подъем для самых смелых. Максимальный множитель: ×10.0',
+    p: [0.58, 0.36, 0.15, 0.07, 0.045, 0.03, 0.018, 0.012, 0.008, 0.005, 0.003, 0.002],
+    pay: [1.35, 1.60, 2.05, 2.85, 3.85, 5.05, 6.35, 7.65, 8.80, 9.40, 9.75, 10.0]
+  }
+};
+let curJumpMode = 'med';
+
+function gameJumper(){
+  const a=q('#gameArea');
+  let level=0,phase='idle',busy=false,t1=0,t2=0,raf=0,dead=false;
+  const curM=()=>JP_MODES[curJumpMode];
+  const xn=n=>{ const m=curM(); return (m.pay&&m.pay[n-1])?m.pay[n-1]:+(1.2*n).toFixed(2); };
+
+  a.innerHTML=`
+  <div class="chips" id="jumpModes" style="margin-bottom:10px;justify-content:center">
+    <button class="chip ${curJumpMode==='lite'?'on':''}" data-jm="lite">🟢 Лайт</button>
+    <button class="chip ${curJumpMode==='med'?'on':''}" data-jm="med">🟡 Средний</button>
+    <button class="chip ${curJumpMode==='crit'?'on':''}" data-jm="crit">🔴 Критический</button>
+  </div>
+  <div class="jumpstage" id="js"><div class="ground"></div><div class="ball2" id="jb" style="bottom:10px"></div></div>
+  ${betHTML()}
+  <div class="actions" style="margin-top:11px"><button class="control" id="jj" style="margin:0">ПРЫЖОК</button><button class="control ghost" id="jt2" style="margin:0" disabled>ЗАБРАТЬ</button></div>
+  <div class="result" id="jr">${curM().desc}</div>`;
+
+  const stage=q('#js'),ball=q('#jb'),jj=q('#jj'),jt=q('#jt2'),jr=q('#jr');
+  const stageH=stage.clientHeight||330;
+  const DASH_H=3;                                            // толщина черты
+  const step=Math.max(15,Math.floor((stageH-45-16-DASH_H)/12));  // шаг черты под высоту экрана
+  const ballH=Math.max(11,Math.min(16,step-DASH_H-2));       // шарик стоит на черте и не задевает следующую
+  ball.style.width=ballH+'px';ball.style.height=ballH+'px';ball.style.marginLeft=(-ballH/2)+'px';
+  const dashes=[];
+  for(let n=1;n<=12;n++){
+    const d=document.createElement('div');
+    d.className='dash';d.style.bottom=(45+n*step)+'px';
+    d.innerHTML='<span>×'+fx(xn(n))+'</span>';
+    stage.appendChild(d);dashes.push(d);
+  }
+  const ballTop=n=>n?45+n*step+DASH_H:10;               // низ шарика — ровно на поверхности черты
+  function updateDashLabels(){
+    dashes.forEach((d,i)=>{
+      const n=i+1;
+      const sp=d.querySelector('span');if(sp)sp.textContent='×'+fx(xn(n));
+    });
+  }
+  const jmEl=q('#jumpModes');
+  if(jmEl){
+    jmEl.addEventListener('click',e=>{
+      const b=e.target.closest('[data-jm]');if(!b||busy||phase==='run')return;
+      curJumpMode=b.dataset.jm;
+      qa('#jumpModes .chip').forEach(c=>c.classList.toggle('on',c===b));
+      updateDashLabels();refresh();
+      jr.className='result';jr.textContent=curM().desc;
+    });
+  }
+  function refresh(){
+    dashes.forEach((d,i)=>{
+      const n=i+1,c=band(xn(n)),on=n<=level,next=(n===level+1&&phase==='run');
+      d.style.background=on||next?c:hexA(c,.26);
+      d.style.boxShadow=on?'0 0 10px '+hexA(c,.45):(next?'0 0 16px '+hexA(c,.7):'none');
+      const sp=d.querySelector('span');if(sp)sp.style.color=on||next?c:hexA(c,.7);
+    });
+    jj.disabled=busy;
+    jt.disabled=!(level>0&&phase==='run')||busy;
+    jj.textContent = phase==='idle'?'ПРЫЖОК · '+S.bet+' ⬦'
+      : phase==='done'?'НОВЫЙ ЗАХОД · '+S.bet+' ⬦'
+      : 'ПРЫЖОК → уровень '+(level+1);
+    jt.textContent = level>0?'ЗАБРАТЬ ×'+fx(xn(level))+' (+'+fmt(S.bet*xn(level))+' ⬦)':'ЗАБРАТЬ';
+  }
+  function positionBall(){ball.style.bottom=ballTop(level)+'px'}
+  function reset(){
+    cancelAnimationFrame(raf);level=0;phase='idle';busy=false;
+    positionBall();refresh();
+  }
+  function jump(){
+    if(busy)return;
+    if(phase==='done')reset();
+    if(phase==='idle'){
+      if(S.balance<S.bet){jr.className='result bad';jr.textContent='Недостаточно токенов — пополни баланс.';return}
+      place(S.bet,'Попрыгун');phase='run';
+    }
+    if(level>=12)return;
+    busy=true;refresh();
+    const from=ballTop(level),to=ballTop(level+1);
+    const dur=540,st=performance.now(),sway=Math.random()<.5?-1:1;
+    jr.className='result';jr.textContent='Прыжок на уровень '+(level+1)+'…';
+    (function go(now){
+      if(dead)return;
+      const t=Math.min(1,(now-st)/dur),e=t*t*(3-2*t);
+      ball.style.bottom=(from+(to-from)*e+Math.sin(Math.PI*t)*24)+'px';
+      ball.style.transform='translateX('+fx(Math.sin(Math.PI*t)*sway*9,1)+'px)';
+      if(t<1){raf=requestAnimationFrame(go)}else{land(from)}
+    })(st);
+  }
+  function land(from){
+    ball.style.transform='translateX(0)';
+    const m=curM();
+    const stepP = (m.p && m.p[level]) ? m.p[level] : 0.03;
+    if(Math.random()<stepP){
+      level++;
+      positionBall();
+      if(level>=12){busy=false;auto();return}
+      busy=false;phase='run';
+      jr.className='result good';
+      jr.innerHTML='Уровень '+level+' пройден · множитель <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b>';
+      refresh();
+    }else{
+      const st=performance.now(),dur=780;
+      jr.className='result bad';jr.textContent='Шарик сорвался и падает…';
+      (function fall(now){
+        if(dead)return;
+        const t=Math.min(1,(now-st)/dur);
+        const y=ballTop(level)+(10-ballTop(level))*t*t;
+        ball.style.bottom=y+'px';
+        ball.style.transform='translateX('+fx(Math.sin(t*9)*4,1)+'px)';
+        if(t<1){raf=requestAnimationFrame(fall)}else{
+          ball.style.transform='translateX(0)';
+          phase='done';busy=false;tgHaptic('lose');
+          jr.className='result bad';
+          jr.innerHTML='Срыв на уровне '+(level+1)+'. Ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') потеряна.';
+          refresh();
+          t2=setTimeout(()=>{if(dead)return;if(phase==='done')jr.innerHTML+=' <span class="muted">Жми «ПРЫЖОК» — новый заход.</span>'},500);
+        }
+      })(st);
+    }
+  }
+  function auto(){
+    const amount=Math.floor(S.bet*xn(12));
+    win(amount,'Попрыгун','предел ×'+fx(xn(12)));
+    phase='done';
+    jr.className='result good';
+    jr.innerHTML='Верхний уровень — авто-забор <b style="color:'+band(xn(12))+'">×'+fx(xn(12))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
+    refresh();
+  }
+  function take(){
+    if(busy||phase!=='run'||level<1)return;
+    const amount=Math.floor(S.bet*xn(level));
+    win(amount,'Попрыгун','кэшаут ×'+fx(xn(level)));
+    phase='done';busy=false;
+    jr.className='result good';
+    jr.innerHTML='Забрано на уровне '+level+': <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
+    refresh();
+  }
+  jj.addEventListener('click',jump);
+  jt.addEventListener('click',take);
+  wireBet(a,refresh);
+  positionBall();refresh();
+  return ()=>{dead=true;cancelAnimationFrame(raf);clearTimeout(t1);clearTimeout(t2)};
+}
+
+/* =======================================================================
+   СПИН — 8 внешне одинаковых секторов с градацией по режимам
+   ======================================================================= */
+const SP_MODES = {
+  lite: {
+    name: 'Лайт',
+    pay: [2.0, 1.3, 1.0, 0.8, 0.6, 0.2, 1.2, 0.7],
+    w:   [4,   12,  18,  24,  20,  8,   6,   8], // RTP 87.2% (House Edge 12.8%)
+    col: ['#ffcf6b','#ff7386','#3ddc96','#687699','#4c5670','#323a4e','#a175ff','#2dc284']
+  },
+  med: {
+    name: 'Средний',
+    pay: [5, 3, 0.75, 0.5, 0.25, 0, 2, 1],
+    w:   [2, 8, 21, 23, 21, 9, 8, 8], // RTP 90.5% (House Edge 9.5%)
+    col: ['#ffcf6b','#ff7386','#6e7b9e','#515b74','#394154','#212634','#a175ff','#3ddc96']
+  },
+  crit: {
+    name: 'Критический',
+    pay: [15, 8, 0.5, 0.2, 0, 0, 4, 1.5],
+    w:   [1, 3, 16, 20, 30, 20, 5, 5], // RTP 78.5% (House Edge 21.5%)
+    col: ['#ffcf6b','#ff7386','#606c8b','#41495e','#292f3f','#191d27','#a175ff','#3ddc96']
+  }
+};
+let curSpinMode = 'med';
+
+function gameSpin(){
+  const a=q('#gameArea');
+  let rot=0,busy=false,timer=0,dead=false;
+  const lbl=v=>'×'+fx(v,v%1?(Math.round(v*100)%10?2:1):0);
+
+  function renderSpin(){
+    const curM = SP_MODES[curSpinMode];
+    a.innerHTML=`
+    <div class="chips" id="spinModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curSpinMode==='lite'?'on':''}" data-sm="lite">🟢 Лайт</button>
+      <button class="chip ${curSpinMode==='med'?'on':''}" data-sm="med">🟡 Средний</button>
+      <button class="chip ${curSpinMode==='crit'?'on':''}" data-sm="crit">🔴 Критический</button>
+    </div>
+    <div class="spinwrap"><div class="pointer"></div><div class="wheel" id="sw"></div></div>
+    <div class="legend" id="sleg">${curM.pay.map((v,i)=>`<div class="lg" id="lg${i}"><span class="dot" style="background:${curM.col[i]}"></span><b style="color:${band(v)}">${lbl(v)}</b>сектор ${i+1}</div>`).join('')}</div>
+    ${betHTML()}
+    <button class="control" id="sgo">КРУТИТЬ · ${S.bet} ⬦</button>
+    <div class="result" id="sr">Нажмите «КРУТИТЬ», чтобы запустить колесо.</div>`;
+
+    const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
+    wheel.innerHTML='';
+    const N=curM.pay.length;
+    const segAngle=360/N;   // строго 45 градусов — внешне одинаковые!
+    const segs=curM.pay.map((v,i)=>{
+      const a0=i*segAngle, a1=(i+1)*segAngle;
+      return {v,a0,a1,size:segAngle,col:curM.col[i]};
+    });
+    wheel.style.background='conic-gradient('+segs.map(sg=>`${sg.col} ${sg.a0}deg ${sg.a1}deg`).join(',')+')';
+
+    // Аккуратный контур секторов колеса (8 радиальных линий от центра)
+    const svgContour = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgContour.setAttribute('viewBox', '0 0 100 100');
+    svgContour.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+    for(let i=0; i<N; i++){
+      const rad = i * segAngle * Math.PI / 180;
+      const x2 = +(50 + 50 * Math.sin(rad)).toFixed(3);
+      const y2 = +(50 - 50 * Math.cos(rad)).toFixed(3);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50');
+      line.setAttribute('y1', '50');
+      line.setAttribute('x2', String(x2));
+      line.setAttribute('y2', String(y2));
+      line.setAttribute('stroke', '#161b28');
+      line.setAttribute('stroke-width', '1.6');
+      line.setAttribute('stroke-linecap', 'round');
+      svgContour.appendChild(line);
+    }
+    const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerDot.setAttribute('cx', '50');
+    centerDot.setAttribute('cy', '50');
+    centerDot.setAttribute('r', '2.2');
+    centerDot.setAttribute('fill', '#161b28');
+    svgContour.appendChild(centerDot);
+    wheel.appendChild(svgContour);
+
+    segs.forEach(sg=>{
+      const cen=(sg.a0+sg.a1)/2, el=document.createElement('span');
+      el.textContent=lbl(sg.v);
+      const rad=35;
+      el.style.left=(50+rad*Math.sin(cen*Math.PI/180))+'%';
+      el.style.top=(50-rad*Math.cos(cen*Math.PI/180))+'%';
+      el.style.zIndex='3';
+      wheel.appendChild(el);
+    });
+
+    const smEl=q('#spinModes');
+    if(smEl){
+      smEl.addEventListener('click',e=>{
+        const b=e.target.closest('[data-sm]');if(!b||busy)return;
+        curSpinMode=b.dataset.sm;
+        renderSpin();
+      });
+    }
+
+    let spinTimeouts=[];
+    function clearSpinTimers(){
+      spinTimeouts.forEach(t=>clearTimeout(t));
+      spinTimeouts=[];
+      qa('.lg',a).forEach(e=>e.classList.remove('tease-flash'));
+      const ptr=q('.pointer',a);
+      if(ptr)ptr.classList.remove('tease-flutter');
+      qa('.wheel span',a).forEach(s=>s.classList.remove('tease-flash'));
+    }
+
+    function spin(){
+      if(busy)return;
+      if(S.balance<S.bet){sr.className='result bad';sr.textContent='Недостаточно токенов — пополни баланс.';return}
+      busy=true;place(S.bet,'Спин');
+      clearSpinTimers();
+
+      let pick=Math.random()*100,idx=0,cum=0;
+      for(let i=0;i<curM.w.length;i++){cum+=curM.w[i];if(pick<cum){idx=i;break}}
+      const v=curM.pay[idx];
+      const isLoss=v<1;
+
+      // Находим топ множитель для тизера в случае проигрыша
+      let maxPay=-1, topXIdx=0;
+      for(let i=0; i<curM.pay.length; i++){
+        if(curM.pay[i]>maxPay){ maxPay=curM.pay[i]; topXIdx=i; }
+      }
+      const topLabel = lbl(maxPay);
+
+      // Тизер: при проигрыше стрелка останавливается у самого края сектора, граничащего с другим
+      const edgeOffset=isLoss?(Math.random()<0.5?0.16:0.84):0.5;
+      const cen=(idx+edgeOffset)*segAngle;
+      const curMod=((rot%360)+360)%360;
+      rot+=((-cen-curMod)%360+360)%360+360*6;
+      wheel.style.transform='rotate('+rot+'deg)';
+      sr.className='result';sr.textContent='Колесо вращается…';
+      qa('.lg').forEach(e=>e.classList.remove('hit'));
+
+      // Замедляющиеся тики стрелки
+      const tickTimes=[260,540,880,1280,1750,2290,2900,3580,4200];
+      tickTimes.forEach(t=>{
+        spinTimeouts.push(setTimeout(()=>{
+          if(dead||!busy)return;
+          const ptr=q('.pointer',a);
+          if(ptr){
+            ptr.style.transform='rotate(-12deg)';
+            setTimeout(()=>{if(ptr&&!ptr.classList.contains('tease-flutter'))ptr.style.transform='rotate(0deg)';},70);
+          }
+          tgHaptic('light');
+        },t));
+      });
+
+      // Замедление в конце прокрута: мелькание большого Х
+      spinTimeouts.push(setTimeout(()=>{
+        if(dead||!busy)return;
+        if(isLoss){
+          const lgTop=q('#lg'+topXIdx,a);
+          if(lgTop)lgTop.classList.add('tease-flash');
+          const spans=qa('.wheel span',a);
+          if(spans[topXIdx])spans[topXIdx].classList.add('tease-flash');
+          const ptr=q('.pointer',a);
+          if(ptr)ptr.classList.add('tease-flutter');
+          sr.innerHTML='Колесо замедляется… <b style="color:#ffcf6b">★ Большой '+topLabel+' мелькает у стрелки!</b>';
+          tgHaptic('medium');
+        }
+      },3100));
+
+      timer=setTimeout(()=>{
+        if(dead)return;
+        busy=false;
+        clearSpinTimers();
+        const amount=Math.floor(S.bet*v);
+        const lg=q('#lg'+idx);if(lg)lg.classList.add('hit');
+        if(amount>0)win(amount,'Спин',lbl(v));
+        sr.className='result '+(amount>=S.bet?'good':'bad');
+        sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается')+(isLoss?' · <span style="color:#ffcf6b">★ Большой '+topLabel+' пролетел в шаге от стрелки!</span>':'');
+      },4650);
+    }
+    go.addEventListener('click',spin);
+    wireBet(a,()=>{go.textContent='КРУТИТЬ · '+S.bet+' ⬦'});
+  }
+
+  renderSpin();
+  return ()=>{dead=true;clearTimeout(timer);clearSpinTimers()};
+}
+
+/* =======================================================================
+   ДРОП — шарик по развилкам падает в лунки (8, 10 или 12 лунок)
+   ======================================================================= */
+const DP_MODES = {
+  lite: {
+    name: 'Лайт',
+    slots: 8,
+    rows: 7,
+    pay: [3.5, 1.5, 1.0, 0.5, 0.5, 1.0, 1.5, 3.5] // зеркальные коэффициенты: в центре два по 0.5x, по бокам 1.0x
+  },
+  med: {
+    name: 'Средний',
+    slots: 10,
+    rows: 9,
+    pay: [8.0, 3.0, 0.4, 0.4, 0, 0, 0.4, 0.4, 3.0, 8.0] // зеркальные коэффициенты: в центре нули, вместо 1 и 1.6 установлены 0.4x
+  },
+  crit: {
+    name: 'Критический',
+    slots: 12,
+    rows: 11,
+    pay: [18.0, 8.0, 4.0, 0.6, 0.3, 0.1, 0.1, 0.3, 0.6, 4.0, 8.0, 18.0] // зеркальные коэффициенты с максимальными краями 18x и 8x
+  }
+};
+let curDropMode = 'med';
+
+function gameDrop(){
+  const a=q('#gameArea');
+  let raf=0,busy=false,dead=false;
+
+  function renderDrop(){
+    const curM = DP_MODES[curDropMode];
+    a.innerHTML=`
+    <div class="chips" id="dropModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curDropMode==='lite'?'on':''}" data-dm="lite">🟢 Лайт (8)</button>
+      <button class="chip ${curDropMode==='med'?'on':''}" data-dm="med">🟡 Средний (10)</button>
+      <button class="chip ${curDropMode==='crit'?'on':''}" data-dm="crit">🔴 Критический (12)</button>
+    </div>
+    <div class="dropwrap"><canvas id="dcv"></canvas></div>
+    <div class="slots" style="--slot-cols:${curM.slots}">${curM.pay.map((v,k)=>{
+      const c=band(v);
+      return `<div class="slot" id="ds${k}" style="background:${hexA(c,.13)};border-color:${hexA(c,.4)};color:${c}">×${fx(v,v%1?1:0)}</div>`;
+    }).join('')}</div>
+    ${betHTML()}
+    <button class="control" id="dgo">СДЕЛАТЬ ДРОП · ${S.bet} ⬦</button>
+    <div class="result" id="dr">Шарик падает по развилкам (${curM.slots} лунок). Режим: ${curM.name}.</div>`;
+
+    const cvs=q('#dcv'),go=q('#dgo'),dr=q('#dr');
+    const dmEl=q('#dropModes');
+    if(dmEl){
+      dmEl.addEventListener('click',e=>{
+        const b=e.target.closest('[data-dm]');if(!b||busy)return;
+        curDropMode=b.dataset.dm;
+        renderDrop();
+      });
+    }
+
+    function draw(path,prog){
+      const {g,W,H}=fitCanvas(cvs);
+      const rows=curM.rows;
+      const cx=W/2, unit=W/(rows*2+2), yTop=22, yBot=H-52, rowH=(yBot-yTop)/rows;
+      for(let i=1;i<=rows;i++){
+        const y=yTop+(i-1)*rowH;
+        for(let j=0;j<i;j++){
+          const x=cx+(2*j-i+1)*unit;
+          g.beginPath();g.arc(x,y,3,0,7);g.fillStyle='#4b5675';g.fill();
+        }
+      }
+      const tt=Math.min(prog,1)*rows*1.09;
+      let x=cx,y=yTop;
+      if(tt<rows){
+        const i=Math.floor(tt),f=tt-i;
+        const from=2*path[i]-i,to=2*path[i+1]-(i+1),e=f*f*(3-2*f);
+        x=cx+(from+(to-from)*e)*unit;
+        y=yTop+tt*rowH;
+      }else{
+        const f=Math.min(1,(tt-rows)/0.09);
+        x=cx+(2*path[rows]-rows)*unit;
+        y=yBot+f*(H-28-yBot);
+      }
+      g.setLineDash([2,4]);g.strokeStyle='rgba(152,160,255,.42)';g.beginPath();
+      const lim=Math.min(rows,tt*1.02);
+      for(let i=0;i<=lim;i++){const px=cx+(2*path[i]-i)*unit,py=yTop+i*rowH;i?g.lineTo(px,py):g.moveTo(px,py-22)}
+      g.stroke();g.setLineDash([]);
+      g.save();g.shadowColor='rgba(255,255,255,.85)';g.shadowBlur=16;
+      g.beginPath();g.arc(x,y,6.5,0,7);g.fillStyle='#fff';g.fill();g.restore();
+    }
+
+    function run(){
+      if(busy)return;
+      if(S.balance<S.bet){dr.className='result bad';dr.textContent='Недостаточно токенов — пополни баланс.';return}
+      busy=true;place(S.bet,'Дроп');
+      qa('.slot').forEach(e=>e.classList.remove('hit'));
+      const rows=curM.rows;
+      const path=[0];let r=0;
+      for(let i=1;i<=rows;i++){r+=Math.random()<0.5?0:1;path.push(r)}
+      const slot=path[rows];
+      dr.className='result';dr.textContent='Шарик проходит развилки…';
+      const dur=2100,st=performance.now();
+      (function anim(now){
+        if(dead)return;
+        const pr=Math.min(1,(now-st)/dur);
+        draw(path,pr);
+        if(pr<1){raf=requestAnimationFrame(anim)}else{land(slot)}
+      })(st);
+    }
+    function land(k){
+      busy=false;
+      const sl=q('#ds'+k);if(sl)sl.classList.add('hit');
+      const v=curM.pay[k],amount=Math.floor(S.bet*v);
+      if(amount>0)win(amount,'Дроп','лунка '+(k+1)+' ×'+fx(v,v%1?1:0));
+      dr.className='result '+(amount>=S.bet?'good':'bad');
+      dr.innerHTML='Шарик упал в лунку '+(k+1)+': <b style="color:'+band(v)+'">×'+fx(v,v%1?1:0)+'</b> → '+(amount>0?'<b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'возврат 0 ⬦ (ставка '+S.bet+' ⬦ ≈ '+fmtRub(S.bet)+')');
+    }
+    go.addEventListener('click',run);
+    wireBet(a,()=>{go.textContent='СДЕЛАТЬ ДРОП · '+S.bet+' ⬦'});
+    draw(new Array(curM.rows+1).fill(0),0);
+  }
+
+  renderDrop();
+  return ()=>{dead=true;cancelAnimationFrame(raf)};
+}
+
+/* =======================================================================
+   СКУФ VS АЛЬТУШКА (🎀🖤 vs 🍺) — Сапёр с пониженными шансами и минусовым RTP
+   ======================================================================= */
+const SKUF_MODES = {
+  lite: { name: 'Лайт', skufs: 7, desc: '7 банок пива на 25 плиток. Повышенная плотность ловушек.' },
+  med:  { name: 'Средний', skufs: 11, desc: '11 банок пива на 25 плиток. Почти каждая вторая плитка — ловушка!' },
+  crit: { name: 'Критический', skufs: 15, desc: '15 банок пива на 25 плиток! Экстремальный хардкор, ловушек больше половины.' }
+};
+let curSkufMode = 'med';
+
+function gameSkuf(){
+  const a = q('#gameArea');
+  let phase = 'idle';
+  let opened = 0;
+  const skufIndices = new Set();
+  const openedSet = new Set();
+  let busy = false;
+
+  function comb(n, k){
+    if(k < 0 || k > n) return 0;
+    if(k === 0 || k === n) return 1;
+    let c = 1;
+    for(let i = 1; i <= k; i++) c = c * (n - (k - i)) / i;
+    return c;
+  }
+
+  // Расчет множителя со строгим минусовым матожиданием (RTP 75%, House Edge 25%):
+  function getMult(k){
+    const M = SKUF_MODES[curSkufMode].skufs;
+    if(k <= 0) return 1;
+    const prob = comb(25 - M, k) / comb(25, k);
+    return +(0.75 / prob).toFixed(2);
+  }
+
+  function render(){
+    const curM = SKUF_MODES[curSkufMode];
+    const mult = opened > 0 ? getMult(opened) : 1;
+    const curWin = Math.floor(S.bet * mult);
+
+    a.innerHTML = `
+    <div class="chips" id="skufModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curSkufMode==='lite'?'on':''}" data-skm="lite">🟢 Лайт (7 🍺)</button>
+      <button class="chip ${curSkufMode==='med'?'on':''}" data-skm="med">🟡 Средний (11 🍺)</button>
+      <button class="chip ${curSkufMode==='crit'?'on':''}" data-skm="crit">🔴 Критический (15 🍺)</button>
+    </div>
+    <div class="skuf-grid" id="skufGrid">
+      ${Array.from({length:25}).map((_,i)=>`<button class="skuf-cell" data-idx="${i}">?</button>`).join('')}
+    </div>
+    ${betHTML()}
+    <div class="actions" style="margin-top:10px">
+      <button class="control" id="skufGo" style="margin:0">${phase==='run'?'ИГРА ИДЁТ':'НАЧАТЬ · '+S.bet+' ⬦'}</button>
+      <button class="control ghost" id="skufTake" style="margin:0" ${phase!=='run'||opened===0?'disabled':''}>ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ⬦)</button>
+    </div>
+    <div class="result" id="skufRes">${curM.desc}</div>`;
+
+    const grid = q('#skufGrid'), go = q('#skufGo'), take = q('#skufTake'), res = q('#skufRes');
+
+    openedSet.forEach(idx => {
+      const cell = grid.children[idx];
+      if(cell){
+        cell.classList.add('open-good');
+        cell.textContent = idx % 2 ? '🎀' : '🖤';
+        cell.disabled = true;
+      }
+    });
+
+    const mEl = q('#skufModes');
+    if(mEl){
+      mEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-skm]'); if(!b || phase === 'run') return;
+        curSkufMode = b.dataset.skm;
+        render();
+      });
+    }
+
+    grid.addEventListener('click', e => {
+      const cell = e.target.closest('.skuf-cell');
+      if(!cell || busy || phase !== 'run') return;
+      const idx = +cell.dataset.idx;
+      if(openedSet.has(idx)) return;
+
+      if(skufIndices.has(idx)){
+        busy = true;
+        cell.classList.add('open-bad');
+        cell.textContent = '🍺';
+        tgHaptic('lose');
+        skufIndices.forEach(sIdx => {
+          const sc = grid.children[sIdx];
+          if(sc){ sc.classList.add('open-bad'); sc.textContent = '🍺'; }
+        });
+        phase = 'done';
+        busy = false;
+        res.className = 'result bad';
+        res.innerHTML = `🍺 <b>Скуф затянул в танки!</b> Ставка ${S.bet} ⬦ сгорела. Жмите «НАЧАТЬ» для нового захода.`;
+        go.disabled = false;
+        go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+        take.disabled = true;
+      } else {
+        openedSet.add(idx);
+        opened++;
+        cell.classList.add('open-good');
+        cell.textContent = idx % 2 ? '🎀' : '🖤';
+        tgHaptic('light');
+        const nextMult = getMult(opened);
+        const winAmt = Math.floor(S.bet * nextMult);
+        res.className = 'result good';
+        res.innerHTML = `🎀 Альтушка найдена #${opened}! Множитель <b style="color:${band(nextMult)}">×${fx(nextMult)}</b> (<b>+${fmt(winAmt)} ⬦</b>).`;
+        take.disabled = false;
+        take.textContent = `ЗАБРАТЬ ×${fx(nextMult)} (+${fmt(winAmt)} ⬦)`;
+
+        const safeTotal = 25 - SKUF_MODES[curSkufMode].skufs;
+        if(opened >= safeTotal){
+          win(winAmt, 'Скуф vs Альтушка', 'все Альтушки найдены');
+          phase = 'done';
+          res.innerHTML = `👑 <b>ВСЕ АЛЬТУШКИ НАЙДЕНЫ!</b> Выигрыш <b>+${fmt(winAmt)} ⬦</b>!`;
+          take.disabled = true;
+          go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+        }
+      }
+    });
+
+    go.addEventListener('click', () => {
+      if(phase === 'run') return;
+      if(S.balance < S.bet){
+        res.className = 'result bad';
+        res.textContent = 'Недостаточно токенов — пополните баланс.';
+        return;
+      }
+      place(S.bet, 'Скуф vs Альтушка');
+      phase = 'run';
+      opened = 0;
+      openedSet.clear();
+      skufIndices.clear();
+
+      const M = SKUF_MODES[curSkufMode].skufs;
+      while(skufIndices.size < M){
+        skufIndices.add(Math.floor(Math.random() * 25));
+      }
+      render();
+      const rEl = q('#skufRes');
+      if(rEl){
+        rEl.className = 'result';
+        rEl.textContent = `Поле заряжено (${M} Скуфов 🍺). Ищите Альтушек 🎀🖤!`;
+      }
+    });
+
+    take.addEventListener('click', () => {
+      if(phase !== 'run' || opened === 0) return;
+      const finalMult = getMult(opened);
+      const amount = Math.floor(S.bet * finalMult);
+      win(amount, 'Скуф vs Альтушка', `кэшаут ×${fx(finalMult)}`);
+      phase = 'done';
+      skufIndices.forEach(sIdx => {
+        const sc = grid.children[sIdx];
+        if(sc && !openedSet.has(sIdx)){ sc.style.opacity = '0.5'; sc.textContent = '🍺'; }
+      });
+      res.className = 'result good';
+      res.innerHTML = `Забрано: <b style="color:${band(finalMult)}">×${fx(finalMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
+      go.disabled = false;
+      go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
+      take.disabled = true;
+    });
+
+    wireBet(a, () => {
+      if(phase !== 'run') go.textContent = 'НАЧАТЬ · ' + S.bet + ' ⬦';
+    });
+  }
+
+  render();
+  return () => { phase = 'done'; };
+}
+
+/* =======================================================================
+   ПЕРЕКУП НА АВИТО (🏎️📦) — Ступенчатые торги с пониженными шансами
+   ======================================================================= */
+const AVITO_LOTS = {
+  lite: {
+    name: 'Лайт',
+    item: 'Дропнутый iPhone 15 Pro',
+    icon: '📱',
+    desc: 'Торгуемся за разбитый айфон: шансы чуть мягче',
+    steps: [
+      { name: '1. Сбить цену на Авито', p: 0.54, mult: 1.40 },
+      { name: '2. Поменять экран на Горбушке', p: 0.35, mult: 3.50 },
+      { name: '3. Продать школьнику как новый', p: 0.20, mult: 14.0 }
+    ]
+  },
+  med: {
+    name: 'Средний',
+    item: 'Приора 2011 «не бит не крашен»',
+    icon: '🏎️',
+    desc: 'Классика перекупа: высокий риск встрять на СТО',
+    steps: [
+      { name: '1. Сбить цену у деда в деревне', p: 0.46, mult: 1.60 },
+      { name: '2. Подкрасить из баллончика и смотать пробег', p: 0.27, mult: 5.00 },
+      { name: '3. Слить мажору под фонк в Telegram', p: 0.14, mult: 28.0 }
+    ]
+  },
+  crit: {
+    name: 'Критический',
+    item: 'Кроссовки Stone Island из Гуанчжоу',
+    icon: '👟',
+    desc: 'Суровый перекуп: сорваться легко, коэффициенты гигантские',
+    steps: [
+      { name: '1. Выбить оптовую партию на Садоводе', p: 0.38, mult: 1.90 },
+      { name: '2. Нашить фирменные патчи и сделать чек', p: 0.17, mult: 8.50 },
+      { name: '3. Продать моднику на Патриках', p: 0.09, mult: 72.0 }
+    ]
+  }
+};
+let curAvitoMode = 'med';
+
+function gameAvito(){
+  const a = q('#gameArea');
+  let phase = 'idle';
+  let step = 0;
+  let busy = false;
+  let boxState = '';
+  let resMsg = 'Купите лот, чтобы начать торг и перепродажу.';
+  let resClass = 'result';
+
+  function render(){
+    const curLot = AVITO_LOTS[curAvitoMode];
+    const curStepObj = curLot.steps[step - 1];
+    const mult = step > 0 ? curStepObj.mult : 1;
+    const curWin = Math.floor(S.bet * mult);
+
+    a.innerHTML = `
+    <div class="chips" id="avitoModes" style="margin-bottom:10px;justify-content:center">
+      <button class="chip ${curAvitoMode==='lite'?'on':''}" data-avm="lite">🟢 Лайт</button>
+      <button class="chip ${curAvitoMode==='med'?'on':''}" data-avm="med">🟡 Средний</button>
+      <button class="chip ${curAvitoMode==='crit'?'on':''}" data-avm="crit">🔴 Критический</button>
+    </div>
+    <div class="avito-box ${boxState}">
+      <div class="avito-icon">${curLot.icon}</div>
+      <b style="font-size:16.5px;color:#fff">${curLot.item}</b>
+      <div class="muted small" style="margin-top:4px">${curLot.desc}</div>
+      <div class="avito-steps">
+        ${curLot.steps.map((st, i) => {
+          const isDone = step > i + 1;
+          const isOn = step === i + 1;
+          return `<div class="avito-step ${isDone?'done':(isOn?'on':'')}"><b>×${fx(st.mult)}</b><br><span style="font-size:9.5px">${st.name.split('.')[0]} этап</span></div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${betHTML()}
+    <div class="actions" style="margin-top:10px">
+      <button class="control" id="avitoDeal" style="margin:0">${phase==='run'?(step<3?'ТОРГОВАТЬСЯ → ЭТАП '+(step+1):'ФИНАЛ'):'КУПИТЬ ЛОТ · '+S.bet+' ⬦'}</button>
+      <button class="control ghost" id="avitoTake" style="margin:0" ${phase!=='run'||step===0?'disabled':''}>ПРОДАТЬ И ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ⬦)</button>
+    </div>
+    <div class="${resClass}" id="avitoRes">${resMsg}</div>`;
+
+    const dealBtn = q('#avitoDeal'), takeBtn = q('#avitoTake');
+
+    const mEl = q('#avitoModes');
+    if(mEl){
+      mEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-avm]'); if(!b || phase === 'run') return;
+        curAvitoMode = b.dataset.avm;
+        boxState = '';
+        resMsg = 'Купите лот, чтобы начать торг и перепродажу.';
+        resClass = 'result';
+        render();
+      });
+    }
+
+    dealBtn.addEventListener('click', () => {
+      if(busy) return;
+      if(phase === 'idle' || phase === 'done'){
+        if(S.balance < S.bet){
+          resClass = 'result bad';
+          resMsg = 'Недостаточно токенов — пополните баланс.';
+          render();
+          return;
+        }
+        place(S.bet, 'Перекуп на Авито');
+        phase = 'run';
+        step = 0;
+        boxState = '';
+      }
+
+      if(step >= 3) return;
+      busy = true;
+      const targetStep = step;
+      const stepData = curLot.steps[targetStep];
+      resClass = 'result';
+      resMsg = `${stepData.name}… Идут торги…`;
+      render();
+
+      setTimeout(() => {
+        busy = false;
+        if(Math.random() < stepData.p){
+          step++;
+          tgHaptic('light');
+          boxState = 'win';
+          const curMult = curLot.steps[step - 1].mult;
+          const winAmt = Math.floor(S.bet * curMult);
+          resClass = 'result good';
+          resMsg = `🤝 <b>Сделка успешна!</b> ${stepData.name} пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ⬦).`;
+
+          if(step >= 3){
+            win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult));
+            phase = 'done';
+            resMsg = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Товар продан с максимальной наценкой: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ⬦</b>!`;
+          }
+          render();
+        } else {
+          phase = 'done';
+          tgHaptic('lose');
+          boxState = 'lose';
+          resClass = 'result bad';
+          resMsg = `💥 <b>Сделка сорвалась:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${S.bet} ⬦ сгорела.`;
+          render();
+        }
+      }, 750);
+    });
+
+    takeBtn.addEventListener('click', () => {
+      if(phase !== 'run' || step === 0) return;
+      const curMult = curLot.steps[step - 1].mult;
+      const amount = Math.floor(S.bet * curMult);
+      win(amount, 'Перекуп на Авито', `кэшаут ×${fx(curMult)}`);
+      phase = 'done';
+      boxState = 'win';
+      resClass = 'result good';
+      resMsg = `💰 <b>Успешный кэшаут!</b> Лот перепродан: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(amount)} ⬦</b> (≈ ${fmtRub(amount)}).`;
+      render();
+    });
+
+    wireBet(a, () => {
+      if(phase !== 'run') dealBtn.textContent = 'КУПИТЬ ЛОТ · ' + S.bet + ' ⬦';
+    });
+  }
+
+  render();
+  return () => { phase = 'done'; };
+}
+
+/* =======================================================================
+   КЕЙСЫ (📦) — 5 кейсов, 100 уникальных предметов, рулетка CS:GO с отрицательным RTP
+   ======================================================================= */
+const TIER_COLS = {
+  cheap: '#64748b',   // Серый (Обычный)
+  low: '#3b82f6',     // Синий (Редкий)
+  profit: '#a855f7',  // Фиолетовый (Богатый)
+  high: '#ec4899',    // Розово-пурпурный (Королевский)
+  jackpot: '#eab308'  // Золотой (Божеский дроп)
+};
+const TIER_NAMES = {
+  cheap: 'Обычный',
+  low: 'Редкий',
+  profit: 'Богатый',
+  high: 'Королевский',
+  jackpot: '★ Божеский дроп'
+};
+
+const CASES_DATA = {
+  case_500: {
+    id: 'case_500',
+    name: 'Базовый сетап',
+    cost: 500,
+    icon: '🔌',
+    desc: 'Кабели, адаптеры, аксессуары для гаджетов и ПК',
+    items: [
+      { name: 'Кабель Type-C нейлон', icon: '🔌', price: 120, w: 1.0, tier: 'cheap' },
+      { name: 'Стилус для экрана', icon: '🖊️', price: 150, w: 1.0, tier: 'cheap' },
+      { name: 'Переходник OTG USB', icon: '🔄', price: 220, w: 8.5, tier: 'low' },
+      { name: 'Коврик для мыши Speed', icon: '⬛', price: 240, w: 8.5, tier: 'low' },
+      { name: 'Органайзер проводов', icon: '🗂️', price: 260, w: 8.5, tier: 'low' },
+      { name: 'Картридер USB 3.0', icon: '💾', price: 280, w: 8.5, tier: 'low' },
+      { name: 'Настольная подставка', icon: '📐', price: 300, w: 8.5, tier: 'low' },
+      { name: 'USB-вентилятор гибкий', icon: '🌀', price: 320, w: 8.5, tier: 'low' },
+      { name: 'Наушники проводные вкладыши', icon: '🎧', price: 520, w: 7.0, tier: 'profit' },
+      { name: 'USB-фонарик карманный', icon: '🔦', price: 540, w: 6.5, tier: 'profit' },
+      { name: 'Спрей-очиститель экрана', icon: '🧼', price: 560, w: 6.0, tier: 'profit' },
+      { name: 'Разветвитель USB 4 порта', icon: '🔀', price: 580, w: 5.5, tier: 'profit' },
+      { name: 'Автодержатель магнитный', icon: '🧲', price: 600, w: 5.5, tier: 'profit' },
+      { name: 'Кабель HDMI 2.1 оплетка', icon: '🪢', price: 620, w: 5.0, tier: 'profit' },
+      { name: 'Светодиодная лента 1м', icon: '💡', price: 650, w: 5.0, tier: 'profit' },
+      { name: 'Повербанк 5000 mAh', icon: '🔋', price: 800, w: 3.0, tier: 'high' },
+      { name: 'Беспроводная мышь Silent', icon: '🖱️', price: 950, w: 1.8, tier: 'high' },
+      { name: 'Bluetooth-метка брелок', icon: '🏷️', price: 1250, w: 0.7, tier: 'high' },
+      { name: 'Умная розетка Wi-Fi', icon: '🔘', price: 1800, w: 0.7, tier: 'jackpot' },
+      { name: 'TWS-наушники базовые', icon: '🎵', price: 2600, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_1500: {
+    id: 'case_1500',
+    name: 'Домашний уют',
+    cost: 1500,
+    icon: '🫖',
+    desc: 'Умная бытовая техника и электроника для дома и кухни',
+    items: [
+      { name: 'Ночник светодиодный в розетку', icon: '🌙', price: 300, w: 1.0, tier: 'cheap' },
+      { name: 'Машинка от катышков', icon: '🧶', price: 380, w: 1.0, tier: 'cheap' },
+      { name: 'Кухонные смарт-весы', icon: '⚖️', price: 680, w: 8.5, tier: 'low' },
+      { name: 'Электрозажигалка плазменная', icon: '⚡', price: 720, w: 8.5, tier: 'low' },
+      { name: 'Капучинатор ручной венчик', icon: '🥛', price: 780, w: 8.5, tier: 'low' },
+      { name: 'Кулинарный щуп-термометр', icon: '🌡️', price: 840, w: 8.5, tier: 'low' },
+      { name: 'Настольная лампа с диммером', icon: '🪔', price: 920, w: 8.5, tier: 'low' },
+      { name: 'Запайщик пакетов мини', icon: '👝', price: 980, w: 8.5, tier: 'low' },
+      { name: 'Увлажнитель воздуха настольный', icon: '💧', price: 1580, w: 7.0, tier: 'profit' },
+      { name: 'Электрочайник из стали', icon: '🫖', price: 1650, w: 6.5, tier: 'profit' },
+      { name: 'Бутербродница-сэндвичница', icon: '🥪', price: 1720, w: 6.0, tier: 'profit' },
+      { name: 'Напольные смарт-весы', icon: '🦶', price: 1800, w: 5.5, tier: 'profit' },
+      { name: 'Погружной блендер', icon: '🥣', price: 1900, w: 5.5, tier: 'profit' },
+      { name: 'Компактный фен с ионизацией', icon: '💨', price: 2000, w: 5.0, tier: 'profit' },
+      { name: 'Ультразвуковой аромадиффузор', icon: '🌸', price: 2150, w: 5.0, tier: 'profit' },
+      { name: 'Электробритва роторная', icon: '🪒', price: 2600, w: 3.0, tier: 'high' },
+      { name: 'Кофемолка жерновая', icon: '☕', price: 3100, w: 1.8, tier: 'high' },
+      { name: 'Вертикальный отпариватель', icon: '👔', price: 4200, w: 0.7, tier: 'high' },
+      { name: 'Контактный электрогриль', icon: '🥩', price: 6000, w: 0.7, tier: 'jackpot' },
+      { name: 'Робот-пылесос сухой уборки', icon: '🧹', price: 8500, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_5000: {
+    id: 'case_5000',
+    name: 'Гаджет-бокс',
+    cost: 5000,
+    icon: '⌚',
+    desc: 'Персональные гаджеты, портативное аудио и смарт-девайсы',
+    items: [
+      { name: 'Bluetooth-модулятор в авто', icon: '📻', price: 900, w: 1.0, tier: 'cheap' },
+      { name: 'Селфи-трипод с пультом', icon: '🤳', price: 1200, w: 1.0, tier: 'cheap' },
+      { name: 'Повербанк 10000 mAh PD', icon: '🪫', price: 2200, w: 8.5, tier: 'low' },
+      { name: 'Колонка портативная IPX6', icon: '🔊', price: 2400, w: 8.5, tier: 'low' },
+      { name: 'Веб-камера Full HD', icon: '📷', price: 2600, w: 8.5, tier: 'low' },
+      { name: 'Игровая мышь с макросами', icon: '🎯', price: 2800, w: 8.5, tier: 'low' },
+      { name: 'Беспроводная станция 3в1', icon: '🥞', price: 3100, w: 8.5, tier: 'low' },
+      { name: 'Фитнес-браслет AMOLED', icon: '⌚', price: 3400, w: 8.5, tier: 'low' },
+      { name: 'TWS-наушники с ANC', icon: '🎶', price: 5250, w: 7.0, tier: 'profit' },
+      { name: 'Видеорегистратор авто Full HD', icon: '🚗', price: 5500, w: 6.5, tier: 'profit' },
+      { name: 'Настольные смарт-часы', icon: '⏰', price: 5800, w: 6.0, tier: 'profit' },
+      { name: 'Внешний SSD 256GB Type-C', icon: '💽', price: 6100, w: 5.5, tier: 'profit' },
+      { name: 'Механическая клавиатура 60%', icon: '⌨️', price: 6400, w: 5.5, tier: 'profit' },
+      { name: 'Саундбар компактный для ТВ', icon: '🔉', price: 6750, w: 5.0, tier: 'profit' },
+      { name: 'ТВ-приставка 4K Android', icon: '📼', price: 7200, w: 5.0, tier: 'profit' },
+      { name: 'Повербанк 20000 mAh 65W', icon: '🧱', price: 8800, w: 3.0, tier: 'high' },
+      { name: 'Экшн-камера 4K с аквабоксом', icon: '📹', price: 10500, w: 1.8, tier: 'high' },
+      { name: 'Полноразмерные наушники Hi-Res', icon: '🎼', price: 14000, w: 0.7, tier: 'high' },
+      { name: 'Умная колонка с ассистентом', icon: '🗣️', price: 21000, w: 0.7, tier: 'jackpot' },
+      { name: 'Электронная книга E-Ink 6"', icon: '📖', price: 30000, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_10000: {
+    id: 'case_10000',
+    name: 'Кибер-сетап',
+    cost: 10000,
+    icon: '🖥️',
+    desc: 'Геймерская периферия, стрим-оборудование и быстрые накопители',
+    items: [
+      { name: 'Подставка для наушников RGB', icon: '⛩️', price: 1800, w: 1.0, tier: 'cheap' },
+      { name: 'Конденсаторный USB-микрофон', icon: '🎙️', price: 2200, w: 1.0, tier: 'cheap' },
+      { name: 'Игровая гарнитура 7.1', icon: '👾', price: 4500, w: 8.5, tier: 'low' },
+      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 4900, w: 8.5, tier: 'low' },
+      { name: 'Вертикальная мышь Ergonomic', icon: '🖲️', price: 5300, w: 8.5, tier: 'low' },
+      { name: 'LED-панель для стримов со штативом', icon: '🔆', price: 5800, w: 8.5, tier: 'low' },
+      { name: 'Роутер Wi-Fi 6 Gigabit', icon: '📡', price: 6400, w: 8.5, tier: 'low' },
+      { name: 'Графический планшет Pen', icon: '🎨', price: 7000, w: 8.5, tier: 'low' },
+      { name: 'Механика на оптике RGB', icon: '🌈', price: 10600, w: 7.0, tier: 'profit' },
+      { name: 'Накопитель NVMe SSD 1TB', icon: '🗄️', price: 11200, w: 6.5, tier: 'profit' },
+      { name: 'Ударопрочные смарт-часы GPS', icon: '🧭', price: 11800, w: 6.0, tier: 'profit' },
+      { name: 'Портативный монитор 15.6"', icon: '🪟', price: 12500, w: 5.5, tier: 'profit' },
+      { name: 'Мощная колонка PartyBoom', icon: '🪩', price: 13200, w: 5.5, tier: 'profit' },
+      { name: 'Геймерское кресло ткань', icon: '🪑', price: 14000, w: 5.0, tier: 'profit' },
+      { name: 'Портативная ретро-консоль', icon: '🕹️', price: 15000, w: 5.0, tier: 'profit' },
+      { name: 'Очиститель воздуха HEPA', icon: '🍃', price: 18500, w: 3.0, tier: 'high' },
+      { name: 'Капсульная кофемашина', icon: '🧋', price: 22500, w: 1.8, tier: 'high' },
+      { name: 'Микроволновка с грилем инвертор', icon: '♨️', price: 30000, w: 0.7, tier: 'high' },
+      { name: 'Домашний проектор Full HD', icon: '📽️', price: 44000, w: 0.7, tier: 'jackpot' },
+      { name: 'Смартфон 128GB 90Hz', icon: '📱', price: 62000, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_25000: {
+    id: 'case_25000',
+    name: 'Флагманский люкс',
+    cost: 25000,
+    icon: '💎',
+    desc: 'Флагманские смартфоны, ультрабуки, 4K Smart TV и топ-техника',
+    items: [
+      { name: 'Металлический хаб 10в1 4K', icon: '🔲', price: 4500, w: 1.0, tier: 'cheap' },
+      { name: 'Графический стилус Pro', icon: '✏️', price: 5500, w: 1.0, tier: 'cheap' },
+      { name: '4K-экшн камера стабилизация', icon: '🎥', price: 11000, w: 8.5, tier: 'low' },
+      { name: 'Беспроводной пылесос ручной', icon: '🌪️', price: 12000, w: 8.5, tier: 'low' },
+      { name: 'Умный аэрогриль-мультипечь', icon: '🍟', price: 13500, w: 8.5, tier: 'low' },
+      { name: 'Лазерный дальномер с камерой', icon: '📏', price: 14800, w: 8.5, tier: 'low' },
+      { name: 'Премиум наушники ANC флагман', icon: '🔇', price: 16500, w: 8.5, tier: 'low' },
+      { name: 'Изогнутый монитор 27" 165Hz', icon: '🖥️', price: 18000, w: 8.5, tier: 'low' },
+      { name: 'Робот-пылесос с влажной уборкой', icon: '🤖', price: 26500, w: 7.0, tier: 'profit' },
+      { name: 'Зерновая кофемашина автомат', icon: '🫘', price: 28000, w: 6.5, tier: 'profit' },
+      { name: 'Паровая гладильная станция', icon: '🌫️', price: 29800, w: 6.0, tier: 'profit' },
+      { name: 'Smart TV 50" 4K HDR', icon: '📺', price: 31500, w: 5.5, tier: 'profit' },
+      { name: 'Игровая консоль NextGen', icon: '🎮', price: 33500, w: 5.5, tier: 'profit' },
+      { name: 'Ультрабук 14" тонкий металл', icon: '💻', price: 36000, w: 5.0, tier: 'profit' },
+      { name: 'Квадрокоптер 4K с GPS', icon: '🛸', price: 38500, w: 5.0, tier: 'profit' },
+      { name: 'Планшет 11" 128GB Wi-Fi', icon: '🖼️', price: 47000, w: 3.0, tier: 'high' },
+      { name: 'Беззеркальный фотоаппарат 4K', icon: '📸', price: 58000, w: 1.8, tier: 'high' },
+      { name: 'Флагманский смартфон Pro 256GB', icon: '📲', price: 80000, w: 0.7, tier: 'high' },
+      { name: 'Ноутбук на Apple Silicon', icon: '🍏', price: 125000, w: 0.7, tier: 'jackpot' },
+      { name: 'Игровой ПК на RTX 4070', icon: '🚀', price: 200000, w: 0.3, tier: 'jackpot' }
+    ]
+  }
+};
+let curCaseId = 'case_500';
+
+function gameCases(){
+  const a = q('#gameArea');
+  let busy = false;
+  let timer = 0;
+  let caseTimeouts = [];
+  const testBoosts = {};
+
+  function clearCaseTimers(){
+    caseTimeouts.forEach(t => clearTimeout(t));
+    caseTimeouts = [];
+    const pointer = q('.case-pointer', a);
+    if(pointer) pointer.classList.remove('teaser');
+    qa('.case-card.tease-flash', a).forEach(c => c.classList.remove('tease-flash'));
+  }
+
+  function render(){
+    const curCase = CASES_DATA[curCaseId];
+    const isBoosted = !!testBoosts[curCaseId];
+
+    a.innerHTML = `
+    <div class="chips" id="caseModes" style="margin-bottom:10px;justify-content:center;flex-wrap:wrap">
+      <button class="chip ${curCaseId==='case_500'?'on':''}" data-cid="case_500">🟢 Базовый (500 ⬦)</button>
+      <button class="chip ${curCaseId==='case_1500'?'on':''}" data-cid="case_1500">🟡 Уют (1 500 ⬦)</button>
+      <button class="chip ${curCaseId==='case_5000'?'on':''}" data-cid="case_5000">🟠 Гаджеты (5 000 ⬦)</button>
+      <button class="chip ${curCaseId==='case_10000'?'on':''}" data-cid="case_10000">🔵 Сетап (10 000 ⬦)</button>
+      <button class="chip ${curCaseId==='case_25000'?'on':''}" data-cid="case_25000">🟣 Люкс (25 000 ⬦)</button>
+    </div>
+
+    <div style="text-align:center;margin:6px 0 10px">
+      <div style="font-size:38px">${curCase.icon}</div>
+      <b style="font-size:18px;color:#fff">${curCase.name}</b>
+      <div class="muted small" style="margin-top:2px">${curCase.desc}</div>
+      <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${fmt(curCase.cost)} ⬦</b></div>
+      ${isBoosted ? '<div style="margin-top:6px"><span class="case-boost-badge">🔥 ШАНСЫ РАЗОГНАНЫ: +35% К УДАЧЕ НА СЛЕДУЮЩИЙ КЕЙС!</span></div>' : ''}
+    </div>
+
+    <div class="case-roulette" id="caseRoulette">
+      <div class="case-pointer"></div>
+      <div class="case-strip" id="caseStrip">
+        ${curCase.items.slice(0, 15).map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-card" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${fmt(it.price)} ⬦</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="control" id="caseOpen" style="margin:0;flex:2">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+fmt(curCase.cost)+' ⬦'}</button>
+      <button class="control ghost" id="caseTestSpin" style="margin:0;flex:1;min-width:135px;background:rgba(255,207,107,.12);border-color:#ffcf6b;color:#ffcf6b;font-weight:700" ${busy?'disabled':''}>${isBoosted ? '⚡ ПРОГРЕТ (+35%)' : '🧪 ТЕСТ-ПРОКРУТ'}</button>
+    </div>
+    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС» или запустите бесплатный «ТЕСТ-ПРОКРУТ» для разгона шансов.</div>
+
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b class="small" style="color:#d9ddff">Содержимое кейса (20 предметов):</b>
+      </div>
+      <div class="case-grid">
+        ${curCase.items.map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-grid-item" style="--tier-col:${col}">
+            <div class="cgi-col"></div>
+            <div style="font-size:20px">${it.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
+              <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px">
+                <span style="color:${col};font-weight:700">${fmt(it.price)} ⬦</span>
+                <span style="color:${col};font-weight:700;font-size:9.5px">${TIER_NAMES[it.tier] || ''}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+    const openBtn = q('#caseOpen');
+    const testSpinBtn = q('#caseTestSpin');
+    const modesEl = q('#caseModes');
+
+    if(modesEl){
+      modesEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-cid]');
+        if(!b || busy) return;
+        curCaseId = b.dataset.cid;
+        render();
+      });
+    }
+
+    if(testSpinBtn){
+      testSpinBtn.addEventListener('click', () => {
+        if(busy) return;
+        busy = true;
+        clearCaseTimers();
+
+        // Для тестового прокрута выбираем привлекательный дроп (profit/high/jackpot)
+        const luckyPool = curCase.items.filter(it => it.tier === 'profit' || it.tier === 'high' || it.tier === 'jackpot');
+        const testItem = luckyPool[Math.floor(Math.random() * luckyPool.length)] || curCase.items[0];
+
+        const testTargetIdx = 36;
+        const stripItems = [];
+        for(let i = 0; i < 50; i++){
+          if(i === testTargetIdx){
+            stripItems.push(testItem);
+          } else {
+            stripItems.push(curCase.items[Math.floor(Math.random() * curCase.items.length)]);
+          }
+        }
+
+        const strip = q('#caseStrip');
+        const roulette = q('#caseRoulette');
+        const res = q('#caseRes');
+        if(openBtn) openBtn.disabled = true;
+        testSpinBtn.disabled = true;
+        testSpinBtn.textContent = 'КАЛИБРОВКА…';
+
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0px)';
+        strip.innerHTML = stripItems.map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-card" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${fmt(it.price)} ⬦</div>
+          </div>`;
+        }).join('');
+
+        const targetCard = strip.children[testTargetIdx];
+        const cardLeft = targetCard.offsetLeft;
+        const cardW = targetCard.offsetWidth || 104;
+        const rW = roulette ? roulette.clientWidth : 320;
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
+
+        res.className = 'result';
+        res.textContent = '🧪 Идёт калибровочный тест-прокрут… Прогрев шансов кейса…';
+
+        void strip.offsetWidth;
+
+        requestAnimationFrame(() => {
+          strip.style.transition = 'transform 3.8s cubic-bezier(0.10, 0.90, 0.15, 1)';
+          strip.style.transform = `translateX(-${targetX}px)`;
+        });
+
+        const tickTimes = [160, 340, 560, 840, 1200, 1680, 2260, 2920];
+        tickTimes.forEach(t => {
+          caseTimeouts.push(setTimeout(() => {
+            if(!busy) return;
+            tgHaptic('light');
+          }, t));
+        });
+
+        timer = setTimeout(() => {
+          clearCaseTimers();
+          busy = false;
+          testBoosts[curCaseId] = true;
+
+          const targetCard = strip.children[testTargetIdx];
+          if(targetCard) targetCard.classList.add('win-picked');
+
+          tgHaptic('win');
+          res.className = 'result good';
+          res.innerHTML = `
+          <div style="text-align:center">
+            🧪 <b>Тест-прокрут завершён!</b> Демо-дроп: <b style="color:${TIER_COLS[testItem.tier]}">${testItem.name} (${fmt(testItem.price)} ⬦)</b>.<br>
+            <span style="color:#ffcf6b;font-weight:700">🔥 Алгоритм прогрет! Шанс топового дропа для «${curCase.name}» увеличен на +35% на следующий раунд!</span>
+          </div>`;
+
+          if(openBtn){ openBtn.disabled = false; openBtn.textContent = 'ОТКРЫТЬ КЕЙС · ' + fmt(curCase.cost) + ' ⬦'; }
+          testSpinBtn.disabled = false;
+          testSpinBtn.textContent = '⚡ ПРОГРЕТ (+35%)';
+          render();
+        }, 4000);
+      });
+    }
+
+    if(openBtn){
+      openBtn.addEventListener('click', () => {
+        if(busy) return;
+        if(S.balance < curCase.cost){
+          const res = q('#caseRes');
+          if(res){ res.className = 'result bad'; res.textContent = 'Недостаточно токенов — пополните баланс.'; }
+          return;
+        }
+
+        const wasBoosted = !!testBoosts[curCaseId];
+        testBoosts[curCaseId] = false;
+        place(curCase.cost, 'Кейс: ' + curCase.name);
+        busy = true;
+        clearCaseTimers();
+
+        // Выбираем выигрышный предмет по весам
+        let totalW = 0;
+        curCase.items.forEach(it => totalW += it.w);
+        let rnd = Math.random() * totalW;
+        let winItem = curCase.items[0];
+        let cum = 0;
+        for(let it of curCase.items){
+          cum += it.w;
+          if(rnd <= cum){
+            winItem = it;
+            break;
+          }
+        }
+
+        const isProfit = winItem.price >= curCase.cost;
+        const diff = winItem.price - curCase.cost;
+
+        // Находим супер-дорогую вещь (топ джекпот) для тизера в случае проигрыша
+        const sortedItems = [...curCase.items].sort((a, b) => b.price - a.price);
+        const topJackpot = sortedItems[0];
+        const secondJackpot = sortedItems[1] || topJackpot;
+
+        // Генерируем ленту из 60 карточек
+        const targetIndex = 45;
+        const stripItems = [];
+        for(let i = 0; i < 60; i++){
+          if(i === targetIndex){
+            stripItems.push(winItem);
+          } else if(!isProfit && i === targetIndex - 1){
+            // Тизер: прямо перед проигрышным предметом пролетает самый дорогой джекпот кейса!
+            stripItems.push(topJackpot);
+          } else if(!isProfit && i === targetIndex + 1){
+            // Тизер: сразу после него еще один редкий предмет
+            stripItems.push(secondJackpot);
+          } else {
+            const randIt = curCase.items[Math.floor(Math.random() * curCase.items.length)];
+            stripItems.push(randIt);
+          }
+        }
+
+        const strip = q('#caseStrip');
+        const roulette = q('#caseRoulette');
+        const res = q('#caseRes');
+        if(openBtn){ openBtn.disabled = true; openBtn.textContent = 'РУЛЕТКА КРУТИТСЯ…'; }
+
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0px)';
+        strip.innerHTML = stripItems.map((it, i) => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          const isTeaser = !isProfit && (i === targetIndex - 1 || i === targetIndex + 1);
+          return `<div class="case-card ${isTeaser ? 'case-card-teaser' : ''}" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${it.price} ⬦</div>
+          </div>`;
+        }).join('');
+
+        // Точный расчет координат по DOM элементам
+        const targetCard = strip.children[targetIndex];
+        const cardLeft = targetCard.offsetLeft;
+        const cardW = targetCard.offsetWidth || 104;
+        const rW = roulette ? roulette.clientWidth : 320;
+
+        // При тизере (неокуп) останавливаемся чуть ближе к левому краю карточки,
+        // чтобы золотой джекпот оставался визуально прямо у стрелки
+        const teaseOffset = !isProfit ? Math.round(cardW * 0.18) : 0;
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2) - teaseOffset);
+
+        res.className = 'result';
+        res.textContent = 'Рулетка крутится… Ожидание дропа…';
+
+        // Принудительный reflow перед стартом анимации
+        void strip.offsetWidth;
+
+        // Драматическое замедление в конце (5.6s с плавной кривой натяжения)
+        requestAnimationFrame(() => {
+          strip.style.transition = 'transform 5.6s cubic-bezier(0.08, 0.90, 0.12, 1)';
+          strip.style.transform = `translateX(-${targetX}px)`;
+        });
+
+        // Замедляющиеся тики трещотки рулетки
+        const tickTimes = [200, 440, 720, 1080, 1520, 2040, 2650, 3350, 4150, 5000];
+        tickTimes.forEach(t => {
+          caseTimeouts.push(setTimeout(() => {
+            if(!busy) return;
+            tgHaptic('light');
+          }, t));
+        });
+
+        // Мелькание супер-дорогой вещи в замедлении перед остановкой
+        caseTimeouts.push(setTimeout(() => {
+          if(!busy) return;
+          if(!isProfit){
+            const pointer = q('.case-pointer', roulette);
+            if(pointer) pointer.classList.add('teaser');
+            const teaseCard = strip.children[targetIndex - 1];
+            if(teaseCard) teaseCard.classList.add('tease-flash');
+            res.innerHTML = 'Рулетка замедляется… <b style="color:#ffcf6b">★ ' + topJackpot.name + ' мелькает у стрелки!</b>';
+            tgHaptic('medium');
+          }
+        }, 4100));
+
+        timer = setTimeout(() => {
+          clearCaseTimers();
+          busy = false;
+
+          const targetCard = strip.children[targetIndex];
+          if(targetCard) targetCard.classList.add('win-picked');
+
+          tgHaptic(isProfit ? 'win' : 'light');
+          win(winItem.price, 'Кейсы', winItem.name);
+
+          res.className = `result ${isProfit ? 'good' : 'bad'}`;
+          res.innerHTML = `
+          <div class="case-win-banner">
+            <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
+            <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
+            <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса · <span style="color:#ffcf6b">★ Супер-дроп ${topJackpot.name} (${fmt(topJackpot.price)} ⬦) пролетел в одном шаге!</span>`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
+          </div>`;
+
+          if(openBtn){
+            openBtn.disabled = false;
+            openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + fmt(curCase.cost) + ' ⬦';
+          }
+        }, 5750);
+      });
+    }
+  }
+
+  render();
+  return () => {
+    busy = false;
+    clearTimeout(timer);
+    clearCaseTimers();
+  };
+}
+
+/* ---------- роутинг ---------- */
+const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы'};
+const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases};
+function play(type){
+  screen('play');
+  q('#gameLabel').textContent='ИГРА';
+  q('#gameTitle').textContent=NAMES[type];
+  q('#gameArea').innerHTML='';
+  cleanup=BUILD[type]();
+}
+qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)));
+
+/* отладочные хуки для автотестов (не влияют на игру) */
+window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
+window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
+
+tgInit();tgRegister();syncUI();screen('games');
+})();
+</script>
+</body>
+</html>
