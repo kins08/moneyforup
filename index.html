@@ -94,6 +94,11 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .lg b{display:block;font-size:13.5px;color:#fff;margin-bottom:3px}
 .lg .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
 .lg.hit{border-color:#8f97ff;background:#2b3457;box-shadow:0 0 0 1px rgba(143,151,255,.5)}
+.lg.tease-flash{border-color:#ffcf6b !important;background:rgba(255,207,107,.18) !important;box-shadow:0 0 16px rgba(255,207,107,.7) !important;animation:pulseTease .35s ease-in-out infinite alternate}
+.wheel span.tease-flash{color:#ffcf6b !important;text-shadow:0 0 10px #ffcf6b, 0 0 20px #ffcf6b !important;transform:translate(-50%,-50%) scale(1.35) !important;transition:transform .2s,color .2s}
+.pointer.tease-flutter{border-top-color:#ffcf6b !important;filter:drop-shadow(0 0 10px #ffcf6b) !important;animation:ptrFlutter .14s ease-in-out infinite alternate}
+@keyframes ptrFlutter{from{transform:rotate(-14deg)}to{transform:rotate(5deg)}}
+@keyframes pulseTease{from{filter:brightness(1)}to{filter:brightness(1.4)}}
 /* дроп */
 .dropwrap{position:relative;height:300px;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#252c3e,#191e2a);border:1px solid var(--line)}
 .dropwrap canvas{width:100%;height:100%;display:block}
@@ -116,12 +121,15 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .avito-step.done{border-color:#3ddc96;color:#3ddc96;background:rgba(61,220,150,.12)}
 /* кейсы */
 .case-roulette{position:relative;height:128px;border-radius:18px;background:linear-gradient(180deg,#191f2c,#10141d);border:1px solid var(--line);overflow:hidden;margin:12px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.7)}
-.case-pointer{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#ffcf6b;z-index:10;box-shadow:0 0 12px #ffcf6b}
+.case-pointer{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#ffcf6b;z-index:10;box-shadow:0 0 12px #ffcf6b;transition:box-shadow .2s}
+.case-pointer.teaser{box-shadow:0 0 24px #ffcf6b, 0 0 45px #ffcf6b !important}
 .case-pointer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ffcf6b}
 .case-pointer::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:10px solid #ffcf6b}
 .case-strip{display:flex;position:absolute;left:0;top:0;bottom:0;will-change:transform}
 .case-card{flex:0 0 104px;width:104px;min-width:104px;max-width:104px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;position:relative;user-select:none;transition:box-shadow .3s,background .3s}
 .case-card.win-picked{box-shadow:inset 0 0 24px var(--tier-col,#ffcf6b);background:rgba(255,255,255,.06)}
+.case-card.case-card-teaser::before{content:'★ ТОП';position:absolute;top:4px;right:4px;font-size:8px;font-weight:800;color:#ffcf6b;background:rgba(255,207,107,.18);border:1px solid rgba(255,207,107,.45);padding:1px 4px;border-radius:4px;z-index:2}
+.case-card.tease-flash{box-shadow:inset 0 0 32px #ffcf6b, 0 0 24px rgba(255,207,107,.7) !important;border:1px solid #ffcf6b !important;animation:pulseTease .35s ease-in-out infinite alternate}
 .case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
 .case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px}
 .case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -150,7 +158,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
 <div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
 </div>
-<div class="section"><b>Игры</b><span class="muted small">6 игр</span></div>
+<div class="section"><b>Игры</b><span class="muted small">7 игр</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -1716,6 +1724,10 @@ function gameSpin(){
     function clearSpinTimers(){
       spinTimeouts.forEach(t=>clearTimeout(t));
       spinTimeouts=[];
+      qa('.lg',a).forEach(e=>e.classList.remove('tease-flash'));
+      const ptr=q('.pointer',a);
+      if(ptr)ptr.classList.remove('tease-flutter');
+      qa('.wheel span',a).forEach(s=>s.classList.remove('tease-flash'));
     }
 
     function spin(){
@@ -1728,6 +1740,13 @@ function gameSpin(){
       for(let i=0;i<curM.w.length;i++){cum+=curM.w[i];if(pick<cum){idx=i;break}}
       const v=curM.pay[idx];
       const isLoss=v<1;
+
+      // Находим топ множитель для тизера в случае проигрыша
+      let maxPay=-1, topXIdx=0;
+      for(let i=0; i<curM.pay.length; i++){
+        if(curM.pay[i]>maxPay){ maxPay=curM.pay[i]; topXIdx=i; }
+      }
+      const topLabel = lbl(maxPay);
 
       // Тизер: при проигрыше стрелка останавливается у самого края сектора, граничащего с другим
       const edgeOffset=isLoss?(Math.random()<0.5?0.16:0.84):0.5;
@@ -1746,7 +1765,7 @@ function gameSpin(){
           const ptr=q('.pointer',a);
           if(ptr){
             ptr.style.transform='rotate(-12deg)';
-            setTimeout(()=>{if(ptr)ptr.style.transform='rotate(0deg)';},70);
+            setTimeout(()=>{if(ptr&&!ptr.classList.contains('tease-flutter'))ptr.style.transform='rotate(0deg)';},70);
           }
           tgHaptic('light');
         },t));
@@ -1756,7 +1775,14 @@ function gameSpin(){
       spinTimeouts.push(setTimeout(()=>{
         if(dead||!busy)return;
         if(isLoss){
-          sr.innerHTML='Колесо замедляется… <b style="color:#ffcf6b">Большой Х совсем рядом!</b>';
+          const lgTop=q('#lg'+topXIdx,a);
+          if(lgTop)lgTop.classList.add('tease-flash');
+          const spans=qa('.wheel span',a);
+          if(spans[topXIdx])spans[topXIdx].classList.add('tease-flash');
+          const ptr=q('.pointer',a);
+          if(ptr)ptr.classList.add('tease-flutter');
+          sr.innerHTML='Колесо замедляется… <b style="color:#ffcf6b">★ Большой '+topLabel+' мелькает у стрелки!</b>';
+          tgHaptic('medium');
         }
       },2200));
 
@@ -1768,7 +1794,7 @@ function gameSpin(){
         const lg=q('#lg'+idx);if(lg)lg.classList.add('hit');
         if(amount>0)win(amount,'Спин',lbl(v));
         sr.className='result '+(amount>=S.bet?'good':'bad');
-        sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается')+(isLoss?' · <span style="color:#ffcf6b">Большой Х пролетел совсем рядом!</span>':'');
+        sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается')+(isLoss?' · <span style="color:#ffcf6b">★ Большой '+topLabel+' пролетел в шаге от стрелки!</span>':'');
       },3500);
     }
     go.addEventListener('click',spin);
@@ -2415,6 +2441,9 @@ function gameCases(){
   function clearCaseTimers(){
     caseTimeouts.forEach(t => clearTimeout(t));
     caseTimeouts = [];
+    const pointer = q('.case-pointer', a);
+    if(pointer) pointer.classList.remove('teaser');
+    qa('.case-card.tease-flash', a).forEach(c => c.classList.remove('tease-flash'));
   }
 
   function render(){
@@ -2549,9 +2578,10 @@ function gameCases(){
 
         strip.style.transition = 'none';
         strip.style.transform = 'translateX(0px)';
-        strip.innerHTML = stripItems.map(it => {
+        strip.innerHTML = stripItems.map((it, i) => {
           const col = TIER_COLS[it.tier] || '#8f97ff';
-          return `<div class="case-card" style="--tier-col:${col}">
+          const isTeaser = !isProfit && (i === targetIndex - 1 || i === targetIndex + 1);
+          return `<div class="case-card ${isTeaser ? 'case-card-teaser' : ''}" style="--tier-col:${col}">
             <div class="ci-icon">${it.icon}</div>
             <div class="ci-name">${it.name}</div>
             <div class="ci-val">${it.price} ⬦</div>
@@ -2594,7 +2624,12 @@ function gameCases(){
         caseTimeouts.push(setTimeout(() => {
           if(!busy) return;
           if(!isProfit){
-            res.innerHTML = 'Рулетка замедляется… <b style="color:#ffcf6b">★ ' + topJackpot.name + ' пролетает рядом!</b>';
+            const pointer = q('.case-pointer', roulette);
+            if(pointer) pointer.classList.add('teaser');
+            const teaseCard = strip.children[targetIndex - 1];
+            if(teaseCard) teaseCard.classList.add('tease-flash');
+            res.innerHTML = 'Рулетка замедляется… <b style="color:#ffcf6b">★ ' + topJackpot.name + ' мелькает у стрелки!</b>';
+            tgHaptic('medium');
           }
         }, 3200));
 
