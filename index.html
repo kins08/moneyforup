@@ -86,7 +86,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .ball2{position:absolute;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:linear-gradient(135deg,#8f95ff,#c39bff);box-shadow:0 0 8px rgba(140,150,255,.45)}
 /* спин */
 .spinwrap{position:relative;width:100%;display:flex;justify-content:center;padding-top:14px}
-.wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;overflow:hidden;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.45);transition:transform 3.4s cubic-bezier(.12,.88,.18,1)}
+.wheel{width:228px;height:228px;border-radius:50%;border:9px solid #2a3142;position:relative;overflow:hidden;box-shadow:inset 0 0 14px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.45);transition:transform 4.5s cubic-bezier(.08,.88,.14,1)}
 .wheel span{position:absolute;transform:translate(-50%,-50%);font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);white-space:nowrap}
 .pointer{position:absolute;top:6px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #fff;z-index:5;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));transition:transform .12s ease;transform-origin:50% 0}
 .legend{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
@@ -195,7 +195,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
 <button class="game" data-game="skuf"><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
 <button class="game" data-game="avito"><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
-<button class="game" data-game="cases"><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 50 до 2500 ₽, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -1301,8 +1301,12 @@ function gameRacket(){
       g.fillStyle=(i%2?'rgba(255,180,90,':'rgba(255,110,110,')+(1-k).toFixed(2)+')';g.fill();
     }
     g.restore();
+  const ROCKET_SPEED = 0.58; // замедление полёта ракетки для приятного и драматичного нарастания
+  function flightT(){
+    const s = ((performance.now() - t0) / 1000) * ROCKET_SPEED;
+    return s * (1 + 0.05 * s);
   }
-  function curT(){return tStop?tStop:(phase==='flight'?(performance.now()-t0)/1000:0)}
+  function curT(){return tStop ? tStop : (phase==='flight' ? flightT() : 0)}
   function draw(){
     const {g,W,H}=fitCanvas(cvs);
     const pad={l:48,r:14,t:16,b:26},kk=RK.k;
@@ -1394,10 +1398,9 @@ function gameRacket(){
     }
     draw();
   }
-  const tau=t=>t*(1+0.06*t);          // двигатель постепенно раскручивается
   function loop(){
     if(dead)return;
-    const t=tau((performance.now()-t0)/1000);
+    const t=flightT();
     cur=Math.exp(RK.k*t);
     if(!cashed&&autoOn&&autoX<crash&&cur>=autoX)autoCash();   // авто-вывод; полёт продолжается
     if(cur>=crash){cur=crash;tStop=t;stop();return}
@@ -1555,7 +1558,7 @@ function gameJumper(){
     if(level>=12)return;
     busy=true;refresh();
     const from=ballTop(level),to=ballTop(level+1);
-    const dur=380,st=performance.now(),sway=Math.random()<.5?-1:1;
+    const dur=540,st=performance.now(),sway=Math.random()<.5?-1:1;
     jr.className='result';jr.textContent='Прыжок на уровень '+(level+1)+'…';
     (function go(now){
       if(dead)return;
@@ -1578,7 +1581,7 @@ function gameJumper(){
       jr.innerHTML='Уровень '+level+' пройден · множитель <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b>';
       refresh();
     }else{
-      const st=performance.now(),dur=620;
+      const st=performance.now(),dur=780;
       jr.className='result bad';jr.textContent='Шарик сорвался и падает…';
       (function fall(now){
         if(dead)return;
@@ -1752,13 +1755,13 @@ function gameSpin(){
       const edgeOffset=isLoss?(Math.random()<0.5?0.16:0.84):0.5;
       const cen=(idx+edgeOffset)*segAngle;
       const curMod=((rot%360)+360)%360;
-      rot+=((-cen-curMod)%360+360)%360+360*5;
+      rot+=((-cen-curMod)%360+360)%360+360*6;
       wheel.style.transform='rotate('+rot+'deg)';
       sr.className='result';sr.textContent='Колесо вращается…';
       qa('.lg').forEach(e=>e.classList.remove('hit'));
 
       // Замедляющиеся тики стрелки
-      const tickTimes=[220,460,740,1070,1460,1920,2440,2960];
+      const tickTimes=[260,540,880,1280,1750,2290,2900,3580,4200];
       tickTimes.forEach(t=>{
         spinTimeouts.push(setTimeout(()=>{
           if(dead||!busy)return;
@@ -1784,7 +1787,7 @@ function gameSpin(){
           sr.innerHTML='Колесо замедляется… <b style="color:#ffcf6b">★ Большой '+topLabel+' мелькает у стрелки!</b>';
           tgHaptic('medium');
         }
-      },2200));
+      },3100));
 
       timer=setTimeout(()=>{
         if(dead)return;
@@ -1795,7 +1798,7 @@ function gameSpin(){
         if(amount>0)win(amount,'Спин',lbl(v));
         sr.className='result '+(amount>=S.bet?'good':'bad');
         sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+S.bet+' ⬦ (≈ '+fmtRub(S.bet)+') не возвращается')+(isLoss?' · <span style="color:#ffcf6b">★ Большой '+topLabel+' пролетел в шаге от стрелки!</span>':'');
-      },3500);
+      },4650);
     }
     go.addEventListener('click',spin);
     wireBet(a,()=>{go.textContent='КРУТИТЬ · '+S.bet+' ⬦'});
@@ -1902,7 +1905,7 @@ function gameDrop(){
       for(let i=1;i<=rows;i++){r+=Math.random()<0.5?0:1;path.push(r)}
       const slot=path[rows];
       dr.className='result';dr.textContent='Шарик проходит развилки…';
-      const dur=1350,st=performance.now();
+      const dur=2100,st=performance.now();
       (function anim(now){
         if(dead)return;
         const pr=Math.min(1,(now-st)/dur);
@@ -2241,7 +2244,7 @@ function gameAvito(){
           resMsg = `💥 <b>Сделка сорвалась:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${S.bet} ⬦ сгорела.`;
           render();
         }
-      }, 420);
+      }, 750);
     });
 
     takeBtn.addEventListener('click', () => {
@@ -2451,18 +2454,18 @@ function gameCases(){
 
     a.innerHTML = `
     <div class="chips" id="caseModes" style="margin-bottom:10px;justify-content:center;flex-wrap:wrap">
-      <button class="chip ${curCaseId==='case_500'?'on':''}" data-cid="case_500">🟢 Базовый (50 ₽)</button>
-      <button class="chip ${curCaseId==='case_1500'?'on':''}" data-cid="case_1500">🟡 Уют (150 ₽)</button>
-      <button class="chip ${curCaseId==='case_5000'?'on':''}" data-cid="case_5000">🟠 Гаджеты (500 ₽)</button>
-      <button class="chip ${curCaseId==='case_10000'?'on':''}" data-cid="case_10000">🔵 Сетап (1000 ₽)</button>
-      <button class="chip ${curCaseId==='case_25000'?'on':''}" data-cid="case_25000">🟣 Люкс (2500 ₽)</button>
+      <button class="chip ${curCaseId==='case_500'?'on':''}" data-cid="case_500">🟢 Базовый (500 ⬦)</button>
+      <button class="chip ${curCaseId==='case_1500'?'on':''}" data-cid="case_1500">🟡 Уют (1 500 ⬦)</button>
+      <button class="chip ${curCaseId==='case_5000'?'on':''}" data-cid="case_5000">🟠 Гаджеты (5 000 ⬦)</button>
+      <button class="chip ${curCaseId==='case_10000'?'on':''}" data-cid="case_10000">🔵 Сетап (10 000 ⬦)</button>
+      <button class="chip ${curCaseId==='case_25000'?'on':''}" data-cid="case_25000">🟣 Люкс (25 000 ⬦)</button>
     </div>
 
     <div style="text-align:center;margin:6px 0 10px">
       <div style="font-size:38px">${curCase.icon}</div>
       <b style="font-size:18px;color:#fff">${curCase.name}</b>
       <div class="muted small" style="margin-top:2px">${curCase.desc}</div>
-      <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${curCase.cost} ⬦</b> (≈ ${fmtRub(curCase.cost)})</div>
+      <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${fmt(curCase.cost)} ⬦</b></div>
     </div>
 
     <div class="case-roulette" id="caseRoulette">
@@ -2605,14 +2608,14 @@ function gameCases(){
         // Принудительный reflow перед стартом анимации
         void strip.offsetWidth;
 
-        // Драматическое замедление в конце (4.4s с кривой высокого натяжения)
+        // Драматическое замедление в конце (5.6s с плавной кривой натяжения)
         requestAnimationFrame(() => {
-          strip.style.transition = 'transform 4.4s cubic-bezier(0.10, 0.90, 0.15, 1)';
+          strip.style.transition = 'transform 5.6s cubic-bezier(0.08, 0.90, 0.12, 1)';
           strip.style.transform = `translateX(-${targetX}px)`;
         });
 
         // Замедляющиеся тики трещотки рулетки
-        const tickTimes = [150, 320, 520, 760, 1050, 1400, 1800, 2260, 2780, 3350, 3950];
+        const tickTimes = [200, 440, 720, 1080, 1520, 2040, 2650, 3350, 4150, 5000];
         tickTimes.forEach(t => {
           caseTimeouts.push(setTimeout(() => {
             if(!busy) return;
@@ -2631,7 +2634,7 @@ function gameCases(){
             res.innerHTML = 'Рулетка замедляется… <b style="color:#ffcf6b">★ ' + topJackpot.name + ' мелькает у стрелки!</b>';
             tgHaptic('medium');
           }
-        }, 3200));
+        }, 4100));
 
         timer = setTimeout(() => {
           clearCaseTimers();
@@ -2648,7 +2651,7 @@ function gameCases(){
           <div class="case-win-banner">
             <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
-            <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${winItem.price} ⬦</b> (≈ ${fmtRub(winItem.price)}) · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
+            <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
             <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса · <span style="color:#ffcf6b">★ Супер-дроп ${topJackpot.name} (${topJackpot.price} ⬦) пролетел в одном шаге!</span>`} · токены начислены на баланс!</div>
           </div>`;
 
@@ -2656,7 +2659,7 @@ function gameCases(){
             openBtn.disabled = false;
             openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + curCase.cost + ' ⬦';
           }
-        }, 4600);
+        }, 5750);
       });
     }
   }
