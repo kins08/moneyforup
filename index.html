@@ -138,6 +138,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .case-grid-item{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:12px;background:#1e2434;border:1px solid var(--line);font-size:11px}
 .case-grid-item .cgi-col{width:4px;height:24px;border-radius:2px;background:var(--tier-col,#8f97ff);flex-shrink:0}
 .case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
+.case-boost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,207,107,.15);border:1px solid #ffcf6b;color:#ffcf6b;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;margin-top:6px;animation:pulseTease .8s ease-in-out infinite alternate}
 @media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
 </style>
 </head>
@@ -1463,21 +1464,21 @@ function gameRacket(){
 const JP_MODES = {
   lite: {
     name: 'Лайт',
-    desc: '1-й (78%), 2-й (65%), 3-й (40%). Выше 2-й ступени — сильное падение шансов. Макс: ×4.5',
+    desc: 'Умеренный риск: надёжный подъём на начальных ступенях. Максимальный множитель: ×4.5',
     p: [0.78, 0.65, 0.40, 0.20, 0.15, 0.12, 0.09, 0.07, 0.05, 0.04, 0.03, 0.02],
     pay: [1.15, 1.30, 1.50, 1.75, 2.05, 2.40, 2.80, 3.25, 3.70, 4.05, 4.30, 4.50]
   },
   med: {
     name: 'Средний',
-    desc: '1-й (70%), 2-й (58%), 3-й (32%). После 2-й ступени — крутой барьер. Макс: ×7.0',
-    p: [0.70, 0.58, 0.32, 0.15, 0.10, 0.07, 0.05, 0.035, 0.025, 0.018, 0.012, 0.008],
-    pay: [1.25, 1.55, 1.90, 2.35, 2.90, 3.55, 4.30, 5.10, 5.85, 6.35, 6.75, 7.00]
+    desc: 'Сбалансированный риск: крутой барьер высоты после 2-й ступени. Максимальный множитель: ×7.0',
+    p: [0.70, 0.46, 0.20, 0.12, 0.08, 0.055, 0.038, 0.025, 0.018, 0.012, 0.008, 0.005],
+    pay: [1.25, 1.40, 1.68, 2.15, 2.75, 3.45, 4.25, 5.10, 5.85, 6.35, 6.75, 7.00]
   },
   crit: {
     name: 'Критический',
-    desc: '1-й (62%), 2-й (48%), 3-й (24%). Выше 2-й ступени выжить экстремально сложно. Макс: ×10.0',
-    p: [0.62, 0.48, 0.24, 0.10, 0.06, 0.04, 0.025, 0.018, 0.012, 0.008, 0.005, 0.003],
-    pay: [1.40, 1.85, 2.45, 3.25, 4.25, 5.40, 6.65, 7.85, 8.85, 9.40, 9.75, 10.0]
+    desc: 'Экстремальный риск: опасный подъем для самых смелых. Максимальный множитель: ×10.0',
+    p: [0.58, 0.36, 0.15, 0.07, 0.045, 0.03, 0.018, 0.012, 0.008, 0.005, 0.003, 0.002],
+    pay: [1.35, 1.60, 2.05, 2.85, 3.85, 5.05, 6.35, 7.65, 8.80, 9.40, 9.75, 10.0]
   }
 };
 let curJumpMode = 'med';
@@ -2440,6 +2441,7 @@ function gameCases(){
   let busy = false;
   let timer = 0;
   let caseTimeouts = [];
+  const testBoosts = {};
 
   function clearCaseTimers(){
     caseTimeouts.forEach(t => clearTimeout(t));
@@ -2451,6 +2453,7 @@ function gameCases(){
 
   function render(){
     const curCase = CASES_DATA[curCaseId];
+    const isBoosted = !!testBoosts[curCaseId];
 
     a.innerHTML = `
     <div class="chips" id="caseModes" style="margin-bottom:10px;justify-content:center;flex-wrap:wrap">
@@ -2466,6 +2469,7 @@ function gameCases(){
       <b style="font-size:18px;color:#fff">${curCase.name}</b>
       <div class="muted small" style="margin-top:2px">${curCase.desc}</div>
       <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${fmt(curCase.cost)} ⬦</b></div>
+      ${isBoosted ? '<div style="margin-top:6px"><span class="case-boost-badge">🔥 ШАНСЫ РАЗОГНАНЫ: +35% К УДАЧЕ НА СЛЕДУЮЩИЙ КЕЙС!</span></div>' : ''}
     </div>
 
     <div class="case-roulette" id="caseRoulette">
@@ -2476,16 +2480,17 @@ function gameCases(){
           return `<div class="case-card" style="--tier-col:${col}">
             <div class="ci-icon">${it.icon}</div>
             <div class="ci-name">${it.name}</div>
-            <div class="ci-val">${it.price} ⬦</div>
+            <div class="ci-val">${fmt(it.price)} ⬦</div>
           </div>`;
         }).join('')}
       </div>
     </div>
 
-    <div class="actions" style="margin-top:10px">
-      <button class="control" id="caseOpen" style="margin:0">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+curCase.cost+' ⬦'}</button>
+    <div class="actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="control" id="caseOpen" style="margin:0;flex:2">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+fmt(curCase.cost)+' ⬦'}</button>
+      <button class="control ghost" id="caseTestSpin" style="margin:0;flex:1;min-width:135px;background:rgba(255,207,107,.12);border-color:#ffcf6b;color:#ffcf6b;font-weight:700" ${busy?'disabled':''}>${isBoosted ? '⚡ ПРОГРЕТ (+35%)' : '🧪 ТЕСТ-ПРОКРУТ'}</button>
     </div>
-    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС», чтобы запустить рулетку.</div>
+    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС» или запустите бесплатный «ТЕСТ-ПРОКРУТ» для разгона шансов.</div>
 
     <div style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -2500,8 +2505,8 @@ function gameCases(){
             <div style="flex:1;min-width:0">
               <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
               <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px">
-                <span style="color:${col};font-weight:700">${it.price} ⬦</span>
-                <span class="muted">${it.w}%</span>
+                <span style="color:${col};font-weight:700">${fmt(it.price)} ⬦</span>
+                <span style="color:${col};font-weight:700;font-size:9.5px">${TIER_NAMES[it.tier] || ''}</span>
               </div>
             </div>
           </div>`;
@@ -2510,6 +2515,7 @@ function gameCases(){
     </div>`;
 
     const openBtn = q('#caseOpen');
+    const testSpinBtn = q('#caseTestSpin');
     const modesEl = q('#caseModes');
 
     if(modesEl){
@@ -2518,6 +2524,92 @@ function gameCases(){
         if(!b || busy) return;
         curCaseId = b.dataset.cid;
         render();
+      });
+    }
+
+    if(testSpinBtn){
+      testSpinBtn.addEventListener('click', () => {
+        if(busy) return;
+        busy = true;
+        clearCaseTimers();
+
+        // Для тестового прокрута выбираем привлекательный дроп (profit/high/jackpot)
+        const luckyPool = curCase.items.filter(it => it.tier === 'profit' || it.tier === 'high' || it.tier === 'jackpot');
+        const testItem = luckyPool[Math.floor(Math.random() * luckyPool.length)] || curCase.items[0];
+
+        const testTargetIdx = 36;
+        const stripItems = [];
+        for(let i = 0; i < 50; i++){
+          if(i === testTargetIdx){
+            stripItems.push(testItem);
+          } else {
+            stripItems.push(curCase.items[Math.floor(Math.random() * curCase.items.length)]);
+          }
+        }
+
+        const strip = q('#caseStrip');
+        const roulette = q('#caseRoulette');
+        const res = q('#caseRes');
+        if(openBtn) openBtn.disabled = true;
+        testSpinBtn.disabled = true;
+        testSpinBtn.textContent = 'КАЛИБРОВКА…';
+
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0px)';
+        strip.innerHTML = stripItems.map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-card" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${fmt(it.price)} ⬦</div>
+          </div>`;
+        }).join('');
+
+        const targetCard = strip.children[testTargetIdx];
+        const cardLeft = targetCard.offsetLeft;
+        const cardW = targetCard.offsetWidth || 104;
+        const rW = roulette ? roulette.clientWidth : 320;
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
+
+        res.className = 'result';
+        res.textContent = '🧪 Идёт калибровочный тест-прокрут… Прогрев шансов кейса…';
+
+        void strip.offsetWidth;
+
+        requestAnimationFrame(() => {
+          strip.style.transition = 'transform 3.8s cubic-bezier(0.10, 0.90, 0.15, 1)';
+          strip.style.transform = `translateX(-${targetX}px)`;
+        });
+
+        const tickTimes = [160, 340, 560, 840, 1200, 1680, 2260, 2920];
+        tickTimes.forEach(t => {
+          caseTimeouts.push(setTimeout(() => {
+            if(!busy) return;
+            tgHaptic('light');
+          }, t));
+        });
+
+        timer = setTimeout(() => {
+          clearCaseTimers();
+          busy = false;
+          testBoosts[curCaseId] = true;
+
+          const targetCard = strip.children[testTargetIdx];
+          if(targetCard) targetCard.classList.add('win-picked');
+
+          tgHaptic('win');
+          res.className = 'result good';
+          res.innerHTML = `
+          <div style="text-align:center">
+            🧪 <b>Тест-прокрут завершён!</b> Демо-дроп: <b style="color:${TIER_COLS[testItem.tier]}">${testItem.name} (${fmt(testItem.price)} ⬦)</b>.<br>
+            <span style="color:#ffcf6b;font-weight:700">🔥 Алгоритм прогрет! Шанс топового дропа для «${curCase.name}» увеличен на +35% на следующий раунд!</span>
+          </div>`;
+
+          if(openBtn){ openBtn.disabled = false; openBtn.textContent = 'ОТКРЫТЬ КЕЙС · ' + fmt(curCase.cost) + ' ⬦'; }
+          testSpinBtn.disabled = false;
+          testSpinBtn.textContent = '⚡ ПРОГРЕТ (+35%)';
+          render();
+        }, 4000);
       });
     }
 
@@ -2530,6 +2622,8 @@ function gameCases(){
           return;
         }
 
+        const wasBoosted = !!testBoosts[curCaseId];
+        testBoosts[curCaseId] = false;
         place(curCase.cost, 'Кейс: ' + curCase.name);
         busy = true;
         clearCaseTimers();
@@ -2652,12 +2746,12 @@ function gameCases(){
             <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
             <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
-            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса · <span style="color:#ffcf6b">★ Супер-дроп ${topJackpot.name} (${topJackpot.price} ⬦) пролетел в одном шаге!</span>`} · токены начислены на баланс!</div>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса · <span style="color:#ffcf6b">★ Супер-дроп ${topJackpot.name} (${fmt(topJackpot.price)} ⬦) пролетел в одном шаге!</span>`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
           </div>`;
 
           if(openBtn){
             openBtn.disabled = false;
-            openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + curCase.cost + ' ⬦';
+            openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + fmt(curCase.cost) + ' ⬦';
           }
         }, 5750);
       });
