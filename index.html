@@ -120,7 +120,8 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .case-pointer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ffcf6b}
 .case-pointer::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:10px solid #ffcf6b}
 .case-strip{display:flex;position:absolute;left:0;top:0;bottom:0;will-change:transform}
-.case-card{flex:0 0 100px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;position:relative;user-select:none}
+.case-card{flex:0 0 104px;width:104px;min-width:104px;max-width:104px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;position:relative;user-select:none;transition:box-shadow .3s,background .3s}
+.case-card.win-picked{box-shadow:inset 0 0 24px var(--tier-col,#ffcf6b);background:rgba(255,255,255,.06)}
 .case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
 .case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px}
 .case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2227,20 +2228,20 @@ const CASES_DATA = {
     icon: '🔌',
     desc: 'Кабели, адаптеры, аксессуары для гаджетов и ПК',
     items: [
-      { name: 'Кабель Type-C нейлон', icon: '🔌', price: 12, w: 0.8, tier: 'cheap' },
-      { name: 'Стилус для экрана', icon: '🖊️', price: 15, w: 0.7, tier: 'cheap' },
-      { name: 'Переходник OTG USB', icon: '🔄', price: 22, w: 7.5, tier: 'low' },
-      { name: 'Коврик для мыши Speed', icon: '🖱️', price: 24, w: 8.0, tier: 'low' },
-      { name: 'Органайзер проводов', icon: '🗂️', price: 26, w: 8.0, tier: 'low' },
-      { name: 'Картридер USB 3.0', icon: '💾', price: 28, w: 7.5, tier: 'low' },
-      { name: 'Настольная подставка', icon: '📱', price: 30, w: 7.5, tier: 'low' },
-      { name: 'USB-вентилятор гибкий', icon: '🌀', price: 32, w: 7.5, tier: 'low' },
-      { name: 'Наушники проводные вкладыши', icon: '🎧', price: 52, w: 8.0, tier: 'profit' },
-      { name: 'USB-фонарик карманный', icon: '🔦', price: 54, w: 7.5, tier: 'profit' },
-      { name: 'Спрей-очиститель экрана', icon: '🧼', price: 56, w: 7.0, tier: 'profit' },
-      { name: 'Разветвитель USB 4 порта', icon: '🔀', price: 58, w: 6.5, tier: 'profit' },
-      { name: 'Автодержатель магнитный', icon: '🧲', price: 60, w: 6.0, tier: 'profit' },
-      { name: 'Кабель HDMI 2.1 оплетка', icon: '📺', price: 62, w: 5.5, tier: 'profit' },
+      { name: 'Кабель Type-C нейлон', icon: '🔌', price: 12, w: 1.0, tier: 'cheap' },
+      { name: 'Стилус для экрана', icon: '🖊️', price: 15, w: 1.0, tier: 'cheap' },
+      { name: 'Переходник OTG USB', icon: '🔄', price: 22, w: 8.5, tier: 'low' },
+      { name: 'Коврик для мыши Speed', icon: '🖱️', price: 24, w: 8.5, tier: 'low' },
+      { name: 'Органайзер проводов', icon: '🗂️', price: 26, w: 8.5, tier: 'low' },
+      { name: 'Картридер USB 3.0', icon: '💾', price: 28, w: 8.5, tier: 'low' },
+      { name: 'Настольная подставка', icon: '📱', price: 30, w: 8.5, tier: 'low' },
+      { name: 'USB-вентилятор гибкий', icon: '🌀', price: 32, w: 8.5, tier: 'low' },
+      { name: 'Наушники проводные вкладыши', icon: '🎧', price: 52, w: 7.0, tier: 'profit' },
+      { name: 'USB-фонарик карманный', icon: '🔦', price: 54, w: 6.5, tier: 'profit' },
+      { name: 'Спрей-очиститель экрана', icon: '🧼', price: 56, w: 6.0, tier: 'profit' },
+      { name: 'Разветвитель USB 4 порта', icon: '🔀', price: 58, w: 5.5, tier: 'profit' },
+      { name: 'Автодержатель магнитный', icon: '🧲', price: 60, w: 5.5, tier: 'profit' },
+      { name: 'Кабель HDMI 2.1 оплетка', icon: '📺', price: 62, w: 5.0, tier: 'profit' },
       { name: 'Светодиодная лента 1м', icon: '💡', price: 65, w: 5.0, tier: 'profit' },
       { name: 'Повербанк 5000 mAh', icon: '🔋', price: 80, w: 3.0, tier: 'high' },
       { name: 'Беспроводная мышь Silent', icon: '🖱️', price: 95, w: 1.8, tier: 'high' },
@@ -2256,20 +2257,20 @@ const CASES_DATA = {
     icon: '🫖',
     desc: 'Умная бытовая техника и электроника для дома и кухни',
     items: [
-      { name: 'Ночник светодиодный в розетку', icon: '🌙', price: 30, w: 0.8, tier: 'cheap' },
-      { name: 'Машинка от катышков', icon: '🧶', price: 38, w: 0.7, tier: 'cheap' },
-      { name: 'Кухонные смарт-весы', icon: '⚖️', price: 68, w: 7.5, tier: 'low' },
-      { name: 'Электрозажигалка плазменная', icon: '⚡', price: 72, w: 8.0, tier: 'low' },
-      { name: 'Капучинатор ручной венчик', icon: '☕', price: 78, w: 8.0, tier: 'low' },
-      { name: 'Кулинарный щуп-термометр', icon: '🌡️', price: 84, w: 7.5, tier: 'low' },
-      { name: 'Настольная лампа с диммером', icon: '💡', price: 92, w: 7.5, tier: 'low' },
-      { name: 'Запайщик пакетов мини', icon: '👝', price: 98, w: 7.5, tier: 'low' },
-      { name: 'Увлажнитель воздуха настольный', icon: '💧', price: 158, w: 8.0, tier: 'profit' },
-      { name: 'Электрочайник из стали', icon: '🫖', price: 165, w: 7.5, tier: 'profit' },
-      { name: 'Бутербродница-сэндвичница', icon: '🥪', price: 172, w: 7.0, tier: 'profit' },
-      { name: 'Напольные смарт-весы', icon: '🦶', price: 180, w: 6.5, tier: 'profit' },
-      { name: 'Погружной блендер', icon: '🥣', price: 190, w: 6.0, tier: 'profit' },
-      { name: 'Компактный фен с ионизацией', icon: '💨', price: 200, w: 5.5, tier: 'profit' },
+      { name: 'Ночник светодиодный в розетку', icon: '🌙', price: 30, w: 1.0, tier: 'cheap' },
+      { name: 'Машинка от катышков', icon: '🧶', price: 38, w: 1.0, tier: 'cheap' },
+      { name: 'Кухонные смарт-весы', icon: '⚖️', price: 68, w: 8.5, tier: 'low' },
+      { name: 'Электрозажигалка плазменная', icon: '⚡', price: 72, w: 8.5, tier: 'low' },
+      { name: 'Капучинатор ручной венчик', icon: '☕', price: 78, w: 8.5, tier: 'low' },
+      { name: 'Кулинарный щуп-термометр', icon: '🌡️', price: 84, w: 8.5, tier: 'low' },
+      { name: 'Настольная лампа с диммером', icon: '💡', price: 92, w: 8.5, tier: 'low' },
+      { name: 'Запайщик пакетов мини', icon: '👝', price: 98, w: 8.5, tier: 'low' },
+      { name: 'Увлажнитель воздуха настольный', icon: '💧', price: 158, w: 7.0, tier: 'profit' },
+      { name: 'Электрочайник из стали', icon: '🫖', price: 165, w: 6.5, tier: 'profit' },
+      { name: 'Бутербродница-сэндвичница', icon: '🥪', price: 172, w: 6.0, tier: 'profit' },
+      { name: 'Напольные смарт-весы', icon: '🦶', price: 180, w: 5.5, tier: 'profit' },
+      { name: 'Погружной блендер', icon: '🥣', price: 190, w: 5.5, tier: 'profit' },
+      { name: 'Компактный фен с ионизацией', icon: '💨', price: 200, w: 5.0, tier: 'profit' },
       { name: 'Ультразвуковой аромадиффузор', icon: '🌸', price: 215, w: 5.0, tier: 'profit' },
       { name: 'Электробритва роторная', icon: '🪒', price: 260, w: 3.0, tier: 'high' },
       { name: 'Кофемолка жерновая', icon: '☕', price: 310, w: 1.8, tier: 'high' },
@@ -2285,20 +2286,20 @@ const CASES_DATA = {
     icon: '⌚',
     desc: 'Персональные гаджеты, портативное аудио и смарт-девайсы',
     items: [
-      { name: 'Bluetooth-модулятор в авто', icon: '📻', price: 90, w: 0.8, tier: 'cheap' },
-      { name: 'Селфи-трипод с пультом', icon: '🤳', price: 120, w: 0.7, tier: 'cheap' },
-      { name: 'Повербанк 10000 mAh PD', icon: '🔋', price: 220, w: 7.5, tier: 'low' },
-      { name: 'Колонка портативная IPX6', icon: '🔊', price: 240, w: 8.0, tier: 'low' },
-      { name: 'Веб-камера Full HD', icon: '📷', price: 260, w: 8.0, tier: 'low' },
-      { name: 'Игровая мышь с макросами', icon: '🖱️', price: 280, w: 7.5, tier: 'low' },
-      { name: 'Беспроводная станция 3в1', icon: '⚡', price: 310, w: 7.5, tier: 'low' },
-      { name: 'Фитнес-браслет AMOLED', icon: '⌚', price: 340, w: 7.5, tier: 'low' },
-      { name: 'TWS-наушники с ANC', icon: '🎧', price: 525, w: 8.0, tier: 'profit' },
-      { name: 'Видеорегистратор авто Full HD', icon: '🚗', price: 550, w: 7.5, tier: 'profit' },
-      { name: 'Настольные смарт-часы', icon: '⏰', price: 580, w: 7.0, tier: 'profit' },
-      { name: 'Внешний SSD 256GB Type-C', icon: '💽', price: 610, w: 6.5, tier: 'profit' },
-      { name: 'Механическая клавиатура 60%', icon: '⌨️', price: 640, w: 6.0, tier: 'profit' },
-      { name: 'Саундбар компактный для ТВ', icon: '🔉', price: 675, w: 5.5, tier: 'profit' },
+      { name: 'Bluetooth-модулятор в авто', icon: '📻', price: 90, w: 1.0, tier: 'cheap' },
+      { name: 'Селфи-трипод с пультом', icon: '🤳', price: 120, w: 1.0, tier: 'cheap' },
+      { name: 'Повербанк 10000 mAh PD', icon: '🔋', price: 220, w: 8.5, tier: 'low' },
+      { name: 'Колонка портативная IPX6', icon: '🔊', price: 240, w: 8.5, tier: 'low' },
+      { name: 'Веб-камера Full HD', icon: '📷', price: 260, w: 8.5, tier: 'low' },
+      { name: 'Игровая мышь с макросами', icon: '🖱️', price: 280, w: 8.5, tier: 'low' },
+      { name: 'Беспроводная станция 3в1', icon: '⚡', price: 310, w: 8.5, tier: 'low' },
+      { name: 'Фитнес-браслет AMOLED', icon: '⌚', price: 340, w: 8.5, tier: 'low' },
+      { name: 'TWS-наушники с ANC', icon: '🎧', price: 525, w: 7.0, tier: 'profit' },
+      { name: 'Видеорегистратор авто Full HD', icon: '🚗', price: 550, w: 6.5, tier: 'profit' },
+      { name: 'Настольные смарт-часы', icon: '⏰', price: 580, w: 6.0, tier: 'profit' },
+      { name: 'Внешний SSD 256GB Type-C', icon: '💽', price: 610, w: 5.5, tier: 'profit' },
+      { name: 'Механическая клавиатура 60%', icon: '⌨️', price: 640, w: 5.5, tier: 'profit' },
+      { name: 'Саундбар компактный для ТВ', icon: '🔉', price: 675, w: 5.0, tier: 'profit' },
       { name: 'ТВ-приставка 4K Android', icon: '📺', price: 720, w: 5.0, tier: 'profit' },
       { name: 'Повербанк 20000 mAh 65W', icon: '⚡', price: 880, w: 3.0, tier: 'high' },
       { name: 'Экшн-камера 4K с аквабоксом', icon: '📹', price: 1050, w: 1.8, tier: 'high' },
@@ -2314,20 +2315,20 @@ const CASES_DATA = {
     icon: '🖥️',
     desc: 'Геймерская периферия, стрим-оборудование и быстрые накопители',
     items: [
-      { name: 'Подставка для наушников RGB', icon: '🎧', price: 180, w: 0.8, tier: 'cheap' },
-      { name: 'Конденсаторный USB-микрофон', icon: '🎙️', price: 220, w: 0.7, tier: 'cheap' },
-      { name: 'Игровая гарнитура 7.1', icon: '🎧', price: 450, w: 7.5, tier: 'low' },
-      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 490, w: 8.0, tier: 'low' },
-      { name: 'Вертикальная мышь Ergonomic', icon: '🖱️', price: 530, w: 8.0, tier: 'low' },
-      { name: 'LED-панель для стримов со штативом', icon: '💡', price: 580, w: 7.5, tier: 'low' },
-      { name: 'Роутер Wi-Fi 6 Gigabit', icon: '📡', price: 640, w: 7.5, tier: 'low' },
-      { name: 'Графический планшет Pen', icon: '🎨', price: 700, w: 7.5, tier: 'low' },
-      { name: 'Механика на оптике RGB', icon: '⌨️', price: 1060, w: 8.0, tier: 'profit' },
-      { name: 'Накопитель NVMe SSD 1TB', icon: '💾', price: 1120, w: 7.5, tier: 'profit' },
-      { name: 'Ударопрочные смарт-часы GPS', icon: '⌚', price: 1180, w: 7.0, tier: 'profit' },
-      { name: 'Портативный монитор 15.6"', icon: '🖥️', price: 1250, w: 6.5, tier: 'profit' },
-      { name: 'Мощная колонка PartyBoom', icon: '📻', price: 1320, w: 6.0, tier: 'profit' },
-      { name: 'Геймерское кресло ткань', icon: '🪑', price: 1400, w: 5.5, tier: 'profit' },
+      { name: 'Подставка для наушников RGB', icon: '🎧', price: 180, w: 1.0, tier: 'cheap' },
+      { name: 'Конденсаторный USB-микрофон', icon: '🎙️', price: 220, w: 1.0, tier: 'cheap' },
+      { name: 'Игровая гарнитура 7.1', icon: '🎧', price: 450, w: 8.5, tier: 'low' },
+      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 490, w: 8.5, tier: 'low' },
+      { name: 'Вертикальная мышь Ergonomic', icon: '🖱️', price: 530, w: 8.5, tier: 'low' },
+      { name: 'LED-панель для стримов со штативом', icon: '💡', price: 580, w: 8.5, tier: 'low' },
+      { name: 'Роутер Wi-Fi 6 Gigabit', icon: '📡', price: 640, w: 8.5, tier: 'low' },
+      { name: 'Графический планшет Pen', icon: '🎨', price: 700, w: 8.5, tier: 'low' },
+      { name: 'Механика на оптике RGB', icon: '⌨️', price: 1060, w: 7.0, tier: 'profit' },
+      { name: 'Накопитель NVMe SSD 1TB', icon: '💾', price: 1120, w: 6.5, tier: 'profit' },
+      { name: 'Ударопрочные смарт-часы GPS', icon: '⌚', price: 1180, w: 6.0, tier: 'profit' },
+      { name: 'Портативный монитор 15.6"', icon: '🖥️', price: 1250, w: 5.5, tier: 'profit' },
+      { name: 'Мощная колонка PartyBoom', icon: '📻', price: 1320, w: 5.5, tier: 'profit' },
+      { name: 'Геймерское кресло ткань', icon: '🪑', price: 1400, w: 5.0, tier: 'profit' },
       { name: 'Портативная ретро-консоль', icon: '🕹️', price: 1500, w: 5.0, tier: 'profit' },
       { name: 'Очиститель воздуха HEPA', icon: '🍃', price: 1850, w: 3.0, tier: 'high' },
       { name: 'Капсульная кофемашина', icon: '☕', price: 2250, w: 1.8, tier: 'high' },
@@ -2343,20 +2344,20 @@ const CASES_DATA = {
     icon: '💎',
     desc: 'Флагманские смартфоны, ультрабуки, 4K Smart TV и топ-техника',
     items: [
-      { name: 'Металлический хаб 10в1 4K', icon: '🔲', price: 450, w: 0.8, tier: 'cheap' },
-      { name: 'Графический стилус Pro', icon: '✏️', price: 550, w: 0.7, tier: 'cheap' },
-      { name: '4K-экшн камера стабилизация', icon: '🎥', price: 1100, w: 7.5, tier: 'low' },
-      { name: 'Беспроводной пылесос ручной', icon: '🌀', price: 1200, w: 8.0, tier: 'low' },
-      { name: 'Умный аэрогриль-мультипечь', icon: '🍟', price: 1350, w: 8.0, tier: 'low' },
-      { name: 'Лазерный дальномер с камерой', icon: '📐', price: 1480, w: 7.5, tier: 'low' },
-      { name: 'Премиум наушники ANC флагман', icon: '🎧', price: 1650, w: 7.5, tier: 'low' },
-      { name: 'Изогнутый монитор 27" 165Hz', icon: '🖥️', price: 1800, w: 7.5, tier: 'low' },
-      { name: 'Робот-пылесос с влажной уборкой', icon: '🤖', price: 2650, w: 8.0, tier: 'profit' },
-      { name: 'Зерновая кофемашина автомат', icon: '☕', price: 2800, w: 7.5, tier: 'profit' },
-      { name: 'Паровая гладильная станция', icon: '💨', price: 2980, w: 7.0, tier: 'profit' },
-      { name: 'Smart TV 50" 4K HDR', icon: '📺', price: 3150, w: 6.5, tier: 'profit' },
-      { name: 'Игровая консоль NextGen', icon: '🎮', price: 3350, w: 6.0, tier: 'profit' },
-      { name: 'Ультрабук 14" тонкий металл', icon: '💻', price: 3600, w: 5.5, tier: 'profit' },
+      { name: 'Металлический хаб 10в1 4K', icon: '🔲', price: 450, w: 1.0, tier: 'cheap' },
+      { name: 'Графический стилус Pro', icon: '✏️', price: 550, w: 1.0, tier: 'cheap' },
+      { name: '4K-экшн камера стабилизация', icon: '🎥', price: 1100, w: 8.5, tier: 'low' },
+      { name: 'Беспроводной пылесос ручной', icon: '🌀', price: 1200, w: 8.5, tier: 'low' },
+      { name: 'Умный аэрогриль-мультипечь', icon: '🍟', price: 1350, w: 8.5, tier: 'low' },
+      { name: 'Лазерный дальномер с камерой', icon: '📐', price: 1480, w: 8.5, tier: 'low' },
+      { name: 'Премиум наушники ANC флагман', icon: '🎧', price: 1650, w: 8.5, tier: 'low' },
+      { name: 'Изогнутый монитор 27" 165Hz', icon: '🖥️', price: 1800, w: 8.5, tier: 'low' },
+      { name: 'Робот-пылесос с влажной уборкой', icon: '🤖', price: 2650, w: 7.0, tier: 'profit' },
+      { name: 'Зерновая кофемашина автомат', icon: '☕', price: 2800, w: 6.5, tier: 'profit' },
+      { name: 'Паровая гладильная станция', icon: '💨', price: 2980, w: 6.0, tier: 'profit' },
+      { name: 'Smart TV 50" 4K HDR', icon: '📺', price: 3150, w: 5.5, tier: 'profit' },
+      { name: 'Игровая консоль NextGen', icon: '🎮', price: 3350, w: 5.5, tier: 'profit' },
+      { name: 'Ультрабук 14" тонкий металл', icon: '💻', price: 3600, w: 5.0, tier: 'profit' },
       { name: 'Квадрокоптер 4K с GPS', icon: '🛸', price: 3850, w: 5.0, tier: 'profit' },
       { name: 'Планшет 11" 128GB Wi-Fi', icon: '📱', price: 4700, w: 3.0, tier: 'high' },
       { name: 'Беззеркальный фотоаппарат 4K', icon: '📷', price: 5800, w: 1.8, tier: 'high' },
@@ -2415,7 +2416,6 @@ function gameCases(){
     <div style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <b class="small" style="color:#d9ddff">Содержимое кейса (20 предметов):</b>
-        <span class="muted small" style="font-size:10px">RTP ~78%</span>
       </div>
       <div class="case-grid">
         ${curCase.items.map(it => {
@@ -2501,13 +2501,18 @@ function gameCases(){
           </div>`;
         }).join('');
 
-        const cardW = 100;
+        // Точный расчет координат по DOM элементам
+        const targetCard = strip.children[targetIndex];
+        const cardLeft = targetCard.offsetLeft;
+        const cardW = targetCard.offsetWidth || 104;
         const rW = roulette ? roulette.clientWidth : 320;
-        const jitter = Math.floor((Math.random() - 0.5) * 58);
-        const targetX = targetIndex * cardW + (cardW / 2) - (rW / 2) + jitter;
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
 
         res.className = 'result';
         res.textContent = 'Рулетка крутится… Ожидание дропа…';
+
+        // Принудительный reflow перед стартом анимации
+        void strip.offsetWidth;
 
         requestAnimationFrame(() => {
           strip.style.transition = 'transform 4.4s cubic-bezier(0.12, 0.82, 0.22, 1)';
@@ -2523,6 +2528,9 @@ function gameCases(){
         timer = setTimeout(() => {
           clearInterval(tickInterval);
           busy = false;
+
+          const targetCard = strip.children[targetIndex];
+          if(targetCard) targetCard.classList.add('win-picked');
 
           const isProfit = winItem.price >= curCase.cost;
           const diff = winItem.price - curCase.cost;
