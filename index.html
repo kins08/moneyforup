@@ -114,6 +114,21 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .avito-step{padding:8px 5px;border-radius:10px;background:#1e2433;border:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
 .avito-step.on{border-color:#8f97ff;color:#fff;background:rgba(143,151,255,.16)}
 .avito-step.done{border-color:#3ddc96;color:#3ddc96;background:rgba(61,220,150,.12)}
+/* кейсы */
+.case-roulette{position:relative;height:128px;border-radius:18px;background:linear-gradient(180deg,#191f2c,#10141d);border:1px solid var(--line);overflow:hidden;margin:12px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.7)}
+.case-pointer{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#ffcf6b;z-index:10;box-shadow:0 0 12px #ffcf6b}
+.case-pointer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ffcf6b}
+.case-pointer::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:10px solid #ffcf6b}
+.case-strip{display:flex;position:absolute;left:0;top:0;bottom:0;will-change:transform}
+.case-card{flex:0 0 100px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;position:relative;user-select:none}
+.case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
+.case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px}
+.case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.case-card .ci-val{font-size:10px;color:var(--tier-col,#8f97ff);font-weight:700;margin-top:2px}
+.case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:240px;overflow-y:auto;padding-right:4px;margin-top:10px}
+.case-grid-item{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:12px;background:#1e2434;border:1px solid var(--line);font-size:11px}
+.case-grid-item .cgi-col{width:4px;height:24px;border-radius:2px;background:var(--tier-col,#8f97ff);flex-shrink:0}
+.case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
 @media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
 </style>
 </head>
@@ -171,6 +186,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
 <button class="game" data-game="skuf"><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
 <button class="game" data-game="avito"><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 50 до 2500 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -2185,9 +2201,364 @@ function gameAvito(){
   return () => { phase = 'done'; };
 }
 
+/* =======================================================================
+   КЕЙСЫ (📦) — 5 кейсов, 100 уникальных предметов, рулетка CS:GO с отрицательным RTP
+   ======================================================================= */
+const TIER_COLS = {
+  cheap: '#64748b',   // Серый (супер дешевый)
+  low: '#3b82f6',     // Синий (средний неокуп)
+  profit: '#a855f7',  // Фиолетовый (небольшой окуп)
+  high: '#ec4899',    // Розовый (крупный окуп)
+  jackpot: '#eab308'  // Золотой (супер джекпот)
+};
+const TIER_NAMES = {
+  cheap: 'Обычный',
+  low: 'Армейское',
+  profit: 'Засекреченное',
+  high: 'Тайное',
+  jackpot: '★ Редкое'
+};
+
+const CASES_DATA = {
+  case_50: {
+    id: 'case_50',
+    name: 'Базовый сетап',
+    cost: 50,
+    icon: '🔌',
+    desc: 'Кабели, адаптеры, аксессуары для гаджетов и ПК',
+    items: [
+      { name: 'Кабель Type-C нейлон', icon: '🔌', price: 12, w: 0.8, tier: 'cheap' },
+      { name: 'Стилус для экрана', icon: '🖊️', price: 15, w: 0.7, tier: 'cheap' },
+      { name: 'Переходник OTG USB', icon: '🔄', price: 22, w: 7.5, tier: 'low' },
+      { name: 'Коврик для мыши Speed', icon: '🖱️', price: 24, w: 8.0, tier: 'low' },
+      { name: 'Органайзер проводов', icon: '🗂️', price: 26, w: 8.0, tier: 'low' },
+      { name: 'Картридер USB 3.0', icon: '💾', price: 28, w: 7.5, tier: 'low' },
+      { name: 'Настольная подставка', icon: '📱', price: 30, w: 7.5, tier: 'low' },
+      { name: 'USB-вентилятор гибкий', icon: '🌀', price: 32, w: 7.5, tier: 'low' },
+      { name: 'Наушники проводные вкладыши', icon: '🎧', price: 52, w: 8.0, tier: 'profit' },
+      { name: 'USB-фонарик карманный', icon: '🔦', price: 54, w: 7.5, tier: 'profit' },
+      { name: 'Спрей-очиститель экрана', icon: '🧼', price: 56, w: 7.0, tier: 'profit' },
+      { name: 'Разветвитель USB 4 порта', icon: '🔀', price: 58, w: 6.5, tier: 'profit' },
+      { name: 'Автодержатель магнитный', icon: '🧲', price: 60, w: 6.0, tier: 'profit' },
+      { name: 'Кабель HDMI 2.1 оплетка', icon: '📺', price: 62, w: 5.5, tier: 'profit' },
+      { name: 'Светодиодная лента 1м', icon: '💡', price: 65, w: 5.0, tier: 'profit' },
+      { name: 'Повербанк 5000 mAh', icon: '🔋', price: 80, w: 3.0, tier: 'high' },
+      { name: 'Беспроводная мышь Silent', icon: '🖱️', price: 95, w: 1.8, tier: 'high' },
+      { name: 'Bluetooth-метка брелок', icon: '🏷️', price: 125, w: 0.7, tier: 'high' },
+      { name: 'Умная розетка Wi-Fi', icon: '🔌', price: 180, w: 0.7, tier: 'jackpot' },
+      { name: 'TWS-наушники базовые', icon: '🎵', price: 260, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_150: {
+    id: 'case_150',
+    name: 'Домашний уют',
+    cost: 150,
+    icon: '🫖',
+    desc: 'Умная бытовая техника и электроника для дома и кухни',
+    items: [
+      { name: 'Ночник светодиодный в розетку', icon: '🌙', price: 30, w: 0.8, tier: 'cheap' },
+      { name: 'Машинка от катышков', icon: '🧶', price: 38, w: 0.7, tier: 'cheap' },
+      { name: 'Кухонные смарт-весы', icon: '⚖️', price: 68, w: 7.5, tier: 'low' },
+      { name: 'Электрозажигалка плазменная', icon: '⚡', price: 72, w: 8.0, tier: 'low' },
+      { name: 'Капучинатор ручной венчик', icon: '☕', price: 78, w: 8.0, tier: 'low' },
+      { name: 'Кулинарный щуп-термометр', icon: '🌡️', price: 84, w: 7.5, tier: 'low' },
+      { name: 'Настольная лампа с диммером', icon: '💡', price: 92, w: 7.5, tier: 'low' },
+      { name: 'Запайщик пакетов мини', icon: '👝', price: 98, w: 7.5, tier: 'low' },
+      { name: 'Увлажнитель воздуха настольный', icon: '💧', price: 158, w: 8.0, tier: 'profit' },
+      { name: 'Электрочайник из стали', icon: '🫖', price: 165, w: 7.5, tier: 'profit' },
+      { name: 'Бутербродница-сэндвичница', icon: '🥪', price: 172, w: 7.0, tier: 'profit' },
+      { name: 'Напольные смарт-весы', icon: '🦶', price: 180, w: 6.5, tier: 'profit' },
+      { name: 'Погружной блендер', icon: '🥣', price: 190, w: 6.0, tier: 'profit' },
+      { name: 'Компактный фен с ионизацией', icon: '💨', price: 200, w: 5.5, tier: 'profit' },
+      { name: 'Ультразвуковой аромадиффузор', icon: '🌸', price: 215, w: 5.0, tier: 'profit' },
+      { name: 'Электробритва роторная', icon: '🪒', price: 260, w: 3.0, tier: 'high' },
+      { name: 'Кофемолка жерновая', icon: '☕', price: 310, w: 1.8, tier: 'high' },
+      { name: 'Вертикальный отпариватель', icon: '👔', price: 420, w: 0.7, tier: 'high' },
+      { name: 'Контактный электрогриль', icon: '🥩', price: 600, w: 0.7, tier: 'jackpot' },
+      { name: 'Робот-пылесос сухой уборки', icon: '🧹', price: 850, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_500: {
+    id: 'case_500',
+    name: 'Гаджет-бокс',
+    cost: 500,
+    icon: '⌚',
+    desc: 'Персональные гаджеты, портативное аудио и смарт-девайсы',
+    items: [
+      { name: 'Bluetooth-модулятор в авто', icon: '📻', price: 90, w: 0.8, tier: 'cheap' },
+      { name: 'Селфи-трипод с пультом', icon: '🤳', price: 120, w: 0.7, tier: 'cheap' },
+      { name: 'Повербанк 10000 mAh PD', icon: '🔋', price: 220, w: 7.5, tier: 'low' },
+      { name: 'Колонка портативная IPX6', icon: '🔊', price: 240, w: 8.0, tier: 'low' },
+      { name: 'Веб-камера Full HD', icon: '📷', price: 260, w: 8.0, tier: 'low' },
+      { name: 'Игровая мышь с макросами', icon: '🖱️', price: 280, w: 7.5, tier: 'low' },
+      { name: 'Беспроводная станция 3в1', icon: '⚡', price: 310, w: 7.5, tier: 'low' },
+      { name: 'Фитнес-браслет AMOLED', icon: '⌚', price: 340, w: 7.5, tier: 'low' },
+      { name: 'TWS-наушники с ANC', icon: '🎧', price: 525, w: 8.0, tier: 'profit' },
+      { name: 'Видеорегистратор авто Full HD', icon: '🚗', price: 550, w: 7.5, tier: 'profit' },
+      { name: 'Настольные смарт-часы', icon: '⏰', price: 580, w: 7.0, tier: 'profit' },
+      { name: 'Внешний SSD 256GB Type-C', icon: '💽', price: 610, w: 6.5, tier: 'profit' },
+      { name: 'Механическая клавиатура 60%', icon: '⌨️', price: 640, w: 6.0, tier: 'profit' },
+      { name: 'Саундбар компактный для ТВ', icon: '🔉', price: 675, w: 5.5, tier: 'profit' },
+      { name: 'ТВ-приставка 4K Android', icon: '📺', price: 720, w: 5.0, tier: 'profit' },
+      { name: 'Повербанк 20000 mAh 65W', icon: '⚡', price: 880, w: 3.0, tier: 'high' },
+      { name: 'Экшн-камера 4K с аквабоксом', icon: '📹', price: 1050, w: 1.8, tier: 'high' },
+      { name: 'Полноразмерные наушники Hi-Res', icon: '🎧', price: 1400, w: 0.7, tier: 'high' },
+      { name: 'Умная колонка с ассистентом', icon: '🗣️', price: 2100, w: 0.7, tier: 'jackpot' },
+      { name: 'Электронная книга E-Ink 6"', icon: '📖', price: 3000, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_1000: {
+    id: 'case_1000',
+    name: 'Кибер-сетап',
+    cost: 1000,
+    icon: '🖥️',
+    desc: 'Геймерская периферия, стрим-оборудование и быстрые накопители',
+    items: [
+      { name: 'Подставка для наушников RGB', icon: '🎧', price: 180, w: 0.8, tier: 'cheap' },
+      { name: 'Конденсаторный USB-микрофон', icon: '🎙️', price: 220, w: 0.7, tier: 'cheap' },
+      { name: 'Игровая гарнитура 7.1', icon: '🎧', price: 450, w: 7.5, tier: 'low' },
+      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 490, w: 8.0, tier: 'low' },
+      { name: 'Вертикальная мышь Ergonomic', icon: '🖱️', price: 530, w: 8.0, tier: 'low' },
+      { name: 'LED-панель для стримов со штативом', icon: '💡', price: 580, w: 7.5, tier: 'low' },
+      { name: 'Роутер Wi-Fi 6 Gigabit', icon: '📡', price: 640, w: 7.5, tier: 'low' },
+      { name: 'Графический планшет Pen', icon: '🎨', price: 700, w: 7.5, tier: 'low' },
+      { name: 'Механика на оптике RGB', icon: '⌨️', price: 1060, w: 8.0, tier: 'profit' },
+      { name: 'Накопитель NVMe SSD 1TB', icon: '💾', price: 1120, w: 7.5, tier: 'profit' },
+      { name: 'Ударопрочные смарт-часы GPS', icon: '⌚', price: 1180, w: 7.0, tier: 'profit' },
+      { name: 'Портативный монитор 15.6"', icon: '🖥️', price: 1250, w: 6.5, tier: 'profit' },
+      { name: 'Мощная колонка PartyBoom', icon: '📻', price: 1320, w: 6.0, tier: 'profit' },
+      { name: 'Геймерское кресло ткань', icon: '🪑', price: 1400, w: 5.5, tier: 'profit' },
+      { name: 'Портативная ретро-консоль', icon: '🕹️', price: 1500, w: 5.0, tier: 'profit' },
+      { name: 'Очиститель воздуха HEPA', icon: '🍃', price: 1850, w: 3.0, tier: 'high' },
+      { name: 'Капсульная кофемашина', icon: '☕', price: 2250, w: 1.8, tier: 'high' },
+      { name: 'Микроволновка с грилем инвертор', icon: '♨️', price: 3000, w: 0.7, tier: 'high' },
+      { name: 'Домашний проектор Full HD', icon: '📽️', price: 4400, w: 0.7, tier: 'jackpot' },
+      { name: 'Смартфон 128GB 90Hz', icon: '📱', price: 6200, w: 0.3, tier: 'jackpot' }
+    ]
+  },
+  case_2500: {
+    id: 'case_2500',
+    name: 'Флагманский люкс',
+    cost: 2500,
+    icon: '💎',
+    desc: 'Флагманские смартфоны, ультрабуки, 4K Smart TV и топ-техника',
+    items: [
+      { name: 'Металлический хаб 10в1 4K', icon: '🔲', price: 450, w: 0.8, tier: 'cheap' },
+      { name: 'Графический стилус Pro', icon: '✏️', price: 550, w: 0.7, tier: 'cheap' },
+      { name: '4K-экшн камера стабилизация', icon: '🎥', price: 1100, w: 7.5, tier: 'low' },
+      { name: 'Беспроводной пылесос ручной', icon: '🌀', price: 1200, w: 8.0, tier: 'low' },
+      { name: 'Умный аэрогриль-мультипечь', icon: '🍟', price: 1350, w: 8.0, tier: 'low' },
+      { name: 'Лазерный дальномер с камерой', icon: '📐', price: 1480, w: 7.5, tier: 'low' },
+      { name: 'Премиум наушники ANC флагман', icon: '🎧', price: 1650, w: 7.5, tier: 'low' },
+      { name: 'Изогнутый монитор 27" 165Hz', icon: '🖥️', price: 1800, w: 7.5, tier: 'low' },
+      { name: 'Робот-пылесос с влажной уборкой', icon: '🤖', price: 2650, w: 8.0, tier: 'profit' },
+      { name: 'Зерновая кофемашина автомат', icon: '☕', price: 2800, w: 7.5, tier: 'profit' },
+      { name: 'Паровая гладильная станция', icon: '💨', price: 2980, w: 7.0, tier: 'profit' },
+      { name: 'Smart TV 50" 4K HDR', icon: '📺', price: 3150, w: 6.5, tier: 'profit' },
+      { name: 'Игровая консоль NextGen', icon: '🎮', price: 3350, w: 6.0, tier: 'profit' },
+      { name: 'Ультрабук 14" тонкий металл', icon: '💻', price: 3600, w: 5.5, tier: 'profit' },
+      { name: 'Квадрокоптер 4K с GPS', icon: '🛸', price: 3850, w: 5.0, tier: 'profit' },
+      { name: 'Планшет 11" 128GB Wi-Fi', icon: '📱', price: 4700, w: 3.0, tier: 'high' },
+      { name: 'Беззеркальный фотоаппарат 4K', icon: '📷', price: 5800, w: 1.8, tier: 'high' },
+      { name: 'Флагманский смартфон Pro 256GB', icon: '📱', price: 8000, w: 0.7, tier: 'high' },
+      { name: 'Ноутбук на Apple Silicon', icon: '💻', price: 12500, w: 0.7, tier: 'jackpot' },
+      { name: 'Игровой ПК на RTX 4070', icon: '🖥️', price: 20000, w: 0.3, tier: 'jackpot' }
+    ]
+  }
+};
+let curCaseId = 'case_50';
+
+function gameCases(){
+  const a = q('#gameArea');
+  let busy = false;
+  let timer = 0;
+  let tickInterval = 0;
+
+  function render(){
+    const curCase = CASES_DATA[curCaseId];
+
+    a.innerHTML = `
+    <div class="chips" id="caseModes" style="margin-bottom:10px;justify-content:center;flex-wrap:wrap">
+      <button class="chip ${curCaseId==='case_50'?'on':''}" data-cid="case_50">🟢 Базовый (50 ⬦)</button>
+      <button class="chip ${curCaseId==='case_150'?'on':''}" data-cid="case_150">🟡 Уют (150 ⬦)</button>
+      <button class="chip ${curCaseId==='case_500'?'on':''}" data-cid="case_500">🟠 Гаджеты (500 ⬦)</button>
+      <button class="chip ${curCaseId==='case_1000'?'on':''}" data-cid="case_1000">🔵 Сетап (1000 ⬦)</button>
+      <button class="chip ${curCaseId==='case_2500'?'on':''}" data-cid="case_2500">🟣 Люкс (2500 ⬦)</button>
+    </div>
+
+    <div style="text-align:center;margin:6px 0 10px">
+      <div style="font-size:38px">${curCase.icon}</div>
+      <b style="font-size:18px;color:#fff">${curCase.name}</b>
+      <div class="muted small" style="margin-top:2px">${curCase.desc}</div>
+      <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${curCase.cost} ⬦</b> (≈ ${fmtRub(curCase.cost)})</div>
+    </div>
+
+    <div class="case-roulette" id="caseRoulette">
+      <div class="case-pointer"></div>
+      <div class="case-strip" id="caseStrip">
+        ${curCase.items.slice(0, 15).map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-card" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${it.price} ⬦</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:10px">
+      <button class="control" id="caseOpen" style="margin:0">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+curCase.cost+' ⬦'}</button>
+    </div>
+    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС», чтобы запустить рулетку.</div>
+
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b class="small" style="color:#d9ddff">Содержимое кейса (20 предметов):</b>
+        <span class="muted small" style="font-size:10px">RTP ~78%</span>
+      </div>
+      <div class="case-grid">
+        ${curCase.items.map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-grid-item" style="--tier-col:${col}">
+            <div class="cgi-col"></div>
+            <div style="font-size:20px">${it.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
+              <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px">
+                <span style="color:${col};font-weight:700">${it.price} ⬦</span>
+                <span class="muted">${it.w}%</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+    const openBtn = q('#caseOpen');
+    const modesEl = q('#caseModes');
+
+    if(modesEl){
+      modesEl.addEventListener('click', e => {
+        const b = e.target.closest('[data-cid]');
+        if(!b || busy) return;
+        curCaseId = b.dataset.cid;
+        render();
+      });
+    }
+
+    if(openBtn){
+      openBtn.addEventListener('click', () => {
+        if(busy) return;
+        if(S.balance < curCase.cost){
+          const res = q('#caseRes');
+          if(res){ res.className = 'result bad'; res.textContent = 'Недостаточно токенов — пополните баланс.'; }
+          return;
+        }
+
+        place(curCase.cost, 'Кейс: ' + curCase.name);
+        busy = true;
+
+        // Выбираем выигрышный предмет по весам
+        let totalW = 0;
+        curCase.items.forEach(it => totalW += it.w);
+        let rnd = Math.random() * totalW;
+        let winItem = curCase.items[0];
+        let cum = 0;
+        for(let it of curCase.items){
+          cum += it.w;
+          if(rnd <= cum){
+            winItem = it;
+            break;
+          }
+        }
+
+        // Генерируем ленту из 60 карточек
+        const targetIndex = 45;
+        const stripItems = [];
+        for(let i = 0; i < 60; i++){
+          if(i === targetIndex){
+            stripItems.push(winItem);
+          } else {
+            const randIt = curCase.items[Math.floor(Math.random() * curCase.items.length)];
+            stripItems.push(randIt);
+          }
+        }
+
+        const strip = q('#caseStrip');
+        const roulette = q('#caseRoulette');
+        const res = q('#caseRes');
+        if(openBtn){ openBtn.disabled = true; openBtn.textContent = 'РУЛЕТКА КРУТИТСЯ…'; }
+
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0px)';
+        strip.innerHTML = stripItems.map(it => {
+          const col = TIER_COLS[it.tier] || '#8f97ff';
+          return `<div class="case-card" style="--tier-col:${col}">
+            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-name">${it.name}</div>
+            <div class="ci-val">${it.price} ⬦</div>
+          </div>`;
+        }).join('');
+
+        const cardW = 100;
+        const rW = roulette ? roulette.clientWidth : 320;
+        const jitter = Math.floor((Math.random() - 0.5) * 58);
+        const targetX = targetIndex * cardW + (cardW / 2) - (rW / 2) + jitter;
+
+        res.className = 'result';
+        res.textContent = 'Рулетка крутится… Ожидание дропа…';
+
+        requestAnimationFrame(() => {
+          strip.style.transition = 'transform 4.4s cubic-bezier(0.12, 0.82, 0.22, 1)';
+          strip.style.transform = `translateX(-${targetX}px)`;
+        });
+
+        let ticks = 0;
+        tickInterval = setInterval(() => {
+          ticks++;
+          if(ticks <= 14) tgHaptic('light');
+        }, 300);
+
+        timer = setTimeout(() => {
+          clearInterval(tickInterval);
+          busy = false;
+
+          const isProfit = winItem.price >= curCase.cost;
+          const diff = winItem.price - curCase.cost;
+          tgHaptic(isProfit ? 'win' : 'light');
+
+          win(winItem.price, 'Кейсы', winItem.name);
+
+          res.className = `result ${isProfit ? 'good' : 'bad'}`;
+          res.innerHTML = `
+          <div class="case-win-banner">
+            <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
+            <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
+            <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${winItem.price} ⬦</b> (≈ ${fmtRub(winItem.price)}) · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b>` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса`} · токены начислены на баланс!</div>
+          </div>`;
+
+          if(openBtn){
+            openBtn.disabled = false;
+            openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + curCase.cost + ' ⬦';
+          }
+        }, 4600);
+      });
+    }
+  }
+
+  render();
+  return () => {
+    busy = false;
+    clearTimeout(timer);
+    clearInterval(tickInterval);
+  };
+}
+
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито'};
-const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito};
+const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы'};
+const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
@@ -2198,7 +2569,7 @@ function play(type){
 qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)));
 
 /* отладочные хуки для автотестов (не влияют на игру) */
-window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,SP:SP_MODES.med};
+window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
 window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
 
 tgInit();tgRegister();syncUI();screen('games');
