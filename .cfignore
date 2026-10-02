@@ -1,0 +1,13 @@
+node_modules
+.git
+.wrangler
+*.log
+bot.js
+bot-test.js
+tg-test.js
+tg_block.js
+ui-test.js
+make_tg.py
+.env*
+package*.json
+wrangler.jsonc
