@@ -1302,6 +1302,7 @@ function gameRacket(){
       g.fillStyle=(i%2?'rgba(255,180,90,':'rgba(255,110,110,')+(1-k).toFixed(2)+')';g.fill();
     }
     g.restore();
+  }
   const ROCKET_SPEED = 0.58; // замедление полёта ракетки для приятного и драматичного нарастания
   function flightT(){
     const s = ((performance.now() - t0) / 1000) * ROCKET_SPEED;
