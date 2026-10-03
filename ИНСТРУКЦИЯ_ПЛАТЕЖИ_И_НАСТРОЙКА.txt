@@ -1,0 +1,168 @@
+================================================================================
+          ПОЛНОЕ РУКОВОДСТВО ПО ПРИЕМУ ПЛАТЕЖЕЙ И НАСТРОЙКЕ MONEYFORUP
+================================================================================
+
+В этом документе собрано всё, что нужно для настройки:
+1. Прием платежей в личку админу с кнопкой «Подтвердить» в 1 клик (СБП / Карты).
+2. Автоматический прием платежей через Coinso (Крипта / СБП).
+3. Как правильно связать Cloudflare (фронтенд) и Render (бэкенд).
+4. Чек-лист переменных окружения для Render.
+
+--------------------------------------------------------------------------------
+1. ПРИЕМ ПЛАТЕЖЕЙ В ЛИЧКУ В 1 КЛИК (СБП / КАРТА / РУЧНОЙ РЕЖИМ)
+--------------------------------------------------------------------------------
+В вашем коде в bot.js ЭТА СИСТЕМА УЖЕ ПОЛНОСТЬЮ НАПИСАНА И ГОТОВА!
+
+КАК ЭТО РАБОТАЕТ:
+1. Пользователь в игре открывает окно пополнения (например, выбирает СБП / Карта).
+2. Видит реквизиты (ваш номер телефона или карту) и сумму (например, 500 ₽).
+3. Переводит деньги со своего банка и вводит в приложении своё имя или чек.
+4. Нажимает кнопку «Я оплатил».
+5. В ту же секунду ваш Telegram-бот присылает ВАМ В ЛИЧНЫЕ СООБЩЕНИЯ карточку:
+   
+   💳 Новая заявка на пополнение №14
+   ├ Пользователь: @username (ID: 74819284)
+   ├ Сумма: 500 ₽ (к зачислению: +5000 ⬦)
+   ├ Способ: СБП / Сбербанк
+   ├ Примечание: Перевод от Иван И.
+   └ Статус: Ожидает подтверждения
+   [ ✅ Подтвердить ]   [ ❌ Отклонить ]
+
+6. Вы проверяете поступление в приложении банка и нажимаете кнопку: [ ✅ Подтвердить ].
+7. МГНОВЕННО (за 0.1 секунды):
+   - Игроку на баланс начисляется +5000 ⬦ токенов.
+   - Если его пригласил реферал — рефералу начисляется 15% бонуса.
+   - Игроку в Telegram приходит радостное сообщение: «Ваш баланс пополнен на +5000 ⬦!».
+   - Кнопка в вашем сообщении превращается в «✅ Оплата подтверждена! Начислено +5000 ⬦».
+
+КАК ВКЛЮЧИТЬ ЭТО ПРЯМО СЕЙЧАС (2 ШАГА):
+Шаг 1. Узнайте свой Telegram ID:
+- Откройте в Telegram бота @userinfobot (или @myidbot) и нажмите Start.
+- Бот покажет ваш цифровой Id (например: 123456789).
+
+Шаг 2. Добавьте ADMIN_ID в Render:
+- Зайдите на dashboard.render.com -> откройте сервис moneyforup.
+- Вкладка Environment -> кнопка Add Environment Variable.
+- Имя: ADMIN_ID
+- Значение: ваш цифровой ID (например, 123456789).
+- Нажмите Save Changes.
+Готово! Теперь все заявки на пополнение будут прилетать лично вам с кнопками!
+
+
+--------------------------------------------------------------------------------
+2. АВТОМАТИЧЕСКИЙ ПРИЕМ ПЛАТЕЖЕЙ ЧЕРЕЗ COINSO
+--------------------------------------------------------------------------------
+Coinso — это автоматический платежный шлюз. С ним вам вообще не нужно ничего нажимать руками: игрок оплачивает — токены зачисляются сами через робота.
+
+ЭТАП А: Регистрация и получение ключей
+1. Зайдите в кабинет мерчанта Coinso (или их мерчант-бота).
+2. Создайте новый магазин / проект под названием «MoneyForUp».
+3. В настройках магазина скопируйте:
+   - MERCHANT_ID (ID проекта/магазина)
+   - API_KEY (секретный ключ API)
+4. В поле Webhook URL (Callback URL / Result URL) в кабинете Coinso вставьте:
+   https://moneyforup.onrender.com/coinso-webhook
+
+ЭТАП Б: Добавление ключей в Render
+В панели Render (вкладка Environment) добавьте:
+- COINSO_MERCHANT_ID = ваш_id_магазина
+- COINSO_API_KEY = ваш_секретный_ключ
+
+ЭТАП В: Подключение в коде (bot.js)
+1. В начало bot.js (настройки):
+   const COINSO_MERCHANT_ID = process.env.COINSO_MERCHANT_ID || '';
+   const COINSO_API_KEY     = process.env.COINSO_API_KEY || '';
+   const COINSO_API         = process.env.COINSO_API || 'https://api.coinso.org';
+   const coinsoOrders       = new Map();
+
+2. Функция создания ссылки на оплату:
+   async function createCoinsoInvoice(userId, tokens, rub) {
+     const orderId = 'COIN_' + Date.now() + '_' + userId;
+     const res = await fetch(`${COINSO_API}/v1/invoices`, {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+         'Authorization': `Bearer ${COINSO_API_KEY}`
+       },
+       body: JSON.stringify({
+         merchant_id: COINSO_MERCHANT_ID,
+         order_id: orderId,
+         amount: rub,
+         currency: 'RUB',
+         callback_url: `${PUBLIC_URL}/coinso-webhook`,
+         description: `Пополнение MoneyForUp на ${tokens} токенов`
+       })
+     });
+     const data = await res.json();
+     coinsoOrders.set(orderId, { userId, tokens, rub });
+     return {
+       order_id: orderId,
+       pay_url: data.pay_url || data.url || data.invoice_url,
+       tokens
+     };
+   }
+
+3. Эндпоинт для Mini App (в блоке API bot.js):
+   if (url.pathname === '/api/coinso-invoice' && req.method === 'POST') {
+     const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
+     const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
+     const inv = await createCoinsoInvoice(u.id, tokens, rub);
+     return send(200, inv);
+   }
+
+4. Вебхук автоматического зачисления (в блоке вебхуков bot.js):
+   if (url.pathname === '/coinso-webhook' && req.method === 'POST') {
+     const payload = JSON.parse(raw || '{}');
+     const orderId = payload.order_id;
+     const saved = coinsoOrders.get(orderId);
+     if (saved && (payload.status === 'paid' || payload.status === 'completed')) {
+       const user = users.get(saved.userId);
+       if (user) {
+         user.tokens += saved.tokens;
+         creditRefBonus(user, saved.tokens);
+         bot.api.sendMessage(saved.userId, `✅ Оплата Coinso подтверждена! Начислено +${saved.tokens} ⬦.`).catch(()=>{});
+       }
+       coinsoOrders.delete(orderId);
+     }
+     return send(200, { ok: true });
+   }
+
+
+--------------------------------------------------------------------------------
+3. РАЗНИЦА МЕЖДУ ССЫЛКАМИ: ПОЧЕМУ RENDER ВЫДАВАЛ «initData недействителен»
+--------------------------------------------------------------------------------
+Ваш проект состоит из ДВУХ РАЗНЫХ ЧАСТЕЙ:
+
+А) СЕРВЕР (Render):
+- Адрес: https://moneyforup.onrender.com
+- Это НЕ САЙТ для людей. Это «мозг» (Telegram-бот, расчет стейкинга, прием оплат).
+- Когда вы открыли его в обычном браузере, сервер проверил: «Кто пришел? Где Telegram-аккаунт?». Так как вы зашли без Telegram, он выдал технический ответ: {"error":"initData недействителен"}.
+- ЭТО ЗНАЧИТ, ЧТО СЕРВЕР РАБОТАЕТ ИСПРАВНО!
+
+Б) САЙТ С ИГРАМИ (Cloudflare):
+- Адрес: https://moneyforup1.pages.dev (или workers.dev).
+- Это САМ КРАСИВЫЙ САЙТ (рулетки, кейсы, колесо, анимации).
+- Написан в public/index.html.
+- Он сам под капотом соединяется с https://moneyforup.onrender.com для сохранения баланса.
+
+
+--------------------------------------------------------------------------------
+4. ЧЕК-ЛИСТ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ НА RENDER.COM
+--------------------------------------------------------------------------------
+Зайдите в: Render Dashboard -> moneyforup -> вкладка Environment.
+Убедитесь, что у вас прописаны переменные:
+
+1. BOT_TOKEN
+   Токен от @BotFather (например: 7182938192:AAHfe8...)
+   
+2. PUBLIC_URL
+   https://moneyforup.onrender.com
+
+3. APP_URL
+   Ссылка на ваш сайт в Cloudflare (например: https://moneyforup1.pages.dev)
+
+4. ADMIN_ID
+   Ваш личный Telegram ID (чтобы подтверждать пополнения кнопкой в 1 клик).
+
+(Поле «Secret Files» ниже в Render заполнять НЕ НУЖНО, оставьте пустым!).
+================================================================================
