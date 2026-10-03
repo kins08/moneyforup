@@ -108,8 +108,8 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .skuf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
 .skuf-cell{aspect-ratio:1/1;border-radius:13px;background:#232a3a;border:1px solid var(--line);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s,border-color .2s;user-select:none}
 .skuf-cell:hover:not(:disabled){transform:scale(1.04);background:#2c3549;border-color:rgba(143,151,255,.45)}
-.skuf-cell.open-good{background:linear-gradient(135deg,rgba(255,115,182,.22),rgba(143,151,255,.2));border-color:#ff73b6}
-.skuf-cell.open-bad{background:linear-gradient(135deg,rgba(255,80,80,.32),rgba(180,40,40,.2));border-color:#ff5555}
+.skuf-cell.open-good{background:linear-gradient(135deg,rgba(61,220,150,.35),rgba(20,160,90,.25));border-color:#3ddc96;box-shadow:0 0 14px rgba(61,220,150,.45);color:#3ddc96}
+.skuf-cell.open-bad{background:linear-gradient(135deg,rgba(255,60,60,.42),rgba(190,20,20,.28));border-color:#ff4d4d;box-shadow:0 0 16px rgba(255,77,77,.55);color:#ff4d4d}
 .avito-box{background:linear-gradient(145deg,#232b3c,#181e2b);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;text-align:center;transition:border-color .3s,box-shadow .3s,transform .2s}
 .avito-box.win{border-color:#3ddc96;animation:avitoPulseWin .6s ease;background:linear-gradient(145deg,#1c332c,#152520);box-shadow:0 0 24px rgba(61,220,150,.35)}
 .avito-box.lose{border-color:#ff5555;animation:avitoShake .45s ease;background:linear-gradient(145deg,#382025,#26151a);box-shadow:0 0 24px rgba(255,85,85,.35)}
@@ -213,7 +213,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div class="muted small" style="margin-bottom:8px">Способ оплаты</div>
   <div class="chips" id="payMethods">
     <button class="chip on" data-pm="0">📱 СБП / Карты</button>
-    <button class="chip" data-pm="5">🪙 Coinso (Авто-СБП/Крипта)</button>
+    <button class="chip" data-pm="5">🪙 Криптовалюта (Coinso)</button>
     <button class="chip" data-pm="2">₿ CryptoBot</button>
     <button class="chip" data-pm="4">🎟 Промокод</button>
   </div>
@@ -350,7 +350,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="section"><b>Как это работает</b></div>
 <div class="list">
   <div class="item"><b>01 · Поделись кодом или ссылкой</b><div class="muted small">Друг открывает приложение по вашей ссылке — он привязывается к вам.</div></div>
-  <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: карта или СБП (Platega), звёзды, крипта (CryptoBot, Heleket).</div></div>
+  <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: карта или СБП, звёзды, крипта (CryptoBot, Coinso).</div></div>
   <div class="item"><b>03 · Вы получаете 15 % токенами</b><div class="muted small">Начисление приходит сразу после успешного платежа, на баланс, без ограничений по количеству.</div></div>
   <div class="item"><b>04 · Токены можно пустить в стейкинг</b><div class="muted small">Реферальные начисления тоже работают под 1 % в сутки.</div></div>
 </div>
@@ -503,13 +503,13 @@ if(IS_TG&&API_BASE){
       return 'sbp';
     }
     if(methodId===5){
-      /* Coinso (CryptoProc): СБП, Карты, Криптовалюта, P2P */
-      msg.className='result';msg.textContent='Создаём счёт в Coinso…';
+      /* Coinso (CryptoProc): только Криптовалюта (USDT, TON, BTC, ETH) */
+      msg.className='result';msg.textContent='Создаём криптовалютный счёт Coinso…';
       const d=await tgCall('/api/coinso-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
       if(!d||!d.pay_url)throw new Error((d&&d.error)||'Сервер не вернул ссылку Coinso');
       try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
       msg.className='result good';
-      msg.innerHTML='Счёт Coinso на <b>'+rub+' ₽</b> создан!<br><a href="'+d.pay_url+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">Нажмите здесь для оплаты</a> (если ссылка не открылась).<br>После оплаты баланс пополнится автоматически.';
+      msg.innerHTML='Крипто-счёт Coinso на <b>'+rub+' ₽</b> создан!<br><a href="'+d.pay_url+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">Оплатить криптовалютой (нажмите здесь)</a>.<br>Баланс пополнится автоматически сразу после подтверждения сети.';
       tgHaptic('win');
       (async()=>{
         for(let i=0;i<40;i++){
@@ -524,29 +524,6 @@ if(IS_TG&&API_BASE){
           }
         }
       })();
-      return 'pending';
-    }
-    if(methodId===3){
-      /* Heleket: крипта (USDT, BTC, ETH), ссылка на оплату + опрос статуса */
-      msg.className='result';msg.textContent='Создаём счёт в Heleket…';
-      const d=await tgCall('/api/heleket-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
-      if(!d||!d.pay_url)throw new Error((d&&d.error)||'сервер не вернул ссылку Heleket');
-      try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
-      msg.className='result';
-      msg.innerHTML='Счёт Heleket открыт на '+fmt(d.tokens||tk)+' ⬦. Ждём подтверждения платежа…';
-      for(let i=0;i<40;i++){
-        await sleep(3000);
-        const st=await tgCall('/api/check-heleket',{invoice_id:d.invoice_id});
-        if(st&&st.paid){
-          await tgLoadBalance();
-          msg.className='result good';
-          msg.innerHTML='Оплачено криптой: зачислено <b>'+fmt(st.tokens||d.tokens||tk)+' ⬦</b>';
-          tgHaptic('win');
-          return 'paid';
-        }
-      }
-      msg.className='result';
-      msg.innerHTML='Платёж пока не подтверждён. Баланс обновится автоматически после оплаты.';
       return 'pending';
     }
     /* Telegram Stars */
@@ -795,7 +772,7 @@ const SBP_DATA = {
 let curBank = 'tinkoff';
 window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
 
-const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','Telegram Stars','CryptoBot · крипта','Heleket','Промокод','Coinso (СБП/Карты/Крипта)']};
+const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','Telegram Stars','CryptoBot · крипта','','Промокод','Криптовалюта (Coinso)']};
 function paySync(){
   qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
   qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
@@ -804,11 +781,11 @@ function paySync(){
   const rub=Math.max(0,Math.floor(PAY.amt)||0),tk=rub*RATE,accepted=!!S.termsAt;
   const chk=q('#termsChk');if(chk)chk.checked=accepted;
   q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]
-    +(PAY.m===2?' <span class="muted">(USDT, TON, BTC)</span>':(PAY.m===3?' <span class="muted">(USDT, BTC, ETH)</span>':(PAY.m===5?' <span class="muted">(СБП, Карты РФ, Крипта)</span>':'')));
+    +(PAY.m===2?' <span class="muted">(USDT, TON, BTC)</span>':(PAY.m===5?' <span class="muted">(USDT, TON, BTC, ETH)</span>':''));
   if(PAY.m===0){
     q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(tk)+' ⬦)');
   }else if(PAY.m===5){
-    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Оплатить через Coinso ('+rub+' ₽ / '+fmt(tk)+' ⬦)');
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Оплатить криптой ('+rub+' ₽ / '+fmt(tk)+' ⬦)');
   }else{
     q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
   }
@@ -2053,7 +2030,7 @@ function gameSkuf(){
         phase = 'done';
         busy = false;
         res.className = 'result bad';
-        res.innerHTML = `🍺 <b>Скуф затянул в танки!</b> Ставка ${S.bet} ⬦ сгорела. Жмите «НАЧАТЬ» для нового захода.`;
+        res.innerHTML = `<span style="color:#ff4d4d;font-weight:800">🔴 ПИВО!</span> <b>Скуф затянул в танки!</b> Ставка ${S.bet} ⬦ сгорела. Жмите «НАЧАТЬ» для нового захода.`;
         go.disabled = false;
         go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
         take.disabled = true;
@@ -2066,7 +2043,7 @@ function gameSkuf(){
         const nextMult = getMult(opened);
         const winAmt = Math.floor(S.bet * nextMult);
         res.className = 'result good';
-        res.innerHTML = `🎀 Альтушка найдена #${opened}! Множитель <b style="color:${band(nextMult)}">×${fx(nextMult)}</b> (<b>+${fmt(winAmt)} ⬦</b>).`;
+        res.innerHTML = `<span style="color:#3ddc96;font-weight:800">🟢 Попытка #${opened}:</span> Альтушка найдена! Множитель <b style="color:${band(nextMult)}">×${fx(nextMult)}</b> (<b>+${fmt(winAmt)} ⬦</b>).`;
         take.disabled = false;
         take.textContent = `ЗАБРАТЬ ×${fx(nextMult)} (+${fmt(winAmt)} ⬦)`;
 

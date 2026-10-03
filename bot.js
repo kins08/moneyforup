@@ -33,15 +33,7 @@ const PLATEGA_MERCHANT_ID = process.env.PLATEGA_MERCHANT_ID || '';
 const PLATEGA_SECRET      = process.env.PLATEGA_SECRET || '';
 const PLATEGA_API         = process.env.PLATEGA_API || 'https://app.platega.io';
 
-/* Heleket (крипта: USDT, BTC, ETH и др.). Кабинет: heleket.com → Настройки → API
-   Вебхук задаётся в самом счёте (url_callback) — укажите PUBLIC_URL, чтобы он подставлялся */
-const HELEKET_MERCHANT_ID = process.env.HELEKET_MERCHANT_ID || '';
-const HELEKET_API_KEY     = process.env.HELEKET_API_KEY || '';
-const HELEKET_API         = process.env.HELEKET_API || 'https://api.heleket.com';
-const HELEKET_CURRENCY    = process.env.HELEKET_CURRENCY || 'RUB';       // валюта счёта; если RUB не подключён — поставьте USD и курс ниже
-const HELEKET_RUB_PER_USD = +(process.env.HELEKET_RUB_PER_USD || 90);    // нужен только при HELEKET_CURRENCY=USD/EUR
-
-/* Coinso (CryptoProc: СБП, Карты, Криптовалюта, P2P). Кабинет: coinso.io → Настройки проекта → Интеграция */
+/* Coinso (CryptoProc: Криптовалюта USDT, TON, BTC и др.). Кабинет: coinso.io → Настройки проекта → Интеграция */
 const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '279786097';
 const COINSO_API_KEY     = process.env.COINSO_API_KEY || '66b9617c7e746616694bf40248a83e47';
 const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '20a010394423b5a409b667feae26c31c';
@@ -77,7 +69,6 @@ const byCode = new Map();   // реферальный код → id пользо
 const orders = new Map();   // orderId → { userId, tokens, rub, status, source }
 const invoices = new Map(); // cryptoBotInvoiceId → { userId, tokens, rub }
 const plategaTx = new Map(); // transactionId Platega → { userId, tokens, rub }
-const heleketInv = new Map(); // uuid счёта Heleket → { userId, tokens, rub }
 let orderSeq = 1;
 
 /* ---------- реферальные коды -------------------------------------- */
@@ -342,72 +333,7 @@ async function plategaCredit(txId, orderIdFromHook) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Heleket — крипта (USDT, BTC, ETH и др.)                             */
-/* ------------------------------------------------------------------ */
-const heleketOn = () => !!(HELEKET_MERCHANT_ID && HELEKET_API_KEY);
-/* подпись = md5( base64(тело запроса) + API_KEY ) — см. doc.heleket.com/general/request-format */
-const heleketSign = raw =>
-  crypto.createHash('md5').update(Buffer.from(raw, 'utf8').toString('base64') + HELEKET_API_KEY).digest('hex');
-
-async function heleketRequest(method, payload = {}) {
-  if (!heleketOn()) throw new Error('Heleket не настроен: добавьте HELEKET_MERCHANT_ID и HELEKET_API_KEY');
-  const raw = JSON.stringify(payload);
-  const res = await fetch(`${HELEKET_API}/v1/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', merchant: HELEKET_MERCHANT_ID, sign: heleketSign(raw) },
-    body: raw
-  });
-  const data = await res.json().catch(() => ({}));
-  if (data.state !== 0) throw new Error('Heleket: ' + JSON.stringify(data.message || data));
-  return data.result;
-}
-const heleketAmountIn = rub =>
-  HELEKET_CURRENCY === 'RUB' ? rub.toFixed(2) : (rub / HELEKET_RUB_PER_USD).toFixed(2);
-
-async function heleketCreate(u, rub, tokens) {
-  const orderId = 'HL' + Date.now() + '-' + u.id;
-  const result = await heleketRequest('payment', {
-    amount: heleketAmountIn(rub),
-    currency: HELEKET_CURRENCY,
-    order_id: orderId,
-    url_callback: PUBLIC_URL ? `${PUBLIC_URL}/heleket-webhook` : undefined,
-    url_success: APP_URL,
-    url_return: APP_URL,
-    lifetime: 3600,
-    additional_data: `${u.id}:${tokens}`,
-    theme: 'dark'
-  });
-  orders.set(orderId, { userId: u.id, tokens, rub, status: 'pending', source: 'Heleket', uuid: result.uuid });
-  heleketInv.set(String(result.uuid), { orderId, userId: u.id, tokens, rub, status: 'pending' });
-  return { pay_url: result.url, invoice_id: result.uuid, order_id: orderId, tokens };
-}
-
-const heleketInfo = uuid => heleketRequest('payment/info', { uuid });
-
-async function heleketCredit(uuid, orderIdFromHook) {
-  const local = heleketInv.get(String(uuid));
-  const orderId = (local && local.orderId) || orderIdFromHook;
-  const order = orderId ? orders.get(String(orderId)) : null;
-  if (!order) return { paid: true, credited: false, error: 'заказ не найден', tokens: 0 };
-  if (order.status === 'paid') return { paid: true, already: true, tokens: order.tokens };
-  order.status = 'paid';
-  if (local) local.status = 'paid';
-  const r = await creditDeposit(order.userId, order.tokens, 'Heleket');
-  await notifyPaid(order.userId, order.tokens, r.refPaid, 'Heleket');
-  return { paid: true, credited: true, tokens: order.tokens, refPaid: r.refPaid };
-}
-
-/* проверка подписи вебхука Heleket: sign приходит в теле, считается по телу без поля sign */
-function heleketVerify(body) {
-  const got = body && body.sign;
-  if (!got) return false;
-  const rest = { ...body }; delete rest.sign;
-  const expect = heleketSign(JSON.stringify(rest));
-  const a = Buffer.from(expect), b = Buffer.from(String(got));
-}
-
-/* ------------------------------------------------------------------ */
-/* Coinso (CryptoProc: СБП, Карты, Криптовалюта, P2P)                 */
+/* Coinso (CryptoProc: только Криптовалюта USDT, TON, BTC, ETH и др.)  */
 /* Документация: coinso.io/docs                                       */
 /* ------------------------------------------------------------------ */
 const coinsoOn = () => !!(COINSO_PROJECT_ID && COINSO_SECRET_KEY);
@@ -424,7 +350,8 @@ async function createCoinsoInvoice(userId, tokens, rub) {
     body: JSON.stringify({
       project_id: Number(COINSO_PROJECT_ID),
       amount: rub,
-      description: `Пополнение ${tokens} ⬦ MoneyForUp`,
+      method: 'crypto',
+      description: `Пополнение ${tokens} ⬦ MoneyForUp (Криптовалюта)`,
       custom: orderId,
       client_telegram_id: String(userId)
     })
@@ -568,15 +495,15 @@ bot.command('pay', async ctx => {
   } catch (e) { await ctx.reply('Не удалось создать счёт Platega: ' + (e.message || e)); }
 });
 
-bot.command('heleket', async ctx => {
-  if (!heleketOn()) return ctx.reply('Heleket не настроен: добавьте HELEKET_MERCHANT_ID и HELEKET_API_KEY в .env');
+bot.command('coinso', async ctx => {
+  if (!coinsoOn()) return ctx.reply('Coinso не настроен.');
   const rub = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
   const tokens = rub * TOKENS_PER_RUB;
   try {
-    const r = await heleketCreate(user(ctx.from.id, ctx.from.first_name), rub, tokens);
-    await ctx.reply(`Счёт на ${rub} ₽ (${tokens} ⬦) · Heleket: USDT, BTC, ETH`,
+    const r = await createCoinsoInvoice(ctx.from.id, tokens, rub);
+    await ctx.reply(`Счёт на ${rub} ₽ (${tokens} ⬦) · Coinso (Криптовалюта USDT, TON, BTC)`,
       { reply_markup: new InlineKeyboard().url('🪙 Оплатить криптой', r.pay_url) });
-  } catch (e) { await ctx.reply('Не удалось создать счёт Heleket: ' + (e.message || e)); }
+  } catch (e) { await ctx.reply('Не удалось создать счёт Coinso: ' + (e.message || e)); }
 });
 
 bot.command('sbp', async ctx => {
@@ -739,18 +666,6 @@ const server = http.createServer(async (req, res) => {
         const local = plategaTx.get(String(body.id)); if (local) local.status = status;
       }
       return send(200, { ok: true, status });
-    }
-
-    /* вебхук Heleket: подпись = md5(base64(тело без sign) + API_KEY) */
-    if (url.pathname === '/heleket-webhook' && req.method === 'POST') {
-      if (!heleketOn() || !heleketVerify(body)) return send(403, { error: 'bad signature' });
-      const st = String(body.status || '');
-      if (st === 'paid' || st === 'paid_over') return send(200, { ok: true, ...(await heleketCredit(body.uuid, body.order_id)) });
-      if (st === 'cancel' || st === 'fail' || st === 'system_fail') {
-        const order = orders.get(String(body.order_id || ''));
-        if (order && order.status !== 'paid') order.status = 'canceled';
-      }
-      return send(200, { ok: true, status: st });
     }
 
     /* вебхук Coinso (CryptoProc): X-Signature = HMAC-SHA256(raw, COINSO_SECRET_KEY) */
@@ -980,32 +895,6 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { r = { paid: false, error: String(e.message || e) }; }
       return send(200, { ...r, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
     }
-    if (url.pathname === '/api/heleket-invoice' && req.method === 'POST') {
-      if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
-      if (!heleketOn()) return send(503, { error: 'Heleket не настроен' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
-      try {
-        return send(200, await heleketCreate(u, rub, tokens));
-      } catch (e) {
-        return send(200, { error: String(e.message || e), tokens });
-      }
-    }
-    if (url.pathname === '/api/check-heleket' && req.method === 'POST') {
-      const uuid = String(body.invoice_id || '');
-      let r = { paid: false };
-      try {
-        const local = heleketInv.get(uuid);
-        if (local && local.status === 'paid') r = await heleketCredit(uuid, local.orderId);
-        else {
-          const info = await heleketInfo(uuid);
-          const st = String((info && (info.payment_status || info.status)) || '');
-          if (st === 'paid' || st === 'paid_over') r = await heleketCredit(uuid, info.order_id);
-          else r = { paid: false, status: st };
-        }
-      } catch (e) { r = { paid: false, error: String(e.message || e) }; }
-      return send(200, { ...r, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
-    }
     if (url.pathname === '/api/coinso-invoice' && req.method === 'POST') {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
@@ -1063,7 +952,6 @@ if (process.env.BOT_DRY_RUN === '1') console.log('BOT_DRY_RUN: опрос Telegr
 else bot.start();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
   + ' · Platega: ' + (plategaOn() ? 'вкл' : 'выкл')
-  + ' · Heleket: ' + (heleketOn() ? 'вкл' : 'выкл')
   + ' · CryptoBot: ' + (CRYPTOBOT_TOKEN ? 'вкл' : 'выкл')
-  + ' · Coinso: ' + (coinsoOn() ? 'вкл' : 'выкл')
+  + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));
