@@ -41,6 +41,13 @@ const HELEKET_API         = process.env.HELEKET_API || 'https://api.heleket.com'
 const HELEKET_CURRENCY    = process.env.HELEKET_CURRENCY || 'RUB';       // валюта счёта; если RUB не подключён — поставьте USD и курс ниже
 const HELEKET_RUB_PER_USD = +(process.env.HELEKET_RUB_PER_USD || 90);    // нужен только при HELEKET_CURRENCY=USD/EUR
 
+/* Coinso (CryptoProc: СБП, Карты, Криптовалюта, P2P). Кабинет: coinso.io → Настройки проекта → Интеграция */
+const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '279786097';
+const COINSO_API_KEY     = process.env.COINSO_API_KEY || '66b9617c7e746616694bf40248a83e47';
+const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '20a010394423b5a409b667feae26c31c';
+const COINSO_API         = (process.env.COINSO_API || 'https://coinso.io/api').replace(/\/+$/, '');
+const coinsoOrders       = new Map(); // orderId -> { userId, tokens, rub, invoice_id, credited }
+
 /* Публичный адрес этого бэкенда (без слэша на конце) — для url_callback и вебхуков */
 const PUBLIC_URL      = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 const BOT_USERNAME    = (process.env.BOT_USERNAME || '').replace(/^@/, '');   // имя бота без @ (для реферальных ссылок)
@@ -397,7 +404,66 @@ function heleketVerify(body) {
   const rest = { ...body }; delete rest.sign;
   const expect = heleketSign(JSON.stringify(rest));
   const a = Buffer.from(expect), b = Buffer.from(String(got));
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/* ------------------------------------------------------------------ */
+/* Coinso (CryptoProc: СБП, Карты, Криптовалюта, P2P)                 */
+/* Документация: coinso.io/docs                                       */
+/* ------------------------------------------------------------------ */
+const coinsoOn = () => !!(COINSO_PROJECT_ID && COINSO_SECRET_KEY);
+
+async function createCoinsoInvoice(userId, tokens, rub) {
+  if (!coinsoOn()) throw new Error('Coinso не настроен (проверьте COINSO_PROJECT_ID и COINSO_SECRET_KEY)');
+  const orderId = 'MF_COIN_' + Date.now() + '_' + userId;
+  const res = await fetch(`${COINSO_API}/payment/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${COINSO_SECRET_KEY}`
+    },
+    body: JSON.stringify({
+      project_id: Number(COINSO_PROJECT_ID),
+      amount: rub,
+      description: `Пополнение ${tokens} ⬦ MoneyForUp`,
+      custom: orderId,
+      client_telegram_id: String(userId)
+    })
+  });
+  const data = await res.json();
+  const payUrl = data.payment_url || (data.data && data.data.payment_url);
+  const invId = data.invoice_id || (data.data && data.data.invoice_id);
+  if (!payUrl) {
+    throw new Error('Coinso: ' + (data.message || JSON.stringify(data)));
+  }
+  coinsoOrders.set(orderId, { userId, tokens, rub, invoice_id: invId, credited: false });
+  return {
+    order_id: orderId,
+    invoice_id: invId,
+    pay_url: payUrl,
+    tokens
+  };
+}
+
+async function checkCoinsoInvoice(invoiceId, orderId) {
+  if (!invoiceId) return { paid: false };
+  try {
+    const res = await fetch(`${COINSO_API}/payment/status?uuid=${encodeURIComponent(invoiceId)}`);
+    const data = await res.json();
+    if (data && (data.status === 'paid' || (data.data && data.data.status === 'paid'))) {
+      const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === invoiceId);
+      if (saved && !saved.credited) {
+        saved.credited = true;
+        const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+        await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
+        coinsoOrders.delete(orderId);
+        return { paid: true, credited: true, tokens: saved.tokens, refPaid: r.refPaid };
+      }
+      return { paid: true };
+    }
+    return { paid: false, status: data.status || (data.data && data.data.status) };
+  } catch (e) {
+    return { paid: false, error: e.message };
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -687,6 +753,33 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, status: st });
     }
 
+    /* вебхук Coinso (CryptoProc): X-Signature = HMAC-SHA256(raw, COINSO_SECRET_KEY) */
+    if (url.pathname === '/coinso-webhook' && req.method === 'POST') {
+      if (COINSO_SECRET_KEY) {
+        const sig = req.headers['x-signature'];
+        const calcSig = crypto.createHmac('sha256', COINSO_SECRET_KEY).update(raw).digest('hex');
+        if (sig && sig !== calcSig) {
+          console.warn('[Coinso Webhook] Неверная подпись X-Signature');
+          return send(403, { error: 'bad signature' });
+        }
+      }
+      const upd = body;
+      const orderId = String(upd.custom || '');
+      const status = String(upd.event || upd.status || '');
+      if (status === 'payment.success' || status === 'paid') {
+        const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === upd.invoice_id);
+        if (saved && !saved.credited) {
+          saved.credited = true;
+          const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+          await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
+          coinsoOrders.delete(orderId);
+          console.log(`[Coinso Webhook] Успешное зачисление: +${saved.tokens} токенов пользователю ${saved.userId}`);
+          return send(200, { ok: true, credited: true });
+        }
+      }
+      return send(200, { ok: true });
+    }
+
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
     const who = {
@@ -913,6 +1006,22 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { r = { paid: false, error: String(e.message || e) }; }
       return send(200, { ...r, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
     }
+    if (url.pathname === '/api/coinso-invoice' && req.method === 'POST') {
+      if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
+      if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
+      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
+      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
+      try {
+        const inv = await createCoinsoInvoice(u.id, tokens, rub);
+        return send(200, inv);
+      } catch (e) {
+        return send(500, { error: String(e.message || e), tokens });
+      }
+    }
+    if (url.pathname === '/api/check-coinso' && req.method === 'POST') {
+      const r = await checkCoinsoInvoice(body.invoice_id, body.order_id);
+      return send(200, { ...r, balance: u.tokens, staked: u.staked });
+    }
     if (url.pathname === '/api/order-sbp' && req.method === 'POST') {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
@@ -956,4 +1065,5 @@ console.log('Бот запущен. Стейкинг 1 %/сутки, рефер�
   + ' · Platega: ' + (plategaOn() ? 'вкл' : 'выкл')
   + ' · Heleket: ' + (heleketOn() ? 'вкл' : 'выкл')
   + ' · CryptoBot: ' + (CRYPTOBOT_TOKEN ? 'вкл' : 'выкл')
+  + ' · Coinso: ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));
