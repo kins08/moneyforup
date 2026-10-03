@@ -612,6 +612,36 @@ const server = http.createServer(async (req, res) => {
   };
   if (req.method === 'OPTIONS') return send(204, {});
 
+  // Если открыли адрес в обычном браузере — отдаём красивую страницу статуса
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(`<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyForUp Backend</title>
+  <style>
+    body { margin: 0; background: #0b0e14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+    .card { background: #161c28; border: 1px solid #2a3449; border-radius: 20px; padding: 36px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .badge { display: inline-block; padding: 6px 14px; background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 999px; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
+    h1 { margin: 0 0 12px; font-size: 26px; color: #fff; }
+    p { margin: 0 0 24px; color: #94a3b8; font-size: 15px; line-height: 1.6; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #00e5ff, #0072ff); color: #fff; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 15px; transition: transform 0.2s; box-shadow: 0 8px 20px rgba(0,114,255,0.4); }
+    .btn:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">● СЕРВЕР РАБОТАЕТ (ONLINE)</div>
+    <h1>MoneyForUp API & Bot</h1>
+    <p>Бэкенд на Render успешно запущен и обрабатывает запросы Telegram-бота, стейкинга и платежей.</p>
+    <a href="${APP_URL || '#'}" class="btn" target="_blank" rel="noopener">🎮 Открыть сайт с играми (Cloudflare)</a>
+  </div>
+</body>
+</html>`);
+  }
+
   try {
     const raw = req.method === 'POST' ? await readBody(req) : '';
     const body = raw ? (() => { try { return JSON.parse(raw); } catch { return {}; } })() : {};
