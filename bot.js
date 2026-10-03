@@ -5,7 +5,7 @@
  *   • Mini App по кнопке, реферальные ссылки (?startapp=<id>)
  *   • Стейкинг: 1 % в сутки, проценты считаются по секундам, снятие в любой момент
  *   • Реферальная программа: 15 % от каждого пополнения приглашённого — токенами рефереру
- *   • Оплата: Platega (карта / СБП), Telegram Stars, CryptoBot и Heleket (крипта), плюс заявки по СБП вручную
+ *   • Оплата: СБП и Карты (напрямую админу), Криптовалюта Coinso, промокоды с лимитом
  *   • Проверка initData (HMAC-SHA256) на каждом запросе, фиксация принятия соглашения
  *
  * Запуск:
@@ -24,8 +24,6 @@ const BOT_TOKEN     = process.env.BOT_TOKEN;
 const APP_URL       = process.env.APP_URL || 'https://example.com/moneyforup-tg.html';
 const API_PORT      = +(process.env.PORT || process.env.API_PORT || 3000);
 const ADMIN_ID      = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
-const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_TOKEN || '';      // токен из @CryptoBot → My Apps
-const CRYPTOBOT_API = process.env.CRYPTOBOT_API || 'https://pay.crypt.bot/api';
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
@@ -67,7 +65,7 @@ const bot = new Bot(BOT_TOKEN);
 const users = new Map();    // id → { name, code, tokens, staked, stakeSince, accruedBase, ref, refEarned, refInvited, termsAt, starsUsd }
 const byCode = new Map();   // реферальный код → id пользователя
 const orders = new Map();   // orderId → { userId, tokens, rub, status, source }
-const invoices = new Map(); // cryptoBotInvoiceId → { userId, tokens, rub }
+const promoCodes = new Map(); // CODE -> { code, tokens, maxUses, usedBy: Set<userId>, createdAt }
 const plategaTx = new Map(); // transactionId Platega → { userId, tokens, rub }
 let orderSeq = 1;
 
@@ -220,52 +218,51 @@ async function starsInvoiceLink(userId, tokens) {
 }
 
 /* ------------------------------------------------------------------ */
-/* CryptoBot (USDT / TON / BTC)                                        */
+/* Промокоды (с лимитом общего числа активаций)                       */
 /* ------------------------------------------------------------------ */
-async function cryptoBot(method, payload) {
-  if (!CRYPTOBOT_TOKEN) throw new Error('CRYPTOBOT_TOKEN не задан');
-  const res = await fetch(`${CRYPTOBOT_API}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Crypto-Pay-API-Token': CRYPTOBOT_TOKEN },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error('CryptoBot: ' + JSON.stringify(data.error || data));
-  return data.result;
+function addPromoCode(rawCode, tokens, maxUses) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  if (!code || code.length < 2) throw new Error('Код должен содержать от 2 символов');
+  tokens = Math.max(1, Math.floor(Number(tokens) || 0));
+  maxUses = Math.max(1, Math.floor(Number(maxUses) || 1));
+  const existing = promoCodes.get(code);
+  if (existing) {
+    existing.tokens = tokens;
+    existing.maxUses = maxUses;
+    return existing;
+  }
+  const entry = { code, tokens, maxUses, usedBy: new Set(), createdAt: Date.now() };
+  promoCodes.set(code, entry);
+  return entry;
 }
-async function createCryptoInvoice(userId, tokens, rub) {
-  const inv = await cryptoBot('createInvoice', {
-    currency_type: 'fiat', fiat: 'RUB', amount: String(rub),
-    description: `${tokens} ⬦ MoneyForUp (10 ⬦ = 1 ₽, вывод не предусмотрен)`,
-    payload: JSON.stringify({ userId, tokens, kind: 'tokens' }),
-    expires_in: 3600,
-    allow_comments: false,
-    allow_anonymous: false
-  });
-  invoices.set(String(inv.invoice_id), { userId, tokens, rub });
+
+// Предустановленные промокоды
+addPromoCode('MONEYUP', 500, 100);  // 500 ⬦ (~50 ₽), 100 человек
+addPromoCode('START', 250, 50);     // 250 ⬦ (~25 ₽), 50 человек
+addPromoCode('SKUF', 300, 30);      // 300 ⬦ (~30 ₽), 30 человек
+
+function applyPromo(userId, rawCode) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  if (!code) return { ok: false, error: 'Введите промокод' };
+  const promo = promoCodes.get(code);
+  if (!promo) return { ok: false, error: `Промокод «${code}» не найден или не существует` };
+  if (promo.usedBy.has(userId)) return { ok: false, error: `Вы уже активировали промокод «${code}»` };
+  if (promo.usedBy.size >= promo.maxUses) {
+    return { ok: false, error: `Лимит активаций промокода «${code}» исчерпан (${promo.maxUses}/${promo.maxUses})` };
+  }
+
+  promo.usedBy.add(userId);
+  const u = user(userId);
+  u.tokens = (u.tokens || 0) + promo.tokens;
+
   return {
-    invoice_id: inv.invoice_id,
-    pay_url: inv.bot_invoice_url || inv.mini_app_invoice_url || inv.pay_url,
-    tokens
+    ok: true,
+    tokens: promo.tokens,
+    newBalance: u.tokens,
+    code: promo.code,
+    remainingUses: promo.maxUses - promo.usedBy.size,
+    maxUses: promo.maxUses
   };
-}
-/** Проверка оплаты: либо вебхук, либо опрос getInvoices */
-async function checkCryptoInvoice(invoiceId) {
-  const list = await cryptoBot('getInvoices', { invoice_ids: String(invoiceId), count: 1 });
-  const inv = (list.items || [])[0];
-  if (!inv) return { paid: false };
-  if (inv.status !== 'paid') return { paid: false, status: inv.status };
-  const local = invoices.get(String(invoiceId));
-  if (local && local.credited) return { paid: true, already: true, tokens: local.tokens };
-  let tokens = local ? local.tokens : 0, userId = local ? local.userId : null;
-  try {
-    const p = JSON.parse(inv.payload || '{}');
-    tokens = tokens || p.tokens; userId = userId || p.userId;
-  } catch {}
-  if (!userId || !tokens) return { paid: true, credited: false, error: 'нет привязки к пользователю' };
-  const r = await creditDeposit(userId, tokens, 'CryptoBot');
-  if (local) local.credited = true;
-  return { paid: true, credited: true, tokens, refPaid: r.refPaid };
 }
 
 
@@ -414,7 +411,8 @@ bot.command('start', async ctx => {
     `Привет, ${ctx.from.first_name}!\n` +
     `MoneyForUp — математические игры на токены (10 ⬦ = 1 ₽, вывод не предусмотрен).\n` +
     `Стейкинг: 1 % в сутки. Рефералы: ${REF_PERCENT} % с пополнений приглашённых.\n\n` +
-    `Оплата: /pay — карта или СБП · /buy — звёздами · /crypto и /heleket — крипта.\n` +
+    `Пополнение: СБП и Карты (напрямую), Криптовалюта (Coinso) и Промокоды.\n` +
+    `Активировать промокод: /promo <КОД>\n` +
     `На счету: ${u.tokens} ⬦. Открывай приложение 👇`,
     { reply_markup: kb }
   );
@@ -473,15 +471,79 @@ bot.command('buy', async ctx => {
   } catch (e) { await ctx.reply('Не удалось создать счёт: ' + (e.message || e)); }
 });
 
-bot.command('crypto', async ctx => {
-  if (!CRYPTOBOT_TOKEN) return ctx.reply('CryptoBot не настроен: добавьте CRYPTOBOT_TOKEN в .env');
-  const arg = Number((ctx.match || '').trim());
-  const tokens = arg > 0 ? Math.floor(arg) : 3000;
+bot.command('promo', async ctx => {
+  const arg = (ctx.match || '').trim();
+  if (!arg) {
+    return ctx.reply(
+      '🎟 <b>Активация промокода</b>\n\n' +
+      'Используйте: <code>/promo КОД</code>\n' +
+      'Пример: <code>/promo MONEYUP</code>\n\n' +
+      '<i>Также промокод можно ввести прямо в приложении на вкладке Пополнение.</i>',
+      { parse_mode: 'HTML' }
+    );
+  }
+  const res = applyPromo(ctx.from.id, arg);
+  if (!res.ok) {
+    return ctx.reply('⚠️ ' + res.error);
+  }
+  await ctx.reply(
+    `🎉 <b>Промокод «${res.code}» успешно активирован!</b>\n\n` +
+    `├ Зачислено: <b>+${res.tokens} ⬦</b> (~${(res.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n` +
+    `├ Ваш текущий баланс: <b>${res.newBalance} ⬦</b>\n` +
+    `└ Осталось активаций этого промокода: <b>${res.remainingUses} из ${res.maxUses}</b>`,
+    { parse_mode: 'HTML' }
+  );
+});
+
+bot.command('addpromo', async ctx => {
+  if (ADMIN_ID && ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  const parts = (ctx.match || '').trim().split(/\s+/);
+  const [code, tokensStr, maxUsesStr] = parts;
+  if (!code || !tokensStr) {
+    return ctx.reply(
+      'ℹ️ <b>Как добавить промокод:</b>\n\n' +
+      '<code>/addpromo КОД ТОКЕНЫ [МАКС_АКТИВАЦИЙ]</code>\n\n' +
+      '<b>Пример:</b>\n' +
+      '<code>/addpromo BONUS1000 1000 50</code> — промокод на 1000 ⬦ для первых 50 пользователей.',
+      { parse_mode: 'HTML' }
+    );
+  }
   try {
-    const inv = await createCryptoInvoice(ctx.from.id, tokens, tokens / TOKENS_PER_RUB);
-    await ctx.reply(`Счёт на ${tokens} ⬦ ≈ ${(tokens / TOKENS_PER_RUB).toFixed(2)} ₽ · CryptoBot`,
-      { reply_markup: new InlineKeyboard().url('₿ Оплатить криптой', inv.pay_url) });
-  } catch (e) { await ctx.reply('Не удалось создать счёт CryptoBot: ' + (e.message || e)); }
+    const tokens = Number(tokensStr);
+    const maxUses = maxUsesStr ? Number(maxUsesStr) : 100;
+    const promo = addPromoCode(code, tokens, maxUses);
+    await ctx.reply(
+      `✅ <b>Промокод создан!</b>\n\n` +
+      `├ Код: <code>${promo.code}</code>\n` +
+      `├ Награда: <b>${promo.tokens} ⬦</b> (~${(promo.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n` +
+      `├ Лимит активаций: <b>${promo.maxUses}</b> человек\n` +
+      `└ Активировано сейчас: <b>${promo.usedBy.size}</b>`,
+      { parse_mode: 'HTML' }
+    );
+  } catch (e) {
+    await ctx.reply('⚠️ Ошибка: ' + (e.message || e));
+  }
+});
+
+bot.command(['promos', 'promocodes'], async ctx => {
+  if (ADMIN_ID && ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  if (promoCodes.size === 0) return ctx.reply('Промокодов пока нет. Создайте: /addpromo КОД ТОКЕНЫ МАКС');
+  let text = '🎟 <b>Список активных промокодов:</b>\n\n';
+  for (const [code, p] of promoCodes.entries()) {
+    const left = p.maxUses - p.usedBy.size;
+    text += `• <code>${code}</code>: <b>+${p.tokens} ⬦</b> | Использовано: <b>${p.usedBy.size}/${p.maxUses}</b> (осталось: ${left})\n`;
+  }
+  text += '\n<i>Удалить: /delpromo КОД</i>';
+  await ctx.reply(text, { parse_mode: 'HTML' });
+});
+
+bot.command('delpromo', async ctx => {
+  if (ADMIN_ID && ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  const code = (ctx.match || '').trim().toUpperCase();
+  if (!code) return ctx.reply('Используйте: /delpromo КОД');
+  if (!promoCodes.has(code)) return ctx.reply(`Промокод «${code}» не найден.`);
+  promoCodes.delete(code);
+  await ctx.reply(`🗑 Промокод «${code}» успешно удалён.`);
 });
 
 bot.command('pay', async ctx => {
@@ -640,19 +702,6 @@ const server = http.createServer(async (req, res) => {
     const body = raw ? (() => { try { return JSON.parse(raw); } catch { return {}; } })() : {};
     const tgUser = checkInitData(body.initData || url.searchParams.get('initData'));
 
-    /* вебхук CryptoBot (подпись = HMAC-SHA256(rawBody, SHA256(token))) */
-    if (url.pathname === '/cryptobot-webhook' && req.method === 'POST') {
-      if (!CRYPTOBOT_TOKEN) return send(400, { error: 'CryptoBot не настроен' });
-      const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
-      const sig = crypto.createHmac('sha256', secret).update(raw).digest('hex');
-      if (sig !== req.headers['crypto-pay-api-signature']) return send(403, { error: 'bad signature' });
-      const upd = body;
-      if (upd.update_type === 'invoice_paid' && upd.payload && upd.payload.status === 'paid') {
-        const r = await checkCryptoInvoice(upd.payload.invoice_id);
-        return send(200, { ok: true, ...r });
-      }
-      return send(200, { ok: true, ignored: true });
-    }
 
     /* вебхук Platega: приходит с заголовками X-MerchantId и X-Secret */
     if (url.pathname === '/platega-webhook' && req.method === 'POST') {
@@ -861,17 +910,20 @@ const server = http.createServer(async (req, res) => {
       const link = await starsInvoiceLink(u.id, tokens);
       return send(200, { invoice_link: link, tokens });
     }
-    if (url.pathname === '/api/crypto-invoice' && req.method === 'POST') {
-      if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
-      if (!CRYPTOBOT_TOKEN) return send(503, { error: 'CryptoBot не настроен' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
-      const inv = await createCryptoInvoice(u.id, tokens, rub);
-      return send(200, inv);
-    }
-    if (url.pathname === '/api/check-crypto' && req.method === 'POST') {
-      const r = await checkCryptoInvoice(body.invoice_id);
-      return send(200, { ...r, tokens: u.tokens, staked: u.staked });
+    if (url.pathname === '/api/promo' && req.method === 'POST') {
+      const code = String(body.code || '').trim();
+      const res = applyPromo(u.id, code);
+      if (!res.ok) {
+        return send(400, { error: res.error });
+      }
+      return send(200, {
+        ok: true,
+        tokens: res.tokens,
+        balance: res.newBalance,
+        code: res.code,
+        remainingUses: res.remainingUses,
+        message: `Зачислено +${res.tokens} ⬦ по промокоду «${res.code}»`
+      });
     }
     if (url.pathname === '/api/platega-invoice' && req.method === 'POST') {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
@@ -951,7 +1003,6 @@ server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает пор�
 if (process.env.BOT_DRY_RUN === '1') console.log('BOT_DRY_RUN: опрос Telegram отключён');
 else bot.start();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
-  + ' · Platega: ' + (plategaOn() ? 'вкл' : 'выкл')
-  + ' · CryptoBot: ' + (CRYPTOBOT_TOKEN ? 'вкл' : 'выкл')
+  + ' · Промокодов активно: ' + promoCodes.size
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));

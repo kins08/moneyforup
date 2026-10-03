@@ -214,7 +214,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div class="chips" id="payMethods">
     <button class="chip on" data-pm="0">📱 СБП / Карты</button>
     <button class="chip" data-pm="5">🪙 Криптовалюта (Coinso)</button>
-    <button class="chip" data-pm="2">₿ CryptoBot</button>
     <button class="chip" data-pm="4">🎟 Промокод</button>
   </div>
   <div id="sbpRequisites" style="margin:12px 0 6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)">
@@ -235,16 +234,23 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
     </div>
     <div class="muted small" style="margin-top:10px;line-height:1.4">Переведите точную сумму на указанные реквизиты, затем нажмите <b>«Я перевёл»</b> — заявка сразу уйдёт администратору на проверку.</div>
   </div>
-  <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
-  <div class="chips" id="payAmounts">
-    <button class="chip" data-pa="100">100 ₽</button>
-    <button class="chip on" data-pa="300">300 ₽</button>
-    <button class="chip" data-pa="500">500 ₽</button>
-    <button class="chip" data-pa="1000">1000 ₽</button>
+  <div id="promoBox" style="display:none;margin:12px 0 6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)">
+    <div class="muted small" style="margin-bottom:8px">Введите промокод:</div>
+    <input class="betinput" id="promoInput" type="text" placeholder="НАПРИМЕР: MONEYUP" maxlength="32" style="width:100%;box-sizing:border-box;text-align:center;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:10px 12px;font-size:15px" aria-label="Промокод">
+    <div class="muted small" style="margin-top:8px;line-height:1.4">Промокоды имеют ограниченное количество активаций. Введите промокод и нажмите <b>«Активировать промокод»</b>.</div>
   </div>
-  <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
-    <input class="betinput" id="payRub" type="number" min="1" step="10" inputmode="numeric" value="300" aria-label="Сумма в рублях">
-    <span class="muted small">₽</span></div>
+  <div id="paySumBlock">
+    <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
+    <div class="chips" id="payAmounts">
+      <button class="chip" data-pa="100">100 ₽</button>
+      <button class="chip on" data-pa="300">300 ₽</button>
+      <button class="chip" data-pa="500">500 ₽</button>
+      <button class="chip" data-pa="1000">1000 ₽</button>
+    </div>
+    <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
+      <input class="betinput" id="payRub" type="number" min="1" step="10" inputmode="numeric" value="300" aria-label="Сумма в рублях">
+      <span class="muted small">₽</span></div>
+  </div>
   <div class="muted small" id="payPreview" style="margin-top:8px"></div>
   <label class="termsline" for="termsChk">
     <input type="checkbox" id="termsChk">
@@ -258,7 +264,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div class="muted small" style="margin-bottom:8px">Способ получения</div>
   <div class="chips" id="withdrawMethods">
     <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
-    <button class="chip" data-wm="crypto">₿ CryptoBot</button>
+    <button class="chip" data-wm="crypto">🪙 Криптовалюта (USDT / TON)</button>
   </div>
   <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 50 ₽)</div>
   <div class="chips" id="withdrawAmounts">
@@ -271,7 +277,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
     <input class="betinput" id="withdrawRub" type="number" min="50" step="10" inputmode="numeric" value="50" aria-label="Сумма вывода в рублях">
     <span class="muted small">₽</span></div>
-  <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / @CryptoBot username)</div>
+  <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / адрес кошелька USDT или TON)</div>
   <input class="betinput" id="withdrawDetails" type="text" placeholder="+7 999 123-45-67 (Сбер/Т-Банк)" style="width:100%;box-sizing:border-box;text-align:left;padding:10px 12px;font-size:14px" aria-label="Реквизиты вывода">
   <div class="muted small" id="withdrawPreview" style="margin-top:8px"></div>
   <button class="control" id="withdrawGo" style="margin-top:12px">Запросить вывод</button>
@@ -350,7 +356,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="section"><b>Как это работает</b></div>
 <div class="list">
   <div class="item"><b>01 · Поделись кодом или ссылкой</b><div class="muted small">Друг открывает приложение по вашей ссылке — он привязывается к вам.</div></div>
-  <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: карта или СБП, звёзды, крипта (CryptoBot, Coinso).</div></div>
+  <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: СБП или карты напрямую, криптовалюта (Coinso) или промокоды.</div></div>
   <div class="item"><b>03 · Вы получаете 15 % токенами</b><div class="muted small">Начисление приходит сразу после успешного платежа, на баланс, без ограничений по количеству.</div></div>
   <div class="item"><b>04 · Токены можно пустить в стейкинг</b><div class="muted small">Реферальные начисления тоже работают под 1 % в сутки.</div></div>
 </div>
@@ -462,34 +468,27 @@ async function tgRegister(){
   if(!IS_TG||!API_BASE)return;
   try{tgApplyServer(await tgCall('/api/register',{startParam:TGSTART,termsAcceptedAt:S.termsAt||0}))}catch(e){}
 }
-/* реальные платежи: Stars, CryptoBot, заявка по СБП */
+/* реальные платежи: СБП, Coinso, промокод */
 if(IS_TG&&API_BASE){
   payProvider=async (rub,tk,methodId,msg)=>{
-    /* 0 — карта/СБП, 1 — Telegram Stars, 2 — CryptoBot, 3 — промокод */
+    /* 0 — карта/СБП, 5 — Coinso, 4 — промокод */
     if(methodId===4){
-      msg.className='result';msg.innerHTML='Промокоды активируются администратором: отправьте код боту командой /promo.';
-      return 'promo';
-    }
-    if(methodId===2){
-      msg.className='result';msg.textContent='Создаём счёт в CryptoBot…';
-      const d=await tgCall('/api/crypto-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
-      if(!d||!d.pay_url)throw new Error((d&&d.error)||'сервер не вернул ссылку CryptoBot');
-      try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
-      msg.innerHTML='Счёт CryptoBot открыт на '+fmt(tk)+' ⬦. Ждём подтверждения платежа…';
-      for(let i=0;i<40;i++){
-        await sleep(3000);
-        const st=await tgCall('/api/check-crypto',{invoice_id:d.invoice_id});
-        if(st&&st.paid){
-          await tgLoadBalance();
-          msg.className='result good';
-          msg.innerHTML='Оплачено криптой: зачислено <b>'+fmt(st.tokens||d.tokens)+' ⬦</b>';
-          tgHaptic('win');
-          return 'paid';
-        }
+      const codeInp = q('#promoInput');
+      const promoVal = (codeInp ? codeInp.value : '').trim().toUpperCase();
+      if(!promoVal){
+        throw new Error('Пожалуйста, введите промокод в поле выше');
       }
-      msg.className='result';
-      msg.innerHTML='Платёж пока не подтверждён. Баланс обновится автоматически после оплаты.';
-      return 'pending';
+      msg.className='result';msg.textContent='Проверяем и активируем промокод…';
+      const d=await tgCall('/api/promo',{code:promoVal,termsAcceptedAt:S.termsAt});
+      if(!d||!d.ok)throw new Error((d&&d.error)||'Не удалось применить промокод');
+      if(typeof d.balance==='number')S.balance=d.balance;else S.balance=(S.balance||0)+(d.tokens||0);
+      addHist('Промокод '+d.code,d.tokens);
+      save();syncUI();paySync();
+      tgHaptic('win');
+      msg.className='result good';
+      msg.innerHTML='🎉 Промокод <b>«'+d.code+'»</b> успешно активирован!<br>На ваш баланс зачислено <b>+'+fmt(d.tokens)+' ⬦</b> (осталось активаций: '+d.remainingUses+' из '+d.maxUses+')';
+      if(codeInp)codeInp.value='';
+      return 'promo';
     }
     if(methodId===0){
       /* Прямой перевод на карту / СБП (заявка администратору) */
@@ -772,24 +771,37 @@ const SBP_DATA = {
 let curBank = 'tinkoff';
 window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
 
-const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','Telegram Stars','CryptoBot · крипта','','Промокод','Криптовалюта (Coinso)']};
+const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','','','','Промокод','Криптовалюта (Coinso)']};
 function paySync(){
   qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
   qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
   const sbpBox=q('#sbpRequisites');
   if(sbpBox)sbpBox.style.display=PAY.m===0?'block':'none';
+  const promoBox=q('#promoBox');
+  if(promoBox)promoBox.style.display=PAY.m===4?'block':'none';
+  const sumBox=q('#paySumBlock');
+  if(sumBox)sumBox.style.display=PAY.m===4?'none':'block';
+
   const rub=Math.max(0,Math.floor(PAY.amt)||0),tk=rub*RATE,accepted=!!S.termsAt;
   const chk=q('#termsChk');if(chk)chk.checked=accepted;
-  q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]
-    +(PAY.m===2?' <span class="muted">(USDT, TON, BTC)</span>':(PAY.m===5?' <span class="muted">(USDT, TON, BTC, ETH)</span>':''));
-  if(PAY.m===0){
+
+  if(PAY.m===4){
+    q('#payPreview').innerHTML='Активация промокода · моментальное начисление токенов';
+    q('#payGo').textContent=!accepted?'Сначала примите соглашение':'Активировать промокод';
+    q('#payGo').disabled=!accepted;
+  }else if(PAY.m===0){
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m];
     q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(tk)+' ⬦)');
+    q('#payGo').disabled=tk<1||!accepted;
   }else if(PAY.m===5){
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(USDT, TON, BTC, ETH)</span>';
     q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Оплатить криптой ('+rub+' ₽ / '+fmt(tk)+' ⬦)');
+    q('#payGo').disabled=tk<1||!accepted;
   }else{
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk);
     q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
+    q('#payGo').disabled=tk<1||!accepted;
   }
-  q('#payGo').disabled=tk<1||!accepted;
 }
 q('#payMethods').addEventListener('click',e=>{const b=e.target.closest('[data-pm]');if(!b)return;PAY.m=+b.dataset.pm;paySync()});
 q('#payAmounts').addEventListener('click',e=>{const b=e.target.closest('[data-pa]');if(!b)return;PAY.amt=+b.dataset.pa;q('#payRub').value=PAY.amt;paySync()});
@@ -841,6 +853,21 @@ async function startPayment(){
     return;
   }
   // демонстрационный режим (без сервера)
+  if(PAY.m===4){
+    const codeInp = q('#promoInput');
+    const pCode = (codeInp ? codeInp.value : '').trim().toUpperCase();
+    if(!pCode){
+      m.className='result bad';
+      m.textContent='Введите промокод в поле выше';
+      return;
+    }
+    const bonus = 500;
+    deposit(bonus, 'Промокод ' + pCode);
+    m.className='result good';
+    m.innerHTML='🎉 Промокод <b>«'+pCode+'»</b> активирован! Зачислено <b>+'+bonus+' ⬦</b> <span class="muted">(демо-режим)</span>';
+    if(codeInp) codeInp.value = '';
+    return;
+  }
   deposit(tk,PAY.names[PAY.m]);
   m.className='result good';
   m.innerHTML='Зачислено <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(демо-режим)</span>';
@@ -848,7 +875,7 @@ async function startPayment(){
 q('#payGo').addEventListener('click',startPayment);
 
 /* ---------- вывод средств (профиль) ---------- */
-const WITHDRAW={m:'sbp',amt:50,names:{'sbp':'СБП / Карта','crypto':'CryptoBot'}};
+const WITHDRAW={m:'sbp',amt:50,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
 function withdrawSync(){
   const wMeth=q('#withdrawMethods');
   if(!wMeth)return;
@@ -884,7 +911,7 @@ if(wMethEl){
     const det=q('#withdrawDetails');
     if(det){
       if(WITHDRAW.m==='crypto'){
-        det.placeholder='Ваш @username в Telegram или ID';
+        det.placeholder='Адрес кошелька USDT (TRC-20/TON) или TON';
       }else{
         det.placeholder='+7 999 123-45-67 (Сбер/Т-Банк)';
       }
