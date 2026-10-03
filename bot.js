@@ -406,16 +406,22 @@ bot.command('start', async ctx => {
   if (taken) {
     await ctx.reply(`Реферальный код принят ✅ · за ваши пополнения пригласивший получает ${REF_PERCENT} %`);
   }
-  const kb = new InlineKeyboard().webApp('🚀 Открыть MoneyForUp', APP_URL);
-  await ctx.reply(
-    `Привет, ${ctx.from.first_name}!\n` +
-    `MoneyForUp — математические игры на токены (10 ⬦ = 1 ₽, вывод не предусмотрен).\n` +
-    `Стейкинг: 1 % в сутки. Рефералы: ${REF_PERCENT} % с пополнений приглашённых.\n\n` +
-    `Пополнение: СБП и Карты (напрямую), Криптовалюта (Coinso) и Промокоды.\n` +
-    `Активировать промокод: /promo <КОД>\n` +
-    `На счету: ${u.tokens} ⬦. Открывай приложение 👇`,
-    { reply_markup: kb }
-  );
+  const kb = new InlineKeyboard().webApp('🚀 Играть в MoneyForUp', APP_URL);
+  const text =
+    `🔥 <b>Добро пожаловать в MoneyForUp!</b>\n` +
+    `<i>Делай мани, ап-ап! 🚀</i>\n\n` +
+    `<b>MoneyForUp</b> — это игровая платформа в Telegram с кейсами, быстрыми играми и пассивным доходом.\n\n` +
+    `🎮 <b>Что вас ждёт:</b>\n` +
+    `• 📦 <b>Кейсы &amp; Спин</b> — сочные дропы и колесо удачи\n` +
+    `• 🍺 <b>Скуф vs Альтушка</b> — находи альтушек и обходи пиво\n` +
+    `• 📈 <b>Стейкинг 1 % в сутки</b> — проценты начисляются каждую секунду\n` +
+    `• 👥 <b>Реферальная система</b> — ${REF_PERCENT} % с пополнений ваших друзей\n` +
+    `• 🎟 <b>Промокоды</b> — активируйте командой <code>/promo КОД</code>\n\n` +
+    `💳 <b>Пополнение:</b> СБП / Карты напрямую админу, Крипта (Coinso).\n` +
+    `💎 <b>Ваш баланс:</b> <code>${u.tokens} ⬦</code> (~${(u.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n\n` +
+    `Нажимайте кнопку ниже и начинайте игру! 👇`;
+
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
 });
 
 bot.command('balance', async ctx => {
@@ -997,6 +1003,27 @@ const server = http.createServer(async (req, res) => {
     send(500, { error: String(e.message || e) });
   }
 });
+
+async function initBotProfile() {
+  try {
+    await bot.api.setMyDescription({
+      description:
+        '🔥 MoneyForUp — игровая платформа, кейсы и стейкинг в Telegram!\n\n' +
+        '⚡ Слоган: Делай мани, ап-ап!\n\n' +
+        '• 📦 Кейсы и Колесо удачи\n' +
+        '• 🍺 Скуф vs Альтушка\n' +
+        '• 📈 Стейкинг 1 % в сутки (начисление каждую секунду)\n' +
+        '• 👥 Реферальная программа 15 %\n' +
+        '• 🎟 Промокоды с мгновенным зачислением'
+    });
+    await bot.api.setMyShortDescription({
+      short_description: 'MoneyForUp — Делай мани, ап-ап! 🚀 Кейсы, игры и стейкинг.'
+    });
+  } catch (e) {
+    // Тихо игнорируем ошибку при локальном запуске без токена
+  }
+}
+initBotProfile();
 
 server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
 /* BOT_DRY_RUN=1 — не опрашивать Telegram (используется автотестами) */
