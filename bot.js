@@ -13,6 +13,9 @@
  *
  * Демо-хранилище — в памяти (Map). Для продакшена заменить на БД, см. README.md.
  */
+if (typeof process.loadEnvFile === 'function') {
+  try { process.loadEnvFile(); } catch (_) {}
+}
 const http = require('http');
 const crypto = require('crypto');
 const { Bot, InlineKeyboard } = require('grammy');
@@ -49,7 +52,13 @@ const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
 
-if (!BOT_TOKEN) { console.error('Нет BOT_TOKEN. Пример: BOT_TOKEN=123:ABC node bot.js'); process.exit(1); }
+if (!BOT_TOKEN) {
+  console.error('================================================================');
+  console.error('ОШИБКА: Не задан BOT_TOKEN в переменных окружения!');
+  console.error('На Render.com: откройте ваш Web Service -> Environment -> добавьте BOT_TOKEN=токен_бота');
+  console.error('================================================================');
+  process.exit(1);
+}
 
 const bot = new Bot(BOT_TOKEN);
 
@@ -909,7 +918,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(API_PORT, () => console.log(`API: http://localhost:${API_PORT}`));
+server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
 /* BOT_DRY_RUN=1 — не опрашивать Telegram (используется автотестами) */
 if (process.env.BOT_DRY_RUN === '1') console.log('BOT_DRY_RUN: опрос Telegram отключён');
 else bot.start();
