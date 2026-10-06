@@ -636,6 +636,96 @@ bot.callbackQuery(/^no:(\d+)$/, async ctx => {
   ).catch(() => {});
 });
 
+/* ---------- Команда /boost: Вариант 7, Вариант 10, Вариант 4 ---------- */
+bot.command('boost', async ctx => {
+  const u = user(ctx.from.id, ctx.from.first_name, ctx.from.username);
+  const kb = new InlineKeyboard()
+    .webApp('⚡ Открыть Boost-Центр', `${APP_URL}#boost`)
+    .row()
+    .text('🎯 Вариант 7: Челлендж 24ч', 'boost_v7')
+    .text('🔥 Вариант 10: Hot Drop', 'boost_v10')
+    .row()
+    .text('🤫 Вариант 4: Тайный аукцион', 'boost_v4');
+
+  const text =
+    `⚡ <b>MUP BOOST CENTER — 3 режима ускорения токенов!</b>\n\n` +
+    `Привет, <b>${ctx.from.first_name || 'Игрок'}</b>! Активируй бонусы и забирай дополнительный профит:\n\n` +
+    `🎯 <b>Вариант 7: «Челлендж за 24 часа» (Daily Challenge)</b>\n` +
+    `• 3 ежедневных задания с возрастающей наградой до <b>+150 ⬦</b>\n` +
+    `• Удерживай серию дней (Стрик 1..7 🔥)\n` +
+    `• Таймер сброса заданий: 24:00:00\n\n` +
+    `🔥 <b>Вариант 10: «Hot Drop» (Ежечасный Дроп)</b>\n` +
+    `• Бесплатный супер-бокс каждый час (таймер 60 минут)\n` +
+    `• Мгновенный шанс выбить от <b>15 до 500 ⬦</b> без депозита!\n` +
+    `• Забирай в один клик\n\n` +
+    `🤫 <b>Вариант 4: «Тайный аукцион» (Blind Auction)</b>\n` +
+    `• Закрытые торги вслепую за редкие сейфы и контейнеры токенов\n` +
+    `• Перебивай ставки соперников, блефуй и забирай банк с супер-дисконтом!\n\n` +
+    `Нажмите кнопку ниже для подробностей или запустите Mini App:`;
+
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+});
+
+bot.callbackQuery('boost_v7', async ctx => {
+  await ctx.answerCallbackQuery();
+  const u = user(ctx.from.id);
+  const kb = new InlineKeyboard().webApp('🎯 Открыть Челленджи в Mini App', `${APP_URL}#challenge24`);
+  const text =
+    `🎯 <b>Вариант 7: «Челлендж за 24 часа»</b>\n\n` +
+    `🔥 <b>Ваш статус:</b> День 1 / 7 · Стрик активен\n` +
+    `⏱ <b>Таймер до обновления:</b> 24:00:00\n\n` +
+    `<b>Задания на сегодня:</b>\n` +
+    `1. 🚀 «Гонка на Ракете» — сделать 3 кэшаута в Ракетке (+30 ⬦)\n` +
+    `2. 🤫 «Тайный Аукционер» — сделать ставку в Аукционе (+25 ⬦)\n` +
+    `3. 🔥 «Горячий Трофей» — забрать Hot Drop (+20 ⬦)\n\n` +
+    `<i>Выполняйте квесты прямо в игре и забирайте токены на баланс!</i>`;
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+});
+
+bot.callbackQuery('boost_v10', async ctx => {
+  await ctx.answerCallbackQuery();
+  const u = user(ctx.from.id);
+  const now = Date.now();
+  const ONE_HOUR = 60 * 60 * 1000;
+  u.lastHotDrop = u.lastHotDrop || 0;
+  const elapsed = now - u.lastHotDrop;
+  if (elapsed >= ONE_HOUR) {
+    const rewards = [20, 35, 50, 75, 120, 250];
+    const win = rewards[Math.floor(Math.random() * rewards.length)];
+    u.tokens += win;
+    u.lastHotDrop = now;
+    const kb = new InlineKeyboard().webApp('🔥 Играть в MoneyForUp', APP_URL);
+    await ctx.reply(
+      `🔥 <b>HOT DROP УСПЕШНО ОТКРЫТ!</b> 🎉\n\n` +
+      `Вы открыли ежечасный дроп и получили: <b>+${win} ⬦</b> (~${(win / TOKENS_PER_RUB).toFixed(2)} ₽)!\n` +
+      `Ваш баланс: <b>${Math.floor(u.tokens)} ⬦</b>\n\n` +
+      `⏱ Следующий бесплатный Hot Drop будет доступен через 60 минут.`,
+      { parse_mode: 'HTML', reply_markup: kb }
+    );
+  } else {
+    const leftMins = Math.ceil((ONE_HOUR - elapsed) / 60000);
+    const kb = new InlineKeyboard().webApp('🚀 Открыть в приложении', `${APP_URL}#hotdrop`);
+    await ctx.reply(
+      `⏳ <b>Hot Drop пока на перезарядке!</b>\n\n` +
+      `До следующего бесплатного контейнера осталось: <b>${leftMins} мин.</b>\n` +
+      `Заходите в игру, запускайте Ракетку и крутите Спин!`,
+      { parse_mode: 'HTML', reply_markup: kb }
+    );
+  }
+});
+
+bot.callbackQuery('boost_v4', async ctx => {
+  await ctx.answerCallbackQuery();
+  const kb = new InlineKeyboard().webApp('🤫 Войти в Тайный аукцион', `${APP_URL}#auction`);
+  const text =
+    `🤫 <b>Вариант 4: «Тайный аукцион»</b>\n\n` +
+    `📦 <b>Текущий лот:</b> Секретный Кибер-Сейф MUP #088\n` +
+    `💎 <b>Содержимое:</b> от 500 до 1 500 ⬦\n` +
+    `⏱ <b>Статус торгов:</b> Идёт приём тайных ставок\n\n` +
+    `Делайте ставки вслепую, блефуйте и забирайте сейф по лучшей цене!`;
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+});
+
 bot.on('pre_checkout_query', ctx => ctx.answerPreCheckoutQuery(true));
 
 bot.on('message:successful_payment', async ctx => {
@@ -907,6 +997,33 @@ const server = http.createServer(async (req, res) => {
       const invited = [...users.values()].filter(x => Number(x.ref) === u.id).map(x => ({ name: x.name, tokens: Math.round(x.tokens) }));
       return send(200, { code: u.code, link: refLink(u.code), invited: countInvited(u.id), earned: Math.round(u.refEarned || 0),
                          percent: REF_PERCENT, list: invited });
+    }
+
+    /* буст и hot drop */
+    if (url.pathname === '/api/boost-status') {
+      const now = Date.now();
+      const ONE_HOUR = 3600000;
+      u.lastHotDrop = u.lastHotDrop || 0;
+      const hotDropLeft = Math.max(0, ONE_HOUR - (now - u.lastHotDrop));
+      return send(200, {
+        hotDropAvailable: hotDropLeft === 0,
+        hotDropLeftMs: hotDropLeft,
+        balance: u.tokens
+      });
+    }
+    if (url.pathname === '/api/claim-hotdrop' && req.method === 'POST') {
+      const now = Date.now();
+      const ONE_HOUR = 3600000;
+      u.lastHotDrop = u.lastHotDrop || 0;
+      if (now - u.lastHotDrop < ONE_HOUR) {
+        const leftSec = Math.ceil((ONE_HOUR - (now - u.lastHotDrop)) / 1000);
+        return send(400, { error: `Hot Drop перезаряжается. Подождите ${leftSec} сек.` });
+      }
+      const rewards = [20, 25, 35, 50, 75, 100, 250];
+      const win = rewards[Math.floor(Math.random() * rewards.length)];
+      u.tokens += win;
+      u.lastHotDrop = now;
+      return send(200, { ok: true, reward: win, balance: u.tokens });
     }
 
     /* оплата: требуется принятое соглашение */
