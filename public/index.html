@@ -10,42 +10,42 @@
 <title>MoneyForUp</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b92ff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b195ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2241%22%20text-anchor%3D%22middle%22%20font-family%3D%22Inter%2CArial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22900%22%20fill%3D%22%230d1017%22%20letter-spacing%3D%221%22%3EMUP%3C%2Ftext%3E%3C%2Fsvg%3E">
 <style>
-:root{--tgSafe:env(safe-area-inset-bottom,0px);--bg:#161b28;--panel:#1e2433;--panel2:#272e40;--line:rgba(255,255,255,.10);--text:#f6f7fb;--muted:#9aa4ba;--accent:#8f97ff;--good:#3ddc96;--bad:#ff738c;--gold:#ffcf6b;--cta1:#2bd8b6;--cta2:#1fa5ea;--ctaText:#08262c}
+:root{--tgSafe:env(safe-area-inset-bottom,0px);--bg:#121a16;--panel:#17231e;--panel2:#1f2e27;--line:rgba(255,255,255,.08);--text:#f3f7f5;--muted:#8fa497;--accent:#4ea87d;--good:#48bb78;--bad:#f07178;--gold:#e5c07b;--cta1:#2f8f68;--cta2:#3ba377;--ctaText:#0a2016;/* compat: --bg:#161b28; --panel:#1e2433; --cta1:#2bd8b6; --cta2:#1fa5ea; --ctaText:#08262c; */}
 *{box-sizing:border-box}
 body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,sans-serif}
-.app{max-width:736px;min-height:100vh;margin:auto;padding:16px 15px 94px;background:radial-gradient(circle at 85% 0%,rgba(143,151,255,.17),transparent 34%),var(--bg);position:relative}
+.app{max-width:736px;min-height:100vh;margin:auto;padding:16px 15px 94px;background:radial-gradient(circle at 85% 0%,rgba(78,168,125,.14),transparent 34%),var(--bg);position:relative}
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
 .brand{display:flex;gap:10px;align-items:center;background:none;border:0;padding:0;color:#fff;cursor:pointer;text-align:left;font-family:inherit}
-.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#8b92ff,#b195ff);display:grid;place-items:center;font-weight:900;font-size:15px;letter-spacing:.06em;color:#0d1017}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#349c71,#48bb78);display:grid;place-items:center;font-weight:900;font-size:15px;letter-spacing:.06em;color:#0a2016}
 .brand b{font-size:17px}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 .pillbtn{background:var(--panel2);border:1px solid var(--line);color:#fff;cursor:pointer;border-radius:13px;padding:10px 13px;font-size:13px;font-weight:700;font-family:inherit}
 .screen{display:none;animation:enter .28s ease}.screen.active{display:block}
 @keyframes enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-.hero{padding:20px;border-radius:22px;background:linear-gradient(145deg,#272f44,#1d2432);border:1px solid var(--line)}
-.eyebrow{font-size:11px;color:#9ca4ff;text-transform:uppercase;letter-spacing:.12em}
+.hero{padding:20px;border-radius:22px;background:linear-gradient(145deg,#1c2b23,#14201a);border:1px solid var(--line)}
+.eyebrow{font-size:11px;color:#6ee7b7;text-transform:uppercase;letter-spacing:.12em}
 .big{font-size:30px;line-height:1.05;font-weight:850;letter-spacing:-.045em;margin-top:6px}
 .muted{color:var(--muted)}.small{font-size:12px}
 .balance{font-size:34px;font-weight:850;margin:7px 0 15px}
 .actions{display:flex;gap:8px}
 .primary,.secondary{padding:12px 15px;border-radius:14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
-.primary{background:linear-gradient(135deg,#878dff,#a893ff);color:#fff;border:0}
+.primary{background:linear-gradient(135deg,#349c71,#48bb78);color:#0a2016;border:0}
 .secondary{background:rgba(255,255,255,.055);border:1px solid var(--line);color:#fff}
 .section{display:flex;align-items:center;justify-content:space-between;margin:21px 2px 10px}
 .section b{font-size:16px}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .game{min-height:168px;padding:15px;text-align:left;border-radius:20px;background:var(--panel);border:1px solid var(--line);color:#fff;cursor:pointer;position:relative;font-family:inherit}
 .game .gi{font-size:31px;height:34px;margin-bottom:22px;display:flex;align-items:center}.game .gi svg{display:block}.game strong{display:block;font-size:16px}.game span{font-size:11px;color:var(--muted);display:block;margin-top:4px;line-height:1.4}
-.game .arrow{position:absolute;right:13px;bottom:13px;width:28px;height:28px;border-radius:10px;background:#343c53;display:grid;place-items:center;font-style:normal}
+.game .arrow{position:absolute;right:13px;bottom:13px;width:28px;height:28px;border-radius:10px;background:#24362d;display:grid;place-items:center;font-style:normal}
 .wide{grid-column:1/-1}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:13px}.stat b{font-size:18px;display:block;margin-top:5px}
 .list{display:flex;flex-direction:column;gap:8px}.item{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:17px}
-.avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#868cff,#ab92ff);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#0d1017}
+.avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#349c71,#48bb78);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#0a2016}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.profileHead{display:flex;gap:13px;align-items:center}
-.pill{padding:6px 9px;border-radius:9px;background:rgba(124,130,255,.13);color:#aab0ff;font-size:11px}
-.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(33,39,54,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
+.pill{padding:6px 9px;border-radius:9px;background:rgba(78,168,125,.16);color:#a7f3d0;font-size:11px}
+.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(18,28,23,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(4,1fr);z-index:20}
 .nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit}
 .nav button .ni{font-size:20px;display:block;margin-bottom:3px}
-.nav button.active{background:#3b4463;color:#fff}
+.nav button.active{background:#25382e;color:#f3f7f5}
 .gameTop{display:flex;align-items:center;gap:10px;margin-bottom:15px}.back{width:42px;height:42px;border-radius:14px;font-size:28px;background:var(--panel2);border:1px solid var(--line);color:#fff;cursor:pointer}
 .gameTitle{font-size:24px;font-weight:850}
 .control{margin-top:10px;width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,var(--cta1),var(--cta2));font-weight:850;border:0;color:var(--ctaText);cursor:pointer;font-family:inherit;font-size:14.5px;box-shadow:0 12px 26px -14px rgba(31,165,234,.9);transition:transform .12s,box-shadow .2s,filter .2s}
@@ -151,45 +151,71 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .mup-splash-bar i{position:absolute;left:-50%;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#38bdf8,#c084fc);border-radius:8px;animation:splBar 1.2s infinite ease-in-out}
 @keyframes splBar{0%{left:-50%;width:30%}50%{left:35%;width:60%}100%{left:100%;width:30%}}
 
-.game-card-cover{width:100%;height:82px;border-radius:14px;overflow:hidden;margin-bottom:10px;position:relative;background:#1b212e}
+.game-card-cover{width:100%;height:84px;border-radius:14px;overflow:hidden;margin-bottom:10px;position:relative;background:#15221b}
 .game-card-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
 .game:hover .game-card-cover img{transform:scale(1.04)}
-.game-tag{position:absolute;top:6px;right:6px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;z-index:2}
-.game-tag.hot{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.5)}
-.game-tag.boost{background:linear-gradient(135deg,#8b92ff,#b195ff);color:#0d1017;box-shadow:0 2px 8px rgba(139,146,255,.5)}
+.game-tag{display:none !important}
+
+/* Обособленный верхний блок Челленджа */
+.challenge-featured-card{background:linear-gradient(145deg,#192720,#121d17);border:1.5px solid rgba(78,168,125,.35);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.35);cursor:pointer;transition:transform .2s,border-color .2s}
+.challenge-featured-card:hover{transform:translateY(-2px);border-color:rgba(78,168,125,.6)}
+.cfc-cover{width:100%;height:120px;position:relative;background:#132019;overflow:hidden}
+.cfc-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cfc-body{padding:14px 16px}
+.cfc-badge{display:inline-block;font-size:10px;font-weight:800;color:#52b788;background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.35);padding:3px 8px;border-radius:8px;letter-spacing:.05em;margin-bottom:6px}
+.cfc-title{font-size:17px;font-weight:850;color:#fff;margin-bottom:4px}
+.cfc-desc{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:12px}
+.cfc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cfc-pill{font-size:11.5px;font-weight:800;color:#ffcf6b;background:rgba(255,207,107,.14);padding:4px 9px;border-radius:8px}
+.cfc-link{font-size:12.5px;font-weight:800;color:#48bb78;display:flex;align-items:center;gap:4px}
 
 .auction-stage{padding:4px 0}
 .auction-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.auction-timer{font-size:14px;font-weight:800;color:#3ddc96;background:#1e2433;padding:6px 12px;border-radius:12px;border:1px solid var(--line)}
-.auction-timer.urgency{color:#ff738c;animation:pulseTease .4s infinite alternate;border-color:#ff738c}
-.auction-card{background:linear-gradient(145deg,#232b3e,#1a202d);border:1px solid rgba(255,207,107,.3);border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.4);position:relative}
+.auction-timer{font-size:14px;font-weight:800;color:#48bb78;background:#17251e;padding:6px 12px;border-radius:12px;border:1px solid var(--line)}
+.auction-timer.urgency{color:#f07178;animation:pulseTease .4s infinite alternate;border-color:#f07178}
+.auction-card{background:linear-gradient(145deg,#192720,#121d18);border:1px solid rgba(229,192,123,.28);border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.4);position:relative}
 .auction-vault-icon{font-size:48px;position:relative;height:65px;display:flex;align-items:center;justify-content:center}
 .auction-hammer{position:absolute;top:0;right:25%;font-size:32px;transform-origin:bottom right;transition:transform .12s}
 .auction-hammer.strike{transform:rotate(-45deg) scale(1.2)}
 .auction-lot-title{font-size:18px;font-weight:850;color:#fff;margin:6px 0 2px}
 .auction-bid-board{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;background:rgba(0,0,0,.25);padding:10px;border-radius:12px;border:1px solid var(--line)}
 .auction-feed{margin-top:12px;max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
-.auction-feed-item{font-size:11px;color:var(--muted);background:rgba(255,255,255,.03);padding:6px 10px;border-radius:8px;border-left:3px solid #8b92ff}
+.auction-feed-item{font-size:11px;color:var(--muted);background:rgba(255,255,255,.03);padding:6px 10px;border-radius:8px;border-left:3px solid #48bb78}
 
 .streak-day{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:7px 3px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
 .streak-day.curr{border-color:#ffcf6b;background:rgba(255,207,107,.15);box-shadow:0 0 10px rgba(255,207,107,.4)}
-.streak-day.done{border-color:#3ddc96;background:rgba(61,220,150,.1)}
+.streak-day.done{border-color:#48bb78;background:rgba(72,187,120,.12)}
 .streak-num{font-size:8.5px;color:var(--muted);font-weight:700}
 .streak-icon{font-size:13px}
 .streak-rew{font-size:8.5px;color:#ffcf6b;font-weight:800}
-.challenge-bar-wrap{height:8px;background:#1e2433;border-radius:6px;overflow:hidden}
-.challenge-bar{height:100%;background:linear-gradient(90deg,#8b92ff,#3ddc96);border-radius:6px;transition:width .4s ease}
+.challenge-bar-wrap{height:8px;background:#17251e;border-radius:6px;overflow:hidden}
+.challenge-bar{height:100%;background:linear-gradient(90deg,#48bb78,#34d399);border-radius:6px;transition:width .4s ease}
 
+/* Hot Drop */
 .hotdrop-stage{text-align:center;padding:10px 0}
-.hotdrop-box-wrap{position:relative;margin:15px auto 20px;width:150px;height:140px;display:flex;align-items:center;justify-content:center}
+.hotdrop-box-wrap{position:relative;margin:15px auto 16px;width:150px;height:140px;display:flex;align-items:center;justify-content:center}
 .hotdrop-box{font-size:72px;position:relative;z-index:2;transition:transform .15s}
 .hotdrop-box.shaking{animation:hdShake .15s infinite}
 @keyframes hdShake{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(-3px,2px) rotate(-4deg)}50%{transform:translate(3px,-2px) rotate(4deg)}75%{transform:translate(-2px,-2px) rotate(-2deg)}100%{transform:translate(0,0) rotate(0deg)}}
 .hotdrop-flame{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:34px;animation:pulseTease .6s infinite alternate}
-.hotdrop-timer-panel{background:linear-gradient(145deg,#241c18,#191512);border:1px solid rgba(249,115,22,.4);border-radius:18px;padding:15px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.hotdrop-countdown{font-size:32px;font-weight:900;letter-spacing:-.02em;color:#ff9e42;margin-top:4px;text-shadow:0 0 16px rgba(249,115,22,.6)}
+.hotdrop-timer-panel{background:linear-gradient(145deg,#1b2821,#131f1a);border:1px solid rgba(78,168,125,.3);border-radius:18px;padding:15px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.hotdrop-countdown{font-size:32px;font-weight:900;letter-spacing:-.02em;color:#52b788;margin-top:4px;text-shadow:0 0 16px rgba(78,168,125,.5)}
 
-.tg-avatar-preview{width:64px;height:64px;border-radius:50%;border:2px solid #8b92ff;box-shadow:0 0 16px rgba(139,146,255,.5);overflow:hidden;flex-shrink:0}
+/* Рулетка в Hot Drop */
+.hd-roulette{position:relative;height:124px;border-radius:18px;background:linear-gradient(180deg,#192620,#111a15);border:1.5px solid rgba(78,168,125,.35);overflow:hidden;margin:14px 0 10px;box-shadow:inset 0 0 24px rgba(0,0,0,.8)}
+.hd-pointer{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#ffcf6b;z-index:10;box-shadow:0 0 14px #ffcf6b}
+.hd-pointer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid #ffcf6b}
+.hd-pointer::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:11px solid #ffcf6b}
+.hd-strip{display:flex;position:absolute;left:0;top:0;bottom:0;will-change:transform}
+.hd-card{flex:0 0 100px;width:100px;min-width:100px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.06);padding:6px;box-sizing:border-box;position:relative;user-select:none;transition:box-shadow .3s,background .3s}
+.hd-card.hd-win-hit{box-shadow:inset 0 0 26px var(--hd-col,#ffcf6b);background:rgba(255,255,255,.08);animation:pulseTease .4s ease infinite alternate}
+.hd-card .hd-icon{font-size:32px;line-height:1;margin-bottom:4px}
+.hd-card .hd-val{font-size:13px;font-weight:850;color:var(--hd-col,#fff)}
+.hd-card .hd-rub{font-size:9.5px;color:var(--muted);margin-top:2px}
+.hd-win-banner{animation:avitoPulseWin .6s ease;border:1.5px solid #48bb78;border-radius:18px;padding:16px;background:linear-gradient(145deg,#172920,#0f1b15);margin-top:12px;text-align:center;box-shadow:0 0 24px rgba(72,187,120,.25)}
+.hd-win-val{font-size:26px;font-weight:900;color:#ffcf6b;margin:5px 0 2px;letter-spacing:-.02em}
+
+.tg-avatar-preview{width:64px;height:64px;border-radius:50%;border:2px solid #48bb78;box-shadow:0 0 16px rgba(72,187,120,.35);overflow:hidden;flex-shrink:0}
 .tg-avatar-round-img{width:100%;height:100%;object-fit:cover;display:block}
 
 @media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
@@ -223,14 +249,29 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
 <div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
 </div>
-<div class="section"><b>Игры</b><span class="muted small">10 игр</span></div>
+<!-- Обособленный верхний блок: Челлендж 24ч -->
+<div class="challenge-featured-card" data-game="challenge24">
+  <div class="cfc-cover">
+    <img src="assets/game_challenge.jpg" alt="Челлендж 24ч">
+  </div>
+  <div class="cfc-body">
+    <div class="cfc-badge">🎯 ОСОБЫЙ РЕЖИМ · 24 ЧАСА</div>
+    <div class="cfc-title">Ежедневный Челлендж и Стрик Наград</div>
+    <div class="cfc-desc">Заходите каждый день за растущим бонусом (до +350 ⬦) и выполняйте 3 ежедневных квеста!</div>
+    <div class="cfc-foot">
+      <span class="cfc-pill">🔥 Стрик до +350 ⬦</span>
+      <span class="cfc-link">Открыть челлендж →</span>
+    </div>
+  </div>
+</div>
+
+<div class="section"><b>Игры</b><span class="muted small">9 игр</span></div>
 <div class="cards">
-<button class="game" data-game="racket"><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"><span class="game-tag boost">ТОП КРАШ</span></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
-<button class="game" data-game="auction"><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"><span class="game-tag boost">ВАРИАНТ 4</span></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
-<button class="game" data-game="challenge24"><div class="game-card-cover"><img src="assets/game_challenge.jpg" alt="Челлендж 24ч"><span class="game-tag boost">ВАРИАНТ 7</span></div><div class="gi">🎯⏱️</div><strong>Челлендж 24ч</strong><span>3 ежедневных квеста и растущий стрик наград</span><i class="arrow">→</i></button>
-<button class="game" data-game="hotdrop"><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"><span class="game-tag hot">ВАРИАНТ 10</span></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час по таймеру</span><i class="arrow">→</i></button>
-<button class="game" data-game="jumper"><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
-<button class="game" data-game="spin"><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<button class="game" data-game="racket"><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
+<button class="game" data-game="hotdrop"><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
+<button class="game" data-game="auction"><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
+<button class="game" data-game="jumper"><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
+<button class="game" data-game="spin"><div class="game-card-cover"><img src="assets/game_spin.jpg" alt="Спин"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
 <circle cx="20" cy="20" r="19" fill="#1e2433"/>
 <path d="M20 20 L20 3 A17 17 0 0 1 32 7.98 Z" fill="#69748f"/>
 <path d="M20 20 L32 7.98 A17 17 0 0 1 37 20 Z" fill="#3ddc96"/>
@@ -244,7 +285,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <circle cx="20" cy="20" r="4.6" fill="#8f97ff"/>
 <circle cx="20" cy="20" r="1.7" fill="#ffffff" opacity=".85"/>
 </svg></div><strong>Спин</strong><span>8 равных секторов с разной выдачей</span><i class="arrow">→</i></button>
-<button class="game" data-game="drop"><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<button class="game" data-game="drop"><div class="game-card-cover"><img src="assets/game_drop.jpg" alt="Дроп"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
 <defs>
 <radialGradient id="dropBall" cx="34%" cy="28%" r="78%">
 <stop offset="0" stop-color="#ffffff"/>
@@ -261,9 +302,9 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <circle cx="20" cy="21" r="14.5" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1"/>
 <ellipse cx="15" cy="15.5" rx="4.6" ry="3.4" fill="#ffffff" opacity=".75" transform="rotate(-28 15 15.5)"/>
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
-<button class="game" data-game="skuf"><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
-<button class="game" data-game="avito"><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
-<button class="game" data-game="cases"><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
+<button class="game" data-game="skuf"><div class="game-card-cover"><img src="assets/game_skuf.jpg" alt="Скуф vs Альтушка"></div><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
+<button class="game" data-game="avito"><div class="game-card-cover"><img src="assets/game_avito.jpg" alt="Перекуп на Авито"></div><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -275,21 +316,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
 
-<!-- Блок: Аватарка Telegram кружок -->
-<div class="item" style="margin-top:12px;background:rgba(143,151,255,.07);border:1px solid rgba(143,151,255,.24);border-radius:18px;padding:14px">
-  <div style="display:flex;align-items:center;gap:12px">
-    <div class="tg-avatar-preview">
-      <img src="assets/avatar_mup_round.jpg" alt="Telegram Avatar" class="tg-avatar-round-img" onerror="this.style.display='none'">
-    </div>
-    <div style="flex:1">
-      <b style="color:#fff;font-size:14.5px">Аватарка профиля Telegram</b>
-      <div class="muted small" style="margin-top:2px">Формат кружка с логотипом MUP и светящимися монетами</div>
-    </div>
-  </div>
-  <div style="margin-top:10px;display:flex;gap:8px">
-    <a href="assets/avatar_mup_round.jpg" download="mup_round_avatar.jpg" class="primary" style="flex:1;text-align:center;text-decoration:none;display:inline-block;padding:10px 12px;font-size:13px">📥 Скачать аватарку для Telegram</a>
-  </div>
-</div>
+
 <div class="section"><b>Пополнение</b><span class="muted small">10 ⬦ = 1 ₽</span></div>
 <div class="item">
   <div class="muted small" style="margin-bottom:8px">Способ оплаты</div>
@@ -473,9 +500,16 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div id="gameArea"></div>
 </section>
 
+<!-- ======== ЧЕЛЛЕНДЖ 24 ЧАСА ======== -->
+<section class="screen" id="challenge">
+<div class="gameTop"><button class="back" id="chBack">‹</button><div><div class="eyebrow" id="chLabel" style="color:var(--accent)">ОСОБЫЙ РЕЖИМ</div><div class="gameTitle" id="chTitle">Челлендж 24ч</div></div></div>
+<div id="challengeArea"></div>
+</section>
+
 <div class="nav">
 <button data-nav="profile"><span class="ni">○</span>Профиль</button>
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
+<button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 <button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
 </div>
 </div>
@@ -834,14 +868,18 @@ function screen(id){
   if(cleanup){try{cleanup()}catch(e){}cleanup=null}
   qa('.screen').forEach(x=>x.classList.remove('active'));
   const el=q('#'+id);if(el)el.classList.add('active');
-  try{TG&&TG.BackButton&&(id==='play'?TG.BackButton.show():TG.BackButton.hide())}catch(e){}
+  try{TG&&TG.BackButton&&(id==='play'||id==='challenge'?TG.BackButton.show():TG.BackButton.hide())}catch(e){}
   qa('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));
   root.scrollTop=0;
   const se=document.scrollingElement||document.documentElement;
   if(se)se.scrollTop=0;
+  if(id==='challenge'){
+    cleanup=gameChallenge('#challengeArea');
+  }
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
+const chBackBtn=q('#chBack');if(chBackBtn)chBackBtn.addEventListener('click',()=>screen('games'));
 qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
 /* ---------- пополнение (профиль) ---------- */
 const SBP_DATA = {
@@ -1381,88 +1419,85 @@ function gameRacket(){
     axIn.value=fx(autoX);
   }
   function drawRocket(g,cx,cy,ang,bc,sp){
-    const flame=(10+Math.min(32,sp*13))*(0.82+Math.random()*0.38);
+    const t=performance.now()*0.003;
+    const flame=(12+Math.min(36,sp*14))*(0.85+Math.sin(t*12)*0.2);
     g.save();g.translate(cx,cy);g.rotate(ang);
 
-    // 1. Реактивное сопло и пламя ускорения
-    const fg=g.createLinearGradient(-13,0,-13-flame,0);
-    fg.addColorStop(0,'rgba(255,255,230,.98)');
-    fg.addColorStop(.25,'rgba(255,170,40,.92)');
-    fg.addColorStop(.65,'rgba(255,60,80,.78)');
-    fg.addColorStop(1,'rgba(147,51,234,0)');
+    // 1. Звёздный шлейф и мягкое пламя (стиль Ван Гога / волшебная пыльца)
+    const fg=g.createRadialGradient(-16,0,2,-16-flame,0,flame);
+    fg.addColorStop(0,'rgba(255,235,160,.95)');
+    fg.addColorStop(.3,'rgba(78,168,125,.8)');
+    fg.addColorStop(.7,'rgba(47,143,104,.5)');
+    fg.addColorStop(1,'rgba(18,26,22,0)');
     g.fillStyle=fg;
-    g.beginPath();g.moveTo(-13,-5.5);g.lineTo(-13,5.5);g.lineTo(-13-flame,0);g.closePath();g.fill();
+    g.beginPath();g.arc(-16-flame*0.4,0,flame*0.55,0,Math.PI*2);g.fill();
 
-    // Внутренний плазменный луч
-    const ifg=g.createLinearGradient(-13,0,-13-flame*0.55,0);
-    ifg.addColorStop(0,'#ffffff');ifg.addColorStop(1,'rgba(56,189,248,0)');
-    g.fillStyle=ifg;
-    g.beginPath();g.moveTo(-12,-2.2);g.lineTo(-12,2.2);g.lineTo(-12-flame*0.55,0);g.closePath();g.fill();
-
-    // Искры пламени
-    for(let i=0;i<4;i++){
-      const px=-14-Math.random()*flame*0.8, py=(Math.random()-0.5)*7;
-      g.fillStyle='rgba(255,210,100,'+(0.4+Math.random()*0.5).toFixed(2)+')';
-      g.beginPath();g.arc(px,py,1+Math.random()*1.3,0,7);g.fill();
+    // Золотые кружащиеся искры звёздной пыли
+    for(let i=0;i<5;i++){
+      const px=-14-Math.sin(t*8+i)*flame*0.7, py=Math.cos(t*6+i*1.5)*7;
+      g.fillStyle='rgba(255,220,120,'+(0.4+Math.sin(t*10+i)*0.3).toFixed(2)+')';
+      g.beginPath();g.arc(px,py,1.2+Math.abs(Math.sin(t*5+i))*1.3,0,Math.PI*2);g.fill();
     }
 
-    // Сопло ускорителя на задней части льва
-    g.fillStyle='#1e293b';g.fillRect(-15,-4.5,4,9);
-    g.strokeStyle='#38bdf8';g.lineWidth=1;g.strokeRect(-15,-4.5,4,9);
-
-    // 2. Силуэт мощного летящего Льва (золотисто-кибернетический корпус)
-    g.fillStyle='#eab308';
+    // 2. Тело сказочного Льва (живописный тёплый золотистый оттенок)
+    const maneWiggle=Math.sin(t*10)*2;
+    g.fillStyle='#e5a93c';
     g.beginPath();
-    g.moveTo(-13,-4);
-    g.lineTo(-7,-8.5);
-    g.quadraticCurveTo(0,-9.5,10,-6.5);
-    g.lineTo(16,-9.5);
-    g.lineTo(24,-5);
-    g.lineTo(27,-1);
-    g.lineTo(25,3.5);
-    g.lineTo(18,5.5);
-    g.quadraticCurveTo(6,9.5,-4,7);
-    g.lineTo(-13,4);
+    g.moveTo(-12,-3);
+    g.quadraticCurveTo(-6,-8,4,-8);
+    g.quadraticCurveTo(14,-8,20,-3);
+    g.quadraticCurveTo(26,0,24,5);
+    g.quadraticCurveTo(16,8,6,7);
+    g.quadraticCurveTo(-6,7,-12,3);
     g.closePath();
     g.fill();
 
-    // Контуры мускулатуры и кибер-брони
-    g.strokeStyle='rgba(15,23,42,.92)';g.lineWidth=1.5;g.stroke();
+    // Мягкая прорисовка контура (акварельный/ручной стиль)
+    g.strokeStyle='#7c4a1e';g.lineWidth=1.6;g.stroke();
 
-    // Передние вытянутые лапы льва в стремительном полёте
-    g.fillStyle='#ca8a04';
-    g.beginPath();g.moveTo(12,4);g.lineTo(23,8);g.lineTo(21,11);g.lineTo(10,6);g.closePath();g.fill();
-    g.strokeStyle='#38bdf8';g.lineWidth=1.2;g.beginPath();g.moveTo(23,8);g.lineTo(26,9);g.stroke();
+    // Пышная грива льва (круглящиеся мазки)
+    g.fillStyle='#c87d28';
+    g.beginPath();g.arc(4,-3+maneWiggle*0.3,7.5,0,Math.PI*2);g.fill();
+    g.beginPath();g.arc(10,-4-maneWiggle*0.4,7,0,Math.PI*2);g.fill();
+    g.beginPath();g.arc(0,2+maneWiggle*0.5,6.5,0,Math.PI*2);g.fill();
+    g.beginPath();g.arc(8,4,6,0,Math.PI*2);g.fill();
 
-    // Развевающаяся грива льва (динамичная анимация прядей)
-    const maneWiggle=Math.sin(performance.now()*0.02)*1.6;
-    g.fillStyle='#f59e0b';
-    g.beginPath();g.moveTo(10,-7);g.quadraticCurveTo(5,-13+maneWiggle,1,-10);g.quadraticCurveTo(7,-6,13,-6);g.closePath();g.fill();
-    g.beginPath();g.moveTo(15,-8);g.quadraticCurveTo(11,-15-maneWiggle,7,-11);g.quadraticCurveTo(12,-7,18,-7);g.closePath();g.fill();
+    // Круглые ушки льва
+    g.fillStyle='#e5a93c';g.beginPath();g.arc(12,-9,3.2,0,Math.PI*2);g.fill();
+    g.strokeStyle='#7c4a1e';g.lineWidth=1.2;g.stroke();
+    g.fillStyle='#f9c784';g.beginPath();g.arc(12,-9,1.6,0,Math.PI*2);g.fill();
 
-    // Ухо льва
-    g.fillStyle='#d97706';g.beginPath();g.moveTo(17,-9);g.lineTo(14,-14);g.lineTo(20,-9);g.closePath();g.fill();
+    // Мордочка и носик
+    g.fillStyle='#fef3c7';g.beginPath();g.ellipse(21,1,3.5,4,0,0,Math.PI*2);g.fill();
+    g.fillStyle='#7c4a1e';g.beginPath();g.arc(24,0,1.3,0,Math.PI*2);g.fill(); // носик
 
-    // Светящийся кибер-глаз льва (бирюзовый неон)
-    g.fillStyle='#38bdf8';g.shadowColor='#38bdf8';g.shadowBlur=7;
-    g.beginPath();g.arc(22,-2.5,1.6,0,7);g.fill();g.shadowBlur=0;
+    // Живой добрый глаз
+    g.fillStyle='#1e293b';g.beginPath();g.arc(18,-2,1.6,0,Math.PI*2);g.fill();
+    g.fillStyle='#ffffff';g.beginPath();g.arc(18.5,-2.5,0.6,0,Math.PI*2);g.fill(); // блик
 
-    // Хвост льва с кисточкой
-    g.strokeStyle='#ca8a04';g.lineWidth=2;
-    g.beginPath();g.moveTo(-12,1);g.quadraticCurveTo(-18,maneWiggle*2,-22,2);g.stroke();
-    g.fillStyle='#f59e0b';g.beginPath();g.arc(-22,2,2.5,0,7);g.fill();
+    // Лапы в полёте
+    g.fillStyle='#d99b32';
+    g.beginPath();g.ellipse(16,6.5,5,2.4,0.3,0,Math.PI*2);g.fill();
+    g.strokeStyle='#7c4a1e';g.lineWidth=1.1;g.stroke();
 
-    // 3. КОНТРАСТНАЯ ПЛАШКА С НАДПИСЬЮ "MUP" НА БОКУ ЛЬВА
-    g.fillStyle='#090d16'; // глубокий тёмный фон для максимального контраста
-    g.fillRect(-4,-5.5,15,10.5);
-    g.strokeStyle='#38bdf8';g.lineWidth=1.3;g.strokeRect(-4,-5.5,15,10.5);
+    // Хвостик с кисточкой
+    g.strokeStyle='#c87d28';g.lineWidth=2;
+    g.beginPath();g.moveTo(-12,2);g.quadraticCurveTo(-18,-2+maneWiggle,-22,1);g.stroke();
+    g.fillStyle='#9a5818';g.beginPath();g.arc(-22,1,3,0,Math.PI*2);g.fill();
 
-    // Яркие контрастные буквы MUP со стрелкой вверх
-    g.font='900 7px Inter,system-ui,sans-serif';
+    // 3. КОНТРАСТНАЯ ЧЁТКАЯ ПЛАШКА С НАДПИСЬЮ "MUP" НА БОКУ ЛЬВА
+    g.fillStyle='#0f1b15'; // Спокойный изумрудно-тёмный фон
+    g.beginPath();
+    g.roundRect ? g.roundRect(-4,-4.5,14,9,2.5) : g.rect(-4,-4.5,14,9);
+    g.fill();
+    g.strokeStyle='#4ea87d';g.lineWidth=1.3;g.stroke();
+
+    // Яркие контрастные золотисто-белые буквы MUP
+    g.font='900 6.5px Inter,system-ui,sans-serif';
     g.textAlign='center';g.textBaseline='middle';
     g.fillStyle='#ffffff';
-    g.shadowColor='#38bdf8';g.shadowBlur=4;
-    g.fillText('MUP',3.5,-0.2);
+    g.shadowColor='#4ea87d';g.shadowBlur=3;
+    g.fillText('MUP',3,-0.1);
     g.shadowBlur=0;
 
     g.restore();
@@ -2854,8 +2889,6 @@ function gameCases(){
 
         // Находим супер-дорогую вещь (топ джекпот) для тизера в случае проигрыша
         const sortedItems = [...curCase.items].sort((a, b) => b.price - a.price);
-        const topJackpot = sortedItems[0];
-        const secondJackpot = sortedItems[1] || topJackpot;
 
         // Генерируем ленту из 60 карточек
         const targetIndex = 45;
@@ -2863,12 +2896,6 @@ function gameCases(){
         for(let i = 0; i < 60; i++){
           if(i === targetIndex){
             stripItems.push(winItem);
-          } else if(!isProfit && i === targetIndex - 1){
-            // Тизер: прямо перед проигрышным предметом пролетает самый дорогой джекпот кейса!
-            stripItems.push(topJackpot);
-          } else if(!isProfit && i === targetIndex + 1){
-            // Тизер: сразу после него еще один редкий предмет
-            stripItems.push(secondJackpot);
           } else {
             const randIt = curCase.items[Math.floor(Math.random() * curCase.items.length)];
             stripItems.push(randIt);
@@ -2882,10 +2909,9 @@ function gameCases(){
 
         strip.style.transition = 'none';
         strip.style.transform = 'translateX(0px)';
-        strip.innerHTML = stripItems.map((it, i) => {
+        strip.innerHTML = stripItems.map((it) => {
           const col = TIER_COLS[it.tier] || '#8f97ff';
-          const isTeaser = !isProfit && (i === targetIndex - 1 || i === targetIndex + 1);
-          return `<div class="case-card ${isTeaser ? 'case-card-teaser' : ''}" style="--tier-col:${col}">
+          return `<div class="case-card" style="--tier-col:${col}">
             <div class="ci-icon">${it.icon}</div>
             <div class="ci-name">${it.name}</div>
             <div class="ci-val">${it.price} ⬦</div>
@@ -2897,11 +2923,7 @@ function gameCases(){
         const cardLeft = targetCard.offsetLeft;
         const cardW = targetCard.offsetWidth || 104;
         const rW = roulette ? roulette.clientWidth : 320;
-
-        // При тизере (неокуп) останавливаемся чуть ближе к левому краю карточки,
-        // чтобы золотой джекпот оставался визуально прямо у стрелки
-        const teaseOffset = !isProfit ? Math.round(cardW * 0.18) : 0;
-        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2) - teaseOffset);
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
 
         res.className = 'result';
         res.textContent = 'Рулетка крутится… Ожидание дропа…';
@@ -2909,33 +2931,20 @@ function gameCases(){
         // Принудительный reflow перед стартом анимации
         void strip.offsetWidth;
 
-        // Драматическое замедление в конце (5.6s с плавной кривой натяжения)
+        // Плавное замедление в конце
         requestAnimationFrame(() => {
-          strip.style.transition = 'transform 5.6s cubic-bezier(0.08, 0.90, 0.12, 1)';
+          strip.style.transition = 'transform 5.2s cubic-bezier(0.10, 0.90, 0.15, 1)';
           strip.style.transform = `translateX(-${targetX}px)`;
         });
 
         // Замедляющиеся тики трещотки рулетки
-        const tickTimes = [200, 440, 720, 1080, 1520, 2040, 2650, 3350, 4150, 5000];
+        const tickTimes = [200, 440, 720, 1080, 1520, 2040, 2650, 3350, 4150, 4900];
         tickTimes.forEach(t => {
           caseTimeouts.push(setTimeout(() => {
             if(!busy) return;
             tgHaptic('light');
           }, t));
         });
-
-        // Мелькание супер-дорогой вещи в замедлении перед остановкой
-        caseTimeouts.push(setTimeout(() => {
-          if(!busy) return;
-          if(!isProfit){
-            const pointer = q('.case-pointer', roulette);
-            if(pointer) pointer.classList.add('teaser');
-            const teaseCard = strip.children[targetIndex - 1];
-            if(teaseCard) teaseCard.classList.add('tease-flash');
-            res.innerHTML = 'Рулетка замедляется… <b style="color:#ffcf6b">★ ' + topJackpot.name + ' мелькает у стрелки!</b>';
-            tgHaptic('medium');
-          }
-        }, 4100));
 
         timer = setTimeout(() => {
           clearCaseTimers();
@@ -2953,14 +2962,14 @@ function gameCases(){
             <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
             <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
-            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `📉 <b>Неокуп:</b> ${diff} ⬦ от цены кейса · <span style="color:#ffcf6b">★ Супер-дроп ${topJackpot.name} (${fmt(topJackpot.price)} ⬦) пролетел в одном шаге!</span>`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
           </div>`;
 
           if(openBtn){
             openBtn.disabled = false;
             openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + fmt(curCase.cost) + ' ⬦';
           }
-        }, 5750);
+        }, 5400);
       });
     }
   }
@@ -3133,9 +3142,10 @@ function gameAuction(){
   return () => { clearInterval(timerId); };
 }
 
-/* Вариант 7: «Челлендж за 24 часа» (Daily Challenge & Streak) */
-function gameChallenge(){
-  const a=q('#gameArea');
+/* «Челлендж за 24 часа» (Daily Challenge & Streak) */
+function gameChallenge(targetSel){
+  const a=q(targetSel || '#gameArea');
+  if(!a) return () => {};
   S.challengeStreak = S.challengeStreak || 1;
   S.challengeQuests = S.challengeQuests || [
     { id: 'q1', name: 'Гонка на Ракете', desc: 'Сделать 3 успешных кэшаута в Ракетке', target: 3, prog: Math.min(3, (S.rHist||[]).length), reward: 30, claimed: false },
@@ -3145,8 +3155,8 @@ function gameChallenge(){
 
   function render(){
     const days = [
-      { d: 1, r: 15 }, { d: 2, r: 25 }, { d: 3, r: 40 },
-      { d: 4, r: 60 }, { d: 5, r: 85 }, { d: 6, r: 110 }, { d: 7, r: 150 }
+      { d: 1, r: 25 }, { d: 2, r: 45 }, { d: 3, r: 70 },
+      { d: 4, r: 100 }, { d: 5, r: 140 }, { d: 6, r: 180 }, { d: 7, r: 250 }
     ];
     const streakDaysHTML = days.map(item => {
       const isPast = item.d < S.challengeStreak;
@@ -3226,12 +3236,23 @@ function gameChallenge(){
   return () => {};
 }
 
-/* Вариант 10: «Hot Drop» (Hourly Drop) */
+/* «Hot Drop» (Hourly Drop) */
 function gameHotDrop(){
   const a=q('#gameArea');
   const ONE_HOUR = 3600 * 1000;
   S.lastHotDrop = S.lastHotDrop || 0;
-  let timerId = 0;
+  let timerId = 0, isSpinning = false;
+
+  const REWARD_TIERS = [
+    { val: 15, col: '#8b92ff', icon: '🪙', name: 'Монетка' },
+    { val: 25, col: '#8b92ff', icon: '💎', name: 'Кристалл' },
+    { val: 35, col: '#8b92ff', icon: '⚡', name: 'Энергия' },
+    { val: 50, col: '#ffcf6b', icon: '🎁', name: 'Подарок' },
+    { val: 75, col: '#ffcf6b', icon: '⭐', name: 'Звезда' },
+    { val: 120, col: '#ffcf6b', icon: '🔥', name: 'Пламя' },
+    { val: 250, col: '#3ddc96', icon: '👑', name: 'Корона' },
+    { val: 500, col: '#3ddc96', icon: '🏆', name: 'ДЖЕКПОТ' }
+  ];
 
   function getTimeLeft(){
     const now = Date.now();
@@ -3259,54 +3280,149 @@ function gameHotDrop(){
           <div class="hotdrop-crate">📦</div>
         </div>
       </div>
-      <div class="hotdrop-timer-panel">
+
+      <div class="hd-roulette" id="hdRoulette">
+        <div class="hd-pointer"></div>
+        <div class="hd-strip" id="hdStrip">
+          ${REWARD_TIERS.map(it => `
+            <div class="hd-card" style="--hd-col:${it.col}">
+              <div class="hd-icon">${it.icon}</div>
+              <div class="hd-val">${it.val} ⬦</div>
+              <div class="hd-rub">≈ ${fmtRub(it.val)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="hotdrop-timer-panel" style="margin-top:10px">
         <span class="muted small">Следующий бесплатный дроп</span>
         <div class="hotdrop-countdown" id="hdTimer">${canOpen ? 'ГОТОВ К ОТКРЫТИЮ!' : fmtMs(left)}</div>
       </div>
-      <button class="control" id="btnOpenHotDrop" style="margin-top:14px;background:linear-gradient(135deg,#f97316,#ea580c)" ${canOpen?'':'disabled'}>
-        ${canOpen ? '🔥 ОТКРЫТЬ HOT DROP (БЕСПЛАТНО)' : '⏳ ПЕРЕЗАРЯДКА (' + fmtMs(left) + ')'}
+
+      <button class="control" id="btnOpenHotDrop" style="margin-top:14px;background:linear-gradient(135deg,#2f8f68,#3ba377)" ${canOpen && !isSpinning ? '' : 'disabled'}>
+        ${canOpen ? (isSpinning ? 'КРУТИТСЯ РУЛЕТКА…' : '🔥 ОТКРЫТЬ HOT DROP (БЕСПЛАТНО)') : '⏳ ПЕРЕЗАРЯДКА (' + fmtMs(left) + ')'}
       </button>
+
+      <div id="hdWinArea"></div>
+
       <div class="result" id="hdMsg" style="margin-top:12px">
-        Hot Drop доступен раз в 60 минут. Содержит от 15 до 500 ⬦, которые мгновенно зачисляются на баланс.
+        Hot Drop доступен раз в 60 минут. Рулетка раскручивается и выдает от 15 до 500 ⬦ на баланс!
       </div>
+
       <div class="item" style="margin-top:14px">
         <b>Возможные награды из Hot Drop:</b>
         <div class="statgrid" style="margin-top:8px">
           <div class="stat" style="text-align:center"><span class="muted small">Обычный</span><b style="color:#8b92ff">15–35 ⬦</b></div>
-          <div class="stat" style="text-align:center"><span class="muted small">Редкий</span><b style="color:#ffcf6b">50–100 ⬦</b></div>
+          <div class="stat" style="text-align:center"><span class="muted small">Редкий</span><b style="color:#ffcf6b">50–120 ⬦</b></div>
           <div class="stat" style="text-align:center"><span class="muted small">Джекпот</span><b style="color:#3ddc96">250–500 ⬦</b></div>
         </div>
       </div>
     </div>`;
 
     const openBtn = q('#btnOpenHotDrop');
-    if(openBtn && canOpen){
+    if(openBtn && canOpen && !isSpinning){
       openBtn.onclick = () => {
+        isSpinning = true;
         openBtn.disabled = true;
+        openBtn.textContent = 'КРУТИТСЯ РУЛЕТКА…';
+
         const box = q('#hdBox');
         if(box) box.classList.add('shaking');
         tgHaptic('impact');
 
+        // Выбираем выпавший предмет (с весами)
+        const weights = [35, 30, 20, 10, 5, 3, 1.5, 0.5];
+        let totW = weights.reduce((a, b) => a + b, 0);
+        let rnd = Math.random() * totW;
+        let winIdx = 0, cum = 0;
+        for(let i = 0; i < weights.length; i++){
+          cum += weights[i];
+          if(rnd <= cum){ winIdx = i; break; }
+        }
+        const winItem = REWARD_TIERS[winIdx];
+
+        // Генерируем длинную ленту для прокрутки (40 карточек, выигрышная на индексе 30)
+        const targetIdx = 30;
+        const stripItems = [];
+        for(let i = 0; i < 42; i++){
+          if(i === targetIdx){
+            stripItems.push(winItem);
+          } else {
+            stripItems.push(REWARD_TIERS[Math.floor(Math.random() * REWARD_TIERS.length)]);
+          }
+        }
+
+        const strip = q('#hdStrip');
+        const roulette = q('#hdRoulette');
+        if(!strip || !roulette) return;
+
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0px)';
+        strip.innerHTML = stripItems.map(it => `
+          <div class="hd-card" style="--hd-col:${it.col}">
+            <div class="hd-icon">${it.icon}</div>
+            <div class="hd-val">${it.val} ⬦</div>
+            <div class="hd-rub">≈ ${fmtRub(it.val)}</div>
+          </div>
+        `).join('');
+
+        const targetCard = strip.children[targetIdx];
+        const cardLeft = targetCard.offsetLeft;
+        const cardW = targetCard.offsetWidth || 100;
+        const rW = roulette.clientWidth || 320;
+        const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
+
+        void strip.offsetWidth; // Reflow
+
+        requestAnimationFrame(() => {
+          strip.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.90, 0.15, 1)';
+          strip.style.transform = `translateX(-${targetX}px)`;
+        });
+
+        // Haptic тики
+        [200, 450, 750, 1150, 1650, 2250, 3000, 3800].forEach(t => {
+          setTimeout(() => { if(isSpinning) tgHaptic('light'); }, t);
+        });
+
         setTimeout(() => {
-          const rewards = [20, 25, 35, 50, 75, 120, 250, 500];
-          const win = rewards[Math.floor(Math.random() * rewards.length)];
-          S.balance += win;
+          isSpinning = false;
+          if(box) box.classList.remove('shaking');
+          targetCard.classList.add('hd-win-hit');
+
+          S.balance += winItem.val;
           S.lastHotDrop = Date.now();
           syncUI();save();
           tgHaptic('win');
-          render();
+
+          const winArea = q('#hdWinArea');
+          if(winArea){
+            winArea.innerHTML = `
+            <div class="hd-win-banner">
+              <div style="font-size:42px">${winItem.icon}</div>
+              <div class="hd-win-val">+${winItem.val} ⬦</div>
+              <b style="color:#fff;font-size:16px">${winItem.name} (~${fmtRub(winItem.val)})</b>
+              <div class="muted small" style="margin-top:4px">Награда мгновенно зачислена на ваш баланс!</div>
+            </div>`;
+          }
+
           const m = q('#hdMsg');
           if(m){
-            m.className='result good';
-            m.innerHTML=`🎉 <b>HOT DROP ОТКРЫТ!</b> Вы получили: <b>+${win} ⬦</b> (~${fmtRub(win)})! Награда зачислена.`;
+            m.className = 'result good';
+            m.innerHTML = `🎉 <b>HOT DROP ОТКРЫТ!</b> Вы получили <b>+${winItem.val} ⬦</b> (${winItem.name}).`;
           }
-        }, 900);
+
+          if(openBtn){
+            openBtn.textContent = '⏳ ПЕРЕЗАРЯДКА (' + fmtMs(ONE_HOUR) + ')';
+            openBtn.disabled = true;
+          }
+        }, 4700);
       };
     }
   }
 
   render();
   timerId = setInterval(() => {
+    if(isSpinning) return;
     const left = getTimeLeft();
     const tEl = q('#hdTimer');
     const bEl = q('#btnOpenHotDrop');
