@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUP Animated Promo Banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: #06070d;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #ffffff;
+    overflow: hidden;
+    padding: 20px;
+  }
+
+  /* Внешняя плашка-превью для удобного просмотра */
+  .preview-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .preview-hint {
+    font-size: 13px;
+    color: #64748b;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* Сам анимированный компактный баннер (несильно горизонтальный, соотношение ~ 2.4 : 1) */
+  .mup-banner {
+    position: relative;
+    width: 360px;
+    height: 150px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #090b14;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 16px 36px -10px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(56, 189, 248, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    cursor: default;
+  }
+
+  /* Мягкий неброский фон в тонах аватарки (глубокий индиго + сапфир + приглушенный неоновый циан) */
+  .banner-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .bg-glow-1 {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    top: -70px;
+    right: -40px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.16) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 70%);
+    filter: blur(28px);
+    animation: floatGlow 7s ease-in-out infinite alternate;
+  }
+
+  .bg-glow-2 {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    bottom: -60px;
+    left: -30px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.14) 0%, rgba(59, 130, 246, 0.06) 50%, transparent 70%);
+    filter: blur(26px);
+    animation: floatGlow 8s ease-in-out infinite alternate-reverse;
+  }
+
+  @keyframes floatGlow {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-15px, 12px) scale(1.15); }
+  }
+
+  /* Тонкая сетка для глубины */
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+    opacity: 0.45;
+  }
+
+  /* Мягкая световая орбита/контур */
+  .ambient-ring {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: 1px solid rgba(56, 189, 248, 0.08);
+    box-shadow: inset 0 0 30px rgba(56, 189, 248, 0.04);
+  }
+
+  /* Контейнер сцены с текстом */
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  /* СЛОЙ 1: Первый текст (Money на up, делай ап-ап) */
+  .phrase-box {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    will-change: transform, opacity, filter;
+    animation: phraseCycle 5.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  .phrase-line-1 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .phrase-line-1 .hl {
+    color: #ffffff;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+  }
+
+  .phrase-line-2 {
+    font-size: 25px;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+    margin-top: 4px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .phrase-line-2 .up-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 7px;
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #7dd3fc;
+    font-size: 18px;
+    font-weight: 850;
+  }
+
+  /* СЛОЙ 2: Второй текст (MONEYFORUP) */
+  .brand-box {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    will-change: transform, opacity, filter;
+    animation: brandCycle 5.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  /* Аккуратная плашка с выделением */
+  .brand-badge {
+    position: relative;
+    padding: 9px 18px 9px 16px;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.88), rgba(11, 16, 29, 0.95));
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 14px;
+    box-shadow: 
+      0 8px 24px -4px rgba(0, 0, 0, 0.7),
+      0 0 20px rgba(56, 189, 248, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* Мягкий неброский блик, пробегающий по плашке */
+  .brand-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: skewX(-24deg);
+    animation: badgeShine 5.2s ease-in-out infinite;
+  }
+
+  @keyframes badgeShine {
+    0%, 55% { left: -120%; }
+    75% { left: 200%; }
+    100% { left: 200%; }
+  }
+
+  /* Иконка восходящей стрелки, как на аватарке */
+  .brand-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+    flex-shrink: 0;
+  }
+
+  .brand-icon svg {
+    width: 12px;
+    height: 12px;
+    fill: #ffffff;
+  }
+
+  /* Сам логотип MONEYFORUP */
+  .brand-title {
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: baseline;
+  }
+
+  .brand-title span.mup-accent {
+    background: linear-gradient(135deg, #38bdf8 0%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-sub {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  /* =========================================================
+     ТАЙМИНГИ И АНИМАЦИЯ:
+     Общий цикл = 5.2s
+     0.0s - 1.8s:  Показ Phrase 1
+     1.8s - 2.3s:  Phrase 1 ПЛАВНО УЛЕТАЕТ ВВЕРХ с размытием
+     2.3s - 4.5s:  Brand плавно залетает снизу с выделением
+     4.5s - 5.0s:  Brand мягко уходит
+     5.2s:         Начало нового цикла
+     ========================================================= */
+
+  @keyframes phraseCycle {
+    0% {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+      filter: blur(4px);
+    }
+    6%, 33% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+    }
+    38% {
+      /* Плавный красивый взлёт вверх */
+      opacity: 0;
+      transform: translateY(-28px) scale(1.02);
+      filter: blur(6px);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-28px) scale(1.02);
+      filter: blur(6px);
+    }
+  }
+
+  @keyframes brandCycle {
+    0%, 35% {
+      opacity: 0;
+      transform: translateY(24px) scale(0.94);
+      filter: blur(6px);
+    }
+    43%, 82% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+    }
+    90% {
+      opacity: 0;
+      transform: translateY(-20px) scale(1.02);
+      filter: blur(4px);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-20px);
+      filter: blur(4px);
+    }
+  }
+
+  /* Индикатор цикла внизу для удобного контроля */
+  .progress-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    animation: progressLoop 5.2s linear infinite;
+    opacity: 0.6;
+  }
+
+  @keyframes progressLoop {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-wrapper">
+  <div class="preview-hint">Компактный анимированный баннер MUP (360 × 150)</div>
+
+  <div class="mup-banner">
+    <!-- Атмосферный фон с палитрой аватарки -->
+    <div class="banner-bg">
+      <div class="bg-grid"></div>
+      <div class="bg-glow-1"></div>
+      <div class="bg-glow-2"></div>
+      <div class="ambient-ring"></div>
+    </div>
+
+    <!-- Сцена с переключающимся текстом -->
+    <div class="stage">
+      
+      <!-- Фаза 1: «Money на up , делай ап-ап» -->
+      <div class="phrase-box">
+        <div class="phrase-line-1">
+          Money <span class="hl">на up</span>,
+        </div>
+        <div class="phrase-line-2">
+          делай <span class="up-tag">ап-ап ↑</span>
+        </div>
+      </div>
+
+      <!-- Фаза 2: Аккуратное появление «MONEYFORUP» -->
+      <div class="brand-box">
+        <div class="brand-badge">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 4l-7 7h4v9h6v-9h4l-7-7z"/>
+            </svg>
+          </div>
+          <div class="brand-title">
+            MONEYFOR<span class="mup-accent">UP</span>
+          </div>
+        </div>
+        <div class="brand-sub">Игры на токены</div>
+      </div>
+
+    </div>
+
+    <!-- Тонкая аккуратная полоска тайминга внизу -->
+    <div class="progress-line"></div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:4px">
+    <button id="btnRecord" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0a0e1a;border:none;padding:10px 18px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(56,189,248,.35)">📹 Скачать видео для Telegram (.webm)</button>
+  </div>
+  <div id="recStatus" style="font-size:12px;color:#94a3b8;min-height:16px"></div>
+</div>
+
+<script>
+  const recBtn = document.getElementById('btnRecord');
+  const recStatus = document.getElementById('recStatus');
+
+  recBtn.addEventListener('click', async () => {
+    recBtn.disabled = true;
+    recBtn.textContent = '⏳ Подготовка записи...';
+    recStatus.textContent = 'Выберите это окно/вкладку во всплывающем окне браузера для захвата 5 секунд';
+
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'browser' },
+        audio: false
+      });
+
+      recStatus.textContent = '🔴 Идёт запись 5.2 сек (полный цикл баннера)...';
+      recBtn.textContent = '🔴 Запись...';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+      const chunks = [];
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'MUP_banner_telegram.webm';
+        a.click();
+        recStatus.textContent = '✅ Видео скачано! Готово к отправке в Telegram.';
+        recBtn.disabled = false;
+        recBtn.textContent = '📹 Скачать видео для Telegram (.webm)';
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, 5400);
+
+    } catch (err) {
+      recBtn.disabled = false;
+      recBtn.textContent = '📹 Скачать видео для Telegram (.webm)';
+      recStatus.textContent = 'Запись отменена или не выбрана вкладка.';
+    }
+  });
+</script>
+</body>
+</html>

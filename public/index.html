@@ -220,6 +220,58 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .tg-avatar-round-img{width:100%;height:100%;object-fit:cover;display:block}
 
 @media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:262px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
+
+/* Онлайн бейдж на карточках игр */
+.game{position:relative}
+.game-online-badge{position:absolute;top:9px;right:9px;background:rgba(15,23,42,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:3px 7px;font-size:10px;font-weight:750;display:flex;align-items:center;gap:4px;color:#f1f5f9;z-index:4;box-shadow:0 3px 10px rgba(0,0,0,.5)}
+.online-dot{width:6px;height:6px;border-radius:50%;background:#3ddc96;box-shadow:0 0 8px #3ddc96;animation:onlinePulse 1.8s infinite ease-in-out}
+@keyframes onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.85)}}
+
+/* VIP Карточка */
+.vip-card{background:linear-gradient(135deg,#1e1b2e,#171424);border:1px solid rgba(168,85,247,.32);border-radius:20px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.vip-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.vip-title{font-size:16px;font-weight:850;color:#fff;display:flex;align-items:center;gap:6px}
+.vip-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(168,85,247,.2);color:#c084fc;border:1px solid rgba(168,85,247,.4);letter-spacing:.04em}
+.vip-perks{font-size:11px;color:#a855f7;font-weight:700}
+.vip-bar-wrap{height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.vip-bar{height:100%;background:linear-gradient(90deg,#8b5cf6,#d946ef);border-radius:6px;transition:width .4s ease}
+.vip-sub{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600}
+
+/* Колесо Фортуны карточка */
+.wheel-featured-card{background:linear-gradient(145deg,#1f1a30,#141022);border:1.5px solid rgba(168,85,247,.38);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s,border-color .2s;padding:15px 16px}
+.wheel-featured-card:hover{transform:translateY(-2px);border-color:rgba(168,85,247,.65)}
+.wfc-body{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.wfc-badge{display:inline-block;font-size:10px;font-weight:800;color:#c084fc;background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);padding:3px 8px;border-radius:8px;margin-bottom:6px}
+.wfc-title{font-size:17px;font-weight:850;color:#fff;margin-bottom:4px}
+.wfc-desc{font-size:11.5px;color:var(--muted);line-height:1.4}
+.wfc-right{text-align:center;flex-shrink:0}
+.wfc-wheel-icon{font-size:38px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 10px rgba(168,85,247,.5))}
+.wfc-status{font-size:10.5px;font-weight:850;color:#3ddc96;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35);padding:3px 8px;border-radius:8px}
+.wfc-status.wait{color:#ffcf6b;background:rgba(255,207,107,.15);border-color:rgba(255,207,107,.35)}
+
+/* Модалка Колеса */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,7,12,.86);backdrop-filter:blur(14px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.wheel-popup{background:linear-gradient(180deg,#1c172b,#120e1d);border:1.5px solid rgba(168,85,247,.4);border-radius:26px;max-width:380px;width:100%;padding:24px 20px;text-align:center;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.8)}
+.modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;font-size:14px;cursor:pointer}
+.modal-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
+.wheel-wrapper{position:relative;width:260px;height:260px;margin:12px auto;display:flex;align-items:center;justify-content:center}
+.wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:24px;color:#ffcf6b;z-index:10;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
+#wheelCanvas{width:260px;height:260px;border-radius:50%;box-shadow:0 0 24px rgba(168,85,247,.35),0 0 0 4px #261d3b}
+
+/* Живые ставки в Ракетке */
+.bot-bets-box{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.bot-bets-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--line);font-size:12px}
+.bot-bets-list{max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.bot-bet-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:rgba(255,255,255,.01);transition:background .2s}
+.bot-bet-row.user-row{background:rgba(255,207,107,.08);border-left:3px solid #ffcf6b}
+.bot-bet-left{display:flex;align-items:center;gap:10px}
+.bot-bet-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.bot-bet-name{font-size:12px;font-weight:700;color:#e2e8f0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bot-bet-amt{font-size:11.5px;color:var(--muted);font-weight:600}
+.bot-bet-st{font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px;letter-spacing:.02em}
+.bot-bet-st.flight{color:#94a3b8;background:rgba(148,163,184,.1)}
+.bot-bet-st.win{color:#3ddc96;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35)}
+.bot-bet-st.lose{color:#ff738c;background:rgba(255,115,140,.12)}
 </style>
 </head>
 <body>
@@ -266,13 +318,43 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
 </div>
 
-<div class="section"><b>Игры</b><span class="muted small">9 игр</span></div>
+<!-- VIP-ранг (Вариант 5) -->
+<div class="vip-card" id="vipCard">
+  <div class="vip-top">
+    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Новичок</span> <span class="vip-tag">VIP Ранг</span></div>
+    <div class="vip-perks" id="vipPerks">Кэшбэк 1.0% · Стейкинг 1.0%/сут</div>
+  </div>
+  <div class="vip-bar-wrap">
+    <div class="vip-bar" id="vipBar" style="width:0%"></div>
+  </div>
+  <div class="vip-sub">
+    <span id="vipWagered">Оборот: 0 ⬦</span>
+    <span id="vipNext">До ранга «Игрок»: 1 000 ⬦</span>
+  </div>
+</div>
+
+<!-- Колесо Фортуны (Вариант 4) -->
+<div class="wheel-featured-card" id="btnOpenWheel">
+  <div class="wfc-body">
+    <div class="wfc-left">
+      <div class="wfc-badge">🎁 БЕСПЛАТНЫЙ СПИН РАЗ В 12 ЧАСОВ</div>
+      <div class="wfc-title">Колесо Фортуны</div>
+      <div class="wfc-desc">Вращайте колесо и забирайте гарантированные токены и редкие бонусы!</div>
+    </div>
+    <div class="wfc-right">
+      <div class="wfc-wheel-icon">🎡</div>
+      <div class="wfc-status" id="wfcStatus">ГОТОВО!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section"><b>Игры</b><span class="muted small">9 режимов</span></div>
 <div class="cards">
-<button class="game" data-game="racket"><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
-<button class="game" data-game="hotdrop"><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
-<button class="game" data-game="auction"><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
-<button class="game" data-game="jumper"><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
-<button class="game" data-game="spin"><div class="game-card-cover"><img src="assets/game_spin.jpg" alt="Спин"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">18 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
+<button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
+<button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
+<button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
+<button class="game" data-game="spin"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="spin">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_spin.jpg" alt="Спин"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
 <circle cx="20" cy="20" r="19" fill="#1e2433"/>
 <path d="M20 20 L20 3 A17 17 0 0 1 32 7.98 Z" fill="#69748f"/>
 <path d="M20 20 L32 7.98 A17 17 0 0 1 37 20 Z" fill="#3ddc96"/>
@@ -286,7 +368,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <circle cx="20" cy="20" r="4.6" fill="#8f97ff"/>
 <circle cx="20" cy="20" r="1.7" fill="#ffffff" opacity=".85"/>
 </svg></div><strong>Спин</strong><span>8 равных секторов с разной выдачей</span><i class="arrow">→</i></button>
-<button class="game" data-game="drop"><div class="game-card-cover"><img src="assets/game_drop.jpg" alt="Дроп"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+<button class="game" data-game="drop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="drop">7 онлайн</span></span><div class="game-card-cover"><img src="assets/game_drop.jpg" alt="Дроп"></div><div class="gi"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
 <defs>
 <radialGradient id="dropBall" cx="34%" cy="28%" r="78%">
 <stop offset="0" stop-color="#ffffff"/>
@@ -303,9 +385,9 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <circle cx="20" cy="21" r="14.5" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1"/>
 <ellipse cx="15" cy="15.5" rx="4.6" ry="3.4" fill="#ffffff" opacity=".75" transform="rotate(-28 15 15.5)"/>
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
-<button class="game" data-game="skuf"><div class="game-card-cover"><img src="assets/game_skuf.jpg" alt="Скуф vs Альтушка"></div><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
-<button class="game" data-game="avito"><div class="game-card-cover"><img src="assets/game_avito.jpg" alt="Перекуп на Авито"></div><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
-<button class="game" data-game="cases"><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
+<button class="game" data-game="skuf"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="skuf">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_skuf.jpg" alt="Скуф vs Альтушка"></div><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
+<button class="game" data-game="avito"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="avito">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_avito.jpg" alt="Перекуп на Авито"></div><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">17 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -512,7 +594,21 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 <button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
+<!-- Модальное окно Колеса Фортуны (Вариант 4) -->
+<div class="modal-overlay" id="wheelModal" style="display:none">
+  <div class="wheel-popup">
+    <button class="modal-close" id="wheelClose">✕</button>
+    <div class="modal-title">🎡 Колесо Фортуны</div>
+    <div class="muted small" style="margin-bottom:12px">Бесплатный спин раз в 12 часов с гарантированным призом</div>
+    <div class="wheel-wrapper">
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheelCanvas" width="260" height="260"></canvas>
+    </div>
+    <button class="control" id="btnSpinWheel" style="margin-top:14px">КРУТИТЬ БЕСПЛАТНО</button>
+    <div class="result" id="wheelResult" style="margin-top:10px">Нажмите «КРУТИТЬ БЕСПЛАТНО», чтобы запустить рулетку!</div>
+  </div>
 </div>
+
 </div>
 
 <script>
@@ -693,7 +789,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:'',numId:10000,channelCooldownUntil:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -710,7 +806,16 @@ const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
 try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){}}
 function place(bet,game){
+  const oldVip=(typeof getVipInfo==='function')?getVipInfo(S.wagered).cur:{id:0};
   S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
+  if(typeof getVipInfo==='function'){
+    const newVip=getVipInfo(S.wagered).cur;
+    if(newVip.id>oldVip.id&&newVip.bonus>0){
+      S.balance+=newVip.bonus;
+      addHist('VIP бонус · '+newVip.name,newVip.bonus);
+      tgHaptic('win');
+    }
+  }
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
@@ -773,14 +878,15 @@ function faucet(n){
   save();syncUI();
 }
 
-/* ---------- стейкинг: 1 % в сутки ---------- */
+/* ---------- стейкинг: 1 % в сутки (повышается с VIP) ---------- */
 const STAKE_RATE=0.01, DAY_MS=86400000;
 function stakeAccrued(st,now){
   st=st||S.stake; now=now||Date.now();
   if(!st)return 0;
   const base=st.accruedBase||0;                       // проценты, накопленные ранее
   if(!st.amount||!st.since)return base;
-  return base+st.amount*STAKE_RATE*Math.max(0,now-st.since)/DAY_MS;
+  const vipRate = (typeof getVipInfo==='function') ? (getVipInfo(S.wagered).cur.stakePct / 100) : STAKE_RATE;
+  return base+st.amount*vipRate*Math.max(0,now-st.since)/DAY_MS;
 }
 function stakeAdd(v){
   v=Math.floor(v);
@@ -808,10 +914,11 @@ function stakeOut(){
 }
 function syncStake(){
   const now=Date.now(),acc=stakeAccrued(null,now),body=S.stake.amount||0;
+  const vipRate = (typeof getVipInfo==='function') ? (getVipInfo(S.wagered).cur.stakePct / 100) : STAKE_RATE;
   const set=(id,val)=>{const e=q('#'+id);if(e)e.textContent=val};
   set('stakeAmt',fmt(body));
   set('stakeAcc',acc.toFixed(body?2:2));
-  set('stakePerDay',(body*STAKE_RATE).toFixed(2));
+  set('stakePerDay',(body*vipRate).toFixed(2));
   const addB=q('#stakeAdd'),cl=q('#stakeClaim'),out=q('#stakeOut');
   if(addB)addB.disabled=S.balance<1;
   if(cl)cl.disabled=acc<0.01;
@@ -862,6 +969,8 @@ function syncUI(){
   syncStake();
   syncBonusUI();
   withdrawSync();
+  if(typeof syncVipUI==='function') syncVipUI();
+  if(typeof updateModesOnline==='function') updateModesOnline();
   if(onBetChange)onBetChange();
 }
 let onBetChange=null,cleanup=null;
@@ -1350,6 +1459,420 @@ function fitCanvas(cvs){
 }
 
 /* =======================================================================
+   VIP-СИСТЕМА (Вариант 5)
+   ======================================================================= */
+const VIP_RANKS = [
+  { id: 1, name: 'Новичок', icon: '🥉', wagerReq: 0, cbPct: 1.0, stakePct: 1.0, bonus: 0 },
+  { id: 2, name: 'Игрок', icon: '🥈', wagerReq: 5000, cbPct: 2.0, stakePct: 1.2, bonus: 200 },
+  { id: 3, name: 'Хайроллер', icon: '🥇', wagerReq: 25000, cbPct: 3.5, stakePct: 1.5, bonus: 1000 },
+  { id: 4, name: 'Аристократ', icon: '💎', wagerReq: 100000, cbPct: 5.5, stakePct: 1.8, bonus: 4000 },
+  { id: 5, name: 'Герцог', icon: '👑', wagerReq: 500000, cbPct: 8.0, stakePct: 2.2, bonus: 20000 }
+];
+
+function getVipInfo(wagered){
+  wagered = Math.max(0, wagered || 0);
+  let cur = VIP_RANKS[0];
+  let next = null;
+  for(let i = 0; i < VIP_RANKS.length; i++){
+    if(wagered >= VIP_RANKS[i].wagerReq){
+      cur = VIP_RANKS[i];
+      next = VIP_RANKS[i + 1] || null;
+    }
+  }
+  let pct = 100;
+  if(next){
+    const span = next.wagerReq - cur.wagerReq;
+    const progress = wagered - cur.wagerReq;
+    pct = Math.min(100, Math.max(0, Math.floor((progress / span) * 100)));
+  }
+  return { cur, next, pct };
+}
+
+function syncVipUI(){
+  const info = getVipInfo(S.wagered || 0);
+  const iconEl = q('#vipIcon');
+  const nameEl = q('#vipName');
+  const perksEl = q('#vipPerks');
+  const barEl = q('#vipBar');
+  const wagEl = q('#vipWagered');
+  const nextEl = q('#vipNext');
+
+  if(iconEl) iconEl.textContent = info.cur.icon;
+  if(nameEl) nameEl.textContent = info.cur.name;
+  if(perksEl) perksEl.textContent = `Кэшбэк ${info.cur.cbPct.toFixed(1)}% · Стейкинг ${info.cur.stakePct.toFixed(1)}%/сут`;
+  if(wagEl) wagEl.textContent = `Оборот: ${fmt(S.wagered || 0)} ⬦`;
+
+  if(info.next){
+    if(barEl) barEl.style.width = info.pct + '%';
+    const leftWager = info.next.wagerReq - (S.wagered || 0);
+    if(nextEl) nextEl.textContent = `До «${info.next.name}»: ${fmt(leftWager)} ⬦ (+${fmt(info.next.bonus)} ⬦)`;
+  } else {
+    if(barEl) barEl.style.width = '100%';
+    if(nextEl) nextEl.textContent = 'Максимальный VIP-ранг достигнут!';
+  }
+}
+
+/* =======================================================================
+   ОНЛАЙН РЕЖИМОВ (каждые 5 минут от 4 до 20 человек, Ракетка и Кейсы в топе)
+   ======================================================================= */
+function updateModesOnline(){
+  const cycle5m = Math.floor(Date.now() / 300000); // 5 минут
+  qa('[data-online-game]').forEach(el => {
+    const g = el.dataset.onlineGame || '';
+    let hash = 0;
+    for(let i = 0; i < g.length; i++) hash = ((hash << 5) - hash) + g.charCodeAt(i);
+    const pseudo = Math.abs(Math.sin(cycle5m * 12.9898 + hash * 78.233)) * 10000;
+    const r = pseudo - Math.floor(pseudo);
+    let count = 4;
+    if(g === 'racket'){
+      count = 15 + Math.floor(r * 6); // 15..20
+    } else if(g === 'cases'){
+      count = 14 + Math.floor(r * 6); // 14..19
+    } else {
+      count = 4 + Math.floor(r * 9);  // 4..12
+    }
+    el.textContent = count + ' онлайн';
+  });
+}
+
+/* =======================================================================
+   КОЛЕСО ФОРТУНЫ (Вариант 4) — бесплатный спин раз в 12 часов
+   ======================================================================= */
+const WHEEL_COOLDOWN = 12 * 3600 * 1000;
+const WHEEL_SECTORS = [
+  { val: 25, label: '+25 ⬦', color: '#3b82f6', text: '#ffffff' },
+  { val: 50, label: '+50 ⬦', color: '#10b981', text: '#ffffff' },
+  { val: 100, label: '+100 ⬦', color: '#8b5cf6', text: '#ffffff' },
+  { val: 250, label: '+250 ⬦', color: '#f59e0b', text: '#ffffff' },
+  { val: 50, label: '+50 ⬦', color: '#06b6d4', text: '#ffffff' },
+  { val: 500, label: '+500 ⬦', color: '#ec4899', text: '#ffffff' },
+  { val: 25, label: '+25 ⬦', color: '#6366f1', text: '#ffffff' },
+  { val: 1000, label: '+1 000 ⬦', color: '#ef4444', text: '#ffcf6b', jack: true }
+];
+
+let wheelAngle = 0;
+let isWheelSpinning = false;
+
+function drawWheelCanvas(angle = 0){
+  const cvs = q('#wheelCanvas');
+  if(!cvs) return;
+  const ctx = cvs.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const size = 260;
+  if(cvs.width !== size * dpr) cvs.width = size * dpr;
+  if(cvs.height !== size * dpr) cvs.height = size * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+
+  const cx = size / 2, cy = size / 2, r = size / 2 - 8;
+  const numSectors = WHEEL_SECTORS.length;
+  const arc = (Math.PI * 2) / numSectors;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  for(let i = 0; i < numSectors; i++){
+    const startA = i * arc;
+    const endA = startA + arc;
+    const sec = WHEEL_SECTORS[i];
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, startA, endA);
+    ctx.fillStyle = sec.color;
+    ctx.fill();
+    ctx.strokeStyle = '#181226';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(startA + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = sec.text;
+    ctx.font = sec.jack ? '900 13px Inter,sans-serif' : '800 12px Inter,sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(sec.label, r - 14, 0);
+    ctx.restore();
+  }
+
+  // Центральный золотистый круг MUP
+  ctx.beginPath();
+  ctx.arc(0, 0, 22, 0, Math.PI * 2);
+  ctx.fillStyle = '#1c152d';
+  ctx.fill();
+  ctx.strokeStyle = '#ffcf6b';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffcf6b';
+  ctx.font = '900 12px Inter,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('MUP', 0, 0);
+
+  ctx.restore();
+}
+
+function getWheelTimeLeft(){
+  const last = S.lastWheelSpin || 0;
+  return Math.max(0, WHEEL_COOLDOWN - (Date.now() - last));
+}
+
+function fmtWheelTime(ms){
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}ч ${String(m).padStart(2,'0')}м ${String(sec).padStart(2,'0')}с`;
+}
+
+function updateWheelStatus(){
+  const left = getWheelTimeLeft();
+  const stEl = q('#wfcStatus');
+  const spinBtn = q('#btnSpinWheel');
+  if(stEl){
+    if(left === 0){
+      stEl.className = 'wfc-status';
+      stEl.textContent = 'ГОТОВО К СПИНУ!';
+    } else {
+      stEl.className = 'wfc-status wait';
+      stEl.textContent = 'ЧЕРЕЗ ' + fmtWheelTime(left);
+    }
+  }
+  if(spinBtn && !isWheelSpinning){
+    if(left === 0){
+      spinBtn.disabled = false;
+      spinBtn.textContent = 'КРУТИТЬ БЕСПЛАТНО';
+    } else {
+      spinBtn.disabled = true;
+      spinBtn.textContent = 'ПЕРЕЗАРЯДКА (' + fmtWheelTime(left) + ')';
+    }
+  }
+}
+
+function spinWheel(){
+  if(isWheelSpinning) return;
+  const left = getWheelTimeLeft();
+  if(left > 0) return;
+
+  isWheelSpinning = true;
+  const spinBtn = q('#btnSpinWheel');
+  const resEl = q('#wheelResult');
+  if(spinBtn) { spinBtn.disabled = true; spinBtn.textContent = 'КОЛЕСО ВРАЩАЕТСЯ...'; }
+  if(resEl) { resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
+
+  const rand = Math.random();
+  let targetIdx = 0;
+  if(rand < 0.35) targetIdx = (Math.random() < 0.5) ? 0 : 6;
+  else if(rand < 0.70) targetIdx = (Math.random() < 0.5) ? 1 : 4;
+  else if(rand < 0.86) targetIdx = 2;
+  else if(rand < 0.95) targetIdx = 3;
+  else if(rand < 0.985) targetIdx = 5;
+  else targetIdx = 7;
+
+  const prize = WHEEL_SECTORS[targetIdx];
+  const numSectors = WHEEL_SECTORS.length;
+  const arc = (Math.PI * 2) / numSectors;
+
+  const extraRotations = 5 + Math.floor(Math.random() * 3);
+  const pointerAngle = -Math.PI / 2;
+  const sectorCenter = targetIdx * arc + arc / 2;
+  let finalTargetAngle = pointerAngle - sectorCenter;
+  while(finalTargetAngle < 0) finalTargetAngle += Math.PI * 2;
+  const totalTargetAngle = wheelAngle + extraRotations * Math.PI * 2 + (finalTargetAngle - (wheelAngle % (Math.PI * 2)));
+
+  const startTime = performance.now();
+  const duration = 4800;
+  const startA = wheelAngle;
+  const diffA = totalTargetAngle - startA;
+
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function animate(now){
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const eased = easeOutCubic(progress);
+    wheelAngle = startA + diffA * eased;
+    drawWheelCanvas(wheelAngle);
+
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    } else {
+      isWheelSpinning = false;
+      S.lastWheelSpin = Date.now();
+      faucet(prize.val);
+      save();
+      syncUI();
+      updateWheelStatus();
+      tgHaptic('win');
+
+      if(resEl){
+        resEl.className = 'result good';
+        resEl.innerHTML = `🎉 <b>ПОЗДРАВЛЯЕМ!</b> Вы выиграли <b style="color:#ffcf6b">+${prize.val} ⬦</b> (${fmtRub(prize.val)})! Награда зачислена.`;
+      }
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function initWheel(){
+  const openBtn = q('#btnOpenWheel');
+  const modal = q('#wheelModal');
+  const closeBtn = q('#wheelClose');
+  const spinBtn = q('#btnSpinWheel');
+
+  if(openBtn) openBtn.addEventListener('click', () => {
+    if(modal){
+      modal.style.display = 'flex';
+      drawWheelCanvas(wheelAngle);
+      updateWheelStatus();
+    }
+  });
+
+  if(closeBtn) closeBtn.addEventListener('click', () => {
+    if(!isWheelSpinning && modal) modal.style.display = 'none';
+  });
+
+  if(modal) modal.addEventListener('click', e => {
+    if(!isWheelSpinning && e.target === modal) modal.style.display = 'none';
+  });
+
+  if(spinBtn) spinBtn.addEventListener('click', spinWheel);
+
+  drawWheelCanvas(0);
+  updateWheelStatus();
+  setInterval(updateWheelStatus, 1000);
+}
+
+/* =======================================================================
+   БОТЫ И СЕТКА ИГРОКОВ РАКЕТКИ (Вариант 1) — 200 реальных профилей
+   ======================================================================= */
+const BOT_NAMES_RAW = [
+  "@artem_crypto", "Даниил М.", "@vlad_trade", "Максим Соколов", "@sofia_ton",
+  "@alex_invest", "Никита В.", "@roman_rich", "Екатерина П.", "@dmitry_msk",
+  "@alisa_sol", "Кирилл Белов", "@ivan_off", "@egor_shark", "Полина К.",
+  "@sergey_pro", "@timur_kz", "Анна Морозова", "Илья Б.", "@mark_ton",
+  "@yaroslav_x", "Матвей Волков", "@oleg_btc", "Виктория С.", "@denis_kazan",
+  "@gleb_bull", "Андрей Кузнецов", "@valera_top", "Дарья Н.", "@pavel_durov_fan",
+  "@misha_ton", "Арсений Л.", "@stas_scalp", "Алина Г.", "@bogdan_win",
+  "@tim_crypto", "Ксения Романова", "@ruslan_spb", "Григорий Т.", "@igor_pump",
+  "@vladimir_k", "Мария Д.", "@anton_ton", "Лев Орлов", "@semyon_x",
+  "@artyom_pro", "Яна В.", "@kostya_rich", "Фёдор Михайлов", "@stepan_bet",
+  "@vadim_trader", "Елизавета С.", "@marat_kazan", "Тимур А.", "@nikolay_sol",
+  "@diana_ton", "Роман Васильев", "@vitalik_eth", "Юлия Б.", "@david_crypto",
+  "@erik_top", "Валерия К.", "@georgy_m", "Константин Ф.", "@edward_x",
+  "@nazar_ton", "Вероника С.", "@petr_msk", "Артём Новиков", "@slava_bull",
+  "@renat_kz", "Светлана М.", "@tikhon_pro", "Геннадий В.", "@rusik_bet",
+  "@karina_sol", "Евгений Смирнов", "@amir_tashkent", "Милана Т.", "@elena_crypto",
+  "@miron_top", "Вадим Попов", "@damir_ufa", "Ольга И.", "@kirill_scalper",
+  "@saveliy_x", "Татьяна К.", "@rostislav_m", "Иван Козлов", "@platon_ton",
+  "@zahar_bet", "Кристина Л.", "@demid_pro", "Борис Лебедев", "@vladislav_sol",
+  "@samir_baku", "Инна В.", "@german_crypto", "Юрий Федоров", "@marina_top",
+  "@leonid_rich", "Наталья С.", "@arsen_arm", "Василий Морозов", "@artur_trade",
+  "@kamilla_ton", "Михаил Григорьев", "@rodion_x", "Ярослав Ковалев", "@albert_pro",
+  "@renata_kazan", "Степан Воробьев", "@maksim_scalp", "Виктор Семенов", "@timofey_m",
+  "@zhanna_sol", "Денис Голубев", "@taras_crypto", "Валентин П.", "@vitaly_top",
+  "@kira_ton", "Вячеслав Богданов", "@marat_pro", "Анатолий С.", "@daniil_bet",
+  "@sabina_kz", "Глеб Воронов", "@valentin_x", "Маргарита Е.", "@eldar_trade",
+  "@igor_kuznetsov", "Антон Соловьев", "@dasha_crypto", "Владислав Фролов", "@nik_rich",
+  "@angelina_sol", "Александр Павлов", "@sergo_pro", "Ксения Макарова", "@miron_ton",
+  "@alladin_trade", "Егор Зайцев", "@viktoria_m", "Дмитрий Медведев", "@arthur_x",
+  "@ramil_kazan", "Юлия Захарова", "@artyom_rich", "Дамир Ибрагимов", "@karim_uzb",
+  "@polina_ton", "Семен Яковлев", "@vitaliy_b", "Вера Калинина", "@stanislav_pro",
+  "@aleks_trade", "Евгения Борисова", "@vladimir_ton", "Олег Сидоров", "@damir_scalp",
+  "@milana_sol", "Григорий Мельников", "@arseniy_top", "Надежда В.", "@radik_ufa",
+  "@dmitriy_k", "Алла Сергеева", "@lev_trader", "Федор Беляев", "@timur_rich",
+  "@yana_crypto", "Константин Тарасов", "@erlan_kz", "Мария Белова", "@rodion_ton",
+  "@alina_trade", "Илья Комаров", "@gleb_pro", "Диана Орлова", "@edgar_rich",
+  "@ruslan_ufa", "Тамара Г.", "@bogdan_crypto", "Вадим Киселев", "@vitalik_pro",
+  "@vlad_bull", "Арина Кузьмина", "@danil_ton", "Михаил Ильин", "@marat_scalp",
+  "@sofya_trade", "Филипп Гусев", "@zakhariy_m", "Алина Титова", "@denis_bull",
+  "@sardor_tash", "Камилла Р.", "@maksim_ton", "Эдуард Кудрявцев", "@amalia_crypto"
+];
+
+const BOT_PALETTES = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#6366f1', '#14b8a6', '#f97316'
+];
+
+function getBotInitials(name){
+  const clean = name.replace(/^@/,'').trim();
+  const parts = clean.split(/[ _\.]+/).filter(Boolean);
+  if(parts.length >= 2){
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+
+function pseudoRnd(seed, salt=0){
+  let a = ((seed + salt * 1013904223) ^ 0x5DEECE66) >>> 0;
+  a = Math.imul(a ^ (a >>> 16), 0x45d9f3b);
+  a = Math.imul(a ^ (a >>> 15), 0x45d9f3b);
+  a = (a ^ (a >>> 16)) >>> 0;
+  return a / 4294967296;
+}
+
+function generateBotsForRound(rIdx){
+  // Банк раунда от 300 до 2 000 руб (от 3 000 до 20 000 ⬦)
+  const targetRub = 300 + Math.floor(pseudoRnd(rIdx, 101) * 1700);
+  const targetTk = targetRub * 10;
+  const botCount = 12 + Math.floor(pseudoRnd(rIdx, 102) * 11);
+
+  const chosenIndices = [];
+  let salt = 200;
+  while(chosenIndices.length < botCount){
+    const idx = Math.floor(pseudoRnd(rIdx, salt++) * BOT_NAMES_RAW.length);
+    if(!chosenIndices.includes(idx)) chosenIndices.push(idx);
+  }
+
+  const rawWeights = chosenIndices.map((bIdx, i) => {
+    const r = pseudoRnd(rIdx, 300 + i);
+    if(r < 0.6) return 1 + r * 3;
+    if(r < 0.9) return 4 + r * 8;
+    return 15 + r * 25;
+  });
+  const totalWeight = rawWeights.reduce((a,b)=>a+b, 0);
+
+  const bots = chosenIndices.map((bIdx, i) => {
+    const name = BOT_NAMES_RAW[bIdx];
+    const color = BOT_PALETTES[bIdx % BOT_PALETTES.length];
+    const initials = getBotInitials(name);
+
+    // Ставка от 1 до 1 000 руб (от 10 до 10 000 ⬦)
+    let bet = Math.round((rawWeights[i] / totalWeight) * targetTk);
+    bet = Math.max(10, Math.min(10000, bet));
+    bet = Math.round(bet / 10) * 10;
+    if(bet < 10) bet = 10;
+
+    const rx = pseudoRnd(rIdx, 500 + i);
+    let targetX = 1.25;
+    if(rx < 0.28){
+      targetX = +(1.12 + rx * 1.0).toFixed(2);
+    } else if(rx < 0.68){
+      targetX = +(1.40 + (rx - 0.28) * 1.85).toFixed(2);
+    } else if(rx < 0.88){
+      targetX = +(2.15 + (rx - 0.68) * 6.2).toFixed(2);
+    } else {
+      targetX = +(3.40 + (rx - 0.88) * 34.0).toFixed(2);
+    }
+
+    return {
+      name,
+      color,
+      initials,
+      bet,
+      targetX
+    };
+  });
+
+  bots.sort((a, b) => b.bet - a.bet);
+  return bots;
+}
+
+/* =======================================================================
    РАКЕТКА — ракета по кривой, остановка модели + авто-вывод на коэффициенте
    ======================================================================= */
 const RK={tcap:12,k:0.18};
@@ -1362,70 +1885,117 @@ const MINCASH=1.01;                     // забрать можно с само
    дальше 1.10-1.30 — 15 %, 1.30-1.55 — 24 %, 1.55-1.75 — 20 %, 1.75-2.00 — 6 %,
    2.00-2.30 — 10 %, 2.30-3.00 — 9 %, редкий длинный полёт 3.50-8.67 — 2 %.
    Полоса 3.00-3.50 вырезана. Пик отдачи — 94.6 % на ×1.10, в долгую игрок в минусе. */
-function sampleCrash(){
-  const r=Math.random();
+function sampleCrash(seedIdx){
+  let r;
+  if(seedIdx!=null){
+    let a=(seedIdx^0x6D2B79F5)>>>0;
+    a=Math.imul(a^(a>>>15),a|1);
+    a^=a+Math.imul(a^(a>>>7),a|61);
+    r=((a^(a>>>14))>>>0)/4294967296;
+  }else{
+    r=Math.random();
+  }
   if(r<0.08)return 1.00;                                   // мгновенный взрыв
-  if(r<0.14)return +(1.01+Math.random()*0.09).toFixed(2);  // 1.01-1.10 — низкий дроп
-  if(r<0.29)return +(1.10+Math.random()*0.20).toFixed(2);  // 1.10-1.30
-  if(r<0.53)return +(1.30+Math.random()*0.25).toFixed(2);  // 1.30-1.55
-  if(r<0.73)return +(1.55+Math.random()*0.20).toFixed(2);  // 1.55-1.75
-  if(r<0.79)return +(1.75+Math.random()*0.25).toFixed(2);  // 1.75-2.00
-  if(r<0.89)return +(2.00+Math.random()*0.30).toFixed(2);  // 2.00-2.30
-  if(r<0.98)return +(2.30+Math.random()*0.69).toFixed(2);  // 2.30-2.99 (3.00 отдаём вырезу)
+  if(r<0.14)return +(1.01+((r-0.08)/0.06)*0.09).toFixed(2);  // 1.01-1.10 — низкий дроп
+  if(r<0.29)return +(1.10+((r-0.14)/0.15)*0.20).toFixed(2);  // 1.10-1.30
+  if(r<0.53)return +(1.30+((r-0.29)/0.24)*0.25).toFixed(2);  // 1.30-1.55
+  if(r<0.73)return +(1.55+((r-0.53)/0.20)*0.20).toFixed(2);  // 1.55-1.75
+  if(r<0.79)return +(1.75+((r-0.73)/0.06)*0.25).toFixed(2);  // 1.75-2.00
+  if(r<0.89)return +(2.00+((r-0.79)/0.10)*0.30).toFixed(2);  // 2.00-2.30
+  if(r<0.98)return +(2.30+((r-0.89)/0.09)*0.69).toFixed(2);  // 2.30-2.99 (3.00 отдаём вырезу)
   const t0=Math.log(3.5)/RK.k;                             // редкий длинный полёт 3.50-8.67
-  return +Math.exp(RK.k*(t0+Math.random()*(RK.tcap-t0))).toFixed(2);
+  const rLong=(r-0.98)/0.02;
+  return +Math.exp(RK.k*(t0+rLong*(RK.tcap-t0))).toFixed(2);
 }
 
 function gameRacket(){
   const a=q('#gameArea');
-  let phase='idle',crash=1.01,cur=1,t0=0,tStop=0,raf=0,dead=false,cashed=false,boomT=0,cashX=0,cashAmt=0;
+  const ROUND_MS=30000;  // Непрерывный раунд ровно каждые 30 секунд
+  const WAIT_MS=6000;    // 6 секунд на приём ставок до старта ракетки
+  const ROCKET_SPEED=0.58;
+  const tau=t=>t*(1+0.06*t);
+
+  let curRound=-1,phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
+  let inRound=false,userBet=0,cashed=false,boomT=0,cashX=0,cashAmt=0;
+  let roundCrashed=false,nextRoundBet=false;
   let autoOn=!!S.autoOn,autoX=Math.min(RKMAX,Math.max(MINCASH,+S.autoX||1.5));
-  if(S.autoX!==autoX){S.autoX=autoX;save()}          // старые сохранённые значения поднимаем до минимума
+  let autoBet=!!S.autoBet;
+  if(S.autoX!==autoX){S.autoX=autoX;save()}
 
   a.innerHTML=`
   <div class="crashbox"><canvas id="rcv"></canvas>
-    <div class="overlay"><div class="muted small" id="rphase">готов к запуску</div><div class="xbig" id="rx">×1.00</div></div>
+    <div class="overlay"><div class="muted small" id="rphase">приём ставок</div><div class="xbig" id="rx">×1.00</div></div>
   </div>
-  <div class="betrow"><span class="muted small">Авто-вывод при</span>
+  <div class="betrow" style="flex-wrap:wrap;gap:8px"><span class="muted small">Авто-вывод при</span>
     <input class="betinput" id="autoInput" type="number" min="${fx(MINCASH)}" max="${RKMAX}" step="0.05" inputmode="decimal" value="${fx(autoX)}" aria-label="Авто-вывод">
-    <button class="chip" id="autoTgl">авто: выкл</button>
+    <button class="chip" id="autoTgl">авто-вывод: выкл</button>
+    <button class="chip" id="autoBetTgl">авто-ставка: выкл</button>
   </div>
   ${betHTML()}
-  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов</div>
+  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (общий цикл 30с)</div>
   <div class="hstrip" id="rHist"></div>
-  <button class="control" id="rgo" style="margin-top:10px">ЗАПУСТИТЬ · ${S.bet} ⬦</button>
-  <div class="result" id="rr">Забрать можно с ×${fx(MINCASH)} в любой момент полёта — но ракета иногда взрывается мгновенно. Чем выше коэффициент, тем сильнее она разгоняется.</div>`;
+  <button class="control" id="rgo" style="margin-top:10px">ПОСТАВИТЬ · ${S.bet} ⬦</button>
+  <div class="result" id="rr">Раунды запускаются непрерывно каждые 30 секунд (даже без пользователя). Сделайте ставку до старта или включите авто-ставку.</div>
+  <div class="bot-bets-box">
+    <div class="bot-bets-header">
+      <div><b>Игроки в раунде</b> <span class="muted small" id="roundPlayersCount">(0)</span></div>
+      <div>Банк раунда: <b style="color:#ffcf6b" id="roundTotalBank">0 ₽</b></div>
+    </div>
+    <div class="bot-bets-list" id="botBetsList"></div>
+  </div>`;
 
   const cvs=q('#rcv'),go=q('#rgo'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
   const rHistEl=q('#rHist');
+  const axIn=q('#autoInput'),axTg=q('#autoTgl'),abTg=q('#autoBetTgl');
+  let currentRoundBots=[];
+  let currentRoundBank=0;
+  let lastBotsRenderTime=0;
+
   function renderRHist(fresh){
     if(!rHistEl)return;
     const list=(S.rHist||[]).slice(0,20);
     rHistEl.innerHTML=list.length
       ? list.map((v,i)=>`<span class="hitem${fresh&&i===0?' new':''}" style="color:${band(v)};border-color:${hexA(band(v),.45)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`).join('')
-      : '<span class="muted small">Пока нет раундов — запустите первый.</span>';
+      : '<span class="muted small">Синхронизация раундов...</span>';
   }
   function pushRHist(x){
     S.rHist=(S.rHist||[]).filter(v=>Number.isFinite(v));
-    S.rHist.unshift(+x.toFixed(2));            // в ленте — сотые доли коэффициента
+    S.rHist.unshift(+x.toFixed(2));
     if(S.rHist.length>20)S.rHist=S.rHist.slice(0,20);
     save();renderRHist(true);
   }
+
+  // Заполняем детерминированную ленту прошлых 20 раундов, если истории нет
+  const nowInit=Date.now();
+  const rInitIdx=Math.floor(nowInit/ROUND_MS);
+  if(!S.rHist||S.rHist.length<20){
+    S.rHist=[];
+    for(let i=1;i<=20;i++){
+      S.rHist.push(sampleCrash(rInitIdx-i));
+    }
+    save();
+  }
   renderRHist(false);
-  const axIn=q('#autoInput'),axTg=q('#autoTgl');
+
   function syncAuto(){
-    axTg.textContent='авто: '+(autoOn?'вкл':'выкл');
+    axTg.textContent='авто-вывод: '+(autoOn?'вкл':'выкл');
     axTg.classList.toggle('on',autoOn);
     axTg.style.borderColor=autoOn?'rgba(124,130,255,.55)':'';
     axIn.value=fx(autoX);
   }
+  function syncAutoBet(){
+    abTg.textContent='авто-ставка: '+(autoBet?'вкл':'выкл');
+    abTg.classList.toggle('on',autoBet);
+    abTg.style.borderColor=autoBet?'rgba(61,220,150,.55)':'';
+  }
+
   function drawRocket(g,cx,cy,ang,bc,sp){
     const t=performance.now()*0.003;
     const flame=(15+Math.min(42,sp*16))*(0.85+Math.sin(t*12)*0.2);
     g.save();g.translate(cx,cy);g.rotate(ang);
-    g.scale(1.48, 1.48); // Увеличенный размер: персонаж-лев отчётливо виден на экране!
+    g.scale(1.48, 1.48);
 
-    // 1. Звёздный шлейф и мягкое пламя (стиль Ван Гога / волшебная пыльца)
+    // 1. Звёздный шлейф и мягкое пламя
     const fg=g.createRadialGradient(-18,0,2,-18-flame,0,flame);
     fg.addColorStop(0,'rgba(255,245,180,.98)');
     fg.addColorStop(.3,'rgba(239,68,68,.85)');
@@ -1441,7 +2011,7 @@ function gameRacket(){
       g.beginPath();g.arc(px,py,1.3+Math.abs(Math.sin(t*5+i))*1.4,0,Math.PI*2);g.fill();
     }
 
-    // 2. Тело сказочного Льва (живописный тёплый золотисто-янтарный оттенок)
+    // 2. Тело сказочного Льва
     const maneWiggle=Math.sin(t*10)*2.4;
     g.fillStyle='#e5a230';
     g.beginPath();
@@ -1454,28 +2024,28 @@ function gameRacket(){
     g.closePath();
     g.fill();
 
-    // Мягкая прорисовка контура (акварельный/ручной стиль)
+    // Мягкая прорисовка контура
     g.strokeStyle='#6a3810';g.lineWidth=1.7;g.stroke();
 
-    // Пышная грива льва (выразительные объёмные пряди)
+    // Пышная грива льва
     g.fillStyle='#ba6419';
     g.beginPath();g.arc(3,-3+maneWiggle*0.3,8.5,0,Math.PI*2);g.fill();
     g.beginPath();g.arc(11,-4-maneWiggle*0.4,8,0,Math.PI*2);g.fill();
     g.beginPath();g.arc(-1,3+maneWiggle*0.5,7.5,0,Math.PI*2);g.fill();
     g.beginPath();g.arc(8,5,7,0,Math.PI*2);g.fill();
 
-    // Круглые ушки льва с розовой серединкой
+    // Круглые ушки льва
     g.fillStyle='#e5a230';g.beginPath();g.arc(13,-10,3.6,0,Math.PI*2);g.fill();
     g.strokeStyle='#6a3810';g.lineWidth=1.3;g.stroke();
     g.fillStyle='#fca5a5';g.beginPath();g.arc(13,-10,1.8,0,Math.PI*2);g.fill();
 
     // Мордочка и носик
     g.fillStyle='#fff1db';g.beginPath();g.ellipse(23,1.5,4,4.5,0,0,Math.PI*2);g.fill();
-    g.fillStyle='#6a3810';g.beginPath();g.arc(26,0.6,1.5,0,Math.PI*2);g.fill(); // носик
+    g.fillStyle='#6a3810';g.beginPath();g.arc(26,0.6,1.5,0,Math.PI*2);g.fill();
 
-    // Живой выразительный добрый глаз
+    // Живой выразительный глаз
     g.fillStyle='#181113';g.beginPath();g.arc(19,-2.2,1.9,0,Math.PI*2);g.fill();
-    g.fillStyle='#ffffff';g.beginPath();g.arc(19.6,-2.8,0.8,0,Math.PI*2);g.fill(); // блик
+    g.fillStyle='#ffffff';g.beginPath();g.arc(19.6,-2.8,0.8,0,Math.PI*2);g.fill();
 
     // Лапы в стремительном полёте
     g.fillStyle='#d28c22';
@@ -1487,14 +2057,13 @@ function gameRacket(){
     g.beginPath();g.moveTo(-13,2.5);g.quadraticCurveTo(-19,-2+maneWiggle,-24,1.2);g.stroke();
     g.fillStyle='#8c3e0a';g.beginPath();g.arc(-24,1.2,3.5,0,Math.PI*2);g.fill();
 
-    // 3. КОНТРАСТНАЯ ЧЁТКАЯ ПЛАШКА С НАДПИСЬЮ "MUP" НА БОКУ ЛЬВА
-    g.fillStyle='#8f1523'; // глубокий красно-бордовый благородный фон
+    // 3. Плашка с надписью MUP
+    g.fillStyle='#8f1523';
     g.beginPath();
     g.roundRect ? g.roundRect(-4,-5,15,10,2.5) : g.rect(-4,-5,15,10);
     g.fill();
     g.strokeStyle='#ffffff';g.lineWidth=1.4;g.stroke();
 
-    // Яркие белые буквы MUP
     g.font='900 7px Inter,system-ui,sans-serif';
     g.textAlign='center';g.textBaseline='middle';
     g.fillStyle='#ffffff';
@@ -1504,6 +2073,7 @@ function gameRacket(){
 
     g.restore();
   }
+
   function drawBoom(g,cx,cy,age){
     const k=Math.min(1,age/0.8),R=9+52*k;
     g.save();g.globalCompositeOperation='lighter';
@@ -1516,7 +2086,6 @@ function gameRacket(){
       g.beginPath();g.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,2.6*(1-k)+0.6,0,7);
       g.fillStyle=(i%2?'rgba(255,180,90,':'rgba(255,110,110,')+(1-k).toFixed(2)+')';g.fill();
     }
-    // Осколки золотой энергии льва
     for(let j=0;j<6;j++){
       const sa=(j/6)*6.28+age*2.4, sr=R*0.85*(0.4+0.6*(j%2));
       g.fillStyle='rgba(234,179,8,'+(1-k).toFixed(2)+')';
@@ -1524,26 +2093,33 @@ function gameRacket(){
     }
     g.restore();
   }
-  const tau=t=>t*(1+0.06*t);
-  const ROCKET_SPEED = 0.58; // замедление полёта ракетки для приятного и драматичного нарастания
-  function flightT(){
-    const s = ((performance.now() - t0) / 1000) * ROCKET_SPEED;
+
+  function flightT(roundTime){
+    if(roundTime<WAIT_MS) return 0;
+    const s=((roundTime-WAIT_MS)/1000)*ROCKET_SPEED;
     return tau(s);
   }
-  function curT(){return tStop ? tStop : (phase==='flight' ? flightT() : 0)}
+  function curT(roundTime){
+    if(phase==='betting') return 0;
+    if(phase==='done') return Math.max(0,Math.log(Math.max(1,crash))/RK.k);
+    return flightT(roundTime);
+  }
+
   const warpStars=[];
   for(let i=0;i<32;i++){warpStars.push({x:Math.random()*400, y:16+Math.random()*260, sp:0.5+Math.random()*1.5, r:0.6+Math.random()*1.2});}
-  function draw(){
+
+  function draw(roundTime){
     const {g,W,H}=fitCanvas(cvs);
     const pad={l:48,r:14,t:16,b:26},kk=RK.k;
-    const xMax=Math.max(3.2,tStop?tStop*1.15:curT()*1.15+0.6);
+    const tc=curT(roundTime);
+    const xMax=Math.max(3.2,tStop?tStop*1.15:tc*1.15+0.6);
     const yMax=Math.max(1.8,Math.exp(kk*xMax));
     const X=x=>pad.l+(x/xMax)*(W-pad.l-pad.r);
     const Y=m=>H-pad.b-((m-1)/(yMax-1))*(H-pad.t-pad.b);
 
     // Космические звёзды и варп-полосы
     g.save();
-    const starSp = phase==='flight' ? (1 + (cur-1)*2.5) : 0.6;
+    const starSp = phase==='flight' ? (1 + (cur-1)*2.5) : (phase==='betting'?0.3:0.6);
     warpStars.forEach(st => {
       st.x -= st.sp * starSp;
       if(st.x < pad.l) st.x = W - pad.r;
@@ -1568,7 +2144,7 @@ function gameRacket(){
     for(let s=1;s<=Math.floor(xMax);s++){const x=X(s);
       g.strokeStyle='rgba(255,255,255,.05)';g.beginPath();g.moveTo(x,pad.t);g.lineTo(x,H-pad.b);g.stroke();
       g.fillStyle='#8b95ad';g.fillText(s+'с',x,H-11);}
-    const tc=curT();
+
     g.setLineDash([3,4]);g.strokeStyle='rgba(152,160,255,.30)';g.beginPath();
     for(let i=0;i<=140;i++){const x=tc+(xMax-tc)*i/140,m=Math.exp(kk*x);i?g.lineTo(X(x),Y(Math.min(m,yMax))):g.moveTo(X(x),Y(m));}
     g.stroke();g.setLineDash([]);
@@ -1582,6 +2158,7 @@ function gameRacket(){
     for(let i=1;i<=180;i++){const x=tc*i/180;g.lineTo(X(x),Y(Math.exp(kk*x)));}
     g.stroke();g.lineWidth=1;
     const mm=Math.min(cur,yMax),cx=X(tc),cy=Y(mm);
+
     if(cashed&&cashX<yMax){
       const ky=Y(Math.min(cashX,yMax));
       g.setLineDash([3,3]);g.strokeStyle='rgba(61,220,150,.8)';g.beginPath();g.moveTo(pad.l,ky);g.lineTo(W-pad.r,ky);g.stroke();g.setLineDash([]);
@@ -1600,8 +2177,9 @@ function gameRacket(){
       const right=cx>W-72;g.fillStyle='#ff9db1';g.textAlign=right?'right':'left';g.font='11px Inter,system-ui,sans-serif';
       g.fillText('стоп ×'+fx(crash),cx+(right?-6:6),pad.t+10);
     }
+
     if(!tStop){
-      // шлейф позади ракеты
+      // Шлейф
       const seg=0.3,steps=9;
       g.save();g.globalCompositeOperation='lighter';
       for(let i=0;i<steps;i++){
@@ -1613,10 +2191,10 @@ function gameRacket(){
         g.stroke();
       }
       g.restore();
-      // направление полёта
+
       const t2=tc+0.05;
       const ang=Math.atan2(Y(Math.min(Math.exp(kk*t2),yMax))-cy,X(t2)-cx);
-      const sp=Math.min(2.4,(cur-1)/1.2)*(0.9+Math.random()*0.2);
+      const sp=phase==='betting'?0.1:Math.min(2.4,(cur-1)/1.2)*(0.9+Math.random()*0.2);
       g.save();g.shadowColor=hexA(bc,.85);g.shadowBlur=14;
       drawRocket(g,cx,cy,ang,bc,sp);
       g.restore();
@@ -1624,81 +2202,301 @@ function gameRacket(){
       drawBoom(g,cx,cy,(performance.now()-boomT)/1000);
     }
   }
-  function render(){
-    rx.textContent='×'+fx(cur);
-    const crashed=phase==='done'&&!cashed;
-    rx.classList.toggle('bad',crashed);
-    rx.style.color=crashed?'':(phase==='idle'?'':band(cur));
-    rp.textContent=phase==='flight'?'полёт':(phase==='done'?'остановка':'готов к запуску');
-    if(phase==='flight'&&cashed){
-      go.disabled=true;                                  // ракета летит до своей остановки
-      go.textContent=`ЗАБРАНО ×${fx(cashX)} · ждём остановку (×${fx(cur)})`;
-    }else if(phase==='flight'){
-      const can=cur>=MINCASH;
-      go.disabled=!can;
-      go.textContent=can?`ЗАБРАТЬ ×${fx(cur)}  (+${fmt(S.bet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)} · сейчас ×${fx(cur)}`;
-    }else{
+
+  function render(roundTime){
+    if(phase==='betting'){
+      const leftSec=Math.max(0,(WAIT_MS-roundTime)/1000);
+      rx.textContent='×1.00';
+      rx.className='xbig';
+      rx.style.color='#3ddc96';
+      rp.textContent='СТАРТ ЧЕРЕЗ '+leftSec.toFixed(1)+'с';
       go.disabled=false;
-      go.textContent=phase==='done'?'ЗАПУСТИТЬ СНОВА · '+S.bet+' ⬦':'ЗАПУСТИТЬ · '+S.bet+' ⬦';
-    }
-    draw();
-  }
-  function loop(){
-    if(dead)return;
-    const t=flightT();
-    cur=Math.exp(RK.k*t);
-    if(!cashed&&autoOn&&autoX<crash&&cur>=autoX)autoCash();   // авто-вывод; полёт продолжается
-    if(cur>=crash){cur=crash;tStop=t;stop();return}
-    render();raf=requestAnimationFrame(loop);
-  }
-  function stop(){
-    cancelAnimationFrame(raf);phase='done';cur=crash;boomT=performance.now();if(!cashed)tgHaptic('lose');   // cashed сохраняем: итог зависит от того, забрали ли
-    if(cashed){                                   // забрали раньше — итог всё равно по остановке ракеты
-      rr.className='result good';
-      rr.innerHTML=`Итог раунда: ракета остановилась на <b style="color:${band(crash)}">×${fx(crash)}</b>, ваш вывод был на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}).`;
+      if(inRound){
+        go.textContent=`СТАВКА ${userBet} ⬦ ПРИНЯТА · (ОТМЕНИТЬ)`;
+        go.style.background='linear-gradient(135deg,#10b981,#059669)';
+      }else{
+        go.textContent=`ПОСТАВИТЬ · ${S.bet} ⬦`;
+        go.style.background='';
+      }
+    }else if(phase==='flight'){
+      rx.textContent='×'+fx(cur);
+      rx.className='xbig';
+      rx.style.color=band(cur);
+      rp.textContent='ПОЛЁТ РАКЕТКИ';
+      if(inRound&&!cashed){
+        const can=cur>=MINCASH;
+        go.disabled=!can;
+        go.textContent=can?`ЗАБРАТЬ ×${fx(cur)} (+${fmt(userBet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)} · сейчас ×${fx(cur)}`;
+        go.style.background='';
+      }else if(inRound&&cashed){
+        go.disabled=true;
+        go.textContent=`ЗАБРАНО ×${fx(cashX)} · ждём финал (×${fx(cur)})`;
+        go.style.background='';
+      }else{
+        go.disabled=false;
+        go.textContent=nextRoundBet?`СТАВКА НА СЛЕД. РАУНД (${S.bet} ⬦) ПРИНЯТА`:`СТАВКА НА СЛЕД. РАУНД · ${S.bet} ⬦`;
+        go.style.background=nextRoundBet?'linear-gradient(135deg,#10b981,#059669)':'';
+      }
     }else{
-      rr.className='result bad';
-      rr.innerHTML=crash<=1
-        ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Ставка ${S.bet} ⬦ (≈ ${fmtRub(S.bet)}) сгорела.`
-        :`Ракета остановилась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Ставка ${S.bet} ⬦ (≈ ${fmtRub(S.bet)}) сгорела.`;
+      // phase === 'done'
+      rx.textContent='×'+fx(crash);
+      rx.className='xbig bad';
+      rx.style.color='';
+      const toNext=Math.max(1,Math.ceil((ROUND_MS-roundTime)/1000));
+      rp.textContent=`ОСТАНОВКА ×${fx(crash)} · СЛЕД. РАУНД ${toNext}с`;
+      go.disabled=false;
+      go.textContent=nextRoundBet?`СТАВКА НА СЛЕД. РАУНД (${S.bet} ⬦) ПРИНЯТА`:`СТАВКА НА СЛЕД. РАУНД · ${S.bet} ⬦`;
+      go.style.background=nextRoundBet?'linear-gradient(135deg,#10b981,#059669)':'';
     }
-    pushRHist(crash);                             // в ленте — итоговый коэффициент раунда
-    (function boom(){
-      if(dead)return;
-      render();
-      if(performance.now()-boomT<950)raf=requestAnimationFrame(boom);
-    })();
+    draw(roundTime);
+    renderBotBets(roundTime);
   }
-  function start(){
-    if(S.balance<S.bet){rr.className='result bad';rr.textContent='Недостаточно токенов — пополни баланс.';return}
-    crash=sampleCrash();place(S.bet,'Ракетка');cashed=false;cashX=0;cashAmt=0;
-    tStop=0;t0=performance.now();phase='flight';cur=1;
-    rr.className='result';
-    rr.textContent=autoOn?`Полёт начат. Авто-вывод сработает на ×${fx(autoX)}.`:'Полёт начат. Забирай, пока ракета не остановилась.';
-    loop();
+
+  function renderBotBets(roundTime){
+    const countEl=q('#roundPlayersCount');
+    const bankEl=q('#roundTotalBank');
+    const listEl=q('#botBetsList');
+    if(!listEl)return;
+
+    const totalPlayers=currentRoundBots.length+(inRound?1:0);
+    const totalTokens=currentRoundBank+(inRound?userBet:0);
+
+    if(countEl)countEl.textContent=`(${totalPlayers})`;
+    if(bankEl)bankEl.textContent=`${fmtRub(totalTokens)} (${fmt(totalTokens)} ⬦)`;
+
+    const now=performance.now();
+    if(now-lastBotsRenderTime<120 && phase==='flight') return;
+    lastBotsRenderTime=now;
+
+    let html='';
+
+    if(inRound){
+      const pr=tgProfile();
+      let stHtml='';
+      if(phase==='betting'){
+        stHtml='<span class="bot-bet-st flight">Ожидание</span>';
+      }else if(phase==='flight'){
+        if(cashed){
+          stHtml=`<span class="bot-bet-st win">×${fx(cashX)} (+${fmt(cashAmt)} ⬦)</span>`;
+        }else{
+          stHtml=`<span class="bot-bet-st flight">В игре (×${fx(cur)})</span>`;
+        }
+      }else{
+        if(cashed){
+          stHtml=`<span class="bot-bet-st win">×${fx(cashX)} (+${fmt(cashAmt)} ⬦)</span>`;
+        }else{
+          stHtml='<span class="bot-bet-st lose">Сгорело</span>';
+        }
+      }
+
+      html+=`
+      <div class="bot-bet-row user-row">
+        <div class="bot-bet-left">
+          <div class="bot-bet-av" style="background:#ffcf6b;color:#0f172a;font-weight:900">${pr.avatar||'Я'}</div>
+          <div>
+            <div class="bot-bet-name" style="color:#ffcf6b">${pr.name} (Вы)</div>
+            <div class="bot-bet-amt">${fmt(userBet)} ⬦ ≈ ${fmtRub(userBet)}</div>
+          </div>
+        </div>
+        <div>${stHtml}</div>
+      </div>`;
+    }
+
+    for(let i=0;i<currentRoundBots.length;i++){
+      const b=currentRoundBots[i];
+      let stHtml='';
+
+      if(phase==='betting'){
+        stHtml='<span class="bot-bet-st flight">Ставка принята</span>';
+      }else if(phase==='flight'){
+        if(cur>=b.targetX&&b.targetX<=crash){
+          const winTk=Math.floor(b.bet*b.targetX);
+          stHtml=`<span class="bot-bet-st win">×${fx(b.targetX)} (+${fmt(winTk)} ⬦)</span>`;
+        }else{
+          stHtml='<span class="bot-bet-st flight">В игре</span>';
+        }
+      }else{
+        if(b.targetX<=crash){
+          const winTk=Math.floor(b.bet*b.targetX);
+          stHtml=`<span class="bot-bet-st win">×${fx(b.targetX)} (+${fmt(winTk)} ⬦)</span>`;
+        }else{
+          stHtml='<span class="bot-bet-st lose">Сгорело</span>';
+        }
+      }
+
+      html+=`
+      <div class="bot-bet-row">
+        <div class="bot-bet-left">
+          <div class="bot-bet-av" style="background:${b.color}">${b.initials}</div>
+          <div>
+            <div class="bot-bet-name">${b.name}</div>
+            <div class="bot-bet-amt">${fmt(b.bet)} ⬦ ≈ ${fmtRub(b.bet)}</div>
+          </div>
+        </div>
+        <div>${stHtml}</div>
+      </div>`;
+    }
+
+    listEl.innerHTML=html;
   }
+
   function cash(target){
-    if(phase!=='flight')return;
-    if(cashed)return;
-    if(cur<MINCASH)return;                       // раньше ×1.01 забрать нельзя
-    cashX=+((target!=null?target:cur).toFixed(2));   // округляем до сотых: сумма кэшаута совпадает с надписью
+    if(phase!=='flight'||!inRound||cashed)return;
+    if(cur<MINCASH)return;
+    cashX=+((target!=null?target:cur).toFixed(2));
     if(target!=null)cur=Math.max(cur,target);
-    cashAmt=Math.floor(S.bet*cashX);
-    cashed=true;                                 // ракета продолжает полёт до своей остановки
+    cashAmt=Math.floor(userBet*cashX);
+    cashed=true;
     win(cashAmt,'Ракетка','кэшаут ×'+fx(cashX));
     rr.className='result good';
-    rr.innerHTML=`Забрано на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}). Ракета летит дальше — итог появится, когда она остановится.`;
-    render();
+    rr.innerHTML=`Забрано на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}). Ракета летит дальше.`;
+    render(Date.now()%ROUND_MS);
   }
-  function autoCash(){cash(autoX);}
-  go.addEventListener('click',()=>{phase==='flight'?cash():start()});
-  axTg.addEventListener('click',()=>{autoOn=!autoOn;S.autoOn=autoOn;save();syncAuto();if(phase!=='flight')render()});
+
+  function loop(){
+    if(dead)return;
+    const now=Date.now();
+    const rIdx=Math.floor(now/ROUND_MS);
+    const rTime=now%ROUND_MS;
+
+    // Переход в новый 30-секундный раунд
+    if(rIdx!==curRound){
+      curRound=rIdx;
+      crash=sampleCrash(curRound);
+      currentRoundBots=generateBotsForRound(curRound);
+      currentRoundBank=currentRoundBots.reduce((sum,b)=>sum+b.bet,0);
+      lastBotsRenderTime=0;
+      roundCrashed=false;
+      boomT=0;
+      cashed=false;
+      cashX=0;
+      cashAmt=0;
+      tStop=0;
+
+      // Проверяем авто-ставку или предварительную ставку на раунд
+      if(autoBet||nextRoundBet){
+        nextRoundBet=false;
+        if(S.balance>=S.bet){
+          userBet=S.bet;
+          place(userBet,'Ракетка');
+          inRound=true;
+          rr.className='result';
+          rr.textContent=`Ставка ${userBet} ⬦ на новый раунд принята!`;
+        }else{
+          inRound=false;
+          rr.className='result bad';
+          rr.textContent='Недостаточно токенов для ставки на новый раунд.';
+        }
+      }else{
+        inRound=false;
+      }
+    }
+
+    if(rTime<WAIT_MS){
+      phase='betting';
+      cur=1.00;
+      tStop=0;
+    }else{
+      const flightSec=(rTime-WAIT_MS)/1000;
+      const s=flightSec*ROCKET_SPEED;
+      const t=tau(s);
+      const potX=+Math.exp(RK.k*t).toFixed(2);
+
+      if(potX<crash){
+        phase='flight';
+        cur=potX;
+        tStop=0;
+        if(inRound&&!cashed&&autoOn&&cur>=autoX&&autoX<=crash){
+          cash(autoX);
+        }
+      }else{
+        phase='done';
+        cur=crash;
+        tStop=Math.log(Math.max(1,crash))/RK.k;
+        if(!roundCrashed){
+          roundCrashed=true;
+          boomT=performance.now();
+          pushRHist(crash);
+          if(inRound&&!cashed){
+            tgHaptic('lose');
+            rr.className='result bad';
+            rr.innerHTML=crash<=1
+              ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Ставка ${userBet} ⬦ сгорела.`
+              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Ставка ${userBet} ⬦ сгорела.`;
+          }else if(inRound&&cashed){
+            rr.className='result good';
+            rr.innerHTML=`Итог раунда: остановка на <b style="color:${band(crash)}">×${fx(crash)}</b>, вывод на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b>.`;
+          }
+        }
+      }
+    }
+
+    render(rTime);
+    raf=requestAnimationFrame(loop);
+  }
+
+  go.addEventListener('click',()=>{
+    const now=Date.now();
+    const rTime=now%ROUND_MS;
+    if(rTime<WAIT_MS){
+      // Фаза приёма ставок
+      if(inRound){
+        // Отмена ставки
+        inRound=false;
+        S.balance+=userBet;
+        save();syncUI();
+        rr.className='result';
+        rr.textContent='Ставка отменена, токены возвращены.';
+      }else{
+        if(S.balance<S.bet){
+          rr.className='result bad';
+          rr.textContent='Недостаточно токенов — пополни баланс.';
+          return;
+        }
+        userBet=S.bet;
+        place(userBet,'Ракетка');
+        inRound=true;
+        cashed=false;cashX=0;cashAmt=0;
+        rr.className='result';
+        rr.textContent=`Ставка ${userBet} ⬦ принята! Полёт начнётся через ${Math.ceil((WAIT_MS-rTime)/1000)}с.`;
+      }
+      render(rTime);
+    }else if(phase==='flight'){
+      if(inRound&&!cashed){
+        cash();
+      }else if(!inRound){
+        nextRoundBet=!nextRoundBet;
+        rr.className='result';
+        rr.textContent=nextRoundBet?'Ставка будет сделана в начале следующего раунда!':'Ставка на следующий раунд отменена.';
+        render(rTime);
+      }
+    }else{
+      // phase === 'done'
+      nextRoundBet=!nextRoundBet;
+      rr.className='result';
+      rr.textContent=nextRoundBet?'Ставка будет сделана в начале следующего раунда!':'Ставка на следующий раунд отменена.';
+      render(rTime);
+    }
+  });
+
+  axTg.addEventListener('click',()=>{
+    autoOn=!autoOn;S.autoOn=autoOn;save();syncAuto();
+  });
+  abTg.addEventListener('click',()=>{
+    autoBet=!autoBet;S.autoBet=autoBet;save();syncAutoBet();
+    rr.className='result';
+    rr.textContent=autoBet?'Авто-ставка включена: ставка будет ставиться в каждом раунде.':'Авто-ставка выключена.';
+  });
   axIn.addEventListener('input',()=>{
     const v=Math.min(RKMAX,Math.max(MINCASH,+axIn.value.replace(',','.')||1.5));
-    autoX=v;S.autoX=v;save();if(phase!=='flight')render();
+    autoX=v;S.autoX=v;save();
   });
   axIn.addEventListener('blur',()=>{axIn.value=fx(autoX)});
-  wireBet(a,render);syncAuto();render();
+
+  wireBet(a,()=>{render(Date.now()%ROUND_MS)});
+  syncAuto();syncAutoBet();
+  loop();
+
   return ()=>{dead=true;cancelAnimationFrame(raf)};
 }
 
@@ -3456,6 +4254,9 @@ window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для стары
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
 const startHash = (window.location.hash || '').replace('#', '');
 tgInit();tgRegister();syncUI();
+initWheel();
+updateModesOnline();
+setInterval(updateModesOnline, 30000);
 if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop'){
   play(startHash);
 } else {
