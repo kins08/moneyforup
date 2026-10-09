@@ -227,7 +227,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .online-dot{width:6px;height:6px;border-radius:50%;background:#3ddc96;box-shadow:0 0 8px #3ddc96;animation:onlinePulse 1.8s infinite ease-in-out}
 @keyframes onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.85)}}
 
-/* VIP Карточка */
+/* VIP Ранги кэшбэка */
 .vip-card{background:linear-gradient(135deg,#1e1b2e,#171424);border:1px solid rgba(168,85,247,.32);border-radius:20px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .vip-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .vip-title{font-size:16px;font-weight:850;color:#fff;display:flex;align-items:center;gap:6px}
@@ -237,7 +237,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .vip-bar{height:100%;background:linear-gradient(90deg,#8b5cf6,#d946ef);border-radius:6px;transition:width .4s ease}
 .vip-sub{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600}
 
-/* Колесо Фортуны карточка */
+/* Колесо Фортуны карточка на витрине */
 .wheel-featured-card{background:linear-gradient(145deg,#1f1a30,#141022);border:1.5px solid rgba(168,85,247,.38);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s,border-color .2s;padding:15px 16px}
 .wheel-featured-card:hover{transform:translateY(-2px);border-color:rgba(168,85,247,.65)}
 .wfc-body{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -249,24 +249,26 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .wfc-status{font-size:10.5px;font-weight:850;color:#3ddc96;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35);padding:3px 8px;border-radius:8px}
 .wfc-status.wait{color:#ffcf6b;background:rgba(255,207,107,.15);border-color:rgba(255,207,107,.35)}
 
-/* Модалка Колеса */
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,7,12,.86);backdrop-filter:blur(14px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
-.wheel-popup{background:linear-gradient(180deg,#1c172b,#120e1d);border:1.5px solid rgba(168,85,247,.4);border-radius:26px;max-width:380px;width:100%;padding:24px 20px;text-align:center;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.8)}
-.modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;font-size:14px;cursor:pointer}
-.modal-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
-.wheel-wrapper{position:relative;width:260px;height:260px;margin:12px auto;display:flex;align-items:center;justify-content:center}
-.wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:24px;color:#ffcf6b;z-index:10;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
-#wheelCanvas{width:260px;height:260px;border-radius:50%;box-shadow:0 0 24px rgba(168,85,247,.35),0 0 0 4px #261d3b}
+/* Крупный таймер раунда Ракетки */
+.racket-round-timer-box{margin:12px auto 10px;padding:12px 16px;text-align:center;background:linear-gradient(135deg,#1b1629,#130f1e);border:1.5px solid rgba(168,85,247,.45);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.5),inset 0 0 16px rgba(168,85,247,.12);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rrt-label{font-size:11px;font-weight:800;color:#c084fc;letter-spacing:.06em;text-transform:uppercase}
+.rrt-val{font-size:34px;font-weight:900;color:#3ddc96;letter-spacing:-.02em;text-shadow:0 0 20px rgba(61,220,150,.45);line-height:1.15;margin:3px 0}
+.rrt-val.flight{color:#a175ff;text-shadow:0 0 20px rgba(161,117,255,.45)}
+.rrt-val.done{color:#ff7386;text-shadow:0 0 20px rgba(255,115,134,.45)}
+.rrt-unit{font-size:18px;margin-left:2px;font-weight:800;opacity:.85}
+.rrt-sub{font-size:11px;color:var(--muted);font-weight:600}
 
 /* Живые ставки в Ракетке */
-.bot-bets-box{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.bot-bets-box{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .bot-bets-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--line);font-size:12px}
-.bot-bets-list{max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
-.bot-bet-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:rgba(255,255,255,.01);transition:background .2s}
+.bot-bets-list{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.bot-bet-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.01);transition:background .2s}
 .bot-bet-row.user-row{background:rgba(255,207,107,.08);border-left:3px solid #ffcf6b}
 .bot-bet-left{display:flex;align-items:center;gap:10px}
+.bot-bet-av-wrap{position:relative;width:30px;height:30px;flex-shrink:0}
+.bot-bet-img{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#181324;border:1px solid rgba(255,255,255,.14);display:block}
 .bot-bet-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
-.bot-bet-name{font-size:12px;font-weight:700;color:#e2e8f0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bot-bet-name{font-size:12px;font-weight:700;color:#e2e8f0;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bot-bet-amt{font-size:11.5px;color:var(--muted);font-weight:600}
 .bot-bet-st{font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px;letter-spacing:.02em}
 .bot-bet-st.flight{color:#94a3b8;background:rgba(148,163,184,.1)}
@@ -318,28 +320,28 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
 </div>
 
-<!-- VIP-ранг (Вариант 5) -->
+<!-- Ранги кэшбэка по пополнениям -->
 <div class="vip-card" id="vipCard">
   <div class="vip-top">
-    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Новичок</span> <span class="vip-tag">VIP Ранг</span></div>
-    <div class="vip-perks" id="vipPerks">Кэшбэк 1.0% · Стейкинг 1.0%/сут</div>
+    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Бронза</span> <span class="vip-tag">Кэшбэк Ранг</span></div>
+    <div class="vip-perks" id="vipPerks">Кэшбэк 2.0% за депозит</div>
   </div>
   <div class="vip-bar-wrap">
     <div class="vip-bar" id="vipBar" style="width:0%"></div>
   </div>
   <div class="vip-sub">
-    <span id="vipWagered">Оборот: 0 ⬦</span>
-    <span id="vipNext">До ранга «Игрок»: 1 000 ⬦</span>
+    <span id="vipWagered">Пополнено: 0 ₽</span>
+    <span id="vipNext">До ранга «Серебро»: 500 ₽</span>
   </div>
 </div>
 
-<!-- Колесо Фортуны (Вариант 4) -->
-<div class="wheel-featured-card" id="btnOpenWheel">
+<!-- Колесо Фортуны (Отдельный режим) -->
+<div class="wheel-featured-card" data-game="wheel" id="btnOpenWheel">
   <div class="wfc-body">
     <div class="wfc-left">
       <div class="wfc-badge">🎁 БЕСПЛАТНЫЙ СПИН РАЗ В 12 ЧАСОВ</div>
       <div class="wfc-title">Колесо Фортуны</div>
-      <div class="wfc-desc">Вращайте колесо и забирайте гарантированные токены и редкие бонусы!</div>
+      <div class="wfc-desc">Вращайте отдельное колесо и забирайте гарантированные токены и редкие призы!</div>
     </div>
     <div class="wfc-right">
       <div class="wfc-wheel-icon">🎡</div>
@@ -475,29 +477,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <button class="control" id="withdrawGo" style="margin-top:12px">Запросить вывод</button>
   <div class="result" id="withdrawMsg" style="display:none;margin-top:8px"></div>
 </div>
-<div class="section"><b>Стейкинг</b><span class="muted small">1 % в сутки</span></div>
-<div class="item">
-  <div class="row"><span class="muted small">В стейкинге</span><b><span id="stakeAmt">0</span> ⬦</b></div>
-  <div class="row" style="margin-top:6px"><span class="muted small">Начислено процентов</span><b style="color:var(--good)">+<span id="stakeAcc">0.00</span> ⬦</b></div>
-  <div class="row" style="margin-top:6px"><span class="muted small">Приносит в сутки</span><b>+<span id="stakePerDay">0.00</span> ⬦</b></div>
-  <div class="muted small" style="margin-top:9px;line-height:1.5">Ставка 1 % в сутки на сумму стейкинга. Проценты копятся по секундам, забирать можно когда угодно, тело стейкинга снимается в любой момент.</div>
-  <div class="betrow" style="margin-top:10px"><span class="muted small">Сумма</span>
-    <div class="chips" id="stakeChips">
-      <button class="chip" data-sk="100">100</button>
-      <button class="chip" data-sk="500">500</button>
-      <button class="chip" data-sk="1000">1000</button>
-      <button class="chip" data-sk="half">50 %</button>
-      <button class="chip" data-sk="all">макс</button>
-    </div>
-    <input class="betinput" id="stakeInput" type="number" min="1" step="1" inputmode="numeric" value="100" aria-label="Сумма стейкинга">
-  </div>
-  <div class="actions" style="margin-top:11px">
-    <button class="control" id="stakeAdd" style="margin:0">В стейкинг</button>
-    <button class="control ghost" id="stakeClaim" style="margin:0">Забрать проценты</button>
-    <button class="control ghost" id="stakeOut" style="margin:0">Снять всё</button>
-  </div>
-  <div class="result" id="stakeMsg" style="display:none"></div>
-</div>
 <div class="section"><b>Бонусы и Кэшбэк</b></div>
 <div class="item">
   <div>
@@ -511,9 +490,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
   <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
   <div>
-    <b>Кэшбэк 5 %</b>
-    <div class="muted small" style="margin:3px 0 8px" id="cashbackDesc">5 % от последнего пополнения (1 раз в неделю с последнего депозита).</div>
-    <button class="control" id="btnClaimCashback" style="margin-top:4px">Забрать кэшбэк</button>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>Кэшбэк за пополнение</b>
+      <span class="pill" id="cbRankBadge" style="color:#ffcf6b;font-weight:800">2.0%</span>
+    </div>
+    <div class="muted small" style="margin:3px 0 8px" id="cashbackDesc">Кэшбэк рассчитывается от суммы последнего пополнения и становится доступен ровно через 24 часа.</div>
+    <button class="control" id="btnClaimCashback" style="margin-top:4px" disabled>⏳ КЭШБЭК НЕДОСТУПЕН</button>
     <div class="result" id="msgCashback" style="display:none;margin-top:8px"></div>
   </div>
 </div>
@@ -550,7 +532,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div class="item"><b>01 · Поделись кодом или ссылкой</b><div class="muted small">Друг открывает приложение по вашей ссылке — он привязывается к вам.</div></div>
   <div class="item"><b>02 · Он пополняет баланс</b><div class="muted small">Любым способом: СБП или карты напрямую, криптовалюта (Coinso) или промокоды.</div></div>
   <div class="item"><b>03 · Вы получаете 15 % токенами</b><div class="muted small">Начисление приходит сразу после успешного платежа, на баланс, без ограничений по количеству.</div></div>
-  <div class="item"><b>04 · Токены можно пустить в стейкинг</b><div class="muted small">Реферальные начисления тоже работают под 1 % в сутки.</div></div>
+  <div class="item"><b>04 · Растите в рангах кэшбэка</b><div class="muted small">Чем выше общая сумма пополнений, тем выше процент кэшбэка (до 10 %) и бонусы.</div></div>
 </div>
 <p class="muted small" style="margin-top:10px;line-height:1.5">Самоприглашение, мультиаккаунты и накрутка запрещены — такие начисления отменяются.</p>
 </section>
@@ -594,21 +576,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 <button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
-<!-- Модальное окно Колеса Фортуны (Вариант 4) -->
-<div class="modal-overlay" id="wheelModal" style="display:none">
-  <div class="wheel-popup">
-    <button class="modal-close" id="wheelClose">✕</button>
-    <div class="modal-title">🎡 Колесо Фортуны</div>
-    <div class="muted small" style="margin-bottom:12px">Бесплатный спин раз в 12 часов с гарантированным призом</div>
-    <div class="wheel-wrapper">
-      <div class="wheel-pointer">▼</div>
-      <canvas id="wheelCanvas" width="260" height="260"></canvas>
-    </div>
-    <button class="control" id="btnSpinWheel" style="margin-top:14px">КРУТИТЬ БЕСПЛАТНО</button>
-    <div class="result" id="wheelResult" style="margin-top:10px">Нажмите «КРУТИТЬ БЕСПЛАТНО», чтобы запустить рулетку!</div>
-  </div>
-</div>
-
 </div>
 
 <script>
@@ -619,6 +586,13 @@ const qa=(s,el=root)=>[...el.querySelectorAll(s)];
 const fmt=n=>Math.round(n).toLocaleString('ru-RU');
 const fx=(n,d=2)=>(Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d);
 const sgn=n=>(n>0?'+':'')+fmt(n);
+function fmtHms(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const sec=s%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
 /* общая гамма по коэффициентам: 1-1.5 зелёный, 1.5-2.5 фиолетовый, 2.5-5 красный, 5+ жёлтый */
 const BANDS=[[5,'#ffcf6b'],[2.5,'#ff7386'],[1.5,'#a175ff'],[1,'#3ddc96']];
 const band=x=>{for(const b of BANDS)if(x>=b[0])return b[1];return '#8b94ab'};
@@ -789,7 +763,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,stake:{amount:0,since:0},termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,lastDeposit:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -804,18 +778,9 @@ function ensureRefCode(){
 }
 const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
 try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
-function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){} }
 function place(bet,game){
-  const oldVip=(typeof getVipInfo==='function')?getVipInfo(S.wagered).cur:{id:0};
   S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
-  if(typeof getVipInfo==='function'){
-    const newVip=getVipInfo(S.wagered).cur;
-    if(newVip.id>oldVip.id&&newVip.bonus>0){
-      S.balance+=newVip.bonus;
-      addHist('VIP бонус · '+newVip.name,newVip.bonus);
-      tgHaptic('win');
-    }
-  }
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
@@ -829,8 +794,23 @@ function win(amount,game,note){
   save();syncUI();
 }
 function deposit(tk,label,refBonus){
-  S.balance+=tk;addHist('Пополнение · '+label,tk);
+  const oldVip=(typeof getVipInfo==='function')?getVipInfo(S.totalDeposited||0).cur:{id:0};
+  const rub=Math.max(1,Math.round(tk/RATE));
+  S.totalDeposited=(S.totalDeposited||0)+rub;
+  S.lastDeposit=rub;
+  S.lastDepositAt=Date.now();
+  S.cashbackClaimed=false;
+  S.balance+=tk;
+  addHist('Пополнение · '+label,tk);
   if(refBonus&&refBonus>0)S.refEarned=(S.refEarned||0)+refBonus;   // сервер начисляет рефереру 15 %
+  if(typeof getVipInfo==='function'){
+    const newVip=getVipInfo(S.totalDeposited).cur;
+    if(newVip.id>oldVip.id&&newVip.bonus>0){
+      S.balance+=newVip.bonus;
+      addHist('Ранг кэшбэка · '+newVip.name,newVip.bonus);
+      tgHaptic('win');
+    }
+  }
   save();syncUI();
 }
 /* ---------- соглашение и политика конфиденциальности ---------- */
@@ -839,7 +819,7 @@ const TERMS=[
   ['2. Виртуальные токены платформы','Токены (⬦) представляют собой внутрипрограммные условные расчётные единицы (баллы) симулятора. Токены не имеют реальной денежной стоимости, не являются платёжным средством, валютой, криптовалютой или финансовым активом и не могут обмениваться на реальные деньги за пределами сервиса. Условное соотношение 10 ⬦ = 1 ₽ используется лишь для наглядности отображения баланса.'],
   ['3. Добровольные пожертвования (донаты)','Любые переводы и пополнения на платформе совершаются пользователем исключительно в качестве добровольного безвозмездного пожертвования (ст. 582 ГК РФ) на техническое обслуживание серверов, хостинг и развитие программного комплекса. Пожертвование не является возмездной сделкой или оплатой товаров/услуг и возврату не подлежит. В благодарность за добровольную поддержку проекта пользователю начисляются бонусные токены симулятора.'],
   ['4. Правила аккаунта и безопасность','Пользователь обязуется добросовестно использовать функционал платформы, не использовать вредоносное ПО, баги кода, читы и автоматизированные скрипты. Создание мультиаккаунтов для накрутки бонусов запрещено — при выявлении нарушений начисленные баллы аннулируются.'],
-  ['5. Стейкинг и реферальная программа','Механики накопления (стейкинг 1 % в сутки) и реферальные поощрения (15 % токенами) являются элементами геймификации симулятора и не являются банковским вкладом, инвестиционной деятельностью или гарантированным доходом.'],
+  ['5. Ранги кэшбэка и реферальная программа','Механики возврата части пополнений (кэшбэк до 10 %) и реферальные поощрения (15 % токенами) являются элементами геймификации симулятора и не являются банковским вкладом, инвестиционной деятельностью или гарантированным доходом.'],
   ['6. Ограничение ответственности','Сервис предоставляется по принципу «КАК ЕСТЬ» («AS IS»). Администрация не несет ответственности за возможные перебои в работе сети Интернет, действия Telegram или сторонних сервисов. Соглашение может обновляться без специального уведомления.']
 ];
 
@@ -878,53 +858,6 @@ function faucet(n){
   save();syncUI();
 }
 
-/* ---------- стейкинг: 1 % в сутки (повышается с VIP) ---------- */
-const STAKE_RATE=0.01, DAY_MS=86400000;
-function stakeAccrued(st,now){
-  st=st||S.stake; now=now||Date.now();
-  if(!st)return 0;
-  const base=st.accruedBase||0;                       // проценты, накопленные ранее
-  if(!st.amount||!st.since)return base;
-  const vipRate = (typeof getVipInfo==='function') ? (getVipInfo(S.wagered).cur.stakePct / 100) : STAKE_RATE;
-  return base+st.amount*vipRate*Math.max(0,now-st.since)/DAY_MS;
-}
-function stakeAdd(v){
-  v=Math.floor(v);
-  if(!(v>0))return 'Введите сумму';
-  if(v>S.balance)return 'Недостаточно токенов на балансе';
-  const acc=stakeAccrued();                            // сохраняем уже накопленное
-  S.balance-=v;
-  S.stake={amount:(S.stake.amount||0)+v,since:Date.now(),accruedBase:acc};
-  addHist('Стейкинг · вложено',-v);
-  save();syncUI();return null;
-}
-function stakeClaim(){
-  const acc=stakeAccrued();
-  if(acc<0.01)return 'Пока нечего забирать';
-  S.balance+=acc;S.stake.since=Date.now();S.stake.accruedBase=0;
-  addHist('Стейкинг · проценты',Math.round(acc*100)/100);
-  save();syncUI();return acc;
-}
-function stakeOut(){
-  const acc=stakeAccrued(),body=S.stake.amount||0;
-  if(!body&&acc<0.01)return 'Стейкинг пуст';
-  S.balance+=body+acc;S.stake={amount:0,since:0};
-  addHist('Стейкинг · снято',Math.round((body+acc)*100)/100);
-  save();syncUI();return body+acc;
-}
-function syncStake(){
-  const now=Date.now(),acc=stakeAccrued(null,now),body=S.stake.amount||0;
-  const vipRate = (typeof getVipInfo==='function') ? (getVipInfo(S.wagered).cur.stakePct / 100) : STAKE_RATE;
-  const set=(id,val)=>{const e=q('#'+id);if(e)e.textContent=val};
-  set('stakeAmt',fmt(body));
-  set('stakeAcc',acc.toFixed(body?2:2));
-  set('stakePerDay',(body*vipRate).toFixed(2));
-  const addB=q('#stakeAdd'),cl=q('#stakeClaim'),out=q('#stakeOut');
-  if(addB)addB.disabled=S.balance<1;
-  if(cl)cl.disabled=acc<0.01;
-  if(out)out.disabled=!body&&acc<0.01;
-}
-setInterval(syncStake,1000);
 function addHist(label,delta){
   S.hist.unshift({label,delta,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
@@ -966,7 +899,6 @@ function syncUI(){
   const rl=q('#refLink');if(rl)rl.textContent=S.refLink||refLinkFor(code);
   const ri=q('#refInvited');if(ri)ri.textContent=S.refInvited||0;
   const re=q('#refEarned');if(re)re.textContent=fmt(S.refEarned||0)+' ⬦';
-  syncStake();
   syncBonusUI();
   withdrawSync();
   if(typeof syncVipUI==='function') syncVipUI();
@@ -1221,30 +1153,6 @@ const wGoEl=q('#withdrawGo');
 if(wGoEl)wGoEl.addEventListener('click',startWithdrawal);
 
 
-/* ---------- стейкинг: интерфейс ---------- */
-q('#stakeChips').addEventListener('click',e=>{
-  const b=e.target.closest('[data-sk]');if(!b)return;
-  const k=b.dataset.sk,inp=q('#stakeInput');
-  inp.value=k==='all'?Math.max(1,S.balance):(k==='half'?Math.max(1,Math.floor(S.balance/2)):k);
-  qa('#stakeChips .chip').forEach(c=>c.classList.toggle('on',c===b));
-});
-function stakeMsg(text,ok){
-  const m=q('#stakeMsg');if(!m)return;
-  if(!text){m.style.display='none';return}
-  m.style.display='block';m.className='result '+(ok===false?'bad':'good');m.innerHTML=text;
-}
-q('#stakeAdd').addEventListener('click',()=>{
-  const err=stakeAdd(q('#stakeInput').value);
-  stakeMsg(err?err:'Вложено <b>'+fmt(Math.floor(q('#stakeInput').value))+' ⬦</b> в стейкинг · 1 % в сутки',!err);
-});
-q('#stakeClaim').addEventListener('click',()=>{
-  const r=stakeClaim();
-  if(typeof r==='string')stakeMsg(r,false);else stakeMsg('Забрано <b>'+r.toFixed(2)+' ⬦</b> процентов',true);
-});
-q('#stakeOut').addEventListener('click',()=>{
-  const r=stakeOut();
-  if(typeof r==='string')stakeMsg(r,false);else stakeMsg('Снято <b>'+r.toFixed(2)+' ⬦</b> (тело + проценты)',true);
-});
 paySync();
 withdrawSync();
 
@@ -1288,27 +1196,32 @@ function syncBonusUI(){
       btnCh.disabled=false;
     }
   }
-  const btnCb=q('#btnClaimCashback'), descCb=q('#cashbackDesc');
+  const btnCb=q('#btnClaimCashback'), descCb=q('#cashbackDesc'), badgeCb=q('#cbRankBadge');
   if(btnCb&&descCb){
-    const WEEK_MS=7*24*3600*1000;
+    const DAY_MS=24*3600*1000;
     const now=Date.now();
-    const lastDep=S.lastDeposit||0;
-    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
-    if(!lastDep){
-      descCb.textContent='Кэшбэк 5 % станет доступен после первого пополнения.';
+    const lastDepRub=S.lastDeposit||0;
+    const lastDepTk=lastDepRub*RATE;
+    const info=(typeof getVipInfo==='function')?getVipInfo(S.totalDeposited||0):{cur:{cbPct:2.0}};
+    const cbPct=info.cur.cbPct;
+    if(badgeCb) badgeCb.textContent = cbPct.toFixed(1) + '%';
+    const cbAmt=Math.max(1,Math.round(lastDepTk*(cbPct/100)));
+    const leftMs=Math.max(0,((S.lastDepositAt||0)+DAY_MS)-now);
+
+    if(!lastDepRub){
+      descCb.textContent='Кэшбэк станет доступен после первого пополнения.';
       btnCb.disabled=true;
       btnCb.textContent='Пополните баланс для кэшбэка';
     }else if(S.cashbackClaimed){
-      descCb.textContent='Кэшбэк 5 % с последнего пополнения уже получен. Сделайте новое пополнение через 7 дней.';
+      descCb.textContent=`Кэшбэк ${cbPct.toFixed(1)}% за последнее пополнение (${fmtRub(lastDepTk)}) уже получен.`;
       btnCb.disabled=true;
       btnCb.textContent='Кэшбэк получен ✓';
-    }else if(S.lastCashbackAt&&(now-S.lastCashbackAt<WEEK_MS)){
-      const daysLeft=Math.ceil((WEEK_MS-(now-S.lastCashbackAt))/(24*3600*1000));
-      descCb.textContent=`Кэшбэк доступен раз в неделю. Доступно через ${daysLeft} дн.`;
+    }else if(leftMs>0){
+      descCb.innerHTML=`Кэшбэк <b>${cbPct.toFixed(1)}%</b> по последнему пополнению на ${fmtRub(lastDepTk)} (<b style="color:var(--good)">+${fmt(cbAmt)} ⬦</b>) станет доступен ровно через 24ч после пополнения.`;
       btnCb.disabled=true;
-      btnCb.textContent=`Ожидание (${daysLeft} дн.)`;
+      btnCb.textContent=`⏳ Доступно через ${fmtHms(leftMs)}`;
     }else{
-      descCb.innerHTML=`Доступен кэшбэк 5 % от последнего пополнения (${fmt(lastDep)} ⬦): <b style="color:var(--good)">+${fmt(cbAmt)} ⬦</b>`;
+      descCb.innerHTML=`Доступен кэшбэк <b>${cbPct.toFixed(1)}%</b> по последнему пополнению (${fmtRub(lastDepTk)}): <b style="color:var(--good)">+${fmt(cbAmt)} ⬦</b>!`;
       btnCb.disabled=false;
       btnCb.textContent=`Забрать кэшбэк (+${fmt(cbAmt)} ⬦)`;
     }
@@ -1368,6 +1281,24 @@ const btnClCb=q('#btnClaimCashback');
 if(btnClCb)btnClCb.addEventListener('click',async()=>{
   const btn=q('#btnClaimCashback'), msg=q('#msgCashback');
   btn.disabled=true;
+  const lastDepRub=S.lastDeposit||0;
+  if(!lastDepRub){
+    msg.className='result bad';msg.style.display='block';msg.textContent='Сначала пополните баланс';
+    btn.disabled=false;
+    return;
+  }
+  const DAY_MS=24*3600*1000;
+  const leftMs=Math.max(0,((S.lastDepositAt||0)+DAY_MS)-Date.now());
+  if(leftMs>0){
+    msg.className='result bad';msg.style.display='block';msg.textContent=`Кэшбэк станет доступен через ${fmtHms(leftMs)}`;
+    btn.disabled=true;
+    return;
+  }
+  const info=(typeof getVipInfo==='function')?getVipInfo(S.totalDeposited||0):{cur:{cbPct:2.0}};
+  const cbPct=info.cur.cbPct;
+  const lastDepTk=lastDepRub*RATE;
+  const cbAmt=Math.max(1,Math.round(lastDepTk*(cbPct/100)));
+
   if(IS_TG&&API_BASE){
     try{
       const res=await tgCall('/api/claim-cashback',{});
@@ -1388,22 +1319,16 @@ if(btnClCb)btnClCb.addEventListener('click',async()=>{
       msg.className='result bad';msg.style.display='block';msg.textContent='Ошибка соединения';
     }
   }else{
-    const lastDep=S.lastDeposit||0;
-    if(!lastDep){
-      msg.className='result bad';msg.style.display='block';msg.textContent='Сначала пополните баланс';
-      btn.disabled=false;
-      return;
-    }
-    const cbAmt=Math.max(1,Math.floor(lastDep*0.05));
     S.cashbackClaimed=true;
     S.lastCashbackAt=Date.now();
-    win(cbAmt,'Кэшбэк','5 %');
+    win(cbAmt,'Кэшбэк за пополнение',cbPct.toFixed(1)+' %');
     save();syncUI();
     msg.className='result good';msg.style.display='block';
-    msg.textContent=`Кэшбэк +${fmt(cbAmt)} ⬦ успешно зачислен!`;
+    msg.textContent=`Кэшбэк +${fmt(cbAmt)} ⬦ (${cbPct.toFixed(1)}%) успешно зачислен!`;
   }
   syncBonusUI();
 });
+setInterval(syncBonusUI, 1000);
 
 function copyText(text,btn,label){
   try{navigator.clipboard&&navigator.clipboard.writeText(text)}catch(e){}
@@ -1459,37 +1384,38 @@ function fitCanvas(cvs){
 }
 
 /* =======================================================================
-   VIP-СИСТЕМА (Вариант 5)
+   РАНГИ КЭШБЭКА (исходя из суммы пополнений в ₽)
    ======================================================================= */
-const VIP_RANKS = [
-  { id: 1, name: 'Новичок', icon: '🥉', wagerReq: 0, cbPct: 1.0, stakePct: 1.0, bonus: 0 },
-  { id: 2, name: 'Игрок', icon: '🥈', wagerReq: 5000, cbPct: 2.0, stakePct: 1.2, bonus: 200 },
-  { id: 3, name: 'Хайроллер', icon: '🥇', wagerReq: 25000, cbPct: 3.5, stakePct: 1.5, bonus: 1000 },
-  { id: 4, name: 'Аристократ', icon: '💎', wagerReq: 100000, cbPct: 5.5, stakePct: 1.8, bonus: 4000 },
-  { id: 5, name: 'Герцог', icon: '👑', wagerReq: 500000, cbPct: 8.0, stakePct: 2.2, bonus: 20000 }
+const CASHBACK_RANKS = [
+  { id: 1, name: 'Бронза', icon: '🥉', depReq: 0, cbPct: 2.0, bonus: 0 },
+  { id: 2, name: 'Серебро', icon: '🥈', depReq: 500, cbPct: 3.5, bonus: 250 },
+  { id: 3, name: 'Золото', icon: '🥇', depReq: 2000, cbPct: 5.0, bonus: 1000 },
+  { id: 4, name: 'Платина', icon: '💎', depReq: 5000, cbPct: 7.5, bonus: 3000 },
+  { id: 5, name: 'Бриллиант', icon: '👑', depReq: 15000, cbPct: 10.0, bonus: 10000 }
 ];
+const VIP_RANKS = CASHBACK_RANKS;
 
-function getVipInfo(wagered){
-  wagered = Math.max(0, wagered || 0);
-  let cur = VIP_RANKS[0];
+function getVipInfo(totalDep){
+  totalDep = Math.max(0, totalDep || 0);
+  let cur = CASHBACK_RANKS[0];
   let next = null;
-  for(let i = 0; i < VIP_RANKS.length; i++){
-    if(wagered >= VIP_RANKS[i].wagerReq){
-      cur = VIP_RANKS[i];
-      next = VIP_RANKS[i + 1] || null;
+  for(let i = 0; i < CASHBACK_RANKS.length; i++){
+    if(totalDep >= CASHBACK_RANKS[i].depReq){
+      cur = CASHBACK_RANKS[i];
+      next = CASHBACK_RANKS[i + 1] || null;
     }
   }
   let pct = 100;
   if(next){
-    const span = next.wagerReq - cur.wagerReq;
-    const progress = wagered - cur.wagerReq;
+    const span = next.depReq - cur.depReq;
+    const progress = totalDep - cur.depReq;
     pct = Math.min(100, Math.max(0, Math.floor((progress / span) * 100)));
   }
   return { cur, next, pct };
 }
 
 function syncVipUI(){
-  const info = getVipInfo(S.wagered || 0);
+  const info = getVipInfo(S.totalDeposited || 0);
   const iconEl = q('#vipIcon');
   const nameEl = q('#vipName');
   const perksEl = q('#vipPerks');
@@ -1499,16 +1425,16 @@ function syncVipUI(){
 
   if(iconEl) iconEl.textContent = info.cur.icon;
   if(nameEl) nameEl.textContent = info.cur.name;
-  if(perksEl) perksEl.textContent = `Кэшбэк ${info.cur.cbPct.toFixed(1)}% · Стейкинг ${info.cur.stakePct.toFixed(1)}%/сут`;
-  if(wagEl) wagEl.textContent = `Оборот: ${fmt(S.wagered || 0)} ⬦`;
+  if(perksEl) perksEl.textContent = `Кэшбэк ${info.cur.cbPct.toFixed(1)}% за пополнение`;
+  if(wagEl) wagEl.textContent = `Пополнено: ${fmt(S.totalDeposited || 0)} ₽`;
 
   if(info.next){
     if(barEl) barEl.style.width = info.pct + '%';
-    const leftWager = info.next.wagerReq - (S.wagered || 0);
-    if(nextEl) nextEl.textContent = `До «${info.next.name}»: ${fmt(leftWager)} ⬦ (+${fmt(info.next.bonus)} ⬦)`;
+    const leftDep = info.next.depReq - (S.totalDeposited || 0);
+    if(nextEl) nextEl.textContent = `До «${info.next.name}»: ${fmt(leftDep)} ₽ (+${fmt(info.next.bonus)} ⬦)`;
   } else {
     if(barEl) barEl.style.width = '100%';
-    if(nextEl) nextEl.textContent = 'Максимальный VIP-ранг достигнут!';
+    if(nextEl) nextEl.textContent = 'Максимальный ранг достигнут!';
   }
 }
 
@@ -1536,7 +1462,7 @@ function updateModesOnline(){
 }
 
 /* =======================================================================
-   КОЛЕСО ФОРТУНЫ (Вариант 4) — бесплатный спин раз в 12 часов
+   КОЛЕСО ФОРТУНЫ — отдельный режим (бесплатный спин раз в 12 часов)
    ======================================================================= */
 const WHEEL_COOLDOWN = 12 * 3600 * 1000;
 const WHEEL_SECTORS = [
@@ -1553,18 +1479,18 @@ const WHEEL_SECTORS = [
 let wheelAngle = 0;
 let isWheelSpinning = false;
 
-function drawWheelCanvas(angle = 0){
-  const cvs = q('#wheelCanvas');
+function drawWheelCanvas(cvs, angle = 0){
+  cvs = cvs || q('#wheelCanvas');
   if(!cvs) return;
   const ctx = cvs.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  const size = 260;
+  const size = 280;
   if(cvs.width !== size * dpr) cvs.width = size * dpr;
   if(cvs.height !== size * dpr) cvs.height = size * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, size, size);
 
-  const cx = size / 2, cy = size / 2, r = size / 2 - 8;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 10;
   const numSectors = WHEEL_SECTORS.length;
   const arc = (Math.PI * 2) / numSectors;
 
@@ -1591,16 +1517,16 @@ function drawWheelCanvas(angle = 0){
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = sec.text;
-    ctx.font = sec.jack ? '900 13px Inter,sans-serif' : '800 12px Inter,sans-serif';
+    ctx.font = sec.jack ? '900 14px Inter,sans-serif' : '800 13px Inter,sans-serif';
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = 4;
-    ctx.fillText(sec.label, r - 14, 0);
+    ctx.fillText(sec.label, r - 16, 0);
     ctx.restore();
   }
 
   // Центральный золотистый круг MUP
   ctx.beginPath();
-  ctx.arc(0, 0, 22, 0, Math.PI * 2);
+  ctx.arc(0, 0, 24, 0, Math.PI * 2);
   ctx.fillStyle = '#1c152d';
   ctx.fill();
   ctx.strokeStyle = '#ffcf6b';
@@ -1608,7 +1534,7 @@ function drawWheelCanvas(angle = 0){
   ctx.stroke();
 
   ctx.fillStyle = '#ffcf6b';
-  ctx.font = '900 12px Inter,sans-serif';
+  ctx.font = '900 13px Inter,sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('MUP', 0, 0);
@@ -1629,10 +1555,9 @@ function fmtWheelTime(ms){
   return `${h}ч ${String(m).padStart(2,'0')}м ${String(sec).padStart(2,'0')}с`;
 }
 
-function updateWheelStatus(){
+function updateWheelCardStatus(){
   const left = getWheelTimeLeft();
   const stEl = q('#wfcStatus');
-  const spinBtn = q('#btnSpinWheel');
   if(stEl){
     if(left === 0){
       stEl.className = 'wfc-status';
@@ -1642,155 +1567,159 @@ function updateWheelStatus(){
       stEl.textContent = 'ЧЕРЕЗ ' + fmtWheelTime(left);
     }
   }
-  if(spinBtn && !isWheelSpinning){
-    if(left === 0){
-      spinBtn.disabled = false;
-      spinBtn.textContent = 'КРУТИТЬ БЕСПЛАТНО';
-    } else {
-      spinBtn.disabled = true;
-      spinBtn.textContent = 'ПЕРЕЗАРЯДКА (' + fmtWheelTime(left) + ')';
-    }
-  }
 }
 
-function spinWheel(){
-  if(isWheelSpinning) return;
-  const left = getWheelTimeLeft();
-  if(left > 0) return;
+function gameWheel(){
+  const a = q('#gameArea');
+  if(!a) return () => {};
 
-  isWheelSpinning = true;
-  const spinBtn = q('#btnSpinWheel');
-  const resEl = q('#wheelResult');
-  if(spinBtn) { spinBtn.disabled = true; spinBtn.textContent = 'КОЛЕСО ВРАЩАЕТСЯ...'; }
-  if(resEl) { resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
+  a.innerHTML = `
+  <div class="wheel-stage" style="text-align:center">
+    <div class="hero" style="background:linear-gradient(145deg,#201934,#141024);padding:16px;border-radius:20px;border:1.5px solid rgba(168,85,247,.35);margin-bottom:14px">
+      <div class="wfc-badge" style="margin-bottom:8px">🎁 БЕСПЛАТНЫЙ СПИН РАЗ В 12 ЧАСОВ</div>
+      <div style="font-size:22px;font-weight:900;color:#fff">Колесо Фортуны</div>
+      <div class="muted small" style="margin-top:4px">Испытайте свою удачу и забирайте до +1 000 ⬦ каждые 12 часов!</div>
+    </div>
 
-  const rand = Math.random();
-  let targetIdx = 0;
-  if(rand < 0.35) targetIdx = (Math.random() < 0.5) ? 0 : 6;
-  else if(rand < 0.70) targetIdx = (Math.random() < 0.5) ? 1 : 4;
-  else if(rand < 0.86) targetIdx = 2;
-  else if(rand < 0.95) targetIdx = 3;
-  else if(rand < 0.985) targetIdx = 5;
-  else targetIdx = 7;
+    <div style="position:relative;width:280px;height:280px;margin:10px auto">
+      <div class="wheel-pointer" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:22px solid #ffcf6b;z-index:10;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))"></div>
+      <canvas id="wheelCanvas" width="280" height="280" style="width:280px;height:280px;display:block;border-radius:50%;box-shadow:0 0 30px rgba(168,85,247,.35)"></canvas>
+    </div>
 
-  const prize = WHEEL_SECTORS[targetIdx];
-  const numSectors = WHEEL_SECTORS.length;
-  const arc = (Math.PI * 2) / numSectors;
+    <button class="control" id="btnSpinWheel" style="margin-top:16px;background:linear-gradient(135deg,#9333ea,#7c3aed)">КРУТИТЬ БЕСПЛАТНО</button>
+    <div class="result" id="wheelResult" style="margin-top:10px">Нажмите «КРУТИТЬ БЕСПЛАТНО», чтобы запустить колесо.</div>
 
-  const extraRotations = 5 + Math.floor(Math.random() * 3);
-  const pointerAngle = -Math.PI / 2;
-  const sectorCenter = targetIdx * arc + arc / 2;
-  let finalTargetAngle = pointerAngle - sectorCenter;
-  while(finalTargetAngle < 0) finalTargetAngle += Math.PI * 2;
-  const totalTargetAngle = wheelAngle + extraRotations * Math.PI * 2 + (finalTargetAngle - (wheelAngle % (Math.PI * 2)));
+    <div class="item" style="margin-top:14px;text-align:left">
+      <b>Секторы Колеса Фортуны:</b>
+      <div class="statgrid" style="margin-top:8px">
+        <div class="stat" style="text-align:center"><span class="muted small">Стандарт</span><b style="color:#3b82f6">+25, +50 ⬦</b></div>
+        <div class="stat" style="text-align:center"><span class="muted small">Редкие</span><b style="color:#f59e0b">+100, +250, +500 ⬦</b></div>
+        <div class="stat" style="text-align:center"><span class="muted small">Джекпот</span><b style="color:#ffcf6b">+1 000 ⬦</b></div>
+      </div>
+    </div>
+  </div>`;
 
-  const startTime = performance.now();
-  const duration = 4800;
-  const startA = wheelAngle;
-  const diffA = totalTargetAngle - startA;
+  const cvs = q('#wheelCanvas', a);
+  const spinBtn = q('#btnSpinWheel', a);
+  const resEl = q('#wheelResult', a);
 
-  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+  drawWheelCanvas(cvs, wheelAngle);
 
-  function animate(now){
-    const elapsed = now - startTime;
-    const progress = Math.min(1, elapsed / duration);
-    const eased = easeOutCubic(progress);
-    wheelAngle = startA + diffA * eased;
-    drawWheelCanvas(wheelAngle);
-
-    if(progress < 1){
-      requestAnimationFrame(animate);
-    } else {
-      isWheelSpinning = false;
-      S.lastWheelSpin = Date.now();
-      faucet(prize.val);
-      save();
-      syncUI();
-      updateWheelStatus();
-      tgHaptic('win');
-
-      if(resEl){
-        resEl.className = 'result good';
-        resEl.innerHTML = `🎉 <b>ПОЗДРАВЛЯЕМ!</b> Вы выиграли <b style="color:#ffcf6b">+${prize.val} ⬦</b> (${fmtRub(prize.val)})! Награда зачислена.`;
+  function syncStatus(){
+    const left = getWheelTimeLeft();
+    updateWheelCardStatus();
+    if(spinBtn && !isWheelSpinning){
+      if(left === 0){
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'КРУТИТЬ БЕСПЛАТНО';
+      } else {
+        spinBtn.disabled = true;
+        spinBtn.textContent = 'ПЕРЕЗАРЯДКА (' + fmtWheelTime(left) + ')';
       }
     }
   }
-  requestAnimationFrame(animate);
-}
 
-function initWheel(){
-  const openBtn = q('#btnOpenWheel');
-  const modal = q('#wheelModal');
-  const closeBtn = q('#wheelClose');
-  const spinBtn = q('#btnSpinWheel');
+  function startSpin(){
+    if(isWheelSpinning) return;
+    const left = getWheelTimeLeft();
+    if(left > 0) return;
 
-  if(openBtn) openBtn.addEventListener('click', () => {
-    if(modal){
-      modal.style.display = 'flex';
-      drawWheelCanvas(wheelAngle);
-      updateWheelStatus();
+    isWheelSpinning = true;
+    if(spinBtn) { spinBtn.disabled = true; spinBtn.textContent = 'КОЛЕСО ВРАЩАЕТСЯ...'; }
+    if(resEl) { resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
+
+    const rand = Math.random();
+    let targetIdx = 0;
+    if(rand < 0.35) targetIdx = (Math.random() < 0.5) ? 0 : 6;
+    else if(rand < 0.70) targetIdx = (Math.random() < 0.5) ? 1 : 4;
+    else if(rand < 0.86) targetIdx = 2;
+    else if(rand < 0.95) targetIdx = 3;
+    else if(rand < 0.985) targetIdx = 5;
+    else targetIdx = 7;
+
+    const prize = WHEEL_SECTORS[targetIdx];
+    const numSectors = WHEEL_SECTORS.length;
+    const arc = (Math.PI * 2) / numSectors;
+
+    const extraRotations = 5 + Math.floor(Math.random() * 3);
+    const pointerAngle = -Math.PI / 2;
+    const sectorCenter = targetIdx * arc + arc / 2;
+    let finalTargetAngle = pointerAngle - sectorCenter;
+    while(finalTargetAngle < 0) finalTargetAngle += Math.PI * 2;
+    const totalTargetAngle = wheelAngle + extraRotations * Math.PI * 2 + (finalTargetAngle - (wheelAngle % (Math.PI * 2)));
+
+    const startTime = performance.now();
+    const duration = 4800;
+    const startA = wheelAngle;
+    const diffA = totalTargetAngle - startA;
+
+    function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+    function animate(now){
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeOutCubic(progress);
+      wheelAngle = startA + diffA * eased;
+      drawWheelCanvas(cvs, wheelAngle);
+
+      if(progress < 1){
+        requestAnimationFrame(animate);
+      } else {
+        isWheelSpinning = false;
+        S.lastWheelSpin = Date.now();
+        faucet(prize.val);
+        save();
+        syncUI();
+        syncStatus();
+        tgHaptic('win');
+
+        if(resEl){
+          resEl.className = 'result good';
+          resEl.innerHTML = `🎉 <b>ПОЗДРАВЛЯЕМ!</b> Вы выиграли <b style="color:#ffcf6b">+${prize.val} ⬦</b> (${fmtRub(prize.val)})! Награда зачислена.`;
+        }
+      }
     }
-  });
+    requestAnimationFrame(animate);
+  }
 
-  if(closeBtn) closeBtn.addEventListener('click', () => {
-    if(!isWheelSpinning && modal) modal.style.display = 'none';
-  });
+  if(spinBtn) spinBtn.onclick = startSpin;
+  syncStatus();
+  const timerId = setInterval(syncStatus, 1000);
 
-  if(modal) modal.addEventListener('click', e => {
-    if(!isWheelSpinning && e.target === modal) modal.style.display = 'none';
-  });
-
-  if(spinBtn) spinBtn.addEventListener('click', spinWheel);
-
-  drawWheelCanvas(0);
-  updateWheelStatus();
-  setInterval(updateWheelStatus, 1000);
+  return () => { clearInterval(timerId); };
 }
 
 /* =======================================================================
    БОТЫ И СЕТКА ИГРОКОВ РАКЕТКИ (Вариант 1) — 200 реальных профилей
    ======================================================================= */
 const BOT_NAMES_RAW = [
-  "@artem_crypto", "Даниил М.", "@vlad_trade", "Максим Соколов", "@sofia_ton",
-  "@alex_invest", "Никита В.", "@roman_rich", "Екатерина П.", "@dmitry_msk",
-  "@alisa_sol", "Кирилл Белов", "@ivan_off", "@egor_shark", "Полина К.",
-  "@sergey_pro", "@timur_kz", "Анна Морозова", "Илья Б.", "@mark_ton",
-  "@yaroslav_x", "Матвей Волков", "@oleg_btc", "Виктория С.", "@denis_kazan",
-  "@gleb_bull", "Андрей Кузнецов", "@valera_top", "Дарья Н.", "@pavel_durov_fan",
-  "@misha_ton", "Арсений Л.", "@stas_scalp", "Алина Г.", "@bogdan_win",
-  "@tim_crypto", "Ксения Романова", "@ruslan_spb", "Григорий Т.", "@igor_pump",
-  "@vladimir_k", "Мария Д.", "@anton_ton", "Лев Орлов", "@semyon_x",
-  "@artyom_pro", "Яна В.", "@kostya_rich", "Фёдор Михайлов", "@stepan_bet",
-  "@vadim_trader", "Елизавета С.", "@marat_kazan", "Тимур А.", "@nikolay_sol",
-  "@diana_ton", "Роман Васильев", "@vitalik_eth", "Юлия Б.", "@david_crypto",
-  "@erik_top", "Валерия К.", "@georgy_m", "Константин Ф.", "@edward_x",
-  "@nazar_ton", "Вероника С.", "@petr_msk", "Артём Новиков", "@slava_bull",
-  "@renat_kz", "Светлана М.", "@tikhon_pro", "Геннадий В.", "@rusik_bet",
-  "@karina_sol", "Евгений Смирнов", "@amir_tashkent", "Милана Т.", "@elena_crypto",
-  "@miron_top", "Вадим Попов", "@damir_ufa", "Ольга И.", "@kirill_scalper",
-  "@saveliy_x", "Татьяна К.", "@rostislav_m", "Иван Козлов", "@platon_ton",
-  "@zahar_bet", "Кристина Л.", "@demid_pro", "Борис Лебедев", "@vladislav_sol",
-  "@samir_baku", "Инна В.", "@german_crypto", "Юрий Федоров", "@marina_top",
-  "@leonid_rich", "Наталья С.", "@arsen_arm", "Василий Морозов", "@artur_trade",
-  "@kamilla_ton", "Михаил Григорьев", "@rodion_x", "Ярослав Ковалев", "@albert_pro",
-  "@renata_kazan", "Степан Воробьев", "@maksim_scalp", "Виктор Семенов", "@timofey_m",
-  "@zhanna_sol", "Денис Голубев", "@taras_crypto", "Валентин П.", "@vitaly_top",
-  "@kira_ton", "Вячеслав Богданов", "@marat_pro", "Анатолий С.", "@daniil_bet",
-  "@sabina_kz", "Глеб Воронов", "@valentin_x", "Маргарита Е.", "@eldar_trade",
-  "@igor_kuznetsov", "Антон Соловьев", "@dasha_crypto", "Владислав Фролов", "@nik_rich",
-  "@angelina_sol", "Александр Павлов", "@sergo_pro", "Ксения Макарова", "@miron_ton",
-  "@alladin_trade", "Егор Зайцев", "@viktoria_m", "Дмитрий Медведев", "@arthur_x",
-  "@ramil_kazan", "Юлия Захарова", "@artyom_rich", "Дамир Ибрагимов", "@karim_uzb",
-  "@polina_ton", "Семен Яковлев", "@vitaliy_b", "Вера Калинина", "@stanislav_pro",
-  "@aleks_trade", "Евгения Борисова", "@vladimir_ton", "Олег Сидоров", "@damir_scalp",
-  "@milana_sol", "Григорий Мельников", "@arseniy_top", "Надежда В.", "@radik_ufa",
-  "@dmitriy_k", "Алла Сергеева", "@lev_trader", "Федор Беляев", "@timur_rich",
-  "@yana_crypto", "Константин Тарасов", "@erlan_kz", "Мария Белова", "@rodion_ton",
-  "@alina_trade", "Илья Комаров", "@gleb_pro", "Диана Орлова", "@edgar_rich",
-  "@ruslan_ufa", "Тамара Г.", "@bogdan_crypto", "Вадим Киселев", "@vitalik_pro",
-  "@vlad_bull", "Арина Кузьмина", "@danil_ton", "Михаил Ильин", "@marat_scalp",
-  "@sofya_trade", "Филипп Гусев", "@zakhariy_m", "Алина Титова", "@denis_bull",
-  "@sardor_tash", "Камилла Р.", "@maksim_ton", "Эдуард Кудрявцев", "@amalia_crypto"
+  // 1-50: Рандомные гейминг/сленг слова
+  "shadow", "blaze", "toxic", "phantom", "cyber", "matrix", "storm", "vortex", "nebula", "titan",
+  "sniper", "dragon", "hunter", "hazard", "bullet", "raptor", "legend", "zenith", "frost", "inferno",
+  "quantum", "pulse", "spark", "ninja", "dynamo", "rebel", "comet", "orbit", "flash", "rocket",
+  "blade", "echo", "drift", "apex", "zero", "pixel", "stranger", "meteor", "glitch", "specter",
+  "valkyrie", "rogue", "striker", "havoc", "omega", "alpha", "delta", "nexus", "ghost", "raider",
+
+  // 51-100: Имя + год
+  "artem2004", "maksim2001", "vlad2005", "daniil2003", "ivan1999", "nikita2002", "egor2000", "kirill2006", "alex2001", "roman1998",
+  "denis2003", "andrey2000", "sergey1995", "gleb2005", "timur2002", "misha2004", "arseniy2003", "bogdan2001", "kostya2002", "fedor1999",
+  "vadim2004", "matvey2005", "marat2001", "stepan2000", "dima2003", "oleg1997", "igor2002", "pavel2000", "ilya2004", "slava2001",
+  "ruslan1999", "vitalik2002", "stas2005", "anton2000", "leonid1998", "valera2003", "rodion2004", "yarik2002", "david2005", "semyon2001",
+  "renat2000", "tikhon2003", "amir2004", "damir2002", "miron2005", "rostik2001", "zahar2004", "demid2003", "boris1999", "vladik2005",
+
+  // 101-150: Рандомные буквы + криптовалюты (TON, SOL, BTC, ETH...)
+  "xkr_ton", "sol_vibe", "btc_hodl", "ton_rich", "eth_whale", "trx_fast", "ton_moon", "sol_king", "bnb_pump", "near_flow",
+  "ton_scalp", "crypto_fox", "ton_gem", "doge_rider", "xrp_bull", "avax_max", "ton_shark", "apt_wave", "sui_degen", "ton_lord",
+  "arb_rush", "op_jump", "ton_alpha", "kas_miner", "pepe_bag", "ton_master", "sol_rocket", "ton_sniper", "btc_stack", "ton_vault",
+  "ton_pro", "ton_guru", "sol_ninja", "ton_whale", "eth_gas", "ton_hero", "ton_star", "ton_pulse", "sol_blaze", "ton_matrix",
+  "ton_space", "ton_apex", "crypto_wolf", "ton_speed", "ton_turbo", "ton_prime", "ton_nexus", "ton_core", "ton_blast", "ton_wave",
+
+  // 151-200: Рандомные цифры или 1-2 цифры в нике
+  "77701", "user77", "alex1", "king9", "boss99", "748291", "9901", "lucky7", "neo8", "fox12",
+  "pro21", "top1", "player7", "win99", "max88", "fast3", "cool5", "x77", "sky14", "red2",
+  "dark07", "zero1", "super7", "star9", "hero44", "lion5", "tiger8", "bear11", "wolf03", "ace1",
+  "fire9", "ice33", "gold77", "silver8", "bronze1", "shadow0", "flash6", "zoom9", "turbo12", "power5",
+  "mega88", "ultra7", "prime1", "alpha9", "delta4", "omega8", "apex3", "storm7", "wave2", "88880"
 ];
 
 const BOT_PALETTES = [
@@ -1819,7 +1748,7 @@ function generateBotsForRound(rIdx){
   // Банк раунда от 300 до 2 000 руб (от 3 000 до 20 000 ⬦)
   const targetRub = 300 + Math.floor(pseudoRnd(rIdx, 101) * 1700);
   const targetTk = targetRub * 10;
-  const botCount = 12 + Math.floor(pseudoRnd(rIdx, 102) * 11);
+  const botCount = 12 + Math.floor(pseudoRnd(rIdx, 102) * 9); // 12..20 ботов
 
   const chosenIndices = [];
   let salt = 200;
@@ -1828,11 +1757,14 @@ function generateBotsForRound(rIdx){
     if(!chosenIndices.includes(idx)) chosenIndices.push(idx);
   }
 
+  // Огромная разница в ставках (большой дифф):
+  // одни ставят по 50-150 токенов, другие 400-1500, крупные игроки 2500-5000, киты до 10000!
   const rawWeights = chosenIndices.map((bIdx, i) => {
     const r = pseudoRnd(rIdx, 300 + i);
-    if(r < 0.6) return 1 + r * 3;
-    if(r < 0.9) return 4 + r * 8;
-    return 15 + r * 25;
+    if(r < 0.40) return 0.5 + r * 1.5;      // мелкие ставки: 50 - 150 ⬦
+    if(r < 0.75) return 4 + r * 6;          // средние ставки: 400 - 1 500 ⬦
+    if(r < 0.92) return 20 + r * 25;        // крупные ставки: 2 500 - 5 000 ⬦
+    return 60 + r * 45;                     // киты: до 10 000 ⬦
   });
   const totalWeight = rawWeights.reduce((a,b)=>a+b, 0);
 
@@ -1841,22 +1773,20 @@ function generateBotsForRound(rIdx){
     const color = BOT_PALETTES[bIdx % BOT_PALETTES.length];
     const initials = getBotInitials(name);
 
-    // Ставка от 1 до 1 000 руб (от 10 до 10 000 ⬦)
     let bet = Math.round((rawWeights[i] / totalWeight) * targetTk);
-    bet = Math.max(10, Math.min(10000, bet));
+    bet = Math.max(50, Math.min(10000, bet));
     bet = Math.round(bet / 10) * 10;
-    if(bet < 10) bet = 10;
 
     const rx = pseudoRnd(rIdx, 500 + i);
     let targetX = 1.25;
-    if(rx < 0.28){
-      targetX = +(1.12 + rx * 1.0).toFixed(2);
-    } else if(rx < 0.68){
-      targetX = +(1.40 + (rx - 0.28) * 1.85).toFixed(2);
+    if(rx < 0.30){
+      targetX = +(1.10 + rx * 0.9).toFixed(2);       // аккуратные (забирают рано 1.10..1.37)
+    } else if(rx < 0.70){
+      targetX = +(1.40 + (rx - 0.30) * 2.2).toFixed(2); // средние (1.40..2.28)
     } else if(rx < 0.88){
-      targetX = +(2.15 + (rx - 0.68) * 6.2).toFixed(2);
+      targetX = +(2.30 + (rx - 0.70) * 7.5).toFixed(2); // смелые (2.30..3.65)
     } else {
-      targetX = +(3.40 + (rx - 0.88) * 34.0).toFixed(2);
+      targetX = +(3.80 + (rx - 0.88) * 35.0).toFixed(2); // азартные лудоманы (3.80..8.00)
     }
 
     return {
@@ -1936,6 +1866,11 @@ function gameRacket(){
   <div class="hstrip" id="rHist"></div>
   <button class="control" id="rgo" style="margin-top:10px">ПОСТАВИТЬ · ${S.bet} ⬦</button>
   <div class="result" id="rr">Раунды запускаются непрерывно каждые 30 секунд (даже без пользователя). Сделайте ставку до старта или включите авто-ставку.</div>
+  <div class="racket-round-timer-box" id="rRoundTimerBox">
+    <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
+    <div class="rrt-val" id="rrtVal">06.0<span class="rrt-unit">с</span></div>
+    <div class="rrt-sub" id="rrtSub">Приём ставок открыт</div>
+  </div>
   <div class="bot-bets-box">
     <div class="bot-bets-header">
       <div><b>Игроки в раунде</b> <span class="muted small" id="roundPlayersCount">(0)</span></div>
@@ -1947,6 +1882,7 @@ function gameRacket(){
   const cvs=q('#rcv'),go=q('#rgo'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
   const rHistEl=q('#rHist');
   const axIn=q('#autoInput'),axTg=q('#autoTgl'),abTg=q('#autoBetTgl');
+  const rrtLabel=q('#rrtLabel', a), rrtVal=q('#rrtVal', a), rrtSub=q('#rrtSub', a);
   let currentRoundBots=[];
   let currentRoundBank=0;
   let lastBotsRenderTime=0;
@@ -2210,6 +2146,14 @@ function gameRacket(){
       rx.className='xbig';
       rx.style.color='#3ddc96';
       rp.textContent='СТАРТ ЧЕРЕЗ '+leftSec.toFixed(1)+'с';
+
+      if(rrtLabel) rrtLabel.textContent='ДО СТАРТА РАУНДА';
+      if(rrtVal){
+        rrtVal.className='rrt-val';
+        rrtVal.innerHTML=`${leftSec<10?'0':''}${leftSec.toFixed(1)}<span class="rrt-unit">с</span>`;
+      }
+      if(rrtSub) rrtSub.textContent='Приём ставок открыт';
+
       go.disabled=false;
       if(inRound){
         go.textContent=`СТАВКА ${userBet} ⬦ ПРИНЯТА · (ОТМЕНИТЬ)`;
@@ -2223,6 +2167,14 @@ function gameRacket(){
       rx.className='xbig';
       rx.style.color=band(cur);
       rp.textContent='ПОЛЁТ РАКЕТКИ';
+
+      if(rrtLabel) rrtLabel.textContent='РАКЕТКА В ПОЛЁТЕ';
+      if(rrtVal){
+        rrtVal.className='rrt-val flight';
+        rrtVal.textContent='×'+fx(cur);
+      }
+      if(rrtSub) rrtSub.textContent=inRound&&!cashed?'Нажмите «ЗАБРАТЬ» до взрыва':'Раунд в процессе';
+
       if(inRound&&!cashed){
         const can=cur>=MINCASH;
         go.disabled=!can;
@@ -2244,6 +2196,14 @@ function gameRacket(){
       rx.style.color='';
       const toNext=Math.max(1,Math.ceil((ROUND_MS-roundTime)/1000));
       rp.textContent=`ОСТАНОВКА ×${fx(crash)} · СЛЕД. РАУНД ${toNext}с`;
+
+      if(rrtLabel) rrtLabel.textContent='СЛЕДУЮЩИЙ РАУНД';
+      if(rrtVal){
+        rrtVal.className='rrt-val done';
+        rrtVal.innerHTML=`${toNext<10?'0':''}${toNext}<span class="rrt-unit">с</span>`;
+      }
+      if(rrtSub) rrtSub.textContent=`Остановка ×${fx(crash)} · Подготовка ракеты`;
+
       go.disabled=false;
       go.textContent=nextRoundBet?`СТАВКА НА СЛЕД. РАУНД (${S.bet} ⬦) ПРИНЯТА`:`СТАВКА НА СЛЕД. РАУНД · ${S.bet} ⬦`;
       go.style.background=nextRoundBet?'linear-gradient(135deg,#10b981,#059669)':'';
@@ -2292,7 +2252,9 @@ function gameRacket(){
       html+=`
       <div class="bot-bet-row user-row">
         <div class="bot-bet-left">
-          <div class="bot-bet-av" style="background:#ffcf6b;color:#0f172a;font-weight:900">${pr.avatar||'Я'}</div>
+          <div class="bot-bet-av-wrap">
+            <div class="bot-bet-av" style="background:#ffcf6b;color:#0f172a;font-weight:900">${pr.avatar||'Я'}</div>
+          </div>
           <div>
             <div class="bot-bet-name" style="color:#ffcf6b">${pr.name} (Вы)</div>
             <div class="bot-bet-amt">${fmt(userBet)} ⬦ ≈ ${fmtRub(userBet)}</div>
@@ -2327,7 +2289,10 @@ function gameRacket(){
       html+=`
       <div class="bot-bet-row">
         <div class="bot-bet-left">
-          <div class="bot-bet-av" style="background:${b.color}">${b.initials}</div>
+          <div class="bot-bet-av-wrap">
+            <img class="bot-bet-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(b.name)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="bot-bet-av" style="background:${b.color};display:none">${b.initials}</div>
+          </div>
           <div>
             <div class="bot-bet-name">${b.name}</div>
             <div class="bot-bet-amt">${fmt(b.bet)} ⬦ ≈ ${fmtRub(b.bet)}</div>
@@ -3996,7 +3961,7 @@ function gameChallenge(targetSel){
       <div class="hero" style="background:linear-gradient(145deg,#232b3e,#1a202d);padding:16px;border-radius:20px;border:1px solid var(--line);margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span class="eyebrow" style="color:#ffcf6b">Ежедневный Стрик</span>
-          <span class="muted small">Сброс через <b>23:45:10</b></span>
+          <span class="muted small">Сброс через <b id="chTimer">--:--:--</b></span>
         </div>
         <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
           <div style="font-size:32px">🔥</div>
@@ -4016,6 +3981,17 @@ function gameChallenge(targetSel){
       <div class="result" id="chMsg" style="margin-top:14px">Выполняйте задания в играх MoneyForUp и забирайте бесплатные токены!</div>
     </div>`;
 
+    function getChallengeTimeLeft(){
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+      return Math.max(0, midnight.getTime() - now.getTime());
+    }
+    function updateChTimer(){
+      const tEl = q('#chTimer', a);
+      if(tEl) tEl.textContent = fmtHms(getChallengeTimeLeft());
+    }
+    updateChTimer();
+
     qa('.q-claim-btn').forEach(btn => {
       btn.onclick = () => {
         const idx = +btn.dataset.qid;
@@ -4033,7 +4009,17 @@ function gameChallenge(targetSel){
   }
 
   render();
-  return () => {};
+  function getChallengeTimeLeftOuter(){
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    return Math.max(0, midnight.getTime() - now.getTime());
+  }
+  const chTimerId = setInterval(() => {
+    const tEl = q('#chTimer', a);
+    if(tEl) tEl.textContent = fmtHms(getChallengeTimeLeftOuter());
+  }, 1000);
+
+  return () => { clearInterval(chTimerId); };
 }
 
 /* «Hot Drop» (Hourly Drop) */
@@ -4236,8 +4222,8 @@ function gameHotDrop(){
 }
 
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop'};
-const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop};
+const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
+const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
@@ -4248,16 +4234,17 @@ function play(type){
 qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)));
 
 /* отладочные хуки для автотестов (не влияют на игру) */
-window.MONEYFORUP_DEBUG={stakeAccrued,stakeAdd,stakeClaim,stakeOut,state:S,TERMS,REF_PERCENT,STAKE_RATE,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
+window.MONEYFORUP_DEBUG={state:S,TERMS,REF_PERCENT,CASHBACK_RANKS,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
 window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
 
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
 const startHash = (window.location.hash || '').replace('#', '');
 tgInit();tgRegister();syncUI();
-initWheel();
+updateWheelCardStatus();
+setInterval(updateWheelCardStatus, 1000);
 updateModesOnline();
 setInterval(updateModesOnline, 30000);
-if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop'){
+if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop' || startHash === 'wheel'){
   play(startHash);
 } else {
   screen('games');
