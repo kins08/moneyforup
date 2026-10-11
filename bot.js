@@ -1115,6 +1115,26 @@ const server = http.createServer(async (req, res) => {
       return send(200, { order_id: id, tokens, rub });
     }
 
+    /* Уведомления пользователю в бот (ежедневный кейс / шкала челленджа) */
+    if (url.pathname === '/api/notify-event' && req.method === 'POST') {
+      const type = String(body.type || '');
+      let text = '';
+      if (type === 'daily_ready') {
+        text = `🎁 <b>Ваш ежедневный кейс готов к открытию!</b>\n\nЗаходите в MoneyForUp и забирайте бесплатные токены дня! 🚀`;
+      } else if (type === 'challenge_completed') {
+        text = `🎯 <b>Шкала челленджа 24ч полностью заполнена!</b>\n\nВсе ежедневные квесты выполнены! Заберите награды в приложении прямо сейчас! 🔥`;
+      } else if (type === 'hotdrop_ready') {
+        text = `🔥 <b>Hot Drop перезарядился!</b>\n\nБесплатный контейнер с рулеткой ждёт вас в MoneyForUp! 📦`;
+      }
+      if (text && u.id) {
+        bot.api.sendMessage(u.id, text, {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().webApp('🎮 Открыть MoneyForUp', APP_URL)
+        }).catch(() => {});
+      }
+      return send(200, { ok: true });
+    }
+
     send(404, { error: 'not found' });
   } catch (e) {
     send(500, { error: String(e.message || e) });
@@ -1122,23 +1142,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 async function initBotProfile() {
-  try {
-    await bot.api.setMyDescription({
-      description:
-        '🔥 MoneyForUp — игровая платформа, кейсы и стейкинг в Telegram!\n\n' +
-        '⚡ Слоган: Делай мани, ап-ап!\n\n' +
-        '• 📦 Кейсы и Колесо удачи\n' +
-        '• 🍺 Скуф vs Альтушка\n' +
-        '• 📈 Стейкинг 1 % в сутки (начисление каждую секунду)\n' +
-        '• 👥 Реферальная программа 15 %\n' +
-        '• 🎟 Промокоды с мгновенным зачислением'
-    });
-    await bot.api.setMyShortDescription({
-      short_description: 'MoneyForUp — Делай мани, ап-ап! 🚀 Кейсы, игры и стейкинг.'
-    });
-  } catch (e) {
-    // Тихо игнорируем ошибку при локальном запуске без токена
-  }
+  // Отключено автоматическое обновление описания, чтобы не затирать описание, настроенное вручную через @BotFather.
 }
 initBotProfile();
 

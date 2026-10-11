@@ -278,6 +278,70 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .bot-bet-st.flight{color:#94a3b8;background:rgba(148,163,184,.1)}
 .bot-bet-st.win{color:#3ddc96;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35)}
 .bot-bet-st.lose{color:#ff738c;background:rgba(255,115,140,.12)}
+
+/* Live Win Ticker (FOMO-лента) */
+.live-ticker-wrap{width:100%;margin-bottom:12px;background:rgba(20,16,28,.82);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:6px 10px;overflow:hidden;box-shadow:inset 0 0 16px rgba(0,0,0,.5);backdrop-filter:blur(10px)}
+.live-ticker-bar{display:flex;align-items:center;gap:8px;font-size:11.5px;white-space:nowrap;overflow:hidden}
+.live-ticker-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:850;padding:2px 7px;border-radius:7px;background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.38);flex-shrink:0}
+.live-ticker-badge .lt-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:onlinePulse 1.4s infinite ease-in-out}
+.live-ticker-track{display:flex;align-items:center;gap:18px;animation:tickerScroll 26s linear infinite;will-change:transform}
+.live-ticker-track:hover{animation-play-state:paused}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.lt-item{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);padding:3px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.06);font-size:11px}
+.lt-avatar{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0}
+.lt-name{font-weight:700;color:#e2e8f0}
+.lt-game{color:var(--muted);font-size:10.5px}
+.lt-win{font-weight:850;color:#ffcf6b}
+.lt-mult{font-weight:800;padding:1px 5px;border-radius:5px;font-size:9.5px;background:rgba(61,220,150,.18);color:#3ddc96}
+
+/* Ракетка: Двойная ставка (Bet 1 & Bet 2) */
+.dual-bet-container{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.dual-bet-box{background:linear-gradient(145deg,#1f1823,#16101c);border:1px solid var(--line);border-radius:16px;padding:12px;position:relative}
+.dual-bet-title{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;margin-bottom:8px;color:#fca5a5}
+.dual-bet-chips{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+.dual-bet-chips button{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:11px;color:#fff;cursor:pointer;font-weight:700}
+.dual-bet-chips button.on{background:rgba(239,68,68,.3);border-color:#ef4444;color:#ffcf6b}
+.dual-bet-input{width:100%;box-sizing:border-box;background:#0d1017;border:1px solid var(--line);border-radius:10px;padding:8px;color:#fff;font-weight:800;text-align:center;font-size:14px}
+.dual-bet-sub{font-size:10px;color:var(--muted);margin:4px 0 8px;text-align:center}
+.dual-bet-auto{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.dual-bet-auto input{width:65px;background:#0d1017;border:1px solid var(--line);border-radius:8px;padding:5px;color:#fff;font-weight:700;text-align:center;font-size:11.5px}
+.dual-bet-btn{width:100%;padding:12px 6px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:12.5px;font-weight:900;cursor:pointer;transition:transform .12s,box-shadow .12s;box-shadow:0 4px 14px rgba(220,38,38,.4)}
+.dual-bet-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.dual-bet-btn.cashed{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--line);box-shadow:none}
+
+/* Игра Dice (Больше-Меньше) */
+.dice-stage{text-align:center;padding:4px 0}
+.dice-display{position:relative;height:120px;border-radius:20px;background:linear-gradient(145deg,#231925,#17101a);border:1.5px solid rgba(239,68,68,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,.5);overflow:hidden}
+.dice-roll-num{font-size:48px;font-weight:900;letter-spacing:1px;color:#fff;font-family:monospace;text-shadow:0 0 25px rgba(239,68,68,.5)}
+.dice-roll-num.win{color:#3ddc96;text-shadow:0 0 25px rgba(61,220,150,.6)}
+.dice-roll-num.lose{color:#ef4444;text-shadow:0 0 25px rgba(239,68,68,.6)}
+.dice-status-pill{font-size:11px;font-weight:800;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.08);color:#d1d5db;margin-top:4px}
+.dice-slider-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.dice-range-slider{width:100%;-webkit-appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#3ddc96,#ef4444);outline:none;margin:12px 0}
+.dice-range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #ef4444;cursor:pointer;box-shadow:0 0 12px rgba(239,68,68,.6);transition:transform .1s}
+.dice-range-slider::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.dice-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.dice-stat-box{background:rgba(0,0,0,.3);padding:10px;border-radius:12px;border:1px solid var(--line);text-align:center}
+.dice-stat-title{font-size:11px;color:var(--muted);font-weight:700}
+.dice-stat-val{font-size:17px;font-weight:900;color:#ffcf6b;margin-top:2px}
+.dice-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.dice-btn{padding:16px 12px;border-radius:16px;border:none;font-weight:900;font-size:15px;cursor:pointer;color:#fff;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4);transition:transform .15s}
+.dice-btn:active{transform:scale(.98)}
+.dice-btn-less{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.dice-btn-more{background:linear-gradient(135deg,#10b981,#059669)}
+.dice-btn-sub{font-size:11px;font-weight:700;opacity:.85}
+
+/* Апгрейд Дропа в Кейсах */
+.upgrade-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.upgrade-box{width:100%;max-width:440px;background:linear-gradient(145deg,#231825,#16101c);border:1.5px solid rgba(239,68,68,.4);border-radius:24px;padding:20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 35px rgba(239,68,68,.3);position:relative}
+.upgrade-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.08);border:none;color:#fff;font-size:18px;width:30px;height:30px;border-radius:50%;cursor:pointer}
+.upgrade-visual{display:flex;align-items:center;justify-content:space-around;margin:16px 0;gap:8px}
+.upgrade-item-card{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:14px;padding:10px 14px;width:125px;text-align:center}
+.upgrade-arrow{font-size:24px;color:#ffcf6b;animation:pulseTease .6s infinite alternate}
+.upgrade-circle-wrap{position:relative;width:160px;height:160px;margin:10px auto}
+.upgrade-circle-wrap canvas{width:160px;height:160px;display:block;border-radius:50%}
+.upgrade-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #ffcf6b;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
+.upgrade-wheel-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.9)}
 </style>
 </head>
 <body>
@@ -298,6 +362,14 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   <div style="display:flex;gap:7px;align-items:center">
     <button class="pillbtn" id="topSupport" style="padding:8px 12px;font-size:12px;background:rgba(143,151,255,.12);border-color:rgba(143,151,255,.3);color:#d9ddff;cursor:pointer">💬 Поддержка</button>
     <button class="pillbtn" data-nav="tokens"><b class="js-bal">50</b> ⬦</button>
+  </div>
+</div>
+
+<!-- Live Win Ticker (FOMO-лента выигрышей) -->
+<div class="live-ticker-wrap">
+  <div class="live-ticker-bar">
+    <div class="live-ticker-badge"><span class="lt-dot"></span>LIVE ВЫИГРЫШИ</div>
+    <div class="live-ticker-track" id="liveTickerTrack"></div>
   </div>
 </div>
 
@@ -354,9 +426,10 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
 </div>
 
-<div class="section"><b>Игры</b><span class="muted small">9 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">10 режимов</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
+<button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover" style="background:linear-gradient(135deg,#3b82f6,#ef4444);display:flex;align-items:center;justify-content:center"><span style="font-size:38px">🎲</span></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -794,6 +867,11 @@ function win(amount,game,note){
   if(amount>0)S.hist.unshift({label:game+(note?' · '+note:''),delta:amount,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
   if(amount>0)tgHaptic('win');
+  if(amount>0&&window.pushLiveTickerWin){
+    const pr=tgProfile();
+    const mult=note&&note.includes('×')?+(note.replace(/[^\d\.]/g,''))||1.5:1.5;
+    window.pushLiveTickerWin(pr.name||'Вы',game||'MUP',amount,mult);
+  }
   save();syncUI();
 }
 function deposit(tk,label,refBonus){
@@ -1565,6 +1643,13 @@ function updateWheelCardStatus(){
     if(left === 0){
       stEl.className = 'wfc-status';
       stEl.textContent = 'ГОТОВО К СПИНУ!';
+      if(!S.wheelNotified){
+        S.wheelNotified = true;
+        save();
+        if(IS_TG && API_BASE){
+          tgCall('/api/notify-event', { type: 'daily_ready' }).catch(()=>{});
+        }
+      }
     } else {
       stEl.className = 'wfc-status wait';
       stEl.textContent = 'ЧЕРЕЗ ' + fmtWheelTime(left);
@@ -1670,6 +1755,7 @@ function gameWheel(){
       } else {
         isWheelSpinning = false;
         S.lastWheelSpin = Date.now();
+        S.wheelNotified = false;
         faucet(prize.val);
         save();
         syncUI();
@@ -1849,26 +1935,70 @@ function gameRacket(){
   const tau=t=>t*(1+0.06*t);
 
   let curRound=-1,phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
-  let inRound=false,userBet=0,cashed=false,boomT=0,cashX=0,cashAmt=0;
-  let roundCrashed=false,nextRoundBet=false;
-  let autoOn=!!S.autoOn,autoX=Math.min(RKMAX,Math.max(MINCASH,+S.autoX||1.5));
-  let autoBet=!!S.autoBet;
-  if(S.autoX!==autoX){S.autoX=autoX;save()}
+  let boomT=0,roundCrashed=false;
+
+  // Двойная ставка (Bet 1 и Bet 2)
+  const B1 = {
+    bet: S.bet || 50,
+    inRound: false,
+    nextRound: false,
+    cashed: false,
+    cashX: 0,
+    cashAmt: 0,
+    autoOn: !!S.autoOn,
+    autoX: Math.min(RKMAX, Math.max(MINCASH, +S.autoX || 1.30))
+  };
+
+  const B2 = {
+    bet: S.bet2 || 50,
+    inRound: false,
+    nextRound: false,
+    cashed: false,
+    cashX: 0,
+    cashAmt: 0,
+    autoOn: !!S.autoOn2,
+    autoX: Math.min(RKMAX, Math.max(MINCASH, +S.autoX2 || 2.00))
+  };
 
   a.innerHTML=`
   <div class="crashbox"><canvas id="rcv"></canvas>
     <div class="overlay"><div class="muted small" id="rphase">приём ставок</div><div class="xbig" id="rx">×1.00</div></div>
   </div>
-  <div class="betrow" style="flex-wrap:wrap;gap:8px"><span class="muted small">Авто-вывод при</span>
-    <input class="betinput" id="autoInput" type="number" min="${fx(MINCASH)}" max="${RKMAX}" step="0.05" inputmode="decimal" value="${fx(autoX)}" aria-label="Авто-вывод">
-    <button class="chip" id="autoTgl">авто-вывод: выкл</button>
-    <button class="chip" id="autoBetTgl">авто-ставка: выкл</button>
+  <div class="dual-bet-container">
+    <!-- СТАВКА 1 -->
+    <div class="dual-bet-box" id="b1Box">
+      <div class="dual-bet-title"><span>СТАВКА #1</span><span id="b1Status">Ожидание</span></div>
+      <div class="dual-bet-chips" id="b1Chips">
+        <button data-b1="25">25</button><button data-b1="50">50</button><button data-b1="100">100</button><button data-b1="250">250</button>
+      </div>
+      <input class="dual-bet-input" id="b1Inp" type="number" min="10" step="10" value="${B1.bet}">
+      <div class="dual-bet-sub" id="b1Rub">≈ ${fmtRub(B1.bet)}</div>
+      <div class="dual-bet-auto">
+        <label class="termsline" style="font-size:11px;margin:0"><input type="checkbox" id="b1AutoChk" ${B1.autoOn?'checked':''}><span>Авто ×</span></label>
+        <input type="number" id="b1AutoX" step="0.05" min="1.05" max="100" value="${fx(B1.autoX)}">
+      </div>
+      <button class="dual-bet-btn" id="b1Btn">ПОСТАВИТЬ ${B1.bet} ⬦</button>
+    </div>
+
+    <!-- СТАВКА 2 -->
+    <div class="dual-bet-box" id="b2Box">
+      <div class="dual-bet-title"><span style="color:#60a5fa">СТАВКА #2</span><span id="b2Status">Ожидание</span></div>
+      <div class="dual-bet-chips" id="b2Chips">
+        <button data-b2="25">25</button><button data-b2="50">50</button><button data-b2="100">100</button><button data-b2="250">250</button>
+      </div>
+      <input class="dual-bet-input" id="b2Inp" type="number" min="10" step="10" value="${B2.bet}">
+      <div class="dual-bet-sub" id="b2Rub">≈ ${fmtRub(B2.bet)}</div>
+      <div class="dual-bet-auto">
+        <label class="termsline" style="font-size:11px;margin:0"><input type="checkbox" id="b2AutoChk" ${B2.autoOn?'checked':''}><span>Авто ×</span></label>
+        <input type="number" id="b2AutoX" step="0.05" min="1.05" max="100" value="${fx(B2.autoX)}">
+      </div>
+      <button class="dual-bet-btn" id="b2Btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">ПОСТАВИТЬ ${B2.bet} ⬦</button>
+    </div>
   </div>
-  ${betHTML()}
+
   <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (общий цикл 30с)</div>
   <div class="hstrip" id="rHist"></div>
-  <button class="control" id="rgo" style="margin-top:10px">ПОСТАВИТЬ · ${S.bet} ⬦</button>
-  <div class="result" id="rr">Раунды запускаются непрерывно каждые 30 секунд (даже без пользователя). Сделайте ставку до старта или включите авто-ставку.</div>
+  <div class="result" id="rr" style="margin-top:10px">Раунды запускаются каждые 30 секунд. Делайте 1 или 2 ставки параллельно с отдельными кэшаутами и авто-стопами!</div>
   <div class="racket-round-timer-box" id="rRoundTimerBox">
     <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
     <div class="rrt-val" id="rrtVal">06.0<span class="rrt-unit">с</span></div>
@@ -1882,10 +2012,15 @@ function gameRacket(){
     <div class="bot-bets-list" id="botBetsList"></div>
   </div>`;
 
-  const cvs=q('#rcv'),go=q('#rgo'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
+  const cvs=q('#rcv'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
   const rHistEl=q('#rHist');
-  const axIn=q('#autoInput'),axTg=q('#autoTgl'),abTg=q('#autoBetTgl');
   const rrtLabel=q('#rrtLabel', a), rrtVal=q('#rrtVal', a), rrtSub=q('#rrtSub', a);
+
+  const b1Inp=q('#b1Inp', a), b1Rub=q('#b1Rub', a), b1Btn=q('#b1Btn', a), b1St=q('#b1Status', a);
+  const b1AutoChk=q('#b1AutoChk', a), b1AutoXInp=q('#b1AutoX', a);
+  const b2Inp=q('#b2Inp', a), b2Rub=q('#b2Rub', a), b2Btn=q('#b2Btn', a), b2St=q('#b2Status', a);
+  const b2AutoChk=q('#b2AutoChk', a), b2AutoXInp=q('#b2AutoX', a);
+
   let currentRoundBots=[];
   let currentRoundBank=0;
   let lastBotsRenderTime=0;
@@ -1916,16 +2051,11 @@ function gameRacket(){
   }
   renderRHist(false);
 
-  function syncAuto(){
-    axTg.textContent='авто-вывод: '+(autoOn?'вкл':'выкл');
-    axTg.classList.toggle('on',autoOn);
-    axTg.style.borderColor=autoOn?'rgba(124,130,255,.55)':'';
-    axIn.value=fx(autoX);
-  }
-  function syncAutoBet(){
-    abTg.textContent='авто-ставка: '+(autoBet?'вкл':'выкл');
-    abTg.classList.toggle('on',autoBet);
-    abTg.style.borderColor=autoBet?'rgba(61,220,150,.55)':'';
+  function syncInputs(){
+    if(b1Inp) b1Inp.value = B1.bet;
+    if(b1Rub) b1Rub.textContent = '≈ ' + fmtRub(B1.bet);
+    if(b2Inp) b2Inp.value = B2.bet;
+    if(b2Rub) b2Rub.textContent = '≈ ' + fmtRub(B2.bet);
   }
 
   function drawRocket(g,cx,cy,ang,bc,sp){
@@ -2098,18 +2228,20 @@ function gameRacket(){
     g.stroke();g.lineWidth=1;
     const mm=Math.min(cur,yMax),cx=X(tc),cy=Y(mm);
 
-    if(cashed&&cashX<yMax){
-      const ky=Y(Math.min(cashX,yMax));
-      g.setLineDash([3,3]);g.strokeStyle='rgba(61,220,150,.8)';g.beginPath();g.moveTo(pad.l,ky);g.lineTo(W-pad.r,ky);g.stroke();g.setLineDash([]);
-      g.fillStyle='#3ddc96';g.textAlign='left';g.font='11px Inter,system-ui,sans-serif';
-      g.fillText('забрано ×'+fx(cashX),pad.l+2,ky-6);
-    }
-    if(autoOn&&!tStop&&!cashed){
-      const ay=Y(Math.min(autoX,yMax));
-      g.setLineDash([5,4]);g.strokeStyle='rgba(255,207,107,.7)';g.beginPath();g.moveTo(pad.l,ay);g.lineTo(W-pad.r,ay);g.stroke();g.setLineDash([]);
-      g.fillStyle='#ffcf6b';g.textAlign='right';g.font='11px Inter,system-ui,sans-serif';
-      g.fillText('авто ×'+fx(autoX),W-pad.r-2,ay-8);
-    }
+    [B1, B2].forEach((B, idx) => {
+      if(B.cashed && B.cashX < yMax){
+        const ky=Y(Math.min(B.cashX, yMax));
+        g.setLineDash([3,3]);g.strokeStyle=idx===0?'rgba(61,220,150,.8)':'rgba(96,165,250,.8)';g.beginPath();g.moveTo(pad.l,ky);g.lineTo(W-pad.r,ky);g.stroke();g.setLineDash([]);
+        g.fillStyle=idx===0?'#3ddc96':'#60a5fa';g.textAlign='left';g.font='10px Inter,system-ui,sans-serif';
+        g.fillText(`#${idx+1} забрано ×`+fx(B.cashX),pad.l+2,ky-4);
+      }
+      if(B.autoOn && !tStop && !B.cashed){
+        const ay=Y(Math.min(B.autoX, yMax));
+        g.setLineDash([5,4]);g.strokeStyle=idx===0?'rgba(255,207,107,.7)':'rgba(147,197,253,.7)';g.beginPath();g.moveTo(pad.l,ay);g.lineTo(W-pad.r,ay);g.stroke();g.setLineDash([]);
+        g.fillStyle=idx===0?'#ffcf6b':'#93c5fd';g.textAlign='right';g.font='10px Inter,system-ui,sans-serif';
+        g.fillText(`#${idx+1} авто ×`+fx(B.autoX),W-pad.r-2,ay-6);
+      }
+    });
     g.setLineDash([2,4]);g.strokeStyle='rgba(255,255,255,.24)';g.beginPath();g.moveTo(pad.l,cy);g.lineTo(cx,cy);g.stroke();g.setLineDash([]);
     if(tStop){
       g.setLineDash([4,4]);g.strokeStyle='rgba(255,107,139,.75)';g.beginPath();g.moveTo(cx,pad.t);g.lineTo(cx,H-pad.b);g.stroke();g.setLineDash([]);
@@ -2142,9 +2274,62 @@ function gameRacket(){
     }
   }
 
-  function render(roundTime){
+  function updateBetUI(B, num, bBtn, bSt, bRub){
+    if(!bBtn||!bSt) return;
+    if(bRub) bRub.textContent='≈ '+fmtRub(B.bet);
     if(phase==='betting'){
-      const leftSec=Math.max(0,(WAIT_MS-roundTime)/1000);
+      bBtn.disabled=false;
+      if(B.inRound){
+        bBtn.textContent=`СТАВКА ${B.bet} ⬦ (ОТМЕНИТЬ)`;
+        bBtn.style.background='linear-gradient(135deg,#10b981,#059669)';
+        bSt.textContent='Принята';
+        bSt.style.color='#3ddc96';
+      }else{
+        bBtn.textContent=`ПОСТАВИТЬ ${B.bet} ⬦`;
+        bBtn.style.background=num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)';
+        bSt.textContent='Ожидание';
+        bSt.style.color='#94a3b8';
+      }
+    }else if(phase==='flight'){
+      if(B.inRound&&!B.cashed){
+        const can=cur>=MINCASH;
+        bBtn.disabled=!can;
+        bBtn.textContent=can?`ЗАБРАТЬ ×${fx(cur)} (+${fmt(B.bet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)}`;
+        bBtn.style.background='linear-gradient(135deg,#eab308,#ca8a04)';
+        bSt.textContent=`В игре (×${fx(cur)})`;
+        bSt.style.color='#ffcf6b';
+      }else if(B.inRound&&B.cashed){
+        bBtn.disabled=true;
+        bBtn.textContent=`ЗАБРАНО ×${fx(B.cashX)} (+${fmt(B.cashAmt)} ⬦)`;
+        bBtn.style.background='linear-gradient(135deg,#059669,#047857)';
+        bSt.textContent=`Выигрыш ×${fx(B.cashX)}`;
+        bSt.style.color='#3ddc96';
+      }else{
+        bBtn.disabled=false;
+        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ОК`:`НА СЛЕД. РАУНД · ${B.bet} ⬦`;
+        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
+        bSt.textContent=B.nextRound?'Ждёт старта':'Пропуск';
+        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
+      }
+    }else{
+      // phase === 'done'
+      bBtn.disabled=false;
+      bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ОК`:`НА СЛЕД. РАУНД · ${B.bet} ⬦`;
+      bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
+      if(B.inRound){
+        bSt.textContent=B.cashed?`Забрано ×${fx(B.cashX)}`:'Сгорело';
+        bSt.style.color=B.cashed?'#3ddc96':'#f87171';
+      }else{
+        bSt.textContent=B.nextRound?'Ждёт старта':'Ожидание';
+        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
+      }
+    }
+  }
+
+  function render(roundTime){
+    const leftSec=Math.max(0,(WAIT_MS-roundTime)/1000);
+    const hasActive=(B1.inRound&&!B1.cashed)||(B2.inRound&&!B2.cashed);
+    if(phase==='betting'){
       rx.textContent='×1.00';
       rx.className='xbig';
       rx.style.color='#3ddc96';
@@ -2156,15 +2341,6 @@ function gameRacket(){
         rrtVal.innerHTML=`${leftSec<10?'0':''}${leftSec.toFixed(1)}<span class="rrt-unit">с</span>`;
       }
       if(rrtSub) rrtSub.textContent='Приём ставок открыт';
-
-      go.disabled=false;
-      if(inRound){
-        go.textContent=`СТАВКА ${userBet} ⬦ ПРИНЯТА · (ОТМЕНИТЬ)`;
-        go.style.background='linear-gradient(135deg,#10b981,#059669)';
-      }else{
-        go.textContent=`ПОСТАВИТЬ · ${S.bet} ⬦`;
-        go.style.background='';
-      }
     }else if(phase==='flight'){
       rx.textContent='×'+fx(cur);
       rx.className='xbig';
@@ -2176,22 +2352,7 @@ function gameRacket(){
         rrtVal.className='rrt-val flight';
         rrtVal.textContent='×'+fx(cur);
       }
-      if(rrtSub) rrtSub.textContent=inRound&&!cashed?'Нажмите «ЗАБРАТЬ» до взрыва':'Раунд в процессе';
-
-      if(inRound&&!cashed){
-        const can=cur>=MINCASH;
-        go.disabled=!can;
-        go.textContent=can?`ЗАБРАТЬ ×${fx(cur)} (+${fmt(userBet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)} · сейчас ×${fx(cur)}`;
-        go.style.background='';
-      }else if(inRound&&cashed){
-        go.disabled=true;
-        go.textContent=`ЗАБРАНО ×${fx(cashX)} · ждём финал (×${fx(cur)})`;
-        go.style.background='';
-      }else{
-        go.disabled=false;
-        go.textContent=nextRoundBet?`СТАВКА НА СЛЕД. РАУНД (${S.bet} ⬦) ПРИНЯТА`:`СТАВКА НА СЛЕД. РАУНД · ${S.bet} ⬦`;
-        go.style.background=nextRoundBet?'linear-gradient(135deg,#10b981,#059669)':'';
-      }
+      if(rrtSub) rrtSub.textContent=hasActive?'Нажмите «ЗАБРАТЬ» до взрыва':'Раунд в процессе';
     }else{
       // phase === 'done'
       rx.textContent='×'+fx(crash);
@@ -2206,11 +2367,9 @@ function gameRacket(){
         rrtVal.innerHTML=`${toNext<10?'0':''}${toNext}<span class="rrt-unit">с</span>`;
       }
       if(rrtSub) rrtSub.textContent=`Остановка ×${fx(crash)} · Подготовка ракеты`;
-
-      go.disabled=false;
-      go.textContent=nextRoundBet?`СТАВКА НА СЛЕД. РАУНД (${S.bet} ⬦) ПРИНЯТА`:`СТАВКА НА СЛЕД. РАУНД · ${S.bet} ⬦`;
-      go.style.background=nextRoundBet?'linear-gradient(135deg,#10b981,#059669)':'';
     }
+    updateBetUI(B1, 1, b1Btn, b1St, b1Rub);
+    updateBetUI(B2, 2, b2Btn, b2St, b2Rub);
     draw(roundTime);
     renderBotBets(roundTime);
   }
@@ -2221,8 +2380,9 @@ function gameRacket(){
     const listEl=q('#botBetsList');
     if(!listEl)return;
 
-    const totalPlayers=currentRoundBots.length+(inRound?1:0);
-    const totalTokens=currentRoundBank+(inRound?userBet:0);
+    const activeBets = [B1, B2].filter(b => b.inRound);
+    const totalPlayers = currentRoundBots.length + (activeBets.length > 0 ? 1 : 0);
+    const totalTokens = currentRoundBank + (B1.inRound ? B1.bet : 0) + (B2.inRound ? B2.bet : 0);
 
     if(countEl)countEl.textContent=`(${totalPlayers})`;
     if(bankEl)bankEl.textContent=`${fmtRub(totalTokens)} (${fmt(totalTokens)} ⬦)`;
@@ -2233,20 +2393,21 @@ function gameRacket(){
 
     let html='';
 
-    if(inRound){
+    [B1, B2].forEach((B, idx) => {
+      if(!B.inRound) return;
       const pr=tgProfile();
       let stHtml='';
       if(phase==='betting'){
         stHtml='<span class="bot-bet-st flight">Ожидание</span>';
       }else if(phase==='flight'){
-        if(cashed){
-          stHtml=`<span class="bot-bet-st win">×${fx(cashX)} (+${fmt(cashAmt)} ⬦)</span>`;
+        if(B.cashed){
+          stHtml=`<span class="bot-bet-st win">×${fx(B.cashX)} (+${fmt(B.cashAmt)} ⬦)</span>`;
         }else{
           stHtml=`<span class="bot-bet-st flight">В игре (×${fx(cur)})</span>`;
         }
       }else{
-        if(cashed){
-          stHtml=`<span class="bot-bet-st win">×${fx(cashX)} (+${fmt(cashAmt)} ⬦)</span>`;
+        if(B.cashed){
+          stHtml=`<span class="bot-bet-st win">×${fx(B.cashX)} (+${fmt(B.cashAmt)} ⬦)</span>`;
         }else{
           stHtml='<span class="bot-bet-st lose">Сгорело</span>';
         }
@@ -2256,16 +2417,16 @@ function gameRacket(){
       <div class="bot-bet-row user-row">
         <div class="bot-bet-left">
           <div class="bot-bet-av-wrap">
-            <div class="bot-bet-av" style="background:#ffcf6b;color:#0f172a;font-weight:900">${pr.avatar||'Я'}</div>
+            <div class="bot-bet-av" style="background:${idx===0?'#ffcf6b':'#60a5fa'};color:#0f172a;font-weight:900">${pr.avatar||'Я'}</div>
           </div>
           <div>
-            <div class="bot-bet-name" style="color:#ffcf6b">${pr.name} (Вы)</div>
-            <div class="bot-bet-amt">${fmt(userBet)} ⬦ ≈ ${fmtRub(userBet)}</div>
+            <div class="bot-bet-name" style="color:${idx===0?'#ffcf6b':'#60a5fa'}">${pr.name} (Ставка #${idx+1})</div>
+            <div class="bot-bet-amt">${fmt(B.bet)} ⬦ ≈ ${fmtRub(B.bet)}</div>
           </div>
         </div>
         <div>${stHtml}</div>
       </div>`;
-    }
+    });
 
     for(let i=0;i<currentRoundBots.length;i++){
       const b=currentRoundBots[i];
@@ -2308,16 +2469,16 @@ function gameRacket(){
     listEl.innerHTML=html;
   }
 
-  function cash(target){
-    if(phase!=='flight'||!inRound||cashed)return;
+  function cashBet(B, num, target){
+    if(phase!=='flight'||!B.inRound||B.cashed)return;
     if(cur<MINCASH)return;
-    cashX=+((target!=null?target:cur).toFixed(2));
+    B.cashX=+((target!=null?target:cur).toFixed(2));
     if(target!=null)cur=Math.max(cur,target);
-    cashAmt=Math.floor(userBet*cashX);
-    cashed=true;
-    win(cashAmt,'Ракетка','кэшаут ×'+fx(cashX));
+    B.cashAmt=Math.floor(B.bet*B.cashX);
+    B.cashed=true;
+    win(B.cashAmt,'Ракетка',`Ставка #${num} кэшаут ×`+fx(B.cashX));
     rr.className='result good';
-    rr.innerHTML=`Забрано на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b> (≈ ${fmtRub(cashAmt)}). Ракета летит дальше.`;
+    rr.innerHTML=`Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b> → <b>+${fmt(B.cashAmt)} ⬦</b> (≈ ${fmtRub(B.cashAmt)}).`;
     render(Date.now()%ROUND_MS);
   }
 
@@ -2336,27 +2497,26 @@ function gameRacket(){
       lastBotsRenderTime=0;
       roundCrashed=false;
       boomT=0;
-      cashed=false;
-      cashX=0;
-      cashAmt=0;
       tStop=0;
 
-      // Проверяем авто-ставку или предварительную ставку на раунд
-      if(autoBet||nextRoundBet){
-        nextRoundBet=false;
-        if(S.balance>=S.bet){
-          userBet=S.bet;
-          place(userBet,'Ракетка');
-          inRound=true;
-          rr.className='result';
-          rr.textContent=`Ставка ${userBet} ⬦ на новый раунд принята!`;
-        }else{
-          inRound=false;
-          rr.className='result bad';
-          rr.textContent='Недостаточно токенов для ставки на новый раунд.';
+      // Сброс и запуск ставок на новый раунд
+      [B1, B2].forEach((B, idx) => {
+        B.cashed=false;
+        B.cashX=0;
+        B.cashAmt=0;
+        if(B.nextRound){
+          B.nextRound=false;
+          if(S.balance>=B.bet){
+            place(B.bet, 'Ракетка');
+            B.inRound=true;
+          }else{
+            B.inRound=false;
+          }
         }
-      }else{
-        inRound=false;
+      });
+      if(B1.inRound || B2.inRound){
+        rr.className='result';
+        rr.textContent='Ставки на новый раунд приняты!';
       }
     }
 
@@ -2374,8 +2534,11 @@ function gameRacket(){
         phase='flight';
         cur=potX;
         tStop=0;
-        if(inRound&&!cashed&&autoOn&&cur>=autoX&&autoX<=crash){
-          cash(autoX);
+        if(B1.inRound && !B1.cashed && B1.autoOn && cur>=B1.autoX && B1.autoX<=crash){
+          cashBet(B1, 1, B1.autoX);
+        }
+        if(B2.inRound && !B2.cashed && B2.autoOn && cur>=B2.autoX && B2.autoX<=crash){
+          cashBet(B2, 2, B2.autoX);
         }
       }else{
         phase='done';
@@ -2385,15 +2548,13 @@ function gameRacket(){
           roundCrashed=true;
           boomT=performance.now();
           pushRHist(crash);
-          if(inRound&&!cashed){
+          const hadActive=(B1.inRound&&!B1.cashed)||(B2.inRound&&!B2.cashed);
+          if(hadActive){
             tgHaptic('lose');
             rr.className='result bad';
             rr.innerHTML=crash<=1
-              ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Ставка ${userBet} ⬦ сгорела.`
-              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Ставка ${userBet} ⬦ сгорела.`;
-          }else if(inRound&&cashed){
-            rr.className='result good';
-            rr.innerHTML=`Итог раунда: остановка на <b style="color:${band(crash)}">×${fx(crash)}</b>, вывод на <b style="color:${band(cashX)}">×${fx(cashX)}</b> → <b>+${fmt(cashAmt)} ⬦</b>.`;
+              ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Не забранные ставки сгорели.`
+              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Не забранные ставки сгорели.`;
           }
         }
       }
@@ -2403,66 +2564,104 @@ function gameRacket(){
     raf=requestAnimationFrame(loop);
   }
 
-  go.addEventListener('click',()=>{
+  function handleBetClick(B, num){
     const now=Date.now();
     const rTime=now%ROUND_MS;
     if(rTime<WAIT_MS){
-      // Фаза приёма ставок
-      if(inRound){
-        // Отмена ставки
-        inRound=false;
-        S.balance+=userBet;
+      if(B.inRound){
+        B.inRound=false;
+        S.balance+=B.bet;
         save();syncUI();
         rr.className='result';
-        rr.textContent='Ставка отменена, токены возвращены.';
+        rr.textContent=`Ставка #${num} отменена, токены возвращены.`;
       }else{
-        if(S.balance<S.bet){
+        if(S.balance<B.bet){
           rr.className='result bad';
-          rr.textContent='Недостаточно токенов — пополни баланс.';
+          rr.textContent='Недостаточно токенов для ставки.';
           return;
         }
-        userBet=S.bet;
-        place(userBet,'Ракетка');
-        inRound=true;
-        cashed=false;cashX=0;cashAmt=0;
+        place(B.bet, 'Ракетка');
+        B.inRound=true;
+        B.cashed=false;B.cashX=0;B.cashAmt=0;
         rr.className='result';
-        rr.textContent=`Ставка ${userBet} ⬦ принята! Полёт начнётся через ${Math.ceil((WAIT_MS-rTime)/1000)}с.`;
+        rr.textContent=`Ставка #${num} (${B.bet} ⬦) принята!`;
       }
       render(rTime);
     }else if(phase==='flight'){
-      if(inRound&&!cashed){
-        cash();
-      }else if(!inRound){
-        nextRoundBet=!nextRoundBet;
+      if(B.inRound&&!B.cashed){
+        cashBet(B, num);
+      }else if(!B.inRound){
+        B.nextRound=!B.nextRound;
         rr.className='result';
-        rr.textContent=nextRoundBet?'Ставка будет сделана в начале следующего раунда!':'Ставка на следующий раунд отменена.';
+        rr.textContent=B.nextRound?`Ставка #${num} будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
         render(rTime);
       }
     }else{
-      // phase === 'done'
-      nextRoundBet=!nextRoundBet;
+      B.nextRound=!B.nextRound;
       rr.className='result';
-      rr.textContent=nextRoundBet?'Ставка будет сделана в начале следующего раунда!':'Ставка на следующий раунд отменена.';
+      rr.textContent=B.nextRound?`Ставка #${num} будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
       render(rTime);
     }
+  }
+
+  if(b1Btn) b1Btn.addEventListener('click',()=>handleBetClick(B1, 1));
+  if(b2Btn) b2Btn.addEventListener('click',()=>handleBetClick(B2, 2));
+
+  qAll('#b1Chips button', a).forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const v=+btn.getAttribute('data-b1')||50;
+      B1.bet=v;S.bet=v;save();syncInputs();render(Date.now()%ROUND_MS);
+    });
+  });
+  qAll('#b2Chips button', a).forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const v=+btn.getAttribute('data-b2')||50;
+      B2.bet=v;S.bet2=v;save();syncInputs();render(Date.now()%ROUND_MS);
+    });
   });
 
-  axTg.addEventListener('click',()=>{
-    autoOn=!autoOn;S.autoOn=autoOn;save();syncAuto();
-  });
-  abTg.addEventListener('click',()=>{
-    autoBet=!autoBet;S.autoBet=autoBet;save();syncAutoBet();
-    rr.className='result';
-    rr.textContent=autoBet?'Авто-ставка включена: ставка будет ставиться в каждом раунде.':'Авто-ставка выключена.';
-  });
-  axIn.addEventListener('input',()=>{
-    const v=Math.min(RKMAX,Math.max(MINCASH,+axIn.value.replace(',','.')||1.5));
-    autoX=v;S.autoX=v;save();
-  });
-  axIn.addEventListener('blur',()=>{axIn.value=fx(autoX)});
+  if(b1Inp){
+    b1Inp.addEventListener('input',()=>{
+      const v=Math.max(10, Math.floor(+b1Inp.value)||10);
+      B1.bet=v;S.bet=v;save();if(b1Rub)b1Rub.textContent='≈ '+fmtRub(v);
+    });
+    b1Inp.addEventListener('blur',()=>{b1Inp.value=B1.bet});
+  }
+  if(b2Inp){
+    b2Inp.addEventListener('input',()=>{
+      const v=Math.max(10, Math.floor(+b2Inp.value)||10);
+      B2.bet=v;S.bet2=v;save();if(b2Rub)b2Rub.textContent='≈ '+fmtRub(v);
+    });
+    b2Inp.addEventListener('blur',()=>{b2Inp.value=B2.bet});
+  }
 
-  wireBet(a,()=>{render(Date.now()%ROUND_MS)});
-  syncAuto();syncAutoBet();
+  if(b1AutoChk){
+    b1AutoChk.addEventListener('change',()=>{
+      B1.autoOn=b1AutoChk.checked;S.autoOn=B1.autoOn;save();
+    });
+  }
+  if(b2AutoChk){
+    b2AutoChk.addEventListener('change',()=>{
+      B2.autoOn=b2AutoChk.checked;S.autoOn2=B2.autoOn;save();
+    });
+  }
+
+  if(b1AutoXInp){
+    b1AutoXInp.addEventListener('input',()=>{
+      const v=Math.min(RKMAX, Math.max(MINCASH, +b1AutoXInp.value.replace(',','.')||1.30));
+      B1.autoX=v;S.autoX=v;save();
+    });
+    b1AutoXInp.addEventListener('blur',()=>{b1AutoXInp.value=fx(B1.autoX)});
+  }
+  if(b2AutoXInp){
+    b2AutoXInp.addEventListener('input',()=>{
+      const v=Math.min(RKMAX, Math.max(MINCASH, +b2AutoXInp.value.replace(',','.')||2.00));
+      B2.autoX=v;S.autoX2=v;save();
+    });
+    b2AutoXInp.addEventListener('blur',()=>{b2AutoXInp.value=fx(B2.autoX)});
+  }
+
+  syncInputs();
   loop();
 
   return ()=>{dead=true;cancelAnimationFrame(raf)};
@@ -3731,7 +3930,11 @@ function gameCases(){
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
             <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
             <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
+            <button class="control" id="btnCaseUpgrade" style="margin-top:12px;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:13px;padding:10px 14px;box-shadow:0 4px 14px rgba(245,158,11,.4)">⚡ АПГРЕЙД ДРОПА (до ×20)</button>
           </div>`;
+
+          const upBtn = q('#btnCaseUpgrade');
+          if(upBtn) upBtn.onclick = () => openUpgradeModal(winItem);
 
           if(openBtn){
             openBtn.disabled = false;
@@ -3748,6 +3951,200 @@ function gameCases(){
     clearTimeout(timer);
     clearCaseTimers();
   };
+}
+
+/* «Апгрейд» (Upgrade) выпавшего предмета */
+function openUpgradeModal(dropItem){
+  const existing = q('.upgrade-modal');
+  if(existing) existing.remove();
+
+  const basePrice = Math.max(10, dropItem.price);
+  const targets = [
+    { mult: 2, chance: 47, name: '2x Удвоение' },
+    { mult: 3, chance: 31, name: '3x Рост' },
+    { mult: 5, chance: 18.5, name: '5x Мега' },
+    { mult: 10, chance: 9.2, name: '10x Дроп' },
+    { mult: 20, chance: 4.5, name: '20x Джекпот' }
+  ];
+  let curTgtIdx = 0;
+  let isSpinning = false;
+  let wheelRot = 0;
+
+  const modal = document.createElement('div');
+  modal.className = 'upgrade-modal';
+  modal.innerHTML = `
+  <div class="upgrade-box">
+    <button class="upgrade-close" id="btnUpClose">✕</button>
+    <div style="font-size:13px;font-weight:800;color:#fca5a5;letter-spacing:1px">⚡ АПГРЕЙД ДРОПА</div>
+    <div class="muted small" style="margin-top:2px">Умножьте выпавший приз или рискните всем!</div>
+
+    <div class="upgrade-visual">
+      <div class="upgrade-item-card">
+        <div style="font-size:28px">${dropItem.icon||'📦'}</div>
+        <div style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${dropItem.name}</div>
+        <b style="font-size:12px;color:#ffcf6b">${fmt(basePrice)} ⬦</b>
+      </div>
+      <div class="upgrade-arrow">➔</div>
+      <div class="upgrade-item-card" id="upTargetCard">
+        <div style="font-size:28px" id="upTargetIcon">🎁</div>
+        <div style="font-size:11px;font-weight:700;color:#3ddc96" id="upTargetTitle">×2.00</div>
+        <b style="font-size:12px;color:#3ddc96" id="upTargetPrice">${fmt(basePrice * 2)} ⬦</b>
+      </div>
+    </div>
+
+    <!-- Круговой индикатор шанса -->
+    <div class="upgrade-circle-wrap">
+      <div class="upgrade-pointer"></div>
+      <canvas id="upCanvas" width="160" height="160"></canvas>
+      <div class="upgrade-wheel-text" id="upWheelChance">47%</div>
+    </div>
+
+    <div class="chips" id="upTargetChips" style="justify-content:center;gap:6px;margin:12px 0">
+      ${targets.map((t, idx) => `<button class="chip ${idx===0?'on':''}" data-uidx="${idx}">×${t.mult}</button>`).join('')}
+    </div>
+
+    <button class="control" id="btnRunUpgrade" style="margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:14px;padding:14px;font-weight:900">
+      ⚡ АПГРЕЙДНУТЬ (${fmt(basePrice)} ⬦)
+    </button>
+    <div class="result" id="upMsg" style="margin-top:10px;font-size:11.5px">Выберите цель умножения и запустите колесо!</div>
+  </div>`;
+
+  document.body.appendChild(modal);
+
+  const cvs = q('#upCanvas', modal);
+  const upClose = q('#btnUpClose', modal);
+  const upRun = q('#btnRunUpgrade', modal);
+  const upMsg = q('#upMsg', modal);
+
+  function drawWheel(rot = 0){
+    if(!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height, R = W / 2;
+    ctx.clearRect(0, 0, W, H);
+
+    const curTgt = targets[curTgtIdx];
+    const winAngle = (curTgt.chance / 100) * (Math.PI * 2);
+
+    ctx.save();
+    ctx.translate(R, R);
+    ctx.rotate(rot);
+
+    // Красная зона (проигрыш)
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#2a1215';
+    ctx.fill();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Зелёная выигрышная зона
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R - 4, -Math.PI / 2, -Math.PI / 2 + winAngle);
+    ctx.closePath();
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.strokeStyle = '#3ddc96';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Центральный кругляк
+    ctx.beginPath();
+    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a101b';
+    ctx.fill();
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function syncTarget(){
+    const t = targets[curTgtIdx];
+    const tPrice = basePrice * t.mult;
+    q('#upTargetTitle', modal).textContent = `×${t.mult}.00`;
+    q('#upTargetPrice', modal).textContent = `${fmt(tPrice)} ⬦`;
+    q('#upWheelChance', modal).textContent = `${t.chance}%`;
+    qAll('#upTargetChips button', modal).forEach((b, i) => b.classList.toggle('on', i === curTgtIdx));
+    drawWheel(wheelRot);
+  }
+
+  qAll('#upTargetChips button', modal).forEach(btn => {
+    btn.onclick = () => {
+      if(isSpinning) return;
+      curTgtIdx = +btn.dataset.uidx;
+      syncTarget();
+    };
+  });
+
+  upClose.onclick = () => {
+    if(isSpinning) return;
+    modal.remove();
+  };
+
+  upRun.onclick = () => {
+    if(isSpinning) return;
+    isSpinning = true;
+    upRun.disabled = true;
+    upClose.disabled = true;
+    upRun.textContent = 'ВРАЩЕНИЕ КОЛЕСА…';
+    tgHaptic('impact');
+
+    const curTgt = targets[curTgtIdx];
+    const winProb = curTgt.chance / 100;
+    const isWin = Math.random() < winProb;
+
+    const winAngle = winProb * (Math.PI * 2);
+    const spins = 5 + Math.floor(Math.random() * 3);
+
+    let targetOffsetAngle;
+    if(isWin){
+      targetOffsetAngle = Math.random() * (winAngle - 0.08) + 0.04;
+    } else {
+      targetOffsetAngle = winAngle + 0.08 + Math.random() * ((Math.PI * 2) - winAngle - 0.16);
+    }
+    const finalRot = wheelRot + (spins * Math.PI * 2) + (Math.PI * 2 - (targetOffsetAngle % (Math.PI * 2)));
+
+    const startTime = performance.now();
+    const duration = 3800;
+    const startRot = wheelRot;
+
+    function anim(now){
+      const elap = now - startTime;
+      const p = Math.min(1, elap / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      wheelRot = startRot + (finalRot - startRot) * eased;
+      drawWheel(wheelRot);
+
+      if(p < 1){
+        requestAnimationFrame(anim);
+      } else {
+        isSpinning = false;
+        upClose.disabled = false;
+
+        if(isWin){
+          tgHaptic('win');
+          const winTk = basePrice * curTgt.mult;
+          win(winTk - basePrice, 'Апгрейд кейса', `Успех ×${curTgt.mult}`);
+          upMsg.className = 'result good';
+          upMsg.innerHTML = `🎉 <b>АПГРЕЙД УДАЛСЯ!</b> Выигрыш умножен: <b>+${fmt(winTk)} ⬦</b> (≈ ${fmtRub(winTk)}) на балансе!`;
+          upRun.textContent = 'УСПЕШНЫЙ АПГРЕЙД ✓';
+        } else {
+          tgHaptic('lose');
+          S.balance = Math.max(0, S.balance - basePrice);
+          save(); syncUI();
+          upMsg.className = 'result bad';
+          upMsg.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка попала в красную зону. Предмет сгорел.`;
+          upRun.textContent = 'ПРЕДМЕТ СГОРЕЛ ✕';
+        }
+      }
+    }
+    requestAnimationFrame(anim);
+  };
+
+  syncTarget();
 }
 
 /* ==================== НОВЫЕ ИГРЫ: ВАРИАНТ 4, 7, 10 ==================== */
@@ -4003,6 +4400,13 @@ function gameChallenge(targetSel){
         qObj.claimed = true;
         S.balance += qObj.reward;
         tgHaptic('win');
+        const allClaimed = S.challengeQuests && S.challengeQuests.every(q => q.claimed);
+        if(allClaimed && !S.challengeNotified){
+          S.challengeNotified = true;
+          if(IS_TG && API_BASE){
+            tgCall('/api/notify-event', { type: 'challenge_completed' }).catch(()=>{});
+          }
+        }
         syncUI();save();
         render();
         const m = q('#chMsg');
@@ -4224,9 +4628,268 @@ function gameHotDrop(){
   return () => { clearInterval(timerId); };
 }
 
+/* =======================================================================
+   DICE (БОЛЬШЕ / МЕНЬШЕ) — Классика DragonMoney, NVUTI, RubUp
+   ======================================================================= */
+function gameDice(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let winChance = 50; // 1% .. 95%
+  let isRolling = false;
+  let lastRoll = 500000;
+
+  function getPayout(){
+    return +(98 / winChance).toFixed(2);
+  }
+
+  function getTargetUnder(){
+    return Math.floor(1000000 * (winChance / 100)) - 1;
+  }
+
+  function getTargetOver(){
+    return Math.floor(1000000 * (1 - winChance / 100));
+  }
+
+  function render(){
+    const payout = getPayout();
+    const targetUnder = getTargetUnder();
+    const targetOver = getTargetOver();
+    const potWin = Math.floor(S.bet * payout);
+
+    a.innerHTML = `
+    <div class="dice-stage">
+      <div class="dice-display">
+        <div class="dice-roll-num" id="diceNum">${String(lastRoll).padStart(6, '0')}</div>
+        <div class="dice-status-pill" id="diceSub">Генератор 000 000 — 999 999</div>
+      </div>
+
+      <div class="dice-slider-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="muted small">Вероятность победы</span>
+          <b style="color:#ffcf6b;font-size:18px"><span id="diceChanceVal">${winChance}</span>%</b>
+        </div>
+        <input type="range" class="dice-range-slider" id="diceRange" min="1" max="95" value="${winChance}" step="1">
+        <div class="chips" id="diceQuickChips" style="justify-content:center;gap:6px;margin-top:6px">
+          <button class="chip ${winChance===10?'on':''}" data-dc="10">10%</button>
+          <button class="chip ${winChance===25?'on':''}" data-dc="25">25%</button>
+          <button class="chip ${winChance===50?'on':''}" data-dc="50">50%</button>
+          <button class="chip ${winChance===75?'on':''}" data-dc="75">75%</button>
+          <button class="chip ${winChance===90?'on':''}" data-dc="90">90%</button>
+        </div>
+        <div class="dice-stats-grid">
+          <div class="dice-stat-box">
+            <div class="dice-stat-title">Множитель</div>
+            <div class="dice-stat-val" id="diceMult" style="color:#3ddc96">×${payout}</div>
+          </div>
+          <div class="dice-stat-box">
+            <div class="dice-stat-title">Выигрыш при победе</div>
+            <div class="dice-stat-val" id="dicePotWin">+${fmt(potWin)} ⬦</div>
+          </div>
+        </div>
+      </div>
+
+      ${betHTML()}
+
+      <div class="dice-actions-grid">
+        <button class="dice-btn dice-btn-less" id="btnDiceUnder" ${isRolling?'disabled':''}>
+          <span>МЕНЬШЕ</span>
+          <span class="dice-btn-sub">0 — ${targetUnder}</span>
+        </button>
+        <button class="dice-btn dice-btn-more" id="btnDiceOver" ${isRolling?'disabled':''}>
+          <span>БОЛЬШЕ</span>
+          <span class="dice-btn-sub">${targetOver} — 999999</span>
+        </button>
+      </div>
+
+      <div class="result" id="diceMsg" style="margin-top:12px">Настройте вероятность и выберите «Меньше» или «Больше».</div>
+    </div>`;
+
+    wireBet(a, ()=>{
+      const potW = Math.floor(S.bet * getPayout());
+      const el = q('#dicePotWin', a);
+      if(el) el.textContent = `+${fmt(potW)} ⬦`;
+    });
+
+    const range = q('#diceRange', a);
+    if(range){
+      range.oninput = () => {
+        winChance = +range.value;
+        updateStats();
+      };
+    }
+
+    qAll('#diceQuickChips button', a).forEach(btn => {
+      btn.onclick = () => {
+        winChance = +btn.dataset.dc;
+        if(range) range.value = winChance;
+        updateStats();
+      };
+    });
+
+    const btnUnder = q('#btnDiceUnder', a);
+    const btnOver = q('#btnDiceOver', a);
+    if(btnUnder) btnUnder.onclick = () => rollDice('under');
+    if(btnOver) btnOver.onclick = () => rollDice('over');
+  }
+
+  function updateStats(){
+    const payout = getPayout();
+    const targetUnder = getTargetUnder();
+    const targetOver = getTargetOver();
+    const potWin = Math.floor(S.bet * payout);
+
+    const cVal = q('#diceChanceVal', a); if(cVal) cVal.textContent = winChance;
+    const mVal = q('#diceMult', a); if(mVal) mVal.textContent = '×' + payout;
+    const pwVal = q('#dicePotWin', a); if(pwVal) pwVal.textContent = `+${fmt(potWin)} ⬦`;
+
+    const btnUnder = q('#btnDiceUnder', a);
+    if(btnUnder) btnUnder.innerHTML = `<span>МЕНЬШЕ</span><span class="dice-btn-sub">0 — ${targetUnder}</span>`;
+
+    const btnOver = q('#btnDiceOver', a);
+    if(btnOver) btnOver.innerHTML = `<span>БОЛЬШЕ</span><span class="dice-btn-sub">${targetOver} — 999999</span>`;
+
+    qAll('#diceQuickChips button', a).forEach(b => {
+      b.classList.toggle('on', +b.dataset.dc === winChance);
+    });
+  }
+
+  function rollDice(side){
+    if(isRolling) return;
+    if(S.balance < S.bet){
+      tgHaptic('error');
+      const m = q('#diceMsg', a);
+      if(m){ m.className = 'result bad'; m.textContent = 'Недостаточно токенов на балансе!'; }
+      return;
+    }
+
+    isRolling = true;
+    place(S.bet, 'Dice');
+    tgHaptic('impact');
+
+    const btnUnder = q('#btnDiceUnder', a);
+    const btnOver = q('#btnDiceOver', a);
+    if(btnUnder) btnUnder.disabled = true;
+    if(btnOver) btnOver.disabled = true;
+
+    const numEl = q('#diceNum', a);
+    const msgEl = q('#diceMsg', a);
+    if(numEl) numEl.className = 'dice-roll-num';
+    if(msgEl){ msgEl.className = 'result'; msgEl.textContent = 'Генерация счастливого числа...'; }
+
+    let rollsCount = 0;
+    const rollInterval = setInterval(() => {
+      rollsCount++;
+      const randN = Math.floor(Math.random() * 1000000);
+      if(numEl) numEl.textContent = String(randN).padStart(6, '0');
+      if(rollsCount >= 8){
+        clearInterval(rollInterval);
+        finishRoll();
+      }
+    }, 45);
+
+    function finishRoll(){
+      isRolling = false;
+      if(btnUnder) btnUnder.disabled = false;
+      if(btnOver) btnOver.disabled = false;
+
+      const roll = Math.floor(Math.random() * 1000000);
+      lastRoll = roll;
+      if(numEl) numEl.textContent = String(roll).padStart(6, '0');
+
+      const targetUnder = getTargetUnder();
+      const targetOver = getTargetOver();
+      const payout = getPayout();
+      const isWin = (side === 'under' && roll <= targetUnder) || (side === 'over' && roll >= targetOver);
+
+      if(isWin){
+        tgHaptic('win');
+        const winAmt = Math.floor(S.bet * payout);
+        win(winAmt, 'Dice', `${side==='under'?'Меньше':'Больше'} ×${payout}`);
+        if(numEl) numEl.className = 'dice-roll-num win';
+        if(msgEl){
+          msgEl.className = 'result good';
+          msgEl.innerHTML = `🎉 <b>ПОБЕДА!</b> Выпало <b>${String(roll).padStart(6,'0')}</b>. Вы выиграли <b>+${fmt(winAmt)} ⬦</b> (≈ ${fmtRub(winAmt)})!`;
+        }
+      } else {
+        tgHaptic('lose');
+        if(numEl) numEl.className = 'dice-roll-num lose';
+        if(msgEl){
+          msgEl.className = 'result bad';
+          msgEl.innerHTML = `Выпало <b>${String(roll).padStart(6,'0')}</b>. Ставка ${S.bet} ⬦ сгорела.`;
+        }
+      }
+    }
+  }
+
+  render();
+  return ()=>{};
+}
+
+/* =======================================================================
+   LIVE-ТАКЕР ВЫИГРЫШЕЙ (FOMO-ЛЕНТА)
+   ======================================================================= */
+function initLiveTicker(){
+  const track = q('#liveTickerTrack');
+  if(!track) return;
+
+  const gamesList = [
+    { name: 'Ракетка', minX: 1.25, maxX: 12.0 },
+    { name: 'Dice', minX: 1.15, maxX: 9.8 },
+    { name: 'Кейсы', minX: 1.5, maxX: 15.0 },
+    { name: 'Попрыгун', minX: 1.3, maxX: 4.5 },
+    { name: 'Hot Drop', minX: 1.0, maxX: 5.0 },
+    { name: 'Аукцион', minX: 2.0, maxX: 6.0 }
+  ];
+
+  function addWinItem(name, gameName, amt, mult){
+    const el = document.createElement('div');
+    el.className = 'lt-item';
+    const clean = name.replace(/^@/,'').trim();
+    const initials = (clean.slice(0, 2) || 'TG').toUpperCase();
+    const col = BOT_PALETTES[Math.floor(Math.random() * BOT_PALETTES.length)];
+    el.innerHTML = `
+      <span class="lt-avatar" style="background:${col}">${initials}</span>
+      <span class="lt-name">${clean}</span>
+      <span class="lt-game">${gameName}</span>
+      <span class="lt-win">+${fmt(amt)} ⬦</span>
+      <span class="lt-mult">×${fx(mult)}</span>
+    `;
+    track.prepend(el);
+    while(track.children.length > 25){
+      track.removeChild(track.lastChild);
+    }
+  }
+
+  for(let i = 0; i < 8; i++){
+    const botName = BOT_NAMES_RAW[Math.floor(Math.random() * BOT_NAMES_RAW.length)];
+    const gm = gamesList[Math.floor(Math.random() * gamesList.length)];
+    const mult = +(gm.minX + Math.random() * (gm.maxX - gm.minX)).toFixed(2);
+    const amt = Math.round((50 + Math.random() * 450) * mult);
+    addWinItem(botName, gm.name, amt, mult);
+  }
+
+  function scheduleNext(){
+    const delay = 2200 + Math.random() * 2500;
+    setTimeout(() => {
+      const botName = BOT_NAMES_RAW[Math.floor(Math.random() * BOT_NAMES_RAW.length)];
+      const gm = gamesList[Math.floor(Math.random() * gamesList.length)];
+      const mult = +(gm.minX + Math.random() * (gm.maxX - gm.minX)).toFixed(2);
+      const amt = Math.round((40 + Math.random() * 600) * mult);
+      addWinItem(botName, gm.name, amt, mult);
+      scheduleNext();
+    }, delay);
+  }
+  scheduleNext();
+
+  window.pushLiveTickerWin = function(name, gameName, amt, mult){
+    addWinItem(name, gameName, amt, mult);
+  };
+}
+
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
-const BUILD={racket:gameRacket,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
@@ -4243,11 +4906,12 @@ window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для стары
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
 const startHash = (window.location.hash || '').replace('#', '');
 tgInit();tgRegister();syncUI();
+initLiveTicker();
 updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);
 updateModesOnline();
 setInterval(updateModesOnline, 30000);
-if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop' || startHash === 'wheel'){
+if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop' || startHash === 'wheel' || startHash === 'dice'){
   play(startHash);
 } else {
   screen('games');
