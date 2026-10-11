@@ -164,7 +164,7 @@ function stakeRemove(u, all) {
 async function creditDeposit(userId, tokens, source) {
   const u = user(userId);
   u.tokens += tokens;
-    u.lastDeposit = tokens;
+  u.lastDeposit = Math.round(tokens / TOKENS_PER_RUB);
   u.lastDepositId = (u.lastDepositId || 0) + 1;
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
@@ -840,6 +840,81 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true });
     }
 
+    /* Вебхук автоматизации смс-уведомлений с телефона (iOS Быстрые команды / Android MacroDroid) */
+    if (url.pathname === '/api/payment-webhook' && req.method === 'POST') {
+      const authHeader = req.headers['authorization'] || '';
+      const secret = body.secret || authHeader.replace(/^Bearer\s+/i, '');
+      const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || 'MUP_SECRET_KEY_2026';
+      if (secret !== EXPECTED_SECRET) {
+        return send(403, { error: 'unauthorized: invalid webhook secret' });
+      }
+
+      const text = String(body.text || body.message || body.sms || '');
+      const senderPhone = String(body.sender || '');
+      console.log(`[Payment Webhook] Получено уведомление от ${senderPhone}: "${text}"`);
+
+      // Извлекаем сумму платежа из текста СМС (например "Пополнение 300р", "перевод 500 RUB", "+300.00 RUB", "300 ₽")
+      let match = text.match(/(?:пополнение|перевод|зачисление|поступило|\+)\s*([\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|rub)?/i);
+      if (!match) {
+        match = text.match(/([\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|rub)/i);
+      }
+      
+      let amountRub = 0;
+      if (match && match[1]) {
+        amountRub = Math.floor(parseFloat(match[1].replace(/\s+/g, '').replace(',', '.')));
+      } else if (body.amount) {
+        amountRub = Math.floor(Number(body.amount));
+      }
+
+      if (!amountRub || amountRub <= 0) {
+        return send(400, { error: 'Не удалось определить сумму из текста сообщения', text });
+      }
+
+      // Ищем заявку по сумме среди ожидающих (pending)
+      let foundOrder = null;
+      let foundId = null;
+      for (const [id, ord] of orders.entries()) {
+        if (ord.status === 'pending' && Number(ord.rub) === amountRub) {
+          foundOrder = ord;
+          foundId = id;
+          break;
+        }
+      }
+
+      if (foundOrder) {
+        foundOrder.status = 'paid';
+        const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
+        await bot.api.sendMessage(foundOrder.userId,
+          `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${foundOrder.tokens} ⬦</b> (${foundOrder.rub} ₽)!\nПриятной игры в MoneyForUp!`,
+          { parse_mode: 'HTML' }
+        ).catch(() => {});
+
+        if (ADMIN_ID) {
+          await bot.api.sendMessage(ADMIN_ID,
+            `🤖 <b>Авто-зачисление по СМС:</b>\n` +
+            `├ Заявка: <b>№${foundId}</b>\n` +
+            `├ Сумма: <b>${amountRub} ₽</b> (+${foundOrder.tokens} ⬦)\n` +
+            `├ Пользователь ID: <code>${foundOrder.userId}</code>\n` +
+            `└ Текст смс: <i>${text}</i>`,
+            { parse_mode: 'HTML' }
+          ).catch(() => {});
+        }
+
+        return send(200, { ok: true, matched_order: foundId, amount: amountRub, tokens: foundOrder.tokens });
+      }
+
+      // Если конкретная заявка не найдена, уведомляем админа о поступившем платеже без заявки
+      if (ADMIN_ID) {
+        await bot.api.sendMessage(ADMIN_ID,
+          `ℹ️ <b>Получено СМС о пополнении на ${amountRub} ₽, но активная заявка на такую сумму не найдена в очереди:</b>\n` +
+          `<i>${text}</i>`,
+          { parse_mode: 'HTML' }
+        ).catch(() => {});
+      }
+
+      return send(200, { ok: true, note: 'payment received but no pending order matched', amount: amountRub });
+    }
+
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
     const who = {
@@ -866,6 +941,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
+
+    if (url.pathname === '/api/sync-balance' && req.method === 'POST') {
+      if (typeof body.tokens === 'number') {
+        u.tokens = Math.max(0, Math.floor(body.tokens));
+      }
+      return send(200, { ok: true, tokens: u.tokens });
+    }
 
     if (url.pathname === '/api/terms' && req.method === 'POST') {
       u.termsAt = Date.now();
