@@ -342,6 +342,24 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .upgrade-circle-wrap canvas{width:160px;height:160px;display:block;border-radius:50%}
 .upgrade-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #ffcf6b;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
 .upgrade-wheel-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.9)}
+
+/* Инвентарь предметов в Профиле */
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.inv-card{background:rgba(255,255,255,.03);border:1.5px solid var(--tier-col,rgba(255,255,255,.1));border-radius:14px;padding:10px;text-align:center;display:flex;flex-direction:column;align-items:center;position:relative;box-shadow:inset 0 0 16px rgba(0,0,0,.4)}
+.inv-icon{font-size:32px;margin-bottom:4px}
+.inv-name{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.inv-val{font-size:11.5px;font-weight:800;color:#ffcf6b;margin:2px 0 6px}
+.inv-acts{display:flex;gap:4px;width:100%}
+.inv-btn{flex:1;padding:5px 2px;font-size:9.5px;font-weight:800;border-radius:8px;border:none;cursor:pointer}
+.inv-btn-sell{background:rgba(255,255,255,.08);color:#d1d5db}
+.inv-btn-up{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+
+/* Режим Апгрейдер (Upgrader) */
+.upgrader-stage{padding:4px 0}
+.upg-selector-box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px}
+.upg-items-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-top:10px}
+.upg-item-chip{flex:0 0 110px;background:rgba(0,0,0,.3);border:1.5px solid var(--tier-col,#374151);border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s}
+.upg-item-chip.active{border-color:#ffcf6b;box-shadow:0 0 12px rgba(255,207,107,.5);transform:scale(1.03)}
 </style>
 </head>
 <body>
@@ -426,10 +444,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
   </div>
 </div>
 
-<div class="section"><b>Игры</b><span class="muted small">10 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">11 режимов</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
+<button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Умножай выигранные предметы или рискуй токенами до ×20</span><i class="arrow">→</i></button>
+<button class="game" data-game="cases"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>15 кейсов от 50 до 1000 ₽, 250 уникальных предметов</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -466,7 +486,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
 <button class="game" data-game="skuf"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="skuf">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_skuf.jpg" alt="Скуф vs Альтушка"></div><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
 <button class="game" data-game="avito"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="avito">3 онлайн</span></span><div class="game-card-cover"><img src="assets/game_avito.jpg" alt="Перекуп на Авито"></div><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
-<button class="game" data-game="cases"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>5 кейсов от 500 до 25 000 ⬦, 100 уникальных гаджетов</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -478,6 +497,19 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
 
+<!-- Инвентарь предметов с кейсов -->
+<div class="section" style="margin-top:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <b>Инвентарь предметов</b>
+    <span class="muted small" id="invTotalValue">0 предметов</span>
+  </div>
+</div>
+<div class="item" style="padding:14px">
+  <div class="muted small">Предметы, выигранные из кейсов. Вы можете мгновенно продать их в токены или отправить в Апгрейдер для умножения до ×20!</div>
+  <div class="inv-grid" id="profileInvGrid">
+    <div class="muted small" style="grid-column:1/-1;padding:12px 0;text-align:center">У вас пока нет предметов. Откройте кейс или испытайте удачу!</div>
+  </div>
+</div>
 
 <div class="section"><b>Пополнение</b><span class="muted small">10 ⬦ = 1 ₽</span></div>
 <div class="item">
@@ -853,7 +885,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[],baitStreak:0,lossTrapActive:false};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -1006,8 +1038,106 @@ function syncUI(){
   withdrawSync();
   if(typeof syncVipUI==='function') syncVipUI();
   if(typeof updateModesOnline==='function') updateModesOnline();
+  renderProfileInventory();
   if(onBetChange)onBetChange();
 }
+
+/* ==================== МЕХАНИКА ЗАВЛЕЧЕНИЯ И СЛИВА (ПРИКОРМКА) ==================== */
+function evalBaitTrap(gameName, naturalWin, currentBet){
+  if(gameName === 'racket') return naturalWin; // Ракетка СТРОГО не трогается!
+
+  S.baitStreak = S.baitStreak || 0;
+  S.lastBetAmt = S.lastBetAmt || currentBet;
+
+  // Резкое увеличение ставки (на 35% и более при ставке > 50 токенов)
+  const betHike = (currentBet >= S.lastBetAmt * 1.35) && (currentBet > 50);
+  S.lastBetAmt = currentBet;
+
+  // Если активна ловушка слива, или игрок победил 2-3 раза и поднял ставку, или серия побед >= 3
+  if(S.lossTrapActive || (S.baitStreak >= 2 && betHike) || S.baitStreak >= 3){
+    S.lossTrapActive = false; // разряжаем ловушку после слива
+    S.baitStreak = 0;
+    return false; // Гарантированный слив в 1-2 ставки
+  }
+
+  // Прикормка: если игрок только начинает (0-1 победа), даем выиграть с повышенным шансом ~70%
+  if(S.baitStreak < 2 && Math.random() < 0.70){
+    S.baitStreak++;
+    if(S.baitStreak >= 2 && Math.random() < 0.5){
+      S.lossTrapActive = true;
+    }
+    return true;
+  }
+
+  if(naturalWin){
+    S.baitStreak++;
+    if(S.baitStreak >= 2){
+      S.lossTrapActive = true;
+    }
+    return true;
+  } else {
+    S.baitStreak = 0;
+    return false;
+  }
+}
+
+/* ==================== ИНВЕНТАРЬ И ПРОДАЖА ПРЕДМЕТОВ ==================== */
+function sellInventoryItem(itemId){
+  S.inventory = S.inventory || [];
+  const idx = S.inventory.findIndex(it => it.id === itemId);
+  if(idx === -1) return;
+  const item = S.inventory[idx];
+  S.balance += item.price;
+  S.inventory.splice(idx, 1);
+  save();
+  syncUI();
+  tgHaptic('win');
+}
+
+function renderProfileInventory(){
+  const grid = q('#profileInvGrid');
+  const countEl = q('#invTotalValue');
+  if(!grid) return;
+  S.inventory = S.inventory || [];
+
+  const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
+  if(countEl){
+    countEl.textContent = `${S.inventory.length} шт. (всего ${fmt(totalVal)} ⬦ ≈ ${fmtRub(totalVal)})`;
+  }
+
+  if(!S.inventory.length){
+    grid.innerHTML = '<div class="muted small" style="grid-column:1/-1;padding:16px 0;text-align:center">У вас пока нет предметов. Откройте кейс или испытайте удачу!</div>';
+    return;
+  }
+
+  grid.innerHTML = S.inventory.map(it => {
+    const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
+    return `
+    <div class="inv-card" style="--inv-tier-col:${col}">
+      <div class="inv-icon">${it.icon || '📦'}</div>
+      <div class="inv-name" title="${it.name}">${it.name}</div>
+      <div class="inv-val">${fmt(it.price)} ⬦ <span style="font-size:10px;color:#94a1b8">≈ ${fmtRub(it.price)}</span></div>
+      <div class="inv-acts">
+        <button class="inv-btn-sell" data-sell-id="${it.id}">💰 Продать</button>
+        <button class="inv-btn-up" data-up-id="${it.id}">⚡ Апгрейд</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  qa('[data-sell-id]', grid).forEach(b => {
+    b.onclick = () => sellInventoryItem(b.dataset.sellId);
+  });
+
+  qa('[data-up-id]', grid).forEach(b => {
+    b.onclick = () => {
+      const it = S.inventory.find(x => x.id === b.dataset.upId);
+      if(!it) return;
+      play('upgrader');
+      if(window.__upgraderSelectItem) window.__upgraderSelectItem(it);
+    };
+  });
+}
+
 let onBetChange=null,cleanup=null;
 function screen(id){
   if(cleanup){try{cleanup()}catch(e){}cleanup=null}
@@ -2804,7 +2934,9 @@ function gameJumper(){
     ball.style.transform='translateX(0)';
     const m=curM();
     const stepP = (m.p && m.p[level]) ? m.p[level] : 0.03;
-    if(Math.random()<stepP){
+    const naturalStepWin = Math.random() < stepP;
+    const willLand = evalBaitTrap('jumper', naturalStepWin, S.bet);
+    if(willLand){
       level++;
       positionBall();
       if(level>=12){busy=false;auto();return}
@@ -2973,7 +3105,18 @@ function gameSpin(){
 
       let pick=Math.random()*100,idx=0,cum=0;
       for(let i=0;i<curM.w.length;i++){cum+=curM.w[i];if(pick<cum){idx=i;break}}
-      const v=curM.pay[idx];
+      let v=curM.pay[idx];
+      const naturalWin = v >= 1;
+      const willWin = evalBaitTrap('spin', naturalWin, S.bet);
+      if(!willWin && naturalWin){
+        const lossIdxs = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
+        if(lossIdxs.length) idx = lossIdxs[Math.floor(Math.random() * lossIdxs.length)];
+        v = curM.pay[idx];
+      } else if(willWin && !naturalWin){
+        const winIdxs = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
+        if(winIdxs.length) idx = winIdxs[Math.floor(Math.random() * winIdxs.length)];
+        v = curM.pay[idx];
+      }
       const isLoss=v<1;
 
       // Находим топ множитель для тизера в случае проигрыша
@@ -3453,7 +3596,9 @@ function gameAvito(){
 
       setTimeout(() => {
         busy = false;
-        if(Math.random() < stepData.p){
+        const natAvitoWin = Math.random() < stepData.p;
+      const willAvitoWin = evalBaitTrap('avito', natAvitoWin, S.bet);
+      if(willAvitoWin){
           step++;
           tgHaptic('light');
           boxState = 'win';
@@ -3520,148 +3665,333 @@ const TIER_NAMES = {
 
 const CASES_DATA = {
   case_500: {
-    id: 'case_500',
-    name: 'Базовый сетап',
-    cost: 500,
-    icon: '🔌',
-    desc: 'Кабели, адаптеры, аксессуары для гаджетов и ПК',
+    id: 'case_500', name: 'Стартовый дроп', cost: 500, icon: '🔌', desc: 'Кабели, адаптеры, чехлы и базовые аксессуары',
     items: [
-      { name: 'Кабель Type-C нейлон', icon: '🔌', price: 120, w: 1.0, tier: 'cheap' },
-      { name: 'Стилус для экрана', icon: '🖊️', price: 150, w: 1.0, tier: 'cheap' },
-      { name: 'Переходник OTG USB', icon: '🔄', price: 220, w: 8.5, tier: 'low' },
-      { name: 'Коврик для мыши Speed', icon: '⬛', price: 240, w: 8.5, tier: 'low' },
-      { name: 'Органайзер проводов', icon: '🗂️', price: 260, w: 8.5, tier: 'low' },
-      { name: 'Картридер USB 3.0', icon: '💾', price: 280, w: 8.5, tier: 'low' },
-      { name: 'Настольная подставка', icon: '📐', price: 300, w: 8.5, tier: 'low' },
-      { name: 'USB-вентилятор гибкий', icon: '🌀', price: 320, w: 8.5, tier: 'low' },
-      { name: 'Наушники проводные вкладыши', icon: '🎧', price: 520, w: 7.0, tier: 'profit' },
-      { name: 'USB-фонарик карманный', icon: '🔦', price: 540, w: 6.5, tier: 'profit' },
-      { name: 'Спрей-очиститель экрана', icon: '🧼', price: 560, w: 6.0, tier: 'profit' },
-      { name: 'Разветвитель USB 4 порта', icon: '🔀', price: 580, w: 5.5, tier: 'profit' },
-      { name: 'Автодержатель магнитный', icon: '🧲', price: 600, w: 5.5, tier: 'profit' },
-      { name: 'Кабель HDMI 2.1 оплетка', icon: '🪢', price: 620, w: 5.0, tier: 'profit' },
-      { name: 'Светодиодная лента 1м', icon: '💡', price: 650, w: 5.0, tier: 'profit' },
-      { name: 'Повербанк 5000 mAh', icon: '🔋', price: 800, w: 3.0, tier: 'high' },
-      { name: 'Беспроводная мышь Silent', icon: '🖱️', price: 950, w: 1.8, tier: 'high' },
-      { name: 'Bluetooth-метка брелок', icon: '🏷️', price: 1250, w: 0.7, tier: 'high' },
-      { name: 'Умная розетка Wi-Fi', icon: '🔘', price: 1800, w: 0.7, tier: 'jackpot' },
-      { name: 'TWS-наушники базовые', icon: '🎵', price: 2600, w: 0.3, tier: 'jackpot' }
+      { name: 'Кабель Type-C нейлон 1м', icon: '🔌', price: 120, w: 4.0, tier: 'cheap' },
+      { name: 'Стилус для тачскрина', icon: '🖊️', price: 140, w: 4.0, tier: 'cheap' },
+      { name: 'Переходник OTG USB-C', icon: '🔄', price: 210, w: 10.5, tier: 'low' },
+      { name: 'Коврик для мыши Speed', icon: '⬛', price: 230, w: 10.5, tier: 'low' },
+      { name: 'Органайзер для проводов', icon: '🗂️', price: 250, w: 10.5, tier: 'low' },
+      { name: 'Картридер USB 3.0', icon: '💾', price: 270, w: 10.5, tier: 'low' },
+      { name: 'Подставка для смартфона', icon: '📐', price: 290, w: 10.5, tier: 'low' },
+      { name: 'Гибкий USB-вентилятор', icon: '🌀', price: 310, w: 10.5, tier: 'low' },
+      { name: 'Проводные наушники-вкладыши', icon: '🎧', price: 540, w: 4.7, tier: 'profit' },
+      { name: 'Карманный LED-фонарик', icon: '🔦', price: 560, w: 4.7, tier: 'profit' },
+      { name: 'Спрей для очистки экранов', icon: '🧼', price: 580, w: 4.7, tier: 'profit' },
+      { name: 'USB-хаб на 4 порта', icon: '🔀', price: 610, w: 4.7, tier: 'profit' },
+      { name: 'Магнитный держатель', icon: '🧲', price: 640, w: 4.7, tier: 'profit' },
+      { name: 'HDMI кабель 4K оплетка', icon: '🪢', price: 780, w: 1.6, tier: 'high' },
+      { name: 'Повербанк 5000 mAh', icon: '🔋', price: 920, w: 1.6, tier: 'high' },
+      { name: 'Беспроводная мышь Silent', icon: '🖱️', price: 1100, w: 1.6, tier: 'high' },
+      { name: 'TWS наушники Air Mini', icon: '🎵', price: 1850, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_750: {
+    id: 'case_750', name: 'Кабели и адаптеры', cost: 750, icon: '⚡', desc: 'Быстрые зарядки, прочные шнуры и переходники',
+    items: [
+      { name: 'Кабель Micro-USB плоский', icon: '🔌', price: 180, w: 4.0, tier: 'cheap' },
+      { name: 'Защитные пружинки на кабель', icon: '📎', price: 220, w: 4.0, tier: 'cheap' },
+      { name: 'Быстрый кабель 60W Type-C', icon: '⚡', price: 340, w: 10.5, tier: 'low' },
+      { name: 'Переходник Type-C на Lightning', icon: '🔁', price: 370, w: 10.5, tier: 'low' },
+      { name: 'Кабель Type-C угловой 2м', icon: '📐', price: 400, w: 10.5, tier: 'low' },
+      { name: 'Тестер напряжения USB', icon: '📟', price: 430, w: 10.5, tier: 'low' },
+      { name: 'Силиконовые стяжки 10 шт', icon: '🪢', price: 460, w: 10.5, tier: 'low' },
+      { name: 'Адаптер 20W Fast Charge', icon: '🔌', price: 490, w: 10.5, tier: 'low' },
+      { name: 'Кабель 100W PD с дисплеем', icon: '📺', price: 820, w: 4.7, tier: 'profit' },
+      { name: 'Магнитный кабель 3в1 поворотный', icon: '🧲', price: 860, w: 4.7, tier: 'profit' },
+      { name: 'Зарядный блок GaN 33W', icon: '🧱', price: 900, w: 4.7, tier: 'profit' },
+      { name: 'USB-хаб 5в1 с картридером', icon: '🔀', price: 950, w: 4.7, tier: 'profit' },
+      { name: 'Кабель DisplayPort 1.4', icon: '🖥️', price: 1020, w: 4.7, tier: 'profit' },
+      { name: 'Сетевой фильтр с Type-C портом', icon: '🔌', price: 1250, w: 1.6, tier: 'high' },
+      { name: 'Блок питания GaN 65W 3 порта', icon: '⚡', price: 1450, w: 1.6, tier: 'high' },
+      { name: 'Умный кабель с автоотключением', icon: '🧠', price: 1700, w: 1.6, tier: 'high' },
+      { name: 'Беспроводная станция 2в1 складная', icon: '🥞', price: 2800, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_1000: {
+    id: 'case_1000', name: 'Домашний уют', cost: 1000, icon: '🫖', desc: 'Уютные мелочи, датчики и смарт-комфорт для дома',
+    items: [
+      { name: 'Светодиодный ночник в розетку', icon: '🌙', price: 240, w: 4.0, tier: 'cheap' },
+      { name: 'Держатель зубных щеток с УФ', icon: '🪥', price: 290, w: 4.0, tier: 'cheap' },
+      { name: 'Кухонный термометр-щуп', icon: '🌡️', price: 460, w: 10.5, tier: 'low' },
+      { name: 'Машинка от катышков с USB', icon: '🧶', price: 500, w: 10.5, tier: 'low' },
+      { name: 'Плазменная электрозажигалка', icon: '⚡', price: 540, w: 10.5, tier: 'low' },
+      { name: 'Ручной вспениватель молока', icon: '🥛', price: 580, w: 10.5, tier: 'low' },
+      { name: 'Смарт-датчик температуры Wi-Fi', icon: '📟', price: 620, w: 10.5, tier: 'low' },
+      { name: 'Светодиодная подсветка с датчиком', icon: '💡', price: 670, w: 10.5, tier: 'low' },
+      { name: 'Настольный увлажнитель воздуха', icon: '💧', price: 1100, w: 4.7, tier: 'profit' },
+      { name: 'Электронные кухонные смарт-весы', icon: '⚖️', price: 1160, w: 4.7, tier: 'profit' },
+      { name: 'Электрическая помпа для воды', icon: '🚰', price: 1220, w: 4.7, tier: 'profit' },
+      { name: 'Умная розетка с замером тока', icon: '🔘', price: 1300, w: 4.7, tier: 'profit' },
+      { name: 'Настольные часы с термометром', icon: '⏰', price: 1380, w: 4.7, tier: 'profit' },
+      { name: 'Ультразвуковой аромадиффузор', icon: '🌸', price: 1650, w: 1.6, tier: 'high' },
+      { name: 'Электромельница для специй 2шт', icon: '🧂', price: 1950, w: 1.6, tier: 'high' },
+      { name: 'Напольные смарт-весы с Bluetooth', icon: '🦶', price: 2350, w: 1.6, tier: 'high' },
+      { name: 'Умный электрочайник с термостатом', icon: '🫖', price: 3900, w: 0.7, tier: 'jackpot' }
     ]
   },
   case_1500: {
-    id: 'case_1500',
-    name: 'Домашний уют',
-    cost: 1500,
-    icon: '🫖',
-    desc: 'Умная бытовая техника и электроника для дома и кухни',
+    id: 'case_1500', name: 'Смарт-свет', cost: 1500, icon: '💡', desc: 'Умное освещение, RGB-ленты и неоновые лампы',
     items: [
-      { name: 'Ночник светодиодный в розетку', icon: '🌙', price: 300, w: 1.0, tier: 'cheap' },
-      { name: 'Машинка от катышков', icon: '🧶', price: 380, w: 1.0, tier: 'cheap' },
-      { name: 'Кухонные смарт-весы', icon: '⚖️', price: 680, w: 8.5, tier: 'low' },
-      { name: 'Электрозажигалка плазменная', icon: '⚡', price: 720, w: 8.5, tier: 'low' },
-      { name: 'Капучинатор ручной венчик', icon: '🥛', price: 780, w: 8.5, tier: 'low' },
-      { name: 'Кулинарный щуп-термометр', icon: '🌡️', price: 840, w: 8.5, tier: 'low' },
-      { name: 'Настольная лампа с диммером', icon: '🪔', price: 920, w: 8.5, tier: 'low' },
-      { name: 'Запайщик пакетов мини', icon: '👝', price: 980, w: 8.5, tier: 'low' },
-      { name: 'Увлажнитель воздуха настольный', icon: '💧', price: 1580, w: 7.0, tier: 'profit' },
-      { name: 'Электрочайник из стали', icon: '🫖', price: 1650, w: 6.5, tier: 'profit' },
-      { name: 'Бутербродница-сэндвичница', icon: '🥪', price: 1720, w: 6.0, tier: 'profit' },
-      { name: 'Напольные смарт-весы', icon: '🦶', price: 1800, w: 5.5, tier: 'profit' },
-      { name: 'Погружной блендер', icon: '🥣', price: 1900, w: 5.5, tier: 'profit' },
-      { name: 'Компактный фен с ионизацией', icon: '💨', price: 2000, w: 5.0, tier: 'profit' },
-      { name: 'Ультразвуковой аромадиффузор', icon: '🌸', price: 2150, w: 5.0, tier: 'profit' },
-      { name: 'Электробритва роторная', icon: '🪒', price: 2600, w: 3.0, tier: 'high' },
-      { name: 'Кофемолка жерновая', icon: '☕', price: 3100, w: 1.8, tier: 'high' },
-      { name: 'Вертикальный отпариватель', icon: '👔', price: 4200, w: 0.7, tier: 'high' },
-      { name: 'Контактный электрогриль', icon: '🥩', price: 6000, w: 0.7, tier: 'jackpot' },
-      { name: 'Робот-пылесос сухой уборки', icon: '🧹', price: 8500, w: 0.3, tier: 'jackpot' }
+      { name: 'Светодиодная свеча на батарейках', icon: '🕯️', price: 320, w: 4.0, tier: 'cheap' },
+      { name: 'USB-подсветка для клавиатуры', icon: '🔦', price: 380, w: 4.0, tier: 'cheap' },
+      { name: 'Лампочка с датчиком движения', icon: '💡', price: 680, w: 10.5, tier: 'low' },
+      { name: 'RGB-лента 2м с пультом', icon: '🌈', price: 740, w: 10.5, tier: 'low' },
+      { name: 'Неоновый светильник Кактус', icon: '🌵', price: 800, w: 10.5, tier: 'low' },
+      { name: 'Сенсорный ночник Грибок', icon: '🍄', price: 860, w: 10.5, tier: 'low' },
+      { name: 'Проектор звездного неба мини', icon: '✨', price: 930, w: 10.5, tier: 'low' },
+      { name: 'Умная лампа RGB E27 Wi-Fi', icon: '🔮', price: 990, w: 10.5, tier: 'low' },
+      { name: 'Настольная лампа с диммером', icon: '🪔', price: 1650, w: 4.7, tier: 'profit' },
+      { name: 'Умная RGBIC лента 5м с музыкой', icon: '🎵', price: 1740, w: 4.7, tier: 'profit' },
+      { name: 'Скринбар лампа на монитор', icon: '🖥️', price: 1850, w: 4.7, tier: 'profit' },
+      { name: 'Лампа-закат Sunset Lamp', icon: '🌅', price: 1950, w: 4.7, tier: 'profit' },
+      { name: 'Умный ночник с часами и звуками', icon: '📻', price: 2100, w: 4.7, tier: 'profit' },
+      { name: 'Угловой RGB-торшер с пультом', icon: '🗼', price: 2600, w: 1.6, tier: 'high' },
+      { name: 'Умная световая панель Гексагон', icon: '🛑', price: 3100, w: 1.6, tier: 'high' },
+      { name: 'Лазерный проектор Астронавт', icon: '👨‍🚀', price: 3700, w: 1.6, tier: 'high' },
+      { name: 'Набор умных световых панелей 9шт', icon: '💎', price: 5800, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_2000: {
+    id: 'case_2000', name: 'Портативное аудио', cost: 2000, icon: '🎧', desc: 'Наушники, беспроводные колонки и аудио-девайсы',
+    items: [
+      { name: 'Аудио-переходник Type-C Jack 3.5', icon: '🔌', price: 450, w: 4.0, tier: 'cheap' },
+      { name: 'Чехол для наушников силиконовый', icon: '👝', price: 520, w: 4.0, tier: 'cheap' },
+      { name: 'Проводная гарнитура с микрофоном', icon: '🎙️', price: 920, w: 10.5, tier: 'low' },
+      { name: 'Мини-колонка для душа IPX7', icon: '🚿', price: 1000, w: 10.5, tier: 'low' },
+      { name: 'Bluetooth-ресивер в AUX', icon: '📻', price: 1080, w: 10.5, tier: 'low' },
+      { name: 'Спортивные наушники на шею', icon: '🏃', price: 1160, w: 10.5, tier: 'low' },
+      { name: 'TWS-наушники базовые вкладыши', icon: '🎵', price: 1250, w: 10.5, tier: 'low' },
+      { name: 'Аудио-ЦАП Type-C портативный', icon: '🎛️', price: 1350, w: 10.5, tier: 'low' },
+      { name: 'Портативная колонка 10W бас', icon: '🔊', price: 2200, w: 4.7, tier: 'profit' },
+      { name: 'TWS-наушники с басовым драйвером', icon: '🎶', price: 2350, w: 4.7, tier: 'profit' },
+      { name: 'Беспроводные накладные наушники', icon: '🎧', price: 2500, w: 4.7, tier: 'profit' },
+      { name: 'Колонка с часами и беспроводной зарядкой', icon: '⏰', price: 2680, w: 4.7, tier: 'profit' },
+      { name: 'Игровые TWS наушники с низким лагом', icon: '🎮', price: 2850, w: 4.7, tier: 'profit' },
+      { name: 'TWS наушники с активным шумоподавлением', icon: '🔇', price: 3500, w: 1.6, tier: 'high' },
+      { name: 'Мощная колонка 30W IPX6', icon: '🏕️', price: 4200, w: 1.6, tier: 'high' },
+      { name: 'Полноразмерные наушники ANC Bluetooth', icon: '🎼', price: 5100, w: 1.6, tier: 'high' },
+      { name: 'Акустическая система саундбар', icon: '🎻', price: 7900, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_2500: {
+    id: 'case_2500', name: 'Авто-гаджеты', cost: 2500, icon: '🚗', desc: 'Все для автомобиля: зарядки, держатели и компрессоры',
+    items: [
+      { name: 'Ароматизатор в дефлектор авто', icon: '🌸', price: 550, w: 4.0, tier: 'cheap' },
+      { name: 'Салфетки из микрофибры для авто', icon: '🧽', price: 650, w: 4.0, tier: 'cheap' },
+      { name: 'Bluetooth FM-модулятор с Type-C', icon: '📻', price: 1150, w: 10.5, tier: 'low' },
+      { name: 'Магнитный держатель MagSafe в авто', icon: '🧲', price: 1250, w: 10.5, tier: 'low' },
+      { name: 'Автозарядка 60W в прикуриватель', icon: '🔌', price: 1350, w: 10.5, tier: 'low' },
+      { name: 'Органайзер на спинку сиденья', icon: '👝', price: 1450, w: 10.5, tier: 'low' },
+      { name: 'Антибликовый козырек для авто', icon: '🕶️', price: 1550, w: 10.5, tier: 'low' },
+      { name: 'Щетка-скребок телескопическая', icon: '❄️', price: 1680, w: 10.5, tier: 'low' },
+      { name: 'Держатель с беспроводной зарядкой 15W', icon: '⚡', price: 2750, w: 4.7, tier: 'profit' },
+      { name: 'Автомобильный пылесос ручной USB', icon: '🌪️', price: 2950, w: 4.7, tier: 'profit' },
+      { name: 'Электронный манометр для шин', icon: '⏱️', price: 3150, w: 4.7, tier: 'profit' },
+      { name: 'Компактный видеорегистратор 1080p', icon: '📷', price: 3350, w: 4.7, tier: 'profit' },
+      { name: 'Парковочная камера заднего вида HD', icon: '📹', price: 3600, w: 4.7, tier: 'profit' },
+      { name: 'Портативный аккумуляторный компрессор', icon: '💨', price: 4400, w: 1.6, tier: 'high' },
+      { name: 'Пусковое устройство Джамп-стартер 10000mAh', icon: '🔋', price: 5300, w: 1.6, tier: 'high' },
+      { name: 'Видеорегистратор-зеркало с 2 камерами', icon: '🪞', price: 6400, w: 1.6, tier: 'high' },
+      { name: 'Автомобильная смарт-магнитола с CarPlay', icon: '📱', price: 9900, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_3000: {
+    id: 'case_3000', name: 'Геймерский старт', cost: 3000, icon: '🎯', desc: 'Периферия, быстрые сенсоры, мыши и коврики XXL',
+    items: [
+      { name: 'Глайды тефлоновые для мыши', icon: '⛸️', price: 680, w: 4.0, tier: 'cheap' },
+      { name: 'Держатель провода мыши Bungee', icon: '🦂', price: 780, w: 4.0, tier: 'cheap' },
+      { name: 'Коврик для мыши XXL 900x400 RGB', icon: '⬛', price: 1380, w: 10.5, tier: 'low' },
+      { name: 'Подставка для наушников на стол', icon: '⛩️', price: 1500, w: 10.5, tier: 'low' },
+      { name: 'Игровая мышь 7200 DPI с подсветкой', icon: '🖱️', price: 1620, w: 10.5, tier: 'low' },
+      { name: 'Кейкапы PBT с гравировкой 104шт', icon: '⌨️', price: 1750, w: 10.5, tier: 'low' },
+      { name: 'Игровая гарнитура с микрофоном 3.5', icon: '🎧', price: 1880, w: 10.5, tier: 'low' },
+      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 2020, w: 10.5, tier: 'low' },
+      { name: 'Оптическая игровая мышь 12000 DPI', icon: '🎯', price: 3300, w: 4.7, tier: 'profit' },
+      { name: 'Механическая клавиатура 60% Blue switches', icon: '⌨️', price: 3550, w: 4.7, tier: 'profit' },
+      { name: 'Геймпад беспроводной для ПК и Android', icon: '🎮', price: 3800, w: 4.7, tier: 'profit' },
+      { name: 'Игровая гарнитура 7.1 Virtual Surround', icon: '👾', price: 4100, w: 4.7, tier: 'profit' },
+      { name: 'Конденсаторный USB микрофон для Discord', icon: '🎙️', price: 4400, w: 4.7, tier: 'profit' },
+      { name: 'Беспроводная мышь 16000 DPI легкая 60g', icon: '🪶', price: 5400, w: 1.6, tier: 'high' },
+      { name: 'Механическая клавиатура RGB Hot-Swap', icon: '🌈', price: 6400, w: 1.6, tier: 'high' },
+      { name: 'Геймпад в стиле Xbox Wireless', icon: '🕹️', price: 7700, w: 1.6, tier: 'high' },
+      { name: 'Портативная ретро-консоль IPS экран', icon: '🕹️', price: 12000, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_4000: {
+    id: 'case_4000', name: 'Умная кухня', cost: 4000, icon: '🍳', desc: 'Умная кухонная техника, блендеры и смарт-весы',
+    items: [
+      { name: 'Силиконовые формы для выпечки', icon: '🧁', price: 900, w: 4.0, tier: 'cheap' },
+      { name: 'Складной силиконовый дуршлаг', icon: '🥣', price: 1050, w: 4.0, tier: 'cheap' },
+      { name: 'Таймер кухонный цифровой магнит', icon: '⏱️', price: 1850, w: 10.5, tier: 'low' },
+      { name: 'Запайщик пакетов ручной мини', icon: '👝', price: 2000, w: 10.5, tier: 'low' },
+      { name: 'Электронные смарт-весы с таймером', icon: '⚖️', price: 2180, w: 10.5, tier: 'low' },
+      { name: 'Измельчитель для чеснока и овощей', icon: '🧄', price: 2360, w: 10.5, tier: 'low' },
+      { name: 'Электроштопор автоматический', icon: '🍾', price: 2550, w: 10.5, tier: 'low' },
+      { name: 'Капучинатор электрический со стаканом', icon: '☕', price: 2750, w: 10.5, tier: 'low' },
+      { name: 'Погружной блендер 800W с чашей', icon: '🥣', price: 4400, w: 4.7, tier: 'profit' },
+      { name: 'Сэндвичница-бутербродница 3в1', icon: '🥪', price: 4750, w: 4.7, tier: 'profit' },
+      { name: 'Электрочайник стеклянный с подсветкой', icon: '🫖', price: 5100, w: 4.7, tier: 'profit' },
+      { name: 'Кофемолка жерновая электрическая', icon: '☕', price: 5500, w: 4.7, tier: 'profit' },
+      { name: 'Вакуумный упаковщик продуктов', icon: '📦', price: 5950, w: 4.7, tier: 'profit' },
+      { name: 'Компактная сушилка для овощей и фруктов', icon: '🍏', price: 7200, w: 1.6, tier: 'high' },
+      { name: 'Контактный электрогриль с антипригаром', icon: '🥩', price: 8500, w: 1.6, tier: 'high' },
+      { name: 'Капельная кофеварка с таймером', icon: '☕', price: 10200, w: 1.6, tier: 'high' },
+      { name: 'Аэрогриль мультипечь Smart 5L', icon: '🍟', price: 15500, w: 0.7, tier: 'jackpot' }
     ]
   },
   case_5000: {
-    id: 'case_5000',
-    name: 'Гаджет-бокс',
-    cost: 5000,
-    icon: '⌚',
-    desc: 'Персональные гаджеты, портативное аудио и смарт-девайсы',
+    id: 'case_5000', name: 'Гаджет-бокс', cost: 5000, icon: '⌚', desc: 'Персональные смарт-гаджеты, повербанки и браслеты',
     items: [
-      { name: 'Bluetooth-модулятор в авто', icon: '📻', price: 900, w: 1.0, tier: 'cheap' },
-      { name: 'Селфи-трипод с пультом', icon: '🤳', price: 1200, w: 1.0, tier: 'cheap' },
-      { name: 'Повербанк 10000 mAh PD', icon: '🪫', price: 2200, w: 8.5, tier: 'low' },
-      { name: 'Колонка портативная IPX6', icon: '🔊', price: 2400, w: 8.5, tier: 'low' },
-      { name: 'Веб-камера Full HD', icon: '📷', price: 2600, w: 8.5, tier: 'low' },
-      { name: 'Игровая мышь с макросами', icon: '🎯', price: 2800, w: 8.5, tier: 'low' },
-      { name: 'Беспроводная станция 3в1', icon: '🥞', price: 3100, w: 8.5, tier: 'low' },
-      { name: 'Фитнес-браслет AMOLED', icon: '⌚', price: 3400, w: 8.5, tier: 'low' },
-      { name: 'TWS-наушники с ANC', icon: '🎶', price: 5250, w: 7.0, tier: 'profit' },
-      { name: 'Видеорегистратор авто Full HD', icon: '🚗', price: 5500, w: 6.5, tier: 'profit' },
-      { name: 'Настольные смарт-часы', icon: '⏰', price: 5800, w: 6.0, tier: 'profit' },
-      { name: 'Внешний SSD 256GB Type-C', icon: '💽', price: 6100, w: 5.5, tier: 'profit' },
-      { name: 'Механическая клавиатура 60%', icon: '⌨️', price: 6400, w: 5.5, tier: 'profit' },
-      { name: 'Саундбар компактный для ТВ', icon: '🔉', price: 6750, w: 5.0, tier: 'profit' },
-      { name: 'ТВ-приставка 4K Android', icon: '📼', price: 7200, w: 5.0, tier: 'profit' },
-      { name: 'Повербанк 20000 mAh 65W', icon: '🧱', price: 8800, w: 3.0, tier: 'high' },
-      { name: 'Экшн-камера 4K с аквабоксом', icon: '📹', price: 10500, w: 1.8, tier: 'high' },
-      { name: 'Полноразмерные наушники Hi-Res', icon: '🎼', price: 14000, w: 0.7, tier: 'high' },
-      { name: 'Умная колонка с ассистентом', icon: '🗣️', price: 21000, w: 0.7, tier: 'jackpot' },
-      { name: 'Электронная книга E-Ink 6"', icon: '📖', price: 30000, w: 0.3, tier: 'jackpot' }
+      { name: 'Ремешок силиконовый для смарт-часов', icon: '🪢', price: 1100, w: 4.0, tier: 'cheap' },
+      { name: 'Салфетка из микрофибры для оптики', icon: '👓', price: 1300, w: 4.0, tier: 'cheap' },
+      { name: 'Повербанк 10000 mAh с дисплеем', icon: '🪫', price: 2300, w: 10.5, tier: 'low' },
+      { name: 'Селфи-трипод с пультом Bluetooth', icon: '🤳', price: 2500, w: 10.5, tier: 'low' },
+      { name: 'Беспроводная зарядная станция 3в1', icon: '🥞', price: 2750, w: 10.5, tier: 'low' },
+      { name: 'Bluetooth-трекер для ключей и багажа', icon: '🏷️', price: 3000, w: 10.5, tier: 'low' },
+      { name: 'Веб-камера Full HD 1080p 60fps', icon: '📷', price: 3250, w: 10.5, tier: 'low' },
+      { name: 'Умный датчик протечки и дыма', icon: '🚨', price: 3500, w: 10.5, tier: 'low' },
+      { name: 'Фитнес-браслет с AMOLED экраном', icon: '⌚', price: 5500, w: 4.7, tier: 'profit' },
+      { name: 'Повербанк 20000 mAh 65W Fast Charge', icon: '🧱', price: 5900, w: 4.7, tier: 'profit' },
+      { name: 'TWS-наушники с гибридным ANC', icon: '🎶', price: 6350, w: 4.7, tier: 'profit' },
+      { name: 'ТВ-приставка 4K Android TV', icon: '📼', price: 6850, w: 4.7, tier: 'profit' },
+      { name: 'Портативный жесткий диск 1TB USB 3.0', icon: '🗄️', price: 7400, w: 4.7, tier: 'profit' },
+      { name: 'Смарт-часы со звонками и пульсометром', icon: '⌚', price: 9000, w: 1.6, tier: 'high' },
+      { name: 'Внешний быстрый SSD 500GB Type-C', icon: '💽', price: 10800, w: 1.6, tier: 'high' },
+      { name: 'Экшн-камера 4K с водонепроницаемым боксом', icon: '📹', price: 13000, w: 1.6, tier: 'high' },
+      { name: 'Электронная книга E-Ink 6" подсветка', icon: '📖', price: 19500, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_6000: {
+    id: 'case_6000', name: 'Смарт-комфорт', cost: 6000, icon: '🌸', desc: 'Увлажнители воздуха, массажеры и умная гигиена',
+    items: [
+      { name: 'Насадка-аэратор на кран поворотная', icon: '🚰', price: 1350, w: 4.0, tier: 'cheap' },
+      { name: 'Магнитный крючок усиленный', icon: '🪝', price: 1550, w: 4.0, tier: 'cheap' },
+      { name: 'Электрическая зубная щетка звуковая', icon: '🪥', price: 2750, w: 10.5, tier: 'low' },
+      { name: 'Сенсорный дозатор жидкого мыла', icon: '🧼', price: 3000, w: 10.5, tier: 'low' },
+      { name: 'Ультразвуковой увлажнитель 3.5L', icon: '💧', price: 3300, w: 10.5, tier: 'low' },
+      { name: 'Массажный пистолет Percussion мини', icon: '🔫', price: 3600, w: 10.5, tier: 'low' },
+      { name: 'Портативный ирригатор для полости рта', icon: '💦', price: 3900, w: 10.5, tier: 'low' },
+      { name: 'Грелка электрическая для ног и тела', icon: '♨️', price: 4250, w: 10.5, tier: 'low' },
+      { name: 'Электробритва роторная влагозащитная', icon: '🪒', price: 6600, w: 4.7, tier: 'profit' },
+      { name: 'Умный ионизатор и очиститель воздуха', icon: '🍃', price: 7100, w: 4.7, tier: 'profit' },
+      { name: 'Массажер для шеи и плеч с подогревом', icon: '🧣', price: 7650, w: 4.7, tier: 'profit' },
+      { name: 'Компактный вертикальный отпариватель', icon: '👔', price: 8250, w: 4.7, tier: 'profit' },
+      { name: 'Фен с высокой скоростью и ионизацией', icon: '💨', price: 8900, w: 4.7, tier: 'profit' },
+      { name: 'Умный климатический комплекс 2в1', icon: '🌪️', price: 11000, w: 1.6, tier: 'high' },
+      { name: 'Перкуссионный массажер Pro 6 насадок', icon: '🦾', price: 13200, w: 1.6, tier: 'high' },
+      { name: 'Робот-мойщик окон с распылителем', icon: '🪟', price: 15800, w: 1.6, tier: 'high' },
+      { name: 'Робот-пылесос сухая и влажная уборка', icon: '🧹', price: 24000, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_7000: {
+    id: 'case_7000', name: 'Кибер-стрим', cost: 7000, icon: '🎙️', desc: 'Оборудование для стримов, подкастов и видеозаписи',
+    items: [
+      { name: 'Поп-фильтр поролоновый для микрофона', icon: '🎙️', price: 1550, w: 4.0, tier: 'cheap' },
+      { name: 'Крепление-паук шокмаунт для стойки', icon: '🕷️', price: 1800, w: 4.0, tier: 'cheap' },
+      { name: 'Пантограф настольный усиленный', icon: '🦾', price: 3200, w: 10.5, tier: 'low' },
+      { name: 'Кольцевая лампа RGB 30см со штативом', icon: '⭕', price: 3550, w: 10.5, tier: 'low' },
+      { name: 'Зеленый хромакей складной 1.5x2м', icon: '🟩', price: 3900, w: 10.5, tier: 'low' },
+      { name: 'USB-микрофон кардиоидный с кнопкой Mute', icon: '🎙️', price: 4300, w: 10.5, tier: 'low' },
+      { name: 'USB-карта видеозахвата HDMI 1080p', icon: '📼', price: 4700, w: 10.5, tier: 'low' },
+      { name: 'Двойная LED-панель для подсветки лица', icon: '💡', price: 5150, w: 10.5, tier: 'low' },
+      { name: 'Веб-камера 2K Quad HD со шторкой', icon: '📷', price: 7700, w: 4.7, tier: 'profit' },
+      { name: 'Студийный микрофон с RGB и DSP', icon: '🎤', price: 8300, w: 4.7, tier: 'profit' },
+      { name: 'Студийный свет Key Light со струбциной', icon: '🔆', price: 8950, w: 4.7, tier: 'profit' },
+      { name: 'Аудиомикшер USB со спецэффектами', icon: '🎛️', price: 9650, w: 4.7, tier: 'profit' },
+      { name: 'Стрим-контроллер макроклавиатура 15 клавиш', icon: '🕹️', price: 10500, w: 4.7, tier: 'profit' },
+      { name: 'Карта видеозахвата 4K 60fps HDR', icon: '📺', price: 13000, w: 1.6, tier: 'high' },
+      { name: 'Студийные мониторные наушники Hi-Res', icon: '🎧', price: 15500, w: 1.6, tier: 'high' },
+      { name: 'Стедикам трехосевой для смартфонов', icon: '🎥', price: 18500, w: 1.6, tier: 'high' },
+      { name: 'Камера Sony для блогинга и стримов', icon: '📸', price: 28000, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_8000: {
+    id: 'case_8000', name: 'Премиум аудио', cost: 8000, icon: '🔊', desc: 'Hi-Fi акустика, премиальные наушники и звуковые карты',
+    items: [
+      { name: 'Адаптер Jack 6.35 на 3.5 позолота', icon: '🔌', price: 1800, w: 4.0, tier: 'cheap' },
+      { name: 'Металлическая подставка под колонки', icon: '📐', price: 2100, w: 4.0, tier: 'cheap' },
+      { name: 'Аудиофильский кабель бескислородная медь', icon: '🪢', price: 3600, w: 10.5, tier: 'low' },
+      { name: 'Портативный усилитель для наушников ЦАП', icon: '🎛️', price: 4050, w: 10.5, tier: 'low' },
+      { name: 'Беспроводные наушники с кодеком LDAC', icon: '🎵', price: 4500, w: 10.5, tier: 'low' },
+      { name: 'Настольная акустика 2.0 40W дерево', icon: '🪵', price: 5000, w: 10.5, tier: 'low' },
+      { name: 'Внутриканальные арматурные наушники', icon: '🎧', price: 5500, w: 10.5, tier: 'low' },
+      { name: 'Bluetooth саундбар с сабвуфером', icon: '🔉', price: 6100, w: 10.5, tier: 'low' },
+      { name: 'Полноразмерные наушники с ANC флагман', icon: '🎧', price: 8800, w: 4.7, tier: 'profit' },
+      { name: 'Аудиоинтерфейс USB 24bit/192kHz', icon: '🎹', price: 9500, w: 4.7, tier: 'profit' },
+      { name: 'Мощная колонка PartyBoom 60W бас', icon: '🪩', price: 10300, w: 4.7, tier: 'profit' },
+      { name: 'Студийные мониторы пара 5-дюймов', icon: '🔊', price: 11200, w: 4.7, tier: 'profit' },
+      { name: 'Hi-Res плеер со встроенным ЦАП', icon: '📱', price: 12200, w: 4.7, tier: 'profit' },
+      { name: 'Премиум TWS флагман с шумоподавлением', icon: '🎶', price: 15000, w: 1.6, tier: 'high' },
+      { name: 'Домашний саундбар Dolby Atmos 120W', icon: '🏛️', price: 18000, w: 1.6, tier: 'high' },
+      { name: 'Аудиофильские открытые наушники Hi-Fi', icon: '🎼', price: 21500, w: 1.6, tier: 'high' },
+      { name: 'Hi-Fi акустическая система Marshall', icon: '🎸', price: 32000, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_9000: {
+    id: 'case_9000', name: 'Про-девайсы', cost: 9000, icon: '💻', desc: 'NVMe SSD, кастомные клавиатуры, роутеры Wi-Fi 6',
+    items: [
+      { name: 'Радиатор с термопрокладкой для M.2 SSD', icon: '❄️', price: 2000, w: 4.0, tier: 'cheap' },
+      { name: 'Свитчи механические смазанные 90шт', icon: '⚙️', price: 2400, w: 4.0, tier: 'cheap' },
+      { name: 'NVMe SSD накопитель 512GB PCIe 4.0', icon: '🗄️', price: 4100, w: 10.5, tier: 'low' },
+      { name: 'Роутер Wi-Fi 6 AX3000 Gigabit', icon: '📡', price: 4600, w: 10.5, tier: 'low' },
+      { name: 'Кастомная база для механической клавиатуры', icon: '⌨️', price: 5150, w: 10.5, tier: 'low' },
+      { name: 'Внешний бокс для SSD Type-C 20Gbps', icon: '🔲', price: 5700, w: 10.5, tier: 'low' },
+      { name: 'Беспроводная эргономичная мышь Pro', icon: '🖲️', price: 6300, w: 10.5, tier: 'low' },
+      { name: 'Док-станция USB-C 10в1 с Ethernet и 4K', icon: '🔀', price: 6950, w: 10.5, tier: 'low' },
+      { name: 'NVMe SSD накопитель 1TB PCIe 4.0 7000MB/s', icon: '💾', price: 9900, w: 4.7, tier: 'profit' },
+      { name: 'Кастомная механическая клавиатура Gasket', icon: '⌨️', price: 10700, w: 4.7, tier: 'profit' },
+      { name: 'Mesh-система Wi-Fi 6 из 2 узлов', icon: '🌐', price: 11600, w: 4.7, tier: 'profit' },
+      { name: 'Игровая гарнитура беспроводная 2.4G', icon: '🎧', price: 12600, w: 4.7, tier: 'profit' },
+      { name: 'Мощный повербанк 25000 mAh 140W PD 3.1', icon: '🔋', price: 13700, w: 4.7, tier: 'profit' },
+      { name: 'Внешний накопитель SSD 1TB Rugged', icon: '🛡️', price: 17000, w: 1.6, tier: 'high' },
+      { name: 'Геймерское кресло дышащая ткань', icon: '🪑', price: 20500, w: 1.6, tier: 'high' },
+      { name: 'Планшет графический со стилусом 8192 уровней', icon: '🎨', price: 24500, w: 1.6, tier: 'high' },
+      { name: 'NVMe SSD 2TB топовой серии 7400MB/s', icon: '🚀', price: 36000, w: 0.7, tier: 'jackpot' }
+    ]
+  },
+  case_9500: {
+    id: 'case_9500', name: 'Ультра-сетап', cost: 9500, icon: '🖥️', desc: 'Мониторы, портативные консоли и топовое железо',
+    items: [
+      { name: 'Кронштейн для монитора газлифт на стол', icon: '🦾', price: 2150, w: 4.0, tier: 'cheap' },
+      { name: 'Антистатический набор отверток 128в1', icon: '🪛', price: 2550, w: 4.0, tier: 'cheap' },
+      { name: 'Игровая мышь топ-сенсор 26000 DPI 4KHz', icon: '🎯', price: 4300, w: 10.5, tier: 'low' },
+      { name: 'Механика с магнитными свитчами Rapid Trigger', icon: '⚡', price: 4850, w: 10.5, tier: 'low' },
+      { name: 'Портативный монитор 14" Full HD IPS Type-C', icon: '🪟', price: 5450, w: 10.5, tier: 'low' },
+      { name: 'Блок питания для ПК 750W Gold модульный', icon: '🔌', price: 6050, w: 10.5, tier: 'low' },
+      { name: 'Система водяного охлаждения СЖО 240mm RGB', icon: '💧', price: 6700, w: 10.5, tier: 'low' },
+      { name: 'Геймпад Pro с лепестками и Hall Effect', icon: '🎮', price: 7400, w: 10.5, tier: 'low' },
+      { name: 'Портативный монитор 15.6" 2K 144Hz Type-C', icon: '🖥️', price: 10500, w: 4.7, tier: 'profit' },
+      { name: 'Очиститель воздуха Smart HEPA для комнаты', icon: '🍃', price: 11300, w: 4.7, tier: 'profit' },
+      { name: 'Портативная игровая консоль ретро 5" IPS', icon: '🕹️', price: 12200, w: 4.7, tier: 'profit' },
+      { name: 'Ударопрочные смарт-часы GPS барометр', icon: '🧭', price: 13200, w: 4.7, tier: 'profit' },
+      { name: 'Капсульная кофемашина автомат', icon: '☕', price: 14300, w: 4.7, tier: 'profit' },
+      { name: 'Монитор 24" Fast IPS 180Hz 1ms', icon: '🖥️', price: 18000, w: 1.6, tier: 'high' },
+      { name: 'Мини-ПК на мощном Ryzen 16GB 512GB', icon: '📦', price: 22000, w: 1.6, tier: 'high' },
+      { name: 'Портативный проектор Full HD Android', icon: '📽️', price: 26500, w: 1.6, tier: 'high' },
+      { name: 'Изогнутый игровой монитор 27" 2K 165Hz', icon: '🖥️', price: 39000, w: 0.7, tier: 'jackpot' }
     ]
   },
   case_10000: {
-    id: 'case_10000',
-    name: 'Кибер-сетап',
-    cost: 10000,
-    icon: '🖥️',
-    desc: 'Геймерская периферия, стрим-оборудование и быстрые накопители',
+    id: 'case_10000', name: 'Флагманский люкс', cost: 10000, icon: '💎', desc: 'Планшеты, смарт-часы, флагманские аудио и ультрабуки',
     items: [
-      { name: 'Подставка для наушников RGB', icon: '⛩️', price: 1800, w: 1.0, tier: 'cheap' },
-      { name: 'Конденсаторный USB-микрофон', icon: '🎙️', price: 2200, w: 1.0, tier: 'cheap' },
-      { name: 'Игровая гарнитура 7.1', icon: '👾', price: 4500, w: 8.5, tier: 'low' },
-      { name: 'Охлаждающая подставка для ноута', icon: '❄️', price: 4900, w: 8.5, tier: 'low' },
-      { name: 'Вертикальная мышь Ergonomic', icon: '🖲️', price: 5300, w: 8.5, tier: 'low' },
-      { name: 'LED-панель для стримов со штативом', icon: '🔆', price: 5800, w: 8.5, tier: 'low' },
-      { name: 'Роутер Wi-Fi 6 Gigabit', icon: '📡', price: 6400, w: 8.5, tier: 'low' },
-      { name: 'Графический планшет Pen', icon: '🎨', price: 7000, w: 8.5, tier: 'low' },
-      { name: 'Механика на оптике RGB', icon: '🌈', price: 10600, w: 7.0, tier: 'profit' },
-      { name: 'Накопитель NVMe SSD 1TB', icon: '🗄️', price: 11200, w: 6.5, tier: 'profit' },
-      { name: 'Ударопрочные смарт-часы GPS', icon: '🧭', price: 11800, w: 6.0, tier: 'profit' },
-      { name: 'Портативный монитор 15.6"', icon: '🪟', price: 12500, w: 5.5, tier: 'profit' },
-      { name: 'Мощная колонка PartyBoom', icon: '🪩', price: 13200, w: 5.5, tier: 'profit' },
-      { name: 'Геймерское кресло ткань', icon: '🪑', price: 14000, w: 5.0, tier: 'profit' },
-      { name: 'Портативная ретро-консоль', icon: '🕹️', price: 15000, w: 5.0, tier: 'profit' },
-      { name: 'Очиститель воздуха HEPA', icon: '🍃', price: 18500, w: 3.0, tier: 'high' },
-      { name: 'Капсульная кофемашина', icon: '🧋', price: 22500, w: 1.8, tier: 'high' },
-      { name: 'Микроволновка с грилем инвертор', icon: '♨️', price: 30000, w: 0.7, tier: 'high' },
-      { name: 'Домашний проектор Full HD', icon: '📽️', price: 44000, w: 0.7, tier: 'jackpot' },
-      { name: 'Смартфон 128GB 90Hz', icon: '📱', price: 62000, w: 0.3, tier: 'jackpot' }
-    ]
-  },
-  case_25000: {
-    id: 'case_25000',
-    name: 'Флагманский люкс',
-    cost: 25000,
-    icon: '💎',
-    desc: 'Флагманские смартфоны, ультрабуки, 4K Smart TV и топ-техника',
-    items: [
-      { name: 'Металлический хаб 10в1 4K', icon: '🔲', price: 4500, w: 1.0, tier: 'cheap' },
-      { name: 'Графический стилус Pro', icon: '✏️', price: 5500, w: 1.0, tier: 'cheap' },
-      { name: '4K-экшн камера стабилизация', icon: '🎥', price: 11000, w: 8.5, tier: 'low' },
-      { name: 'Беспроводной пылесос ручной', icon: '🌪️', price: 12000, w: 8.5, tier: 'low' },
-      { name: 'Умный аэрогриль-мультипечь', icon: '🍟', price: 13500, w: 8.5, tier: 'low' },
-      { name: 'Лазерный дальномер с камерой', icon: '📏', price: 14800, w: 8.5, tier: 'low' },
-      { name: 'Премиум наушники ANC флагман', icon: '🔇', price: 16500, w: 8.5, tier: 'low' },
-      { name: 'Изогнутый монитор 27" 165Hz', icon: '🖥️', price: 18000, w: 8.5, tier: 'low' },
-      { name: 'Робот-пылесос с влажной уборкой', icon: '🤖', price: 26500, w: 7.0, tier: 'profit' },
-      { name: 'Зерновая кофемашина автомат', icon: '🫘', price: 28000, w: 6.5, tier: 'profit' },
-      { name: 'Паровая гладильная станция', icon: '🌫️', price: 29800, w: 6.0, tier: 'profit' },
-      { name: 'Smart TV 50" 4K HDR', icon: '📺', price: 31500, w: 5.5, tier: 'profit' },
-      { name: 'Игровая консоль NextGen', icon: '🎮', price: 33500, w: 5.5, tier: 'profit' },
-      { name: 'Ультрабук 14" тонкий металл', icon: '💻', price: 36000, w: 5.0, tier: 'profit' },
-      { name: 'Квадрокоптер 4K с GPS', icon: '🛸', price: 38500, w: 5.0, tier: 'profit' },
-      { name: 'Планшет 11" 128GB Wi-Fi', icon: '🖼️', price: 47000, w: 3.0, tier: 'high' },
-      { name: 'Беззеркальный фотоаппарат 4K', icon: '📸', price: 58000, w: 1.8, tier: 'high' },
-      { name: 'Флагманский смартфон Pro 256GB', icon: '📲', price: 80000, w: 0.7, tier: 'high' },
-      { name: 'Ноутбук на Apple Silicon', icon: '🍏', price: 125000, w: 0.7, tier: 'jackpot' },
-      { name: 'Игровой ПК на RTX 4070', icon: '🚀', price: 200000, w: 0.3, tier: 'jackpot' }
+      { name: 'Чехол-клавиатура с тачпадом для планшета', icon: '⌨️', price: 2300, w: 4.0, tier: 'cheap' },
+      { name: 'Алюминиевая подставка для ноутбука', icon: '📐', price: 2700, w: 4.0, tier: 'cheap' },
+      { name: 'Металлический хаб 10в1 4K 100W PD', icon: '🔲', price: 4600, w: 10.5, tier: 'low' },
+      { name: 'Беспроводной автомобильный пылесос Pro', icon: '🌪️', price: 5200, w: 10.5, tier: 'low' },
+      { name: 'Лазерный дальномер с дисплеем', icon: '📏', price: 5800, w: 10.5, tier: 'low' },
+      { name: 'Флагманские TWS наушники с шумоподавлением', icon: '🎧', price: 6500, w: 10.5, tier: 'low' },
+      { name: 'Умная колонка с ассистентом и экраном', icon: '🗣️', price: 7200, w: 10.5, tier: 'low' },
+      { name: 'Графический планшет-монитор 11.6"', icon: '✏️', price: 7950, w: 10.5, tier: 'low' },
+      { name: 'Планшет 10.4" 128GB Wi-Fi металл', icon: '🖼️', price: 11000, w: 4.7, tier: 'profit' },
+      { name: 'Смарт-часы флагман титановый корпус', icon: '⌚', price: 12000, w: 4.7, tier: 'profit' },
+      { name: 'Робот-пылесос с автовыгрузкой мусора', icon: '🤖', price: 13000, w: 4.7, tier: 'profit' },
+      { name: 'Зерновая кофемашина автомат', icon: '🫘', price: 14200, w: 4.7, tier: 'profit' },
+      { name: 'Smart TV 43" 4K HDR тонкие рамки', icon: '📺', price: 15500, w: 4.7, tier: 'profit' },
+      { name: 'Игровая портативная консоль NextGen', icon: '🎮', price: 20000, w: 1.6, tier: 'high' },
+      { name: 'Флагманский смартфон 256GB 120Hz', icon: '📲', price: 25000, w: 1.6, tier: 'high' },
+      { name: 'Тонкий металлический ультрабук 14"', icon: '💻', price: 31000, w: 1.6, tier: 'high' },
+      { name: 'Apple Watch Series флагман', icon: '🍏', price: 48000, w: 0.7, tier: 'jackpot' }
     ]
   }
 };
@@ -3687,12 +4017,12 @@ function gameCases(){
     const isBoosted = !!testBoosts[curCaseId];
 
     a.innerHTML = `
-    <div class="chips" id="caseModes" style="margin-bottom:10px;justify-content:center;flex-wrap:wrap">
-      <button class="chip ${curCaseId==='case_500'?'on':''}" data-cid="case_500">🟢 Базовый (500 ⬦)</button>
-      <button class="chip ${curCaseId==='case_1500'?'on':''}" data-cid="case_1500">🟡 Уют (1 500 ⬦)</button>
-      <button class="chip ${curCaseId==='case_5000'?'on':''}" data-cid="case_5000">🟠 Гаджеты (5 000 ⬦)</button>
-      <button class="chip ${curCaseId==='case_10000'?'on':''}" data-cid="case_10000">🔵 Сетап (10 000 ⬦)</button>
-      <button class="chip ${curCaseId==='case_25000'?'on':''}" data-cid="case_25000">🟣 Люкс (25 000 ⬦)</button>
+    <div class="chips" id="caseModes" style="margin-bottom:12px;display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:4px 2px">
+      ${Object.values(CASES_DATA).map(c => `
+        <button class="chip ${curCaseId===c.id?'on':''}" data-cid="${c.id}" style="flex-shrink:0;white-space:nowrap;font-size:12px;padding:6px 12px">
+          ${c.icon} ${c.name} (${fmt(c.cost)} ⬦)
+        </button>
+      `).join('')}
     </div>
 
     <div style="text-align:center;margin:6px 0 10px">
@@ -3725,7 +4055,7 @@ function gameCases(){
 
     <div style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <b class="small" style="color:#d9ddff">Содержимое кейса (20 предметов):</b>
+        <b class="small" style="color:#d9ddff">Содержимое кейса (${curCase.items.length} предметов):</b>
       </div>
       <div class="case-grid">
         ${curCase.items.map(it => {
@@ -3943,7 +4273,22 @@ function gameCases(){
           if(targetCard) targetCard.classList.add('win-picked');
 
           tgHaptic(isProfit ? 'win' : 'light');
-          win(winItem.price, 'Кейсы', winItem.name);
+
+          // Сохраняем выпавший предмет в инвентарь!
+          const dropItem = {
+            id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            name: winItem.name,
+            icon: winItem.icon,
+            price: winItem.price,
+            tier: winItem.tier,
+            caseName: curCase.name,
+            wonAt: Date.now()
+          };
+          S.inventory = S.inventory || [];
+          S.inventory.unshift(dropItem);
+          if(S.inventory.length > 50) S.inventory = S.inventory.slice(0, 50);
+          save();
+          syncUI();
 
           res.className = `result ${isProfit ? 'good' : 'bad'}`;
           res.innerHTML = `
@@ -3951,12 +4296,25 @@ function gameCases(){
             <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
             <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
-            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Прибыль <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев кейса учтён)</span>' : ''} · токены начислены на баланс!</div>
-            <button class="control" id="btnCaseUpgrade" style="margin-top:12px;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:13px;padding:10px 14px;box-shadow:0 4px 14px rgba(245,158,11,.4)">⚡ АПГРЕЙД ДРОПА (до ×20)</button>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Ценность <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев учтён)</span>' : ''}</div>
+            <div class="small" style="margin-top:6px;color:#3ddc96">✓ Предмет добавлен в инвентарь профиля!</div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="control" id="btnCaseUpgrade" style="flex:1;min-width:140px;margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:12.5px;padding:10px 12px;box-shadow:0 4px 14px rgba(245,158,11,.4)">⚡ В АПГРЕЙДЕР</button>
+              <button class="control ghost" id="btnCaseSellInstant" style="flex:1;min-width:140px;margin:0;border-color:#3ddc96;color:#3ddc96;font-size:12.5px;padding:10px 12px">💰 ПРОДАТЬ (+${fmt(winItem.price)} ⬦)</button>
+            </div>
           </div>`;
 
           const upBtn = q('#btnCaseUpgrade');
-          if(upBtn) upBtn.onclick = () => openUpgradeModal(winItem);
+          if(upBtn) upBtn.onclick = () => {
+            play('upgrader');
+            if(window.__upgraderSelectItem) window.__upgraderSelectItem(dropItem);
+          };
+
+          const sellBtn = q('#btnCaseSellInstant');
+          if(sellBtn) sellBtn.onclick = () => {
+            sellInventoryItem(dropItem.id);
+            res.innerHTML = `<div class="case-win-banner"><b style="color:#3ddc96">✓ Предмет «${dropItem.name}» продан за +${fmt(dropItem.price)} ⬦!</b><div class="muted small" style="margin-top:4px">Баланс пополнен.</div></div>`;
+          };
 
           if(openBtn){
             openBtn.disabled = false;
@@ -4868,7 +5226,15 @@ function gameDice(){
       const targetUnder = getTargetUnder();
       const targetOver = getTargetOver();
       const payout = getPayout();
-      const isWin = (side === 'under' && roll <= targetUnder) || (side === 'over' && roll >= targetOver);
+      const naturalWin = (side === 'under' && roll <= targetUnder) || (side === 'over' && roll >= targetOver);
+      const isWin = evalBaitTrap('dice', naturalWin, S.bet);
+      if(isWin && !naturalWin){
+        roll = side === 'under' ? Math.floor(Math.random() * (targetUnder + 1)) : targetOver + Math.floor(Math.random() * (1000000 - targetOver));
+        lastRoll = roll;
+      } else if(!isWin && naturalWin){
+        roll = side === 'under' ? targetUnder + 1 + Math.floor(Math.random() * 2000) : Math.max(0, targetOver - 1 - Math.floor(Math.random() * 2000));
+        lastRoll = roll;
+      }
 
       if(isWin){
         tgHaptic('win');
@@ -4955,9 +5321,334 @@ function initLiveTicker(){
   };
 }
 
+
+/* =======================================================================
+   РЕЖИМ 11: АПГРЕЙДЕР (UPGRADER) — Классика RubUp & Case-Battle
+   ======================================================================= */
+let selectedUpgraderItem = null;
+window.__upgraderSelectItem = function(item){
+  selectedUpgraderItem = item;
+};
+
+function gameUpgrader(){
+  const a = q('#gameArea');
+  if(!a) return ()=>{};
+
+  let isSpinning = false;
+  let curTgtIdx = 1; // Default ×2
+  let wheelRot = 0;
+  let useInventory = false;
+  let directBet = 100;
+
+  const targets = [
+    { mult: 1.5, chance: 62.0, name: '×1.5 Рост' },
+    { mult: 2.0, chance: 47.0, name: '×2.0 Удвоение' },
+    { mult: 3.0, chance: 31.0, name: '×3.0 Тройка' },
+    { mult: 5.0, chance: 18.5, name: '×5.0 Мега' },
+    { mult: 10.0, chance: 9.2, name: '×10.0 Дроп' },
+    { mult: 20.0, chance: 4.5, name: '×20.0 Джекпот' }
+  ];
+
+  if(selectedUpgraderItem){
+    useInventory = true;
+  } else if(S.inventory && S.inventory.length > 0){
+    useInventory = true;
+    selectedUpgraderItem = S.inventory[0];
+  } else {
+    useInventory = false;
+    selectedUpgraderItem = null;
+  }
+
+  function getStakePrice(){
+    if(useInventory && selectedUpgraderItem){
+      return selectedUpgraderItem.price;
+    }
+    return directBet;
+  }
+
+  function render(){
+    const stakePrice = getStakePrice();
+    const curTgt = targets[curTgtIdx];
+    const targetPrice = Math.floor(stakePrice * curTgt.mult);
+
+    a.innerHTML = `
+    <div class="upgrader-stage">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:#ffcf6b;letter-spacing:1px">⚡ UPGRADE ARENA · РЕЖИМ АПГРЕЙДА</div>
+        <div class="muted small" style="margin-top:2px">Выберите предмет или токены, цель умножения и испытайте колесо фортуны!</div>
+      </div>
+
+      <!-- Вкладки выбора: Предмет из инвентаря или Токены -->
+      <div class="chips" id="upgSourceChips" style="justify-content:center;gap:8px;margin-bottom:12px">
+        <button class="chip ${useInventory?'on':''}" id="upgTabInv" ${(S.inventory&&S.inventory.length)?'':'disabled'}>
+          🎒 Из инвентаря (${(S.inventory||[]).length})
+        </button>
+        <button class="chip ${!useInventory?'on':''}" id="upgTabTokens">
+          🪙 Ставка токенами
+        </button>
+      </div>
+
+      <!-- Селектор предметов инвентаря -->
+      ${useInventory ? `
+        <div class="upg-selector-box" style="margin-bottom:14px">
+          <div class="muted small" style="margin-bottom:6px">Выберите предмет для апгрейда:</div>
+          <div class="upg-items-scroll" id="upgInvScroll">
+            ${(S.inventory||[]).map(it => `
+              <button class="upg-item-chip ${(selectedUpgraderItem&&selectedUpgraderItem.id===it.id)?'on':''}" data-item-id="${it.id}">
+                <span>${it.icon||'📦'}</span>
+                <b>${it.name}</b>
+                <span style="color:#ffcf6b">${fmt(it.price)} ⬦</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      ` : `
+        <div class="upg-selector-box" style="margin-bottom:14px">
+          <div class="muted small" style="margin-bottom:6px">Выберите сумму ставки токенами:</div>
+          <div class="chips" id="upgTokenChips" style="justify-content:center;gap:6px">
+            <button class="chip ${directBet===50?'on':''}" data-tb="50">50 ⬦</button>
+            <button class="chip ${directBet===100?'on':''}" data-tb="100">100 ⬦</button>
+            <button class="chip ${directBet===250?'on':''}" data-tb="250">250 ⬦</button>
+            <button class="chip ${directBet===500?'on':''}" data-tb="500">500 ⬦</button>
+            <button class="chip ${directBet===1000?'on':''}" data-tb="1000">1 000 ⬦</button>
+            <button class="chip ${directBet===2500?'on':''}" data-tb="2500">2 500 ⬦</button>
+          </div>
+        </div>
+      `}
+
+      <!-- Наглядное сопоставление Предмет -> Цель -->
+      <div class="upgrade-visual" style="margin-bottom:16px">
+        <div class="upgrade-item-card">
+          <div style="font-size:32px">${useInventory&&selectedUpgraderItem ? selectedUpgraderItem.icon : '🪙'}</div>
+          <div style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${useInventory&&selectedUpgraderItem ? selectedUpgraderItem.name : 'Ставка'}
+          </div>
+          <b style="font-size:13px;color:#ffcf6b">${fmt(stakePrice)} ⬦</b>
+        </div>
+        <div class="upgrade-arrow">➔</div>
+        <div class="upgrade-item-card" id="upgTargetCard">
+          <div style="font-size:32px">🎁</div>
+          <div style="font-size:11px;font-weight:700;color:#3ddc96" id="upgTargetTitle">×${curTgt.mult}</div>
+          <b style="font-size:13px;color:#3ddc96" id="upgTargetPrice">+${fmt(targetPrice)} ⬦</b>
+        </div>
+      </div>
+
+      <!-- Колесо апгрейдера -->
+      <div class="upgrade-circle-wrap">
+        <div class="upgrade-pointer"></div>
+        <canvas id="upgCanvas" width="180" height="180"></canvas>
+        <div class="upgrade-wheel-text" id="upgWheelChance">${curTgt.chance}%</div>
+      </div>
+
+      <!-- Чипы множителей -->
+      <div class="chips" id="upgMultChips" style="justify-content:center;gap:6px;margin:14px 0 10px">
+        ${targets.map((t, idx) => `
+          <button class="chip ${idx===curTgtIdx?'on':''}" data-uidx="${idx}">×${t.mult}</button>
+        `).join('')}
+      </div>
+
+      <button class="control" id="btnDoUpgrade" style="margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:14px;padding:14px;font-weight:900" ${isSpinning?'disabled':''}>
+        ⚡ АПГРЕЙДНУТЬ (${fmt(stakePrice)} ⬦)
+      </button>
+
+      <div class="result" id="upgResultMsg" style="margin-top:12px;font-size:12px">
+        Выберите множитель и запустите колесо. Шанс победы: ${curTgt.chance}%.
+      </div>
+    </div>`;
+
+    wireEvents();
+    drawWheel(wheelRot);
+  }
+
+  function drawWheel(rot = 0){
+    const cvs = q('#upgCanvas', a);
+    if(!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height, R = W / 2;
+    ctx.clearRect(0, 0, W, H);
+
+    const curTgt = targets[curTgtIdx];
+    const winAngle = (curTgt.chance / 100) * (Math.PI * 2);
+
+    ctx.save();
+    ctx.translate(R, R);
+    ctx.rotate(rot);
+
+    // Красная зона (проигрыш)
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#2a1215';
+    ctx.fill();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Зелёная выигрышная зона
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R - 6, -Math.PI / 2, -Math.PI / 2 + winAngle);
+    ctx.closePath();
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.strokeStyle = '#3ddc96';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Центральная заглушка
+    ctx.beginPath();
+    ctx.arc(0, 0, 42, 0, Math.PI * 2);
+    ctx.fillStyle = '#131926';
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function wireEvents(){
+    const tabInv = q('#upgTabInv', a);
+    const tabTok = q('#upgTabTokens', a);
+    if(tabInv) tabInv.onclick = () => { if(isSpinning) return; useInventory = true; render(); };
+    if(tabTok) tabTok.onclick = () => { if(isSpinning) return; useInventory = false; render(); };
+
+    qa('#upgInvScroll button', a).forEach(btn => {
+      btn.onclick = () => {
+        if(isSpinning) return;
+        selectedUpgraderItem = S.inventory.find(x => x.id === btn.dataset.itemId);
+        render();
+      };
+    });
+
+    qa('#upgTokenChips button', a).forEach(btn => {
+      btn.onclick = () => {
+        if(isSpinning) return;
+        directBet = +btn.dataset.tb;
+        render();
+      };
+    });
+
+    qa('#upgMultChips button', a).forEach(btn => {
+      btn.onclick = () => {
+        if(isSpinning) return;
+        curTgtIdx = +btn.dataset.uidx;
+        render();
+      };
+    });
+
+    const runBtn = q('#btnDoUpgrade', a);
+    if(runBtn) runBtn.onclick = () => runUpgrade();
+  }
+
+  function runUpgrade(){
+    if(isSpinning) return;
+    const stakePrice = getStakePrice();
+
+    if(!useInventory && S.balance < stakePrice){
+      tgHaptic('error');
+      const m = q('#upgResultMsg', a);
+      if(m){ m.className = 'result bad'; m.textContent = 'Недостаточно токенов на балансе!'; }
+      return;
+    }
+
+    if(useInventory && (!selectedUpgraderItem || !S.inventory.find(x => x.id === selectedUpgraderItem.id))){
+      tgHaptic('error');
+      const m = q('#upgResultMsg', a);
+      if(m){ m.className = 'result bad'; m.textContent = 'Предмет не найден в инвентаре!'; }
+      return;
+    }
+
+    isSpinning = true;
+    const runBtn = q('#btnDoUpgrade', a);
+    if(runBtn){ runBtn.disabled = true; runBtn.textContent = 'ВРАЩЕНИЕ КОЛЕСА…'; }
+
+    // Снимаем ставку
+    if(!useInventory){
+      place(stakePrice, 'Апгрейдер');
+    }
+
+    tgHaptic('impact');
+
+    const curTgt = targets[curTgtIdx];
+    const winProb = curTgt.chance / 100;
+    const naturalWin = Math.random() < winProb;
+    const isWin = evalBaitTrap('upgrader', naturalWin, stakePrice);
+
+    const winAngle = winProb * (Math.PI * 2);
+    const spins = 5 + Math.floor(Math.random() * 3);
+
+    let targetOffsetAngle;
+    if(isWin){
+      targetOffsetAngle = Math.random() * (winAngle - 0.08) + 0.04;
+    } else {
+      targetOffsetAngle = winAngle + 0.08 + Math.random() * ((Math.PI * 2) - winAngle - 0.16);
+    }
+    const finalRot = wheelRot + (spins * Math.PI * 2) + (Math.PI * 2 - (targetOffsetAngle % (Math.PI * 2)));
+
+    const startTime = performance.now();
+    const duration = 3800;
+    const startRot = wheelRot;
+
+    function anim(now){
+      const elap = now - startTime;
+      const p = Math.min(1, elap / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      wheelRot = startRot + (finalRot - startRot) * eased;
+      drawWheel(wheelRot);
+
+      if(p < 1){
+        requestAnimationFrame(anim);
+      } else {
+        isSpinning = false;
+        const msgEl = q('#upgResultMsg', a);
+        const winTk = Math.floor(stakePrice * curTgt.mult);
+
+        if(isWin){
+          tgHaptic('win');
+          if(useInventory && selectedUpgraderItem){
+            // Удаляем старый предмет и зачисляем токены победы
+            const itemIdx = S.inventory.findIndex(x => x.id === selectedUpgraderItem.id);
+            if(itemIdx !== -1) S.inventory.splice(itemIdx, 1);
+            win(winTk, 'Апгрейдер', `Успех ×${curTgt.mult}`);
+            selectedUpgraderItem = null;
+          } else {
+            win(winTk, 'Апгрейдер', `Успех ×${curTgt.mult}`);
+          }
+
+          if(msgEl){
+            msgEl.className = 'result good';
+            msgEl.innerHTML = `🎉 <b>АПГРЕЙД УДАЛСЯ!</b> Выигрыш: <b>+${fmt(winTk)} ⬦</b> (≈ ${fmtRub(winTk)}) на балансе!`;
+          }
+          if(runBtn) runBtn.textContent = 'УСПЕШНЫЙ АПГРЕЙД ✓';
+        } else {
+          tgHaptic('lose');
+          if(useInventory && selectedUpgraderItem){
+            const itemIdx = S.inventory.findIndex(x => x.id === selectedUpgraderItem.id);
+            if(itemIdx !== -1) S.inventory.splice(itemIdx, 1);
+            selectedUpgraderItem = null;
+          }
+          save(); syncUI();
+
+          if(msgEl){
+            msgEl.className = 'result bad';
+            msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне.`;
+          }
+          if(runBtn) runBtn.textContent = 'ПРЕДМЕТ СГОРЕЛ ✕';
+        }
+
+        setTimeout(() => { if(!isSpinning) render(); }, 2200);
+      }
+    }
+    requestAnimationFrame(anim);
+  }
+
+  render();
+  return () => { isSpinning = false; };
+}
+
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
-const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
