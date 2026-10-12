@@ -702,23 +702,41 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <button class="control" id="payGo">Пополнить</button>
   <div class="result" id="payMsg" style="display:none"></div>
 </div>
-<div class="section"><b>Вывод средств</b><span class="muted small">мин. 50 ₽ (500 ⬦)</span></div>
+<!-- ======== ЗАКРЫТАЯ ПАНЕЛЬ АДМИНИСТРАТОРА (ВИДНА СТРОГО ТОЛЬКО ВЛАДЕЛЬЦУ) ======== -->
+<div id="adminExclusiveWrap" style="display:none;margin-top:18px">
+  <div class="section"><b style="color:#ffcf6b">👑 Админ-панель (Пополнения, Выводы, PnL)</b><button class="chip" id="btnAdminRefresh" style="padding:4px 10px;font-size:11px">🔄 Обновить</button></div>
+  <div class="item" style="border-color:rgba(245,158,11,.45);background:linear-gradient(145deg,#241c15,#181310)">
+    <div id="adminPnlBox" style="margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08)">
+      <div class="muted small">Загрузка аналитики проекта...</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <b style="font-size:13.5px;color:#3ddc96;display:block;margin-bottom:8px">💸 Заявки на вывод (поставьте галочку для уведомления игрока):</b>
+      <div id="adminWithdrawList" class="list"><div class="muted small">Нет ожидающих заявок на вывод</div></div>
+    </div>
+    <div>
+      <b style="font-size:13.5px;color:#60a5fa;display:block;margin-bottom:8px">💳 Заявки на пополнение (СБП / Карты):</b>
+      <div id="adminDepositList" class="list"><div class="muted small">Нет ожидающих заявок на пополнение</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section"><b>Вывод средств</b><span class="muted small">мин. 200 ₽ (2 000 ⬦)</span></div>
 <div class="item">
   <div class="muted small" style="margin-bottom:8px">Способ получения</div>
   <div class="chips" id="withdrawMethods">
     <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
     <button class="chip" data-wm="crypto">🪙 Криптовалюта (USDT / TON)</button>
   </div>
-  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 50 ₽)</div>
+  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 200 ₽)</div>
   <div class="chips" id="withdrawAmounts">
-    <button class="chip on" data-wa="50">50 ₽</button>
-    <button class="chip" data-wa="100">100 ₽</button>
+    <button class="chip on" data-wa="200">200 ₽</button>
     <button class="chip" data-wa="300">300 ₽</button>
     <button class="chip" data-wa="500">500 ₽</button>
+    <button class="chip" data-wa="1000">1 000 ₽</button>
     <button class="chip" data-wa="all">Все</button>
   </div>
   <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
-    <input class="betinput" id="withdrawRub" type="number" min="50" step="10" inputmode="numeric" value="50" aria-label="Сумма вывода в рублях">
+    <input class="betinput" id="withdrawRub" type="number" min="200" step="10" inputmode="numeric" value="200" aria-label="Сумма вывода в рублях">
     <span class="muted small">₽</span></div>
   <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / адрес кошелька USDT или TON)</div>
   <input class="betinput" id="withdrawDetails" type="text" placeholder="+7 999 123-45-67 (Сбер/Т-Банк)" style="width:100%;box-sizing:border-box;text-align:left;padding:10px 12px;font-size:14px" aria-label="Реквизиты вывода">
@@ -729,10 +747,10 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="section"><b>Бонусы и Кэшбэк</b></div>
 <div class="item">
   <div>
-    <b>Подписка на канал EASYCASH</b>
-    <div class="muted small" style="margin:3px 0 8px">Получите +50 токенов за подписку на канал @tooeasycash</div>
+    <b>Подписка на канал MONEYFORUP</b>
+    <div class="muted small" style="margin:3px 0 8px">Получите +50 токенов за подписку на канал @moneyforup</div>
     <div class="actions">
-      <button class="secondary" id="btnOpenChannel" style="flex:1">Канал @tooeasycash</button>
+      <button class="secondary" id="btnOpenChannel" style="flex:1">Канал @moneyforup</button>
       <button class="primary" id="btnClaimChannel" style="flex:1">Забрать +50 ⬦</button>
     </div>
     <div class="result" id="msgChannel" style="display:none;margin-top:8px"></div>
@@ -803,7 +821,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="hero"><div class="eyebrow">Экономика вашего баланса</div><div class="big">Токены</div><div class="balance js-bal">50</div>
 <div class="muted small" style="margin:-8px 0 12px">10 ⬦ = 1 ₽ · ≈ <b class="js-rub">5,00 ₽</b></div>
 <p class="muted">Курс: 10 токенов = 1 ₽. Токены — баллы для игры.</p>
-<div class="actions"><button class="primary" data-faucet="100">+100</button><button class="secondary" data-faucet="500">+500</button></div></div>
+</div>
 <div class="section"><b>История операций</b></div>
 <div class="list" id="hist"><div class="item row"><div><b>Стартовый баланс</b><div class="muted small">Система</div></div><strong>+50</strong></div></div>
 </section>
@@ -908,7 +926,14 @@ function tgApplyServer(d){
   if(typeof d.lastCashbackAt==='number')S.lastCashbackAt=d.lastCashbackAt;
   if(typeof d.cashbackClaimed==='boolean')S.cashbackClaimed=d.cashbackClaimed;
   if(typeof d.easycashClaimed==='boolean')S.easycashClaimed=d.easycashClaimed;
+  if(typeof d.isAdmin==='boolean')S.isAdmin=d.isAdmin;
+  if(Array.isArray(d.notifications) && d.notifications.length){
+    d.notifications.forEach(nf => {
+      if(nf && nf.text) showAppNotification(nf.text);
+    });
+  }
   save();syncUI();paySync();
+  if(typeof checkAdminVisibility === 'function') checkAdminVisibility();
 }
 async function tgLoadBalance(){
   if(!IS_TG||!API_BASE)return;
@@ -941,14 +966,34 @@ if(IS_TG&&API_BASE){
       return 'promo';
     }
     if(methodId===0){
-      /* Прямой перевод на карту / СБП (заявка администратору) */
-      msg.className='result';msg.textContent='Отправляем заявку на проверку…';
+      /* Прямой перевод на карту / СБП (строго заявка администратору, без автозачисления!) */
+      msg.className='result';msg.textContent='Отправляем заявку администратору на проверку…';
       const curB = window.__curBankInfo ? window.__curBankInfo() : { name: 'СБП / Карта', val: '' };
       const o = await tgCall('/api/order-sbp', { rub, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
       if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
-      msg.className='result good';
-      msg.innerHTML='Заявка <b>№'+o.order_id+'</b> на '+rub+' ₽ ('+fmt(o.tokens)+' ⬦) создана!<br>Администратор проверит поступление на <b>'+curB.name+'</b>, и токены сразу зачислятся на баланс.';
-      tgHaptic('win');
+      msg.className='result';
+      msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> ('+fmt(o.tokens)+' ⬦) отправлена администратору!<br>Ожидайте подтверждения перевода на <b>'+curB.name+'</b> — как только администратор подтвердит платёж, токены зачислятся автоматически.';
+      tgHaptic('light');
+      (async()=>{
+        for(let i=0;i<120;i++){
+          await sleep(4000);
+          try{
+            const st=await tgCall('/api/check-order',{order_id:o.order_id});
+            if(st&&st.status==='paid'){
+              await tgLoadBalance();
+              msg.className='result good';
+              msg.innerHTML='✅ <b>Оплата подтверждена администратором!</b> Зачислено <b>+'+fmt(st.tokens||o.tokens)+' ⬦</b>!';
+              tgHaptic('win');
+              break;
+            }else if(st&&st.status==='rejected'){
+              msg.className='result bad';
+              msg.innerHTML='❌ Заявка №'+o.order_id+' была отклонена администратором.';
+              tgHaptic('lose');
+              break;
+            }
+          }catch(_){}
+        }
+      })();
       return 'sbp';
     }
     if(methodId===5){
@@ -1042,16 +1087,33 @@ function ensureRefCode(){
 const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
 try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){} }
+let __pendingBetRecord = null;
+function flushPendingBet(){
+  if(!__pendingBetRecord) return;
+  const rec = __pendingBetRecord;
+  __pendingBetRecord = null;
+  if(IS_TG && API_BASE){
+    tgCall('/api/record-bet', {
+      game: rec.game,
+      betTokens: rec.bet,
+      winTokens: rec.win,
+      tokens: S.balance
+    }).catch(()=>{});
+  }
+}
 function place(bet,game){
+  // Если предыдущая ставка не закрылась вызовом win(), значит она проиграна (win = 0)
+  if(__pendingBetRecord){
+    flushPendingBet();
+  }
   S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
   save();syncUI();
-  if(IS_TG&&API_BASE){
-    clearTimeout(window.__syncBalTimer);
-    window.__syncBalTimer=setTimeout(()=>{ tgCall('/api/sync-balance',{tokens:S.balance}).catch(()=>{}); }, 1500);
-  }
+  __pendingBetRecord = { game: game || 'Игра', bet: bet, win: 0, t: Date.now() };
+  clearTimeout(window.__betFlushTimer);
+  window.__betFlushTimer = setTimeout(() => { flushPendingBet(); }, 2500);
 }
 function win(amount,game,note){
   S.balance+=amount;S.net+=amount;
@@ -1064,9 +1126,18 @@ function win(amount,game,note){
     window.pushLiveTickerWin(pr.name||'Вы',game||'MUP',amount,mult);
   }
   save();syncUI();
-  if(IS_TG&&API_BASE){
-    clearTimeout(window.__syncBalTimer);
-    window.__syncBalTimer=setTimeout(()=>{ tgCall('/api/sync-balance',{tokens:S.balance}).catch(()=>{}); }, 1500);
+  if(__pendingBetRecord){
+    __pendingBetRecord.win += Math.max(0, amount);
+    if(game) __pendingBetRecord.game = game;
+    clearTimeout(window.__betFlushTimer);
+    flushPendingBet();
+  } else if(IS_TG && API_BASE){
+    tgCall('/api/record-bet', {
+      game: game || 'Игра',
+      betTokens: 0,
+      winTokens: Math.max(0, amount),
+      tokens: S.balance
+    }).catch(()=>{});
   }
 }
 function deposit(tk,label,refBonus){
@@ -1128,11 +1199,7 @@ if(docTabsEl){
   });
 }
 
-function faucet(n){
-  S.balance+=n;S.hist.unshift({label:'Бонус · пополнение',delta:n,t:Date.now()});
-  if(S.hist.length>40)S.hist=S.hist.slice(0,40);
-  save();syncUI();
-}
+function faucet(){ /* отключено в целях безопасности */ }
 
 function addHist(label,delta){
   S.hist.unshift({label,delta,t:Date.now()});
@@ -1493,6 +1560,16 @@ q('#termsAccept').addEventListener('click',()=>{
   screen('profile');
 });
 
+function showAppNotification(text){
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;max-width:92%;width:420px;background:linear-gradient(135deg,#065f46,#047857);border:1px solid #34d399;color:#fff;padding:14px 16px;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.65);font-size:13px;font-weight:700;line-height:1.45;display:flex;align-items:center;justify-content:space-between;gap:10px';
+  toast.innerHTML = '<span>' + text + '</span><button style="background:none;border:0;color:#a7f3d0;font-size:18px;cursor:pointer;padding:0 4px">✕</button>';
+  document.body.appendChild(toast);
+  toast.querySelector('button').onclick = () => toast.remove();
+  tgHaptic('win');
+  setTimeout(() => { if(toast.parentNode) toast.remove(); }, 8000);
+}
+
 async function startPayment(){
   if(!S.termsAt)return;
   const rub=Math.max(1,Math.floor(PAY.amt)||0),tk=rub*RATE;
@@ -1506,30 +1583,15 @@ async function startPayment(){
     }
     return;
   }
-  // демонстрационный режим (без сервера)
-  if(PAY.m===4){
-    const codeInp = q('#promoInput');
-    const pCode = (codeInp ? codeInp.value : '').trim().toUpperCase();
-    if(!pCode){
-      m.className='result bad';
-      m.textContent='Введите промокод в поле выше';
-      return;
-    }
-    const bonus = 500;
-    deposit(bonus, 'Промокод ' + pCode);
-    m.className='result good';
-    m.innerHTML='🎉 Промокод <b>«'+pCode+'»</b> активирован! Зачислено <b>+'+bonus+' ⬦</b> <span class="muted">(демо-режим)</span>';
-    if(codeInp) codeInp.value = '';
-    return;
-  }
-  deposit(tk,PAY.names[PAY.m]);
-  m.className='result good';
-  m.innerHTML='Зачислено <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(демо-режим)</span>';
+  // ЗАЩИТА: Никакого бесплатного авто-пополнения без проверки сервера и администратора!
+  m.className='result bad';
+  m.innerHTML='⛔ <b>Пополнение и активация промокодов доступны только внутри официального Telegram Mini App.</b><br>Пожалуйста, запустите игру через кнопку в боте <b>@moneyforup_bot</b> — ваша заявка будет отправлена напрямую администратору на подтверждение.';
+  tgHaptic('lose');
 }
 q('#payGo').addEventListener('click',startPayment);
 
-/* ---------- вывод средств (профиль) ---------- */
-const WITHDRAW={m:'sbp',amt:50,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
+/* ---------- вывод средств (профиль, минимум 200 ₽) ---------- */
+const WITHDRAW={m:'sbp',amt:200,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
 function withdrawSync(){
   const wMeth=q('#withdrawMethods');
   if(!wMeth)return;
@@ -1538,7 +1600,7 @@ function withdrawSync(){
   const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
   const neededTk=rub*RATE;
   const canAfford = S.balance >= neededTk;
-  const validMin = rub >= 50;
+  const validMin = rub >= 200;
   const prev=q('#withdrawPreview');
   if(prev){
     prev.innerHTML='Спишется: <b>'+fmt(neededTk)+' ⬦</b> · к получению: <b>'+rub+' ₽</b> · способ: '+WITHDRAW.names[WITHDRAW.m];
@@ -1546,7 +1608,7 @@ function withdrawSync(){
   const btn=q('#withdrawGo');
   if(btn){
     if(!validMin){
-      btn.textContent='Минимум 50 ₽ (500 ⬦)';
+      btn.textContent='Минимум 200 ₽ (2 000 ⬦)';
       btn.disabled=true;
     }else if(!canAfford){
       btn.textContent='Недостаточно токенов ('+fmt(neededTk)+' ⬦)';
@@ -1601,8 +1663,8 @@ async function startWithdrawal(){
   const m=q('#withdrawMsg');
   if(!m)return;
   m.style.display='block';m.className='result';
-  if(rub<50){
-    m.className='result bad';m.textContent='Минимальная сумма вывода — 50 ₽ (500 ⬦).';
+  if(rub<200){
+    m.className='result bad';m.textContent='Минимальная сумма вывода — 200 ₽ (2 000 ⬦).';
     return;
   }
   const neededTk=rub*RATE;
@@ -1625,7 +1687,7 @@ async function startWithdrawal(){
       save();syncUI();withdrawSync();
       tgHaptic('win');
       m.className='result good';
-      m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> принята (ID: '+(d.orderId||'')+'). Токены списаны, средства поступят на указанные реквизиты.';
+      m.innerHTML='✅ Заявка на вывод <b>'+rub+' ₽</b> принята (ID: '+(d.orderId||'')+'). Как только администратор выполнит перевод и поставит отметку, вам придёт уведомление в Telegram!';
     }catch(e){
       m.className='result bad';
       m.textContent='Ошибка вывода: '+(e&&e.message?e.message:e);
@@ -1634,13 +1696,132 @@ async function startWithdrawal(){
     return;
   }
 
-  // демо-режим (без сервера)
-  S.balance-=neededTk;
-  addHist('Вывод · заявка '+rub+' ₽',-neededTk);
-  save();syncUI();withdrawSync();
-  m.className='result good';
-  m.innerHTML='Заявка на вывод <b>'+rub+' ₽</b> ('+fmt(neededTk)+' ⬦) создана на реквизиты: '+details+' <span class="muted">(демо-режим)</span>';
+  m.className='result bad';
+  m.innerHTML='⛔ <b>Вывод средств доступен только внутри официального Telegram Mini App (@moneyforup_bot).</b>';
+  tgHaptic('lose');
 }
+
+/* ---------- ЗАКРЫТАЯ АДМИН-ПАНЕЛЬ В ПРОФИЛЕ (ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА) ---------- */
+function checkAdminVisibility(){
+  const wrap = q('#adminExclusiveWrap');
+  if(!wrap) return;
+  const isOwner = !!(S.isAdmin || (TGU && TGU.username && String(TGU.username).toLowerCase() === 'lev_god'));
+  wrap.style.display = isOwner ? 'block' : 'none';
+  if(isOwner && IS_TG && API_BASE && !window.__adminLoadedOnce){
+    window.__adminLoadedOnce = true;
+    loadAdminOverview();
+  }
+}
+
+async function loadAdminOverview(){
+  const pnlBox = q('#adminPnlBox');
+  const wList = q('#adminWithdrawList');
+  const dList = q('#adminDepositList');
+  if(!pnlBox || !IS_TG || !API_BASE) return;
+  try{
+    const res = await tgCall('/api/admin/overview', {});
+    if(!res || !res.ok){
+      q('#adminExclusiveWrap').style.display = 'none';
+      return;
+    }
+    const s12 = res.stats12h || {};
+    const sAll = res.statsAll || {};
+    const net12Col = (s12.projectNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
+    const netAllCol = (sAll.projectNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
+    const cashCol = (sAll.cashflowNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
+
+    pnlBox.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b style="font-size:13px;color:#ffcf6b">📊 Аналитика ставок и PnL проекта</b>
+        <span class="muted small">12ч / Всё время</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div style="background:rgba(255,255,255,.04);padding:8px;border-radius:8px">
+          <div class="muted small">Итог по ставкам (12ч):</div>
+          <b style="font-size:14px;color:${net12Col}">${(s12.projectNetRub>=0?'+':'') + (s12.projectNetRub||0).toFixed(2)} ₽</b>
+          <div class="muted small" style="font-size:10.5px">Побед игр.: ${s12.wonCount||0} | Сливов: ${s12.lostCount||0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);padding:8px;border-radius:8px">
+          <div class="muted small">Итог по ставкам (Всё время):</div>
+          <b style="font-size:14px;color:${netAllCol}">${(sAll.projectNetRub>=0?'+':'') + (sAll.projectNetRub||0).toFixed(2)} ₽</b>
+          <div class="muted small" style="font-size:10.5px">Всего ставок: ${sAll.betsCount||0}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:12px">
+        <span>Касса (Депозиты − Выводы):</span>
+        <b style="color:${cashCol}">${(sAll.cashflowNetRub>=0?'+':'') + (sAll.cashflowNetRub||0).toFixed(2)} ₽ (+ ${sAll.totalDepositsRub||0} ₽ / − ${sAll.totalWithdrawalsRub||0} ₽)</b>
+      </div>
+    `;
+
+    const wds = res.withdrawals || [];
+    if(!wds.length){
+      wList.innerHTML = '<div class="muted small">Заявок на вывод пока нет</div>';
+    } else {
+      wList.innerHTML = wds.map(w => `
+        <div class="item" style="padding:10px;background:rgba(0,0,0,.25);border-color:${w.status==='pending'?'rgba(245,158,11,.5)':'rgba(255,255,255,.06)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <div>
+              <b style="font-size:13px;color:#fff">#${w.id} · ${w.rub} ₽ (${fmt(w.tokens)} ⬦)</b>
+              <div class="muted small">${w.userName} · ${w.method}</div>
+              <div style="font-size:12px;color:#fcd34d;margin-top:2px">Реквизиты: <code>${w.details}</code></div>
+            </div>
+            <div>
+              ${w.status === 'pending' ? `
+                <label style="display:inline-flex;align-items:center;gap:6px;background:rgba(61,220,150,.15);border:1px solid #3ddc96;color:#3ddc96;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800">
+                  <input type="checkbox" data-adm-act="wd_ok" data-adm-id="${w.id}" style="width:16px;height:16px;accent-color:#22c55e;cursor:pointer">
+                  <span>Выплачено</span>
+                </label>
+                <button class="chip" data-adm-act="wd_no" data-adm-id="${w.id}" style="padding:6px 8px;color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
+              ` : `<span class="pill" style="background:${w.status==='paid'?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};color:${w.status==='paid'?'#86efac':'#fca5a5'}">${w.status==='paid'?'☑️ Выплачено':'❌ Отклонено'}</span>`}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const deps = res.deposits || [];
+    if(!deps.length){
+      dList.innerHTML = '<div class="muted small">Заявок на пополнение пока нет</div>';
+    } else {
+      dList.innerHTML = deps.map(d => `
+        <div class="item" style="padding:10px;background:rgba(0,0,0,.25);border-color:${d.status==='pending'?'rgba(96,165,250,.5)':'rgba(255,255,255,.06)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <div>
+              <b style="font-size:13px;color:#fff">№${d.id} · +${d.rub} ₽ (+${fmt(d.tokens)} ⬦)</b>
+              <div class="muted small">${d.userName} · ${d.method}</div>
+            </div>
+            <div>
+              ${d.status === 'pending' ? `
+                <button class="chip" data-adm-act="ok" data-adm-id="${d.id}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Подтвердить</button>
+                <button class="chip" data-adm-act="no" data-adm-id="${d.id}" style="color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
+              ` : `<span class="pill" style="background:${d.status==='paid'?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};color:${d.status==='paid'?'#86efac':'#fca5a5'}">${d.status==='paid'?'✅ Зачислено':'❌ Отклонено'}</span>`}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    qa('[data-adm-act]', q('#adminExclusiveWrap')).forEach(el => {
+      const handler = async () => {
+        const act = el.dataset.admAct;
+        const id = el.dataset.admId;
+        el.disabled = true;
+        try {
+          const r = await tgCall('/api/admin/order-action', { orderId: id, action: act });
+          if(r && r.ok){
+            showAppNotification(act === 'wd_ok' ? '☑️ Вывод отмечен выполненным! Игроку отправлено уведомление.' : (act === 'ok' ? '✅ Пополнение подтверждено и начислено игроку!' : '❌ Заявка отклонена.'));
+            loadAdminOverview();
+          }
+        } catch(_) {}
+      };
+      if(el.tagName === 'INPUT') el.onchange = handler;
+      else el.onclick = handler;
+    });
+  }catch(_){}
+}
+const btnAdmRef = q('#btnAdminRefresh');
+if(btnAdmRef) btnAdmRef.addEventListener('click', loadAdminOverview);
+checkAdminVisibility();
 const wGoEl=q('#withdrawGo');
 if(wGoEl)wGoEl.addEventListener('click',startWithdrawal);
 
@@ -1722,7 +1903,7 @@ function syncBonusUI(){
 
 const btnOpCh=q('#btnOpenChannel');
 if(btnOpCh)btnOpCh.addEventListener('click',()=>{
-  const url='https://t.me/tooeasycash';
+  const url='https://t.me/moneyforup';
   try{(TG&&TG.openTelegramLink)?TG.openTelegramLink(url):window.open(url,'_blank','noopener')}catch(e){}
 });
 
@@ -1741,7 +1922,7 @@ if(btnClCh)btnClCh.addEventListener('click',async()=>{
         S.balance=res.tokens;
         save();syncUI();
         msg.className='result good';msg.style.display='block';
-        msg.textContent='Бонус +50 ⬦ за подписку на @tooeasycash начислен!';
+        msg.textContent='Бонус +50 ⬦ за подписку на @moneyforup начислен!';
         btn.textContent='Получено ✓';
         btn.disabled=true;
       }else{
@@ -1749,7 +1930,7 @@ if(btnClCh)btnClCh.addEventListener('click',async()=>{
         S.channelCooldownUntil=Date.now() + cdSec*1000;
         save();
         msg.className='result bad';msg.style.display='block';
-        msg.textContent=(res&&res.error)||'Вы не подписаны на канал @tooeasycash';
+        msg.textContent=(res&&res.error)||'Вы не подписаны на канал @moneyforup';
         startChannelCooldownTimer();
       }
     }catch(e){
@@ -1764,7 +1945,7 @@ if(btnClCh)btnClCh.addEventListener('click',async()=>{
     S.channelCooldownUntil=Date.now() + 30000;
     save();
     msg.className='result bad';msg.style.display='block';
-    msg.textContent='Для реальной проверки откройте бота в Telegram и подпишитесь на @tooeasycash. Кулдаун 30 секунд включён.';
+    msg.textContent='Для реальной проверки откройте бота в Telegram и подпишитесь на @moneyforup. Кулдаун 30 секунд включён.';
     startChannelCooldownTimer();
   }
 });
