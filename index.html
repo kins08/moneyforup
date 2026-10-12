@@ -344,22 +344,119 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .upgrade-wheel-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.9)}
 
 /* Инвентарь предметов в Профиле */
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
-.inv-card{background:rgba(255,255,255,.03);border:1.5px solid var(--tier-col,rgba(255,255,255,.1));border-radius:14px;padding:10px;text-align:center;display:flex;flex-direction:column;align-items:center;position:relative;box-shadow:inset 0 0 16px rgba(0,0,0,.4)}
-.inv-icon{font-size:32px;margin-bottom:4px}
-.inv-name{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-.inv-val{font-size:11.5px;font-weight:800;color:#ffcf6b;margin:2px 0 6px}
-.inv-acts{display:flex;gap:4px;width:100%}
-.inv-btn{flex:1;padding:5px 2px;font-size:9.5px;font-weight:800;border-radius:8px;border:none;cursor:pointer}
-.inv-btn-sell{background:rgba(255,255,255,.08);color:#d1d5db}
-.inv-btn-up{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
+.inv-card{
+  background:linear-gradient(155deg, rgba(28,36,54,.92) 0%, rgba(15,20,32,.98) 100%);
+  border:1.5px solid var(--inv-tier-col, rgba(255,255,255,.14));
+  border-radius:18px;
+  padding:12px 10px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:relative;
+  box-shadow:0 8px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+  transition:all .2s cubic-bezier(.2,.8,.2,1);
+  overflow:hidden;
+  cursor:pointer;
+}
+.inv-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--inv-tier-col, #ffcf6b);
+  box-shadow:0 12px 28px rgba(0,0,0,.7), 0 0 16px var(--inv-tier-col, rgba(255,207,107,.25));
+}
+.inv-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at top, var(--inv-tier-col, rgba(255,255,255,.1)) 0%, transparent 70%);
+  opacity:.18;
+  pointer-events:none;
+}
+.inv-tier-tag{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:8.5px;
+  font-weight:900;
+  padding:2px 7px;
+  border-radius:8px;
+  background:var(--inv-tier-col, rgba(255,255,255,.2));
+  color:#000;
+  letter-spacing:.3px;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+  text-transform:uppercase;
+}
+.inv-icon-aura{
+  width:56px;
+  height:56px;
+  border-radius:16px;
+  background:radial-gradient(circle, rgba(255,255,255,.1) 0%, rgba(0,0,0,.45) 80%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:4px 0 8px;
+  border:1px solid rgba(255,255,255,.08);
+}
+.inv-icon{font-size:32px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+.inv-name{font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin-bottom:2px}
+.inv-val{font-size:12px;font-weight:800;color:#ffcf6b;margin-bottom:8px}
+.inv-val span{font-size:10px;font-weight:500;color:#94a1b8}
+.inv-acts{display:flex;gap:6px;width:100%;margin-top:auto}
+.inv-btn-sell{
+  flex:1;
+  padding:7px 4px;
+  font-size:10px;
+  font-weight:800;
+  border-radius:10px;
+  border:1px solid rgba(61,220,150,.35);
+  background:rgba(61,220,150,.12);
+  color:#3ddc96;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.inv-btn-sell:hover{
+  background:rgba(61,220,150,.25);
+  border-color:#3ddc96;
+  color:#fff;
+}
+.inv-btn-up{
+  flex:1;
+  padding:7px 4px;
+  font-size:10px;
+  font-weight:900;
+  border-radius:10px;
+  border:none;
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:#fff;
+  cursor:pointer;
+  box-shadow:0 3px 10px rgba(245,158,11,.35);
+  transition:all .15s ease;
+}
+.inv-btn-up:hover{
+  filter:brightness(1.15);
+  transform:scale(1.02);
+}
+
+/* Модалка предмета инвентаря */
+.inv-modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;animation:invFadeIn .2s ease}
+.inv-modal-box{background:linear-gradient(160deg,#1c2336,#0f1422);border:1.5px solid rgba(255,255,255,.15);border-radius:24px;padding:22px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.85);position:relative}
+.inv-modal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:none;color:#94a1b8;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.inv-modal-close:hover{background:rgba(255,255,255,.16);color:#fff}
+@keyframes invFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 
 /* Режим Апгрейдер (Upgrader) */
 .upgrader-stage{padding:4px 0}
 .upg-selector-box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px}
-.upg-items-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-top:10px}
-.upg-item-chip{flex:0 0 110px;background:rgba(0,0,0,.3);border:1.5px solid var(--tier-col,#374151);border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s}
-.upg-item-chip.active{border-color:#ffcf6b;box-shadow:0 0 12px rgba(255,207,107,.5);transform:scale(1.03)}
+.upg-items-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-top:10px;-webkit-overflow-scrolling:touch}
+.upg-item-chip{flex:0 0 115px;background:rgba(0,0,0,.35);border:1.5px solid var(--tier-col,#374151);border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s;color:#fff}
+.upg-item-chip.on{border-color:#ffcf6b;background:rgba(255,207,107,.12);box-shadow:0 0 14px rgba(255,207,107,.35);transform:scale(1.03)}
+.upg-bet-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.upg-bet-input-wrap{position:relative;flex:1}
+.upg-bet-input{width:100%;font-size:17px;font-weight:900;padding:10px 36px 10px 14px;border-radius:12px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);color:#fff;box-sizing:border-box}
+.upg-bet-input:focus{outline:none;border-color:#ffcf6b;background:rgba(255,255,255,.08)}
+.upg-mod-btn{padding:8px 12px;font-size:12px;font-weight:800;border-radius:10px;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -499,15 +596,18 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 
 <!-- Инвентарь предметов с кейсов -->
 <div class="section" style="margin-top:16px">
-  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
     <b>Инвентарь предметов</b>
     <span class="muted small" id="invTotalValue">0 предметов</span>
   </div>
 </div>
 <div class="item" style="padding:14px">
-  <div class="muted small">Предметы, выигранные из кейсов. Вы можете мгновенно продать их в токены или отправить в Апгрейдер для умножения до ×20!</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div class="muted small" style="flex:1;min-width:180px">Предметы с кейсов. Нажмите на предмет для просмотра деталей или используйте быстрые кнопки:</div>
+    <div id="invBulkSellArea"></div>
+  </div>
   <div class="inv-grid" id="profileInvGrid">
-    <div class="muted small" style="grid-column:1/-1;padding:12px 0;text-align:center">У вас пока нет предметов. Откройте кейс или испытайте удачу!</div>
+    <div class="muted small" style="grid-column:1/-1;padding:16px 0;text-align:center">У вас пока нет предметов. Откройте кейс или испытайте удачу!</div>
   </div>
 </div>
 
@@ -1087,22 +1187,123 @@ function sellInventoryItem(itemId){
   const idx = S.inventory.findIndex(it => it.id === itemId);
   if(idx === -1) return;
   const item = S.inventory[idx];
-  S.balance += item.price;
+  const itemPrice = item.price;
+  const itemName = item.name;
+  S.balance += itemPrice;
   S.inventory.splice(idx, 1);
   save();
   syncUI();
   tgHaptic('win');
 }
 
+function sellAllInventory(){
+  if(!S.inventory || !S.inventory.length) return;
+  const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
+  const count = S.inventory.length;
+  if(confirm(`Продать все ${count} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
+    S.balance += totalVal;
+    S.inventory = [];
+    save();
+    syncUI();
+    tgHaptic('win');
+  }
+}
+
+function openItemDetailModal(it){
+  const existing = q('.inv-modal-wrap');
+  if(existing) existing.remove();
+
+  const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
+  const tierName = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий';
+  const rubVal = fmtRub(it.price);
+
+  const modal = document.createElement('div');
+  modal.className = 'inv-modal-wrap';
+  modal.innerHTML = `
+  <div class="inv-modal-box" style="border-color:${col}">
+    <button class="inv-modal-close" id="btnInvModalClose">✕</button>
+
+    <div style="display:inline-block;padding:2px 10px;border-radius:20px;background:${col}22;border:1px solid ${col};color:${col};font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:10px">
+      ${tierName}
+    </div>
+
+    <div style="font-size:54px;margin:6px 0;filter:drop-shadow(0 6px 16px ${col}66)">${it.icon || '📦'}</div>
+    <b style="font-size:18px;color:#fff;display:block;margin-bottom:4px">${it.name}</b>
+    <div class="muted small">${it.caseName ? `Выпал из кейса «${it.caseName}»` : 'Предмет из инвентаря'}</div>
+
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin:16px 0 14px">
+      <div class="muted small">Гарантированная цена продажи:</div>
+      <div style="font-size:22px;font-weight:900;color:#ffcf6b;margin-top:2px">
+        +${fmt(it.price)} ⬦ <span style="font-size:13px;color:#94a1b8;font-weight:600">≈ ${rubVal}</span>
+      </div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(217,119,6,.06));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:10px 12px;margin-bottom:18px;text-align:left">
+      <div style="font-size:11.5px;font-weight:800;color:#ffcf6b;margin-bottom:6px">⚡ В Апгрейдере этот предмет можно умножить:</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db;margin-bottom:3px">
+        <span>Цель ×2.0 (47%):</span>
+        <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 2))} ⬦</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db;margin-bottom:3px">
+        <span>Цель ×5.0 (18.5%):</span>
+        <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 5))} ⬦</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db">
+        <span>Цель ×20.0 (4.5%):</span>
+        <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 20))} ⬦</b>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="control" id="btnModalGoUpgrade" style="margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:13.5px;font-weight:900;padding:13px;box-shadow:0 4px 16px rgba(245,158,11,.4)">
+        ⚡ АПГРЕЙДИТЬ ПРЕДМЕТ (до ×20)
+      </button>
+      <button class="control ghost" id="btnModalSellItem" style="margin:0;border-color:#3ddc96;color:#3ddc96;font-size:13px;font-weight:800;padding:11px">
+        💰 ПРОДАТЬ ЗА +${fmt(it.price)} ⬦
+      </button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(modal);
+
+  const closeBtn = q('#btnInvModalClose', modal);
+  if(closeBtn) closeBtn.onclick = () => modal.remove();
+  modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
+
+  const upBtn = q('#btnModalGoUpgrade', modal);
+  if(upBtn) upBtn.onclick = () => {
+    modal.remove();
+    play('upgrader');
+    if(window.__upgraderSelectItem) window.__upgraderSelectItem(it);
+  };
+
+  const sellBtn = q('#btnModalSellItem', modal);
+  if(sellBtn) sellBtn.onclick = () => {
+    modal.remove();
+    sellInventoryItem(it.id);
+  };
+}
+
 function renderProfileInventory(){
   const grid = q('#profileInvGrid');
   const countEl = q('#invTotalValue');
+  const bulkArea = q('#invBulkSellArea');
   if(!grid) return;
   S.inventory = S.inventory || [];
 
   const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
   if(countEl){
-    countEl.textContent = `${S.inventory.length} шт. (всего ${fmt(totalVal)} ⬦ ≈ ${fmtRub(totalVal)})`;
+    countEl.textContent = `${S.inventory.length} шт. (${fmt(totalVal)} ⬦ ≈ ${fmtRub(totalVal)})`;
+  }
+
+  if(bulkArea){
+    if(S.inventory.length > 1){
+      bulkArea.innerHTML = `<button class="chip ghost" id="btnBulkSell" style="padding:4px 10px;font-size:11px;font-weight:800;border-color:#3ddc96;color:#3ddc96;cursor:pointer">⚡ Продать всё (+${fmt(totalVal)} ⬦)</button>`;
+      const bb = q('#btnBulkSell', bulkArea);
+      if(bb) bb.onclick = () => sellAllInventory();
+    } else {
+      bulkArea.innerHTML = '';
+    }
   }
 
   if(!S.inventory.length){
@@ -1112,24 +1313,40 @@ function renderProfileInventory(){
 
   grid.innerHTML = S.inventory.map(it => {
     const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
+    const tierName = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий';
     return `
-    <div class="inv-card" style="--inv-tier-col:${col}">
-      <div class="inv-icon">${it.icon || '📦'}</div>
+    <div class="inv-card" style="--inv-tier-col:${col}" data-card-id="${it.id}">
+      <span class="inv-tier-tag">${tierName}</span>
+      <div class="inv-icon-aura">
+        <div class="inv-icon">${it.icon || '📦'}</div>
+      </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
-      <div class="inv-val">${fmt(it.price)} ⬦ <span style="font-size:10px;color:#94a1b8">≈ ${fmtRub(it.price)}</span></div>
+      <div class="inv-val">${fmt(it.price)} ⬦ <span>≈ ${fmtRub(it.price)}</span></div>
       <div class="inv-acts">
-        <button class="inv-btn-sell" data-sell-id="${it.id}">💰 Продать</button>
-        <button class="inv-btn-up" data-up-id="${it.id}">⚡ Апгрейд</button>
+        <button class="inv-btn-sell" data-sell-id="${it.id}" title="Продать за ${it.price} ⬦">💰 +${fmt(it.price)}</button>
+        <button class="inv-btn-up" data-up-id="${it.id}" title="Апгрейдить">⚡ ×20</button>
       </div>
     </div>`;
   }).join('');
 
+  qa('.inv-card', grid).forEach(card => {
+    card.onclick = (e) => {
+      if(e.target.closest('[data-sell-id]') || e.target.closest('[data-up-id]')) return;
+      const it = S.inventory.find(x => x.id === card.dataset.cardId);
+      if(it) openItemDetailModal(it);
+    };
+  });
+
   qa('[data-sell-id]', grid).forEach(b => {
-    b.onclick = () => sellInventoryItem(b.dataset.sellId);
+    b.onclick = (e) => {
+      e.stopPropagation();
+      sellInventoryItem(b.dataset.sellId);
+    };
   });
 
   qa('[data-up-id]', grid).forEach(b => {
-    b.onclick = () => {
+    b.onclick = (e) => {
+      e.stopPropagation();
       const it = S.inventory.find(x => x.id === b.dataset.upId);
       if(!it) return;
       play('upgrader');
@@ -1137,6 +1354,7 @@ function renderProfileInventory(){
     };
   });
 }
+
 
 let onBetChange=null,cleanup=null;
 function screen(id){
@@ -5366,6 +5584,34 @@ function gameUpgrader(){
     return directBet;
   }
 
+  function setDirectBet(val){
+    directBet = Math.max(10, Math.min(10000000, Math.floor(val) || 10));
+    const inp = q('#upgCustomBetInput', a);
+    if(inp && +inp.value !== directBet) inp.value = directBet;
+
+    const rubEl = q('#upgBetRubLine', a);
+    if(rubEl) rubEl.textContent = `≈ ${fmtRub(directBet)}`;
+
+    qa('#upgTokenChips button', a).forEach(b => {
+      b.classList.toggle('on', +b.dataset.tb === directBet);
+    });
+
+    const stakePrice = getStakePrice();
+    const curTgt = targets[curTgtIdx];
+    const targetPrice = Math.floor(stakePrice * curTgt.mult);
+
+    const sVal = q('#upgStakeVal', a);
+    if(sVal) sVal.textContent = `${fmt(stakePrice)} ⬦`;
+
+    const tPriceEl = q('#upgTargetPrice', a);
+    if(tPriceEl) tPriceEl.textContent = `+${fmt(targetPrice)} ⬦`;
+
+    const runBtn = q('#btnDoUpgrade', a);
+    if(runBtn && !isSpinning){
+      runBtn.textContent = `⚡ АПГРЕЙДНУТЬ (${fmt(stakePrice)} ⬦)`;
+    }
+  }
+
   function render(){
     const stakePrice = getStakePrice();
     const curTgt = targets[curTgtIdx];
@@ -5388,23 +5634,43 @@ function gameUpgrader(){
         </button>
       </div>
 
-      <!-- Селектор предметов инвентаря -->
+      <!-- Селектор: Инвентарь ИЛИ Кастомная ставка токенами -->
       ${useInventory ? `
         <div class="upg-selector-box" style="margin-bottom:14px">
           <div class="muted small" style="margin-bottom:6px">Выберите предмет для апгрейда:</div>
           <div class="upg-items-scroll" id="upgInvScroll">
             ${(S.inventory||[]).map(it => `
               <button class="upg-item-chip ${(selectedUpgraderItem&&selectedUpgraderItem.id===it.id)?'on':''}" data-item-id="${it.id}">
-                <span>${it.icon||'📦'}</span>
-                <b>${it.name}</b>
-                <span style="color:#ffcf6b">${fmt(it.price)} ⬦</span>
+                <div style="font-size:22px">${it.icon||'📦'}</div>
+                <b style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</b>
+                <span style="color:#ffcf6b;font-weight:700;font-size:11px">${fmt(it.price)} ⬦</span>
               </button>
             `).join('')}
           </div>
         </div>
       ` : `
         <div class="upg-selector-box" style="margin-bottom:14px">
-          <div class="muted small" style="margin-bottom:6px">Выберите сумму ставки токенами:</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="muted small">Кастомная ставка токенами:</span>
+            <span class="small" style="color:#ffcf6b;font-weight:700">Баланс: <b class="js-bal">${fmt(S.balance)}</b> ⬦</span>
+          </div>
+
+          <div class="upg-bet-row">
+            <div class="upg-bet-input-wrap">
+              <input class="upg-bet-input" id="upgCustomBetInput" type="number" min="10" step="1" inputmode="numeric" value="${directBet}" placeholder="10">
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#ffcf6b;font-weight:900">⬦</span>
+            </div>
+            <button class="chip upg-mod-btn" data-act="half">½</button>
+            <button class="chip upg-mod-btn" data-act="double">2×</button>
+            <button class="chip upg-mod-btn" data-act="min" style="font-size:11px">МИН</button>
+            <button class="chip upg-mod-btn" data-act="max" style="font-size:11px;color:#ffcf6b">МАКС</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="muted small" id="upgBetRubLine">≈ ${fmtRub(directBet)}</span>
+            <span class="muted small" style="font-size:11px">Мин: 10 ⬦</span>
+          </div>
+
           <div class="chips" id="upgTokenChips" style="justify-content:center;gap:6px">
             <button class="chip ${directBet===50?'on':''}" data-tb="50">50 ⬦</button>
             <button class="chip ${directBet===100?'on':''}" data-tb="100">100 ⬦</button>
@@ -5412,6 +5678,7 @@ function gameUpgrader(){
             <button class="chip ${directBet===500?'on':''}" data-tb="500">500 ⬦</button>
             <button class="chip ${directBet===1000?'on':''}" data-tb="1000">1 000 ⬦</button>
             <button class="chip ${directBet===2500?'on':''}" data-tb="2500">2 500 ⬦</button>
+            <button class="chip ${directBet===5000?'on':''}" data-tb="5000">5 000 ⬦</button>
           </div>
         </div>
       `}
@@ -5423,7 +5690,7 @@ function gameUpgrader(){
           <div style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
             ${useInventory&&selectedUpgraderItem ? selectedUpgraderItem.name : 'Ставка'}
           </div>
-          <b style="font-size:13px;color:#ffcf6b">${fmt(stakePrice)} ⬦</b>
+          <b style="font-size:13px;color:#ffcf6b" id="upgStakeVal">${fmt(stakePrice)} ⬦</b>
         </div>
         <div class="upgrade-arrow">➔</div>
         <div class="upgrade-item-card" id="upgTargetCard">
@@ -5520,11 +5787,32 @@ function gameUpgrader(){
       };
     });
 
+    // Custom bet input & modifiers
+    const inp = q('#upgCustomBetInput', a);
+    if(inp){
+      inp.addEventListener('input', () => {
+        const val = +inp.value;
+        if(val >= 10){
+          setDirectBet(val);
+        }
+      });
+    }
+
+    qa('[data-act]', a).forEach(b => {
+      b.onclick = () => {
+        if(isSpinning) return;
+        const act = b.dataset.act;
+        if(act === 'half') setDirectBet(Math.max(10, Math.floor(directBet / 2)));
+        else if(act === 'double') setDirectBet(Math.min(S.balance || 10000000, directBet * 2));
+        else if(act === 'min') setDirectBet(10);
+        else if(act === 'max') setDirectBet(Math.max(10, S.balance));
+      };
+    });
+
     qa('#upgTokenChips button', a).forEach(btn => {
       btn.onclick = () => {
         if(isSpinning) return;
-        directBet = +btn.dataset.tb;
-        render();
+        setDirectBet(+btn.dataset.tb);
       };
     });
 
@@ -5645,6 +5933,7 @@ function gameUpgrader(){
   render();
   return () => { isSpinning = false; };
 }
+
 
 /* ---------- роутинг ---------- */
 const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
