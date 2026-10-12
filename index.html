@@ -457,6 +457,47 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .upg-bet-input:focus{outline:none;border-color:#ffcf6b;background:rgba(255,255,255,.08)}
 .upg-mod-btn{padding:8px 12px;font-size:12px;font-weight:800;border-radius:10px;cursor:pointer}
 
+
+/* [Impeccable & UI/UX Pro Max]: Тактильный отклик и эргономика */
+button, .control, .chip, .game, .inv-card {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:disabled) {
+  transform: scale(0.965) translateY(1px);
+  filter: brightness(0.92);
+  transition: transform .08s ease, filter .08s ease;
+}
+.control {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  letter-spacing: .3px;
+}
+.chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav button:active {
+  transform: scale(0.92);
+}
+/* Плавные скроллбары для горизонтальных списков */
+.chips, .upg-items-scroll, .case-modes {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.15) transparent;
+}
+.chips::-webkit-scrollbar, .upg-items-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.chips::-webkit-scrollbar-thumb, .upg-items-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.15);
+  border-radius: 4px;
+}
+
 </style>
 </head>
 <body>
@@ -5741,33 +5782,78 @@ function gameUpgrader(){
     ctx.translate(R, R);
     ctx.rotate(rot);
 
-    // Красная зона (проигрыш)
+    // [Algorithmic Art]: Внешний обод с радиальным градиентом
+    const outerGrad = ctx.createRadialGradient(0, 0, R - 10, 0, 0, R);
+    outerGrad.addColorStop(0, '#1a2233');
+    outerGrad.addColorStop(1, '#0b0f19');
     ctx.beginPath();
-    ctx.arc(0, 0, R - 6, 0, Math.PI * 2);
-    ctx.fillStyle = '#2a1215';
+    ctx.arc(0, 0, R - 2, 0, Math.PI * 2);
+    ctx.fillStyle = outerGrad;
     ctx.fill();
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Зелёная выигрышная зона
+    // Красная зона проигрыша с глубоким неоновым градиентом
+    const redGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, R - 6);
+    redGrad.addColorStop(0, '#381217');
+    redGrad.addColorStop(0.85, '#220b0e');
+    redGrad.addColorStop(1, '#170608');
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 6, 0, Math.PI * 2);
+    ctx.fillStyle = redGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Зелёная выигрышная зона с ярким кибер-градиентом
+    const greenGrad = ctx.createRadialGradient(0, 0, 15, 0, 0, R - 6);
+    greenGrad.addColorStop(0, '#34d399');
+    greenGrad.addColorStop(0.7, '#10b981');
+    greenGrad.addColorStop(1, '#059669');
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.arc(0, 0, R - 6, -Math.PI / 2, -Math.PI / 2 + winAngle);
     ctx.closePath();
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = greenGrad;
     ctx.fill();
-    ctx.strokeStyle = '#3ddc96';
+    ctx.strokeStyle = '#6ee7b7';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Центральная заглушка
+    // [Algorithmic Art]: Процедурные засечки и деления по окружности (60 делений)
+    ctx.save();
+    for(let i = 0; i < 60; i++){
+      ctx.rotate((Math.PI * 2) / 60);
+      ctx.beginPath();
+      const isMajor = i % 5 === 0;
+      ctx.moveTo(0, R - 6);
+      ctx.lineTo(0, R - (isMajor ? 14 : 10));
+      ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = isMajor ? 1.5 : 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Центральный высокотехнологичный хаб с двойным кольцом
+    const hubGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 44);
+    hubGrad.addColorStop(0, '#232d42');
+    hubGrad.addColorStop(0.7, '#131926');
+    hubGrad.addColorStop(1, '#0c101a');
     ctx.beginPath();
     ctx.arc(0, 0, 42, 0, Math.PI * 2);
-    ctx.fillStyle = '#131926';
+    ctx.fillStyle = hubGrad;
     ctx.fill();
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = 'rgba(255,207,107,0.4)';
     ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Внутреннее светящееся кольцо
+    ctx.beginPath();
+    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.restore();
