@@ -2469,87 +2469,160 @@ function gameRacket(){
     if(b2Rub) b2Rub.textContent = '≈ ' + fmtRub(B2.bet);
   }
 
+  let smoothRocketAng = 0;
+  let smoothRocketInit = false;
+
   function drawRocket(g,cx,cy,ang,bc,sp){
-    const t=performance.now()*0.003;
-    const flame=(15+Math.min(42,sp*16))*(0.85+Math.sin(t*12)*0.2);
-    g.save();g.translate(cx,cy);g.rotate(ang);
-    g.scale(1.48, 1.48);
+    const t = performance.now() * 0.0025;
+    // Спокойная плавная аэродинамическая пульсация пламени без резких дёрганий
+    const flameBase = 16 + Math.min(36, sp * 14);
+    const flame = flameBase * (0.92 + Math.sin(t * 5) * 0.08);
 
-    // 1. Звёздный шлейф и мягкое пламя
-    const fg=g.createRadialGradient(-18,0,2,-18-flame,0,flame);
-    fg.addColorStop(0,'rgba(255,245,180,.98)');
-    fg.addColorStop(.3,'rgba(239,68,68,.85)');
-    fg.addColorStop(.7,'rgba(185,28,28,.45)');
-    fg.addColorStop(1,'rgba(26,14,16,0)');
-    g.fillStyle=fg;
-    g.beginPath();g.arc(-18-flame*0.4,0,flame*0.55,0,Math.PI*2);g.fill();
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(ang);
+    // Увеличенная крупная и запоминающаяся модель Льва (масштаб 2.2x)
+    g.scale(2.2, 2.2);
 
-    // Золотые кружащиеся искры звёздной пыли
-    for(let i=0;i<5;i++){
-      const px=-16-Math.sin(t*8+i)*flame*0.7, py=Math.cos(t*6+i*1.5)*8;
-      g.fillStyle='rgba(255,225,140,'+(0.4+Math.sin(t*10+i)*0.3).toFixed(2)+')';
-      g.beginPath();g.arc(px,py,1.3+Math.abs(Math.sin(t*5+i))*1.4,0,Math.PI*2);g.fill();
+    // 1. Плавный аэродинамический реактивный шлейф
+    const fg = g.createRadialGradient(-20, 1, 2, -20 - flame, 1, flame);
+    fg.addColorStop(0, 'rgba(255, 250, 200, 0.98)');
+    fg.addColorStop(0.25, 'rgba(251, 146, 60, 0.88)');
+    fg.addColorStop(0.65, 'rgba(239, 68, 68, 0.55)');
+    fg.addColorStop(1, 'rgba(185, 28, 28, 0)');
+    g.fillStyle = fg;
+    g.beginPath();
+    g.ellipse(-20 - flame * 0.45, 1, flame * 0.55, 4.2 + flame * 0.08, 0, 0, Math.PI * 2);
+    g.fill();
+
+    // Мягкие летящие золотые искры
+    for(let i = 0; i < 4; i++){
+      const sparkX = -18 - ((t * 28 + i * 9) % (flame * 0.95));
+      const sparkY = Math.sin(t * 4 + i * 1.8) * 3;
+      g.fillStyle = 'rgba(254, 240, 138, 0.75)';
+      g.beginPath();
+      g.arc(sparkX, sparkY, 1.1, 0, Math.PI * 2);
+      g.fill();
     }
 
-    // 2. Тело сказочного Льва
-    const maneWiggle=Math.sin(t*10)*2.4;
-    g.fillStyle='#e5a230';
+    // 2. Металлическая ретро-капсула ракеты под Львом
+    g.fillStyle = '#b45309';
     g.beginPath();
-    g.moveTo(-13,-3);
-    g.quadraticCurveTo(-7,-9,4,-9);
-    g.quadraticCurveTo(15,-9,22,-3.5);
-    g.quadraticCurveTo(28,0,26,6);
-    g.quadraticCurveTo(17,9,6,8);
-    g.quadraticCurveTo(-7,8,-13,3.5);
+    g.roundRect ? g.roundRect(-16, -1, 30, 8, [0, 4, 4, 0]) : g.rect(-16, -1, 30, 8);
+    g.fill();
+    g.strokeStyle = '#522304'; g.lineWidth = 1.3; g.stroke();
+
+    // Сопло двигателя
+    g.fillStyle = '#374151';
+    g.beginPath();
+    g.moveTo(-16, -2); g.lineTo(-20, -3.5); g.lineTo(-20, 5.5); g.lineTo(-16, 4);
     g.closePath();
     g.fill();
+    g.strokeStyle = '#1f2937'; g.lineWidth = 1.2; g.stroke();
 
-    // Мягкая прорисовка контура
-    g.strokeStyle='#6a3810';g.lineWidth=1.7;g.stroke();
+    // Заклёпки на ракете
+    g.fillStyle = '#fde68a';
+    [-11, -4, 3, 9].forEach(rx => {
+      g.beginPath(); g.arc(rx, 4.2, 0.8, 0, Math.PI * 2); g.fill();
+    });
 
-    // Пышная грива льва
-    g.fillStyle='#ba6419';
-    g.beginPath();g.arc(3,-3+maneWiggle*0.3,8.5,0,Math.PI*2);g.fill();
-    g.beginPath();g.arc(11,-4-maneWiggle*0.4,8,0,Math.PI*2);g.fill();
-    g.beginPath();g.arc(-1,3+maneWiggle*0.5,7.5,0,Math.PI*2);g.fill();
-    g.beginPath();g.arc(8,5,7,0,Math.PI*2);g.fill();
+    // 3. Развевающийся алый шарф пилота (плавная аэродинамическая волна)
+    const scarfWave = Math.sin(t * 6) * 1.8;
+    g.strokeStyle = '#dc2626';
+    g.lineWidth = 3.2;
+    g.beginPath();
+    g.moveTo(4, 0);
+    g.quadraticCurveTo(-6, -4 + scarfWave, -18, -3 - scarfWave * 0.8);
+    g.stroke();
+    // Кончики шарфа
+    g.strokeStyle = '#b91c1c';
+    g.lineWidth = 2.4;
+    g.beginPath();
+    g.moveTo(2, 1);
+    g.quadraticCurveTo(-8, -1 + scarfWave * 1.2, -21, 0 - scarfWave);
+    g.stroke();
 
-    // Круглые ушки льва
-    g.fillStyle='#e5a230';g.beginPath();g.arc(13,-10,3.6,0,Math.PI*2);g.fill();
-    g.strokeStyle='#6a3810';g.lineWidth=1.3;g.stroke();
-    g.fillStyle='#fca5a5';g.beginPath();g.arc(13,-10,1.8,0,Math.PI*2);g.fill();
+    // 4. Тело сказочного Льва Лео
+    g.fillStyle = '#f59e0b';
+    g.beginPath();
+    g.moveTo(-11, -2);
+    g.quadraticCurveTo(-6, -9, 4, -9);
+    g.quadraticCurveTo(14, -8, 19, -2);
+    g.quadraticCurveTo(23, 2, 18, 5);
+    g.quadraticCurveTo(8, 7, -5, 6);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 1.4; g.stroke();
+
+    // Пышная золотисто-карамельная грива
+    g.fillStyle = '#d97706';
+    const maneBreathe = Math.sin(t * 3) * 0.8;
+    g.beginPath(); g.arc(1, -4 + maneBreathe * 0.2, 7.5, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(8, -5 - maneBreathe * 0.2, 7.2, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(-4, 0, 6.5, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(6, 3, 6, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 1.2; g.stroke();
+
+    // Ушко льва
+    g.fillStyle = '#f59e0b'; g.beginPath(); g.arc(10, -10.5, 3.2, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 1.1; g.stroke();
+    g.fillStyle = '#fca5a5'; g.beginPath(); g.arc(10, -10.5, 1.6, 0, Math.PI * 2); g.fill();
+
+    // Очки пилота-авиатора на лбу
+    g.fillStyle = '#78350f'; // ремешок очков
+    g.beginPath(); g.moveTo(2, -6.5); g.lineTo(14, -6.5); g.stroke();
+    // Оправы
+    g.fillStyle = '#d97706';
+    g.beginPath(); g.arc(8, -7.5, 2.8, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(13, -7.5, 2.8, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#451a03'; g.lineWidth = 1; g.stroke();
+    // Стёкла очков с небесным бликом
+    g.fillStyle = '#67e8f9';
+    g.beginPath(); g.arc(8, -7.5, 1.9, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(13, -7.5, 1.9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(8.5, -8, 0.8, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(13.5, -8, 0.8, 0, Math.PI * 2); g.fill();
 
     // Мордочка и носик
-    g.fillStyle='#fff1db';g.beginPath();g.ellipse(23,1.5,4,4.5,0,0,Math.PI*2);g.fill();
-    g.fillStyle='#6a3810';g.beginPath();g.arc(26,0.6,1.5,0,Math.PI*2);g.fill();
+    g.fillStyle = '#fef3c7';
+    g.beginPath(); g.ellipse(19, 0.5, 4.2, 3.8, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = '#78350f';
+    g.beginPath(); g.arc(22.2, -0.2, 1.4, 0, Math.PI * 2); g.fill();
 
-    // Живой выразительный глаз
-    g.fillStyle='#181113';g.beginPath();g.arc(19,-2.2,1.9,0,Math.PI*2);g.fill();
-    g.fillStyle='#ffffff';g.beginPath();g.arc(19.6,-2.8,0.8,0,Math.PI*2);g.fill();
+    // Выразительный большой живой глаз льва
+    g.fillStyle = '#1e1b4b';
+    g.beginPath(); g.arc(16, -2.5, 2.1, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(16.7, -3.2, 0.9, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(15.4, -1.8, 0.45, 0, Math.PI * 2); g.fill();
 
-    // Лапы в стремительном полёте
-    g.fillStyle='#d28c22';
-    g.beginPath();g.ellipse(17,7.5,5.5,2.7,0.3,0,Math.PI*2);g.fill();
-    g.strokeStyle='#6a3810';g.lineWidth=1.2;g.stroke();
+    // Розовый румянец на щёчке
+    g.fillStyle = 'rgba(251, 113, 133, 0.45)';
+    g.beginPath(); g.arc(17, 1.8, 2.2, 0, Math.PI * 2); g.fill();
 
-    // Хвостик с пушистой кисточкой
-    g.strokeStyle='#ba6419';g.lineWidth=2.3;
-    g.beginPath();g.moveTo(-13,2.5);g.quadraticCurveTo(-19,-2+maneWiggle,-24,1.2);g.stroke();
-    g.fillStyle='#8c3e0a';g.beginPath();g.arc(-24,1.2,3.5,0,Math.PI*2);g.fill();
+    // Лапка, держащая штурвал
+    g.fillStyle = '#f59e0b';
+    g.beginPath(); g.ellipse(14, 4.8, 4.2, 2.6, 0.25, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 1.1; g.stroke();
 
-    // 3. Плашка с надписью MUP
-    g.fillStyle='#8f1523';
+    // Пушистый хвостик
+    g.strokeStyle = '#d97706'; g.lineWidth = 2.2;
+    g.beginPath(); g.moveTo(-11, 2); g.quadraticCurveTo(-17, -1 + maneBreathe * 0.5, -21, 2.5); g.stroke();
+    g.fillStyle = '#b45309'; g.beginPath(); g.arc(-21, 2.5, 3.2, 0, Math.PI * 2); g.fill();
+
+    // 5. Табличка с брендом MUP
+    g.fillStyle = '#991b1b';
     g.beginPath();
-    g.roundRect ? g.roundRect(-4,-5,15,10,2.5) : g.rect(-4,-5,15,10);
+    g.roundRect ? g.roundRect(-4, 0.5, 14, 8, 2.2) : g.rect(-4, 0.5, 14, 8);
     g.fill();
-    g.strokeStyle='#ffffff';g.lineWidth=1.4;g.stroke();
+    g.strokeStyle = '#fef08a'; g.lineWidth = 1.2; g.stroke();
 
-    g.font='900 7px Inter,system-ui,sans-serif';
-    g.textAlign='center';g.textBaseline='middle';
-    g.fillStyle='#ffffff';
-    g.shadowColor='rgba(255,255,255,.6)';g.shadowBlur=3;
-    g.fillText('MUP',3.5,0);
-    g.shadowBlur=0;
+    g.font = '900 6.5px Inter,system-ui,sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#ffffff';
+    g.fillText('MUP', 3, 4.8);
 
     g.restore();
   }
@@ -2674,11 +2747,20 @@ function gameRacket(){
       }
       g.restore();
 
-      const t2=tc+0.05;
-      const ang=Math.atan2(Y(Math.min(Math.exp(kk*t2),yMax))-cy,X(t2)-cx);
-      const sp=phase==='betting'?0.1:Math.min(2.4,(cur-1)/1.2)*(0.9+Math.random()*0.2);
-      g.save();g.shadowColor=hexA(bc,.85);g.shadowBlur=14;
-      drawRocket(g,cx,cy,ang,bc,sp);
+      const t2=tc+0.06;
+      const targetAng=Math.atan2(Y(Math.min(Math.exp(kk*t2),yMax))-cy,X(t2)-cx);
+      if(!smoothRocketInit || phase==='betting'){
+        smoothRocketAng = targetAng;
+        smoothRocketInit = phase==='flight';
+      } else {
+        let diff = targetAng - smoothRocketAng;
+        while(diff < -Math.PI) diff += Math.PI * 2;
+        while(diff > Math.PI) diff -= Math.PI * 2;
+        smoothRocketAng += diff * 0.12;
+      }
+      const sp=phase==='betting'?0.1:Math.min(2.4,(cur-1)/1.2);
+      g.save();g.shadowColor=hexA(bc,.85);g.shadowBlur=16;
+      drawRocket(g,cx,cy,smoothRocketAng,bc,sp);
       g.restore();
     }else{
       drawBoom(g,cx,cy,(performance.now()-boomT)/1000);
