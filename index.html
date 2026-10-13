@@ -2678,33 +2678,34 @@ function gameWheel(){
    БОТЫ И СЕТКА ИГРОКОВ РАКЕТКИ (Вариант 1) — 200 реальных профилей
    ======================================================================= */
 const BOT_NAMES_RAW = [
-  // 1-50: Рандомные гейминг/сленг слова
-  "shadow", "blaze", "toxic", "phantom", "cyber", "matrix", "storm", "vortex", "nebula", "titan",
-  "sniper", "dragon", "hunter", "hazard", "bullet", "raptor", "legend", "zenith", "frost", "inferno",
-  "quantum", "pulse", "spark", "ninja", "dynamo", "rebel", "comet", "orbit", "flash", "rocket",
-  "blade", "echo", "drift", "apex", "zero", "pixel", "stranger", "meteor", "glitch", "specter",
-  "valkyrie", "rogue", "striker", "havoc", "omega", "alpha", "delta", "nexus", "ghost", "raider",
+  // 1-50: Односложные, скобочки, смайлы и бессвязные буквы (jobks, asdf, zxc, qq, ))
+  ")", "(", ")))", "((", "qq", "q", "xd", "jobks", "asdf", "zxczxc",
+  "qwe", "k1nd", "fghj", "klsd", "werq", "x_x", "0_o", "-_-", "w_w", "T_T",
+  "danil)", "artem(", "vanya)", "roma(", "makson.", "kirill_", "sanya)", "egor(",
+  "леха)", "макс(", "tema)", "влад)", "дима(", "никита)", "илья(", "ростик)",
+  "zxc", "ghoul", "pudge", "clown", "degen", "bebra", "aboba", "shrek", "keker",
+  "ezz", "ggwp", "лудик", "занос", "тильт",
 
-  // 51-100: Имя + год
-  "artem2004", "maksim2001", "vlad2005", "daniil2003", "ivan1999", "nikita2002", "egor2000", "kirill2006", "alex2001", "roman1998",
-  "denis2003", "andrey2000", "sergey1995", "gleb2005", "timur2002", "misha2004", "arseniy2003", "bogdan2001", "kostya2002", "fedor1999",
-  "vadim2004", "matvey2005", "marat2001", "stepan2000", "dima2003", "oleg1997", "igor2002", "pavel2000", "ilya2004", "slava2001",
-  "ruslan1999", "vitalik2002", "stas2005", "anton2000", "leonid1998", "valera2003", "rodion2004", "yarik2002", "david2005", "semyon2001",
-  "renat2000", "tikhon2003", "amir2004", "damir2002", "miron2005", "rostik2001", "zahar2004", "demid2003", "boris1999", "vladik2005",
+  // 51-100: Короткие русские и сленговые ники (1 слово)
+  "пудж", "дед", "фармила", "ноль", "минус", "плюс", "ку", "хай", "хз", "я",
+  "топ", "быстрый", "чужой", "свой", "краш", "ракета", "кек", "лох", "батя", "малой",
+  "кент", "брат", "шеф", "босс", "вор", "киллер", "сокол", "волк", "тигр", "барс",
+  "shadow", "blaze", "toxic", "phantom", "cyber", "matrix", "storm", "vortex", "bullet", "raptor",
+  "pulse", "spark", "blade", "echo", "drift", "apex", "zero", "pixel", "glitch", "ghost",
 
-  // 101-150: Рандомные буквы + криптовалюты (TON, SOL, BTC, ETH...)
-  "xkr_ton", "sol_vibe", "btc_hodl", "ton_rich", "eth_whale", "trx_fast", "ton_moon", "sol_king", "bnb_pump", "near_flow",
-  "ton_scalp", "crypto_fox", "ton_gem", "doge_rider", "xrp_bull", "avax_max", "ton_shark", "apt_wave", "sui_degen", "ton_lord",
-  "arb_rush", "op_jump", "ton_alpha", "kas_miner", "pepe_bag", "ton_master", "sol_rocket", "ton_sniper", "btc_stack", "ton_vault",
-  "ton_pro", "ton_guru", "sol_ninja", "ton_whale", "eth_gas", "ton_hero", "ton_star", "ton_pulse", "sol_blaze", "ton_matrix",
-  "ton_space", "ton_apex", "crypto_wolf", "ton_speed", "ton_turbo", "ton_prime", "ton_nexus", "ton_core", "ton_blast", "ton_wave",
+  // 101-150: Крипто-сленг, мемы и TON/SOL
+  "ton_moon", "ton_rich", "sol_vibe", "btc_hodl", "eth_whale", "sol_king", "pepe_bag", "doge_fan", "ton_gem", "ton_scalp",
+  "ton_shark", "sui_degen", "ton_lord", "arb_rush", "ton_alpha", "sol_rocket", "ton_sniper", "btc_stack", "ton_vault", "sol_ninja",
+  "ton_whale", "eth_gas", "ton_star", "ton_pulse", "sol_blaze", "ton_apex", "crypto_fox", "ton_turbo", "ton_prime", "ton_core",
+  "ton_blast", "ton_wave", "trx_fast", "near_flow", "avax_max", "apt_wave", "kas_miner", "ton_master", "ton_hero", "ton_speed",
+  "crypto_wolf", "ton_matrix", "ton_space", "ton_nexus", "btc_bull", "sol_pump", "ton_king", "ton_pro", "sol_gem", "ton_guru",
 
-  // 151-200: Рандомные цифры или 1-2 цифры в нике
-  "77701", "user77", "alex1", "king9", "boss99", "748291", "9901", "lucky7", "neo8", "fox12",
-  "pro21", "top1", "player7", "win99", "max88", "fast3", "cool5", "x77", "sky14", "red2",
-  "dark07", "zero1", "super7", "star9", "hero44", "lion5", "tiger8", "bear11", "wolf03", "ace1",
-  "fire9", "ice33", "gold77", "silver8", "bronze1", "shadow0", "flash6", "zoom9", "turbo12", "power5",
-  "mega88", "ultra7", "prime1", "alpha9", "delta4", "omega8", "apex3", "storm7", "wave2", "88880"
+  // 151-200: Числовые, короткие теги и редкие ники
+  "777", "999", "user77", "x77", "alex1", "boss99", "748291", "lucky7", "neo8", "pro21",
+  "top1", "win99", "max88", "cool5", "dark07", "super7", "star9", "lion5", "ace1", "fire9",
+  "ice33", "gold77", "turbo12", "mega88", "ultra7", "prime1", "alpha9", "omega8", "88880", "player",
+  "artem2004", "daniil2003", "ivan99", "vlad2005", "egor00", "dima03", "gleb05", "misha04", "kostya02", "vadim04",
+  "anon", "unknown", "noname", "guest", "test", "lucky_one", "fast_money", "up_only", "to_the_moon", "win_all"
 ];
 
 const BOT_PALETTES = [
@@ -5490,15 +5491,22 @@ function openUpgradeModal(dropItem){
     const isWin = evalBaitTrap('upgrade_modal', naturalWin, basePrice, curTgt.mult);
 
     const winAngle = winProb * (Math.PI * 2);
+    const redSpan = (Math.PI * 2) - winAngle;
     const spins = 5 + Math.floor(Math.random() * 3);
 
-    let targetOffsetAngle;
+    let targetRelAngle;
     if(isWin){
-      targetOffsetAngle = Math.random() * (winAngle - 0.08) + 0.04;
+      const margin = Math.min(0.22, winAngle * 0.2);
+      targetRelAngle = margin + Math.random() * (winAngle - 2 * margin);
     } else {
-      targetOffsetAngle = winAngle + 0.08 + Math.random() * ((Math.PI * 2) - winAngle - 0.16);
+      const margin = Math.min(0.22, redSpan * 0.2);
+      targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
     }
-    const finalRot = wheelRot + (spins * Math.PI * 2) + (Math.PI * 2 - (targetOffsetAngle % (Math.PI * 2)));
+    const targetNormRot = ((2 * Math.PI - targetRelAngle) % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
+    const currentNormRot = ((wheelRot % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+    let delta = targetNormRot - currentNormRot;
+    if(delta <= 0) delta += 2 * Math.PI;
+    const finalRot = wheelRot + (spins * 2 * Math.PI) + delta;
 
     const startTime = performance.now();
     const duration = 3800;
@@ -6677,7 +6685,7 @@ function gameUpgrader(){
     if(runBtn) runBtn.onclick = () => runUpgrade();
   }
 
-  function runUpgrade(){
+  async function runUpgrade(){
     if(isSpinning) return;
     const stakePrice = getStakePrice();
 
@@ -6699,28 +6707,85 @@ function gameUpgrader(){
     const runBtn = q('#btnDoUpgrade', a);
     if(runBtn){ runBtn.disabled = true; runBtn.textContent = 'ВРАЩЕНИЕ КОЛЕСА…'; }
 
-    // Снимаем ставку
+    const curTgt = targets[curTgtIdx];
+    const winProb = curTgt.chance / 100;
+    const winAngle = winProb * (Math.PI * 2);
+    const redSpan = (Math.PI * 2) - winAngle;
+
+    let isWin = false;
+    let winTk = Math.floor(stakePrice * curTgt.mult);
+
     if(!useInventory){
-      place(stakePrice, 'Апгрейдер');
+      if(IS_TG && API_BASE){
+        try {
+          const r = await tgCall('/api/play', { game: 'Апгрейдер', bet: stakePrice, mult: curTgt.mult });
+          isWin = (r && r.verdict === 'win');
+          if(r && r.win != null) winTk = r.win;
+          if(r && typeof r.tokens === 'number'){
+            S.balance = r.tokens;
+            save(); syncUI();
+          }
+        } catch(e) {
+          isSpinning = false;
+          if(runBtn){ runBtn.disabled = false; runBtn.textContent = `⚡ АПГРЕЙДНУТЬ (${fmt(stakePrice)} ⬦)`; }
+          const m = q('#upgResultMsg', a);
+          if(m){ m.className = 'result bad'; m.textContent = (e && e.message) || 'Ошибка ставки'; }
+          return;
+        }
+      } else {
+        place(stakePrice, 'Апгрейдер');
+        isWin = Math.random() < winProb;
+      }
+    } else {
+      const targetItem = selectedUpgraderItem;
+      if(IS_TG && API_BASE){
+        try {
+          const sellRes = await tgCall('/api/inventory/sell', { itemId: targetItem.id });
+          if(sellRes && typeof sellRes.tokens === 'number'){
+            S.balance = sellRes.tokens;
+          }
+          S.inventory = (S.inventory || []).filter(x => x.id !== targetItem.id);
+          save(); syncUI();
+          const r = await tgCall('/api/play', { game: 'Апгрейдер', bet: stakePrice, mult: curTgt.mult });
+          isWin = (r && r.verdict === 'win');
+          if(r && r.win != null) winTk = r.win;
+          if(r && typeof r.tokens === 'number'){
+            S.balance = r.tokens;
+            save(); syncUI();
+          }
+        } catch(e) {
+          isSpinning = false;
+          if(runBtn){ runBtn.disabled = false; runBtn.textContent = `⚡ АПГРЕЙДНУТЬ (${fmt(stakePrice)} ⬦)`; }
+          const m = q('#upgResultMsg', a);
+          if(m){ m.className = 'result bad'; m.textContent = (e && e.message) || 'Ошибка апгрейда предмета'; }
+          return;
+        }
+      } else {
+        const itemIdx = S.inventory.findIndex(x => x.id === targetItem.id);
+        if(itemIdx !== -1) S.inventory.splice(itemIdx, 1);
+        save(); syncUI();
+        isWin = Math.random() < winProb;
+      }
     }
 
     tgHaptic('impact');
 
-    const curTgt = targets[curTgtIdx];
-    const winProb = curTgt.chance / 100;
-    const naturalWin = Math.random() < winProb;
-    const isWin = evalBaitTrap('upgrader', naturalWin, stakePrice, curTgt.mult);
-
-    const winAngle = winProb * (Math.PI * 2);
-    const spins = 5 + Math.floor(Math.random() * 3);
-
-    let targetOffsetAngle;
+    // Безупречный расчет угла остановки стрелки
+    let targetRelAngle;
     if(isWin){
-      targetOffsetAngle = Math.random() * (winAngle - 0.08) + 0.04;
+      const margin = Math.min(0.22, winAngle * 0.2);
+      targetRelAngle = margin + Math.random() * (winAngle - 2 * margin);
     } else {
-      targetOffsetAngle = winAngle + 0.08 + Math.random() * ((Math.PI * 2) - winAngle - 0.16);
+      const margin = Math.min(0.22, redSpan * 0.2);
+      targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
     }
-    const finalRot = wheelRot + (spins * Math.PI * 2) + (Math.PI * 2 - (targetOffsetAngle % (Math.PI * 2)));
+    const targetNormRot = ((2 * Math.PI - targetRelAngle) % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
+    const currentNormRot = ((wheelRot % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+    let delta = targetNormRot - currentNormRot;
+    if(delta <= 0) delta += 2 * Math.PI;
+
+    const spins = 5 + Math.floor(Math.random() * 3);
+    const finalRot = wheelRot + (spins * 2 * Math.PI) + delta;
 
     const startTime = performance.now();
     const duration = 3800;
@@ -6738,41 +6803,26 @@ function gameUpgrader(){
       } else {
         isSpinning = false;
         const msgEl = q('#upgResultMsg', a);
-        const winTk = Math.floor(stakePrice * curTgt.mult);
 
         if(isWin){
           tgHaptic('win');
-          if(useInventory && selectedUpgraderItem){
-            // Удаляем старый предмет и зачисляем токены победы
-            const itemIdx = S.inventory.findIndex(x => x.id === selectedUpgraderItem.id);
-            if(itemIdx !== -1) S.inventory.splice(itemIdx, 1);
-            win(winTk, 'Апгрейдер', `Успех ×${curTgt.mult}`);
-            selectedUpgraderItem = null;
-          } else {
+          if(!IS_TG || !API_BASE){
             win(winTk, 'Апгрейдер', `Успех ×${curTgt.mult}`);
           }
-
           if(msgEl){
             msgEl.className = 'result good';
-            msgEl.innerHTML = `🎉 <b>АПГРЕЙД УДАЛСЯ!</b> Выигрыш: <b>+${fmt(winTk)} ⬦</b> (≈ ${fmtRub(winTk)}) на балансе!`;
+            msgEl.innerHTML = `🎉 <b>АПГРЕЙД УДАЛСЯ!</b> Стрелка на зелёном: <b style="color:#3ddc96">+${fmt(winTk)} ⬦</b> (≈ ${fmtRub(winTk)}) на балансе!`;
           }
           if(runBtn) runBtn.textContent = 'УСПЕШНЫЙ АПГРЕЙД ✓';
         } else {
           tgHaptic('lose');
-          if(useInventory && selectedUpgraderItem){
-            const itemIdx = S.inventory.findIndex(x => x.id === selectedUpgraderItem.id);
-            if(itemIdx !== -1) S.inventory.splice(itemIdx, 1);
-            selectedUpgraderItem = null;
-          }
-          save(); syncUI();
-
           if(msgEl){
             msgEl.className = 'result bad';
-            msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне.`;
+            msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне. Ставка сгорела.`;
           }
-          if(runBtn) runBtn.textContent = 'ПРЕДМЕТ СГОРЕЛ ✕';
+          if(runBtn) runBtn.textContent = 'СТАВКА/ПРЕДМЕТ СГОРЕЛ ✕';
         }
-
+        selectedUpgraderItem = null;
         setTimeout(() => { if(!isSpinning) render(); }, 2200);
       }
     }
