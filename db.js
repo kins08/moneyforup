@@ -14,6 +14,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const turso = require('./turso');
 
 let DatabaseSync;
 try {
@@ -300,6 +301,19 @@ function saveUser(u) {
       u.code || null,
       u.id
     );
+    turso.queueQuery(`
+      UPDATE users SET
+        num_id=?, name=?, username=?, staked=?, stake_since=?, accrued_base=?,
+        ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
+        last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
+        easycash_claimed=?, code=?
+      WHERE id=?
+    `, [
+      u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
+      u.ref || 0, u.refEarned || 0, u.refInvited || 0, u.termsAt || 0, u.totalDepositedRub || 0,
+      u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
+      u.easycashClaimed ? 1 : 0, u.code || null, u.id
+    ]);
   } else {
     stmts.insertUser.run(
       u.id,
@@ -323,6 +337,17 @@ function saveUser(u) {
       u.code || null,
       Date.now()
     );
+    turso.queueQuery(`
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name=excluded.name, username=excluded.username, tokens=excluded.tokens, staked=excluded.staked
+    `, [
+      u.id, u.numId || 0, u.name || '', u.username || '', Math.floor(u.tokens || 50),
+      u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
+      u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
+      u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now()
+    ]);
   }
 }
 
@@ -355,6 +380,12 @@ function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = ''
     );
 
     db.exec('COMMIT');
+    const now = Date.now();
+    turso.queueQuery('UPDATE users SET tokens = ? WHERE id = ?', [balanceAfter, userId]);
+    turso.queueQuery(
+      'INSERT INTO transactions_ledger (user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, deltaTokens, type, reason, String(referenceId), balanceBefore, balanceAfter, now]
+    );
     return { ok: true, balanceBefore, balanceAfter };
   } catch (err) {
     db.exec('ROLLBACK');
@@ -409,6 +440,13 @@ function atomicApplyPromo(userId, code) {
     );
 
     db.exec('COMMIT');
+    const pNow = Date.now();
+    turso.queueQuery('INSERT OR IGNORE INTO promo_activations (promo_code, user_id, activated_at) VALUES (?, ?, ?)', [normCode, userId, pNow]);
+    turso.queueQuery('UPDATE users SET tokens = ? WHERE id = ?', [balAfter, userId]);
+    turso.queueQuery(
+      'INSERT INTO transactions_ledger (user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, promo.tokens, 'promo', `Промокод ${normCode}`, normCode, balBefore, balAfter, pNow]
+    );
     return {
       ok: true,
       tokens: promo.tokens,
@@ -453,9 +491,23 @@ module.exports = {
       ord.createdAt || Date.now(),
       Date.now()
     );
+    turso.queueQuery(`
+      INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
+    `, [
+      ord.id, ord.type || 'deposit', ord.userId, ord.tokens, ord.rub, ord.bank || null,
+      ord.card || null, ord.sender || null, ord.method || null, ord.details || null,
+      ord.status || 'pending', ord.source || null, ord.tx || null, ord.createdAt || Date.now(), Date.now()
+    ]);
   },
   getOrder: (id) => stmts.getOrder.get(id),
-  updateOrderStatus: (id, status) => stmts.updateOrderStatus.run(status, Date.now(), id),
+  updateOrderStatus: (id, status) => {
+    const now = Date.now();
+    const res = stmts.updateOrderStatus.run(status, now, id);
+    turso.queueQuery('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?', [status, now, id]);
+    return res;
+  },
   getAllOrders: () => stmts.getAllOrders.all(),
 
   /* ── Раунды игры ──────────────────────────────────────────────────────────
@@ -463,6 +515,8 @@ module.exports = {
      atomicBalanceChange (в bot.js — внутри applyBalance), здесь только журнал.
      PRIMARY KEY round_id защищает от повторного применения одного раунда. */
   saveRound: (r) => {
+    const cAt = r.createdAt || Date.now();
+    const sAt = r.settledAt || Date.now();
     stmts.insertRound.run(
       String(r.roundId),
       r.userId,
@@ -471,11 +525,19 @@ module.exports = {
       Number(r.mult || 1),
       Math.floor(r.win || 0),
       r.status || 'settled',
-      r.createdAt || Date.now(),
-      r.settledAt || Date.now(),
+      cAt,
+      sAt,
       r.itemCode || null,
       r.itemPrice != null ? Math.floor(r.itemPrice) : null
     );
+    turso.queueQuery(`
+      INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      String(r.roundId), r.userId, String(r.game), Math.floor(r.bet || 0),
+      Number(r.mult || 1), Math.floor(r.win || 0), r.status || 'settled', cAt, sAt,
+      r.itemCode || null, r.itemPrice != null ? Math.floor(r.itemPrice) : null
+    ]);
     return { ok: true, roundId: String(r.roundId) };
   },
   getRound: (roundId) => stmts.getRound.get(String(roundId)),
@@ -484,6 +546,7 @@ module.exports = {
      Цена и название берутся из СЕРВЕРНОГО каталога items.js, а не из запроса
      клиента: иначе игрок пришлёт price: 999999 и продаст вентилятор за миллион. */
   addInventoryItem: (r) => {
+    const acAt = r.acquiredAt || Date.now();
     const res = stmts.insertInventoryItem.run(
       r.userId,
       String(r.itemCode),
@@ -494,16 +557,34 @@ module.exports = {
       String(r.caseId || ''),
       String(r.caseName || ''),
       String(r.roundId || ''),
-      r.acquiredAt || Date.now()
+      acAt
     );
-    return { ok: true, id: Number(res.lastInsertRowid) };
+    const newId = Number(res.lastInsertRowid);
+    turso.queueQuery(`
+      INSERT INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+    `, [
+      newId, r.userId, String(r.itemCode), String(r.name || ''), String(r.icon || ''),
+      Math.floor(r.price || 0), String(r.tier || ''), String(r.caseId || ''),
+      String(r.caseName || ''), String(r.roundId || ''), acAt
+    ]);
+    return { ok: true, id: newId };
   },
   listInventory: (userId) => stmts.listInventory.all(userId),
   getInventoryItem: (id) => stmts.getInventoryItem.get(id),
   /** Помечает предмет проданным. false — уже был продан или не его (защита от гонки). */
   markInventorySold: (id, userId, tokens, at) => {
-    const res = stmts.markInventorySold.run(at || Date.now(), Math.floor(tokens || 0), id, userId);
-    return res.changes === 1;
+    const soldAt = at || Date.now();
+    const soldTokens = Math.floor(tokens || 0);
+    const res = stmts.markInventorySold.run(soldAt, soldTokens, id, userId);
+    if (res.changes === 1) {
+      turso.queueQuery(
+        'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL',
+        [soldAt, soldTokens, id, userId]
+      );
+      return true;
+    }
+    return false;
   },
   inventoryTotals: (userId) => {
     const r = stmts.inventoryTotals.get(userId);
@@ -513,5 +594,8 @@ module.exports = {
   userRoundsSince: (userId, sinceMs) => {
     const r = stmts.userRoundsSince.get(userId, sinceMs);
     return r || { count: 0, wagered: 0, won: 0 };
-  }
+  },
+  pullFromTurso: () => turso.pullFromTurso(db),
+  waitForTurso: (timeoutMs) => turso.waitForFlush(timeoutMs),
+  tursoOn: turso.tursoOn
 };
