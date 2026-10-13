@@ -118,9 +118,50 @@ CREATE TABLE IF NOT EXISTS game_rounds (
   win_tokens INTEGER,
   status TEXT,
   created_at INTEGER,
-  settled_at INTEGER
+  settled_at INTEGER,
+  -- выпавший предмет (кейсы): код и его цена на момент раунда
+  item_code TEXT,
+  item_price INTEGER
 );
+
+/* Инвентарь игрока — СЕРВЕРНЫЙ. Раньше предметы жили только в браузере
+   (localStorage), и сервер не знал ни что у игрока есть, ни сколько это стоит.
+   Значит продажу нельзя было ни проверить, ни начислить честно.
+   sold_at = NULL — предмет ещё у игрока; иначе продан и повторно не продаётся. */
+CREATE TABLE IF NOT EXISTS user_inventory (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  item_code TEXT NOT NULL,
+  name TEXT,
+  icon TEXT,
+  price INTEGER NOT NULL,
+  tier TEXT,
+  case_id TEXT,
+  case_name TEXT,
+  round_id TEXT,
+  acquired_at INTEGER,
+  sold_at INTEGER,
+  sold_for INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
 `);
+
+/* Мягкая миграция: CREATE TABLE IF NOT EXISTS не добавит колонки в уже
+   существующую таблицу, а база в проде живёт давно. Добавляем недостающие. */
+function __ensureColumns(table, cols) {
+  try {
+    const have = new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name));
+    for (const [name, type] of cols) {
+      if (!have.has(name)) {
+        db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+        console.log(`[DB] Миграция: ${table}.${name} добавлена`);
+      }
+    }
+  } catch (e) {
+    console.error(`[DB] Миграция ${table}: ${e.message}`);
+  }
+}
+__ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
 
 // Подготовленные SQL-запросы для быстрого выполнения
 const stmts = {
@@ -159,13 +200,30 @@ const stmts = {
     ON CONFLICT(code) DO UPDATE SET tokens = excluded.tokens, max_uses = excluded.max_uses
   `),
   insertRound: db.prepare(`
-    INSERT INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   getRound: db.prepare('SELECT * FROM game_rounds WHERE round_id = ?'),
   userRoundsSince: db.prepare(`
     SELECT COUNT(*) AS count, COALESCE(SUM(bet_tokens), 0) AS wagered, COALESCE(SUM(win_tokens), 0) AS won
     FROM game_rounds WHERE user_id = ? AND created_at >= ?
+  `),
+  insertInventoryItem: db.prepare(`
+    INSERT INTO user_inventory
+      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+  `),
+  listInventory: db.prepare(`
+    SELECT * FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
+    ORDER BY acquired_at DESC, id DESC LIMIT 200
+  `),
+  getInventoryItem: db.prepare('SELECT * FROM user_inventory WHERE id = ?'),
+  markInventorySold: db.prepare(
+    'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL'
+  ),
+  inventoryTotals: db.prepare(`
+    SELECT COUNT(*) AS count, COALESCE(SUM(price), 0) AS value
+    FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
   `)
 };
 
@@ -414,11 +472,43 @@ module.exports = {
       Math.floor(r.win || 0),
       r.status || 'settled',
       r.createdAt || Date.now(),
-      r.settledAt || Date.now()
+      r.settledAt || Date.now(),
+      r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null
     );
     return { ok: true, roundId: String(r.roundId) };
   },
   getRound: (roundId) => stmts.getRound.get(String(roundId)),
+
+  /* ── Инвентарь ──────────────────────────────────────────────────────────
+     Цена и название берутся из СЕРВЕРНОГО каталога items.js, а не из запроса
+     клиента: иначе игрок пришлёт price: 999999 и продаст вентилятор за миллион. */
+  addInventoryItem: (r) => {
+    const res = stmts.insertInventoryItem.run(
+      r.userId,
+      String(r.itemCode),
+      String(r.name || ''),
+      String(r.icon || ''),
+      Math.floor(r.price || 0),
+      String(r.tier || ''),
+      String(r.caseId || ''),
+      String(r.caseName || ''),
+      String(r.roundId || ''),
+      r.acquiredAt || Date.now()
+    );
+    return { ok: true, id: Number(res.lastInsertRowid) };
+  },
+  listInventory: (userId) => stmts.listInventory.all(userId),
+  getInventoryItem: (id) => stmts.getInventoryItem.get(id),
+  /** Помечает предмет проданным. false — уже был продан или не его (защита от гонки). */
+  markInventorySold: (id, userId, tokens, at) => {
+    const res = stmts.markInventorySold.run(at || Date.now(), Math.floor(tokens || 0), id, userId);
+    return res.changes === 1;
+  },
+  inventoryTotals: (userId) => {
+    const r = stmts.inventoryTotals.get(userId);
+    return r || { count: 0, value: 0 };
+  },
   /** Ставки и выигрыши игрока за период — для лимитов и детекта аномалий */
   userRoundsSince: (userId, sinceMs) => {
     const r = stmts.userRoundsSince.get(userId, sinceMs);

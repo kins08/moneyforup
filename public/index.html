@@ -943,6 +943,9 @@ async function tgLoadBalance(){
   try{
     tgApplyServer(await tgCall('/api/balance',{}));
     if(typeof tgLoadRequisites==='function')tgLoadRequisites();
+    // Инвентарь живёт на сервере — тянем его вместе с балансом, иначе после
+    // перезагрузки игрок не увидит своих предметов.
+    if(typeof loadInventory==='function')loadInventory();
   }catch(e){}
 }
 async function tgRegister(){
@@ -1138,18 +1141,21 @@ function place(bet,game,mult){
   }
 
   const rnd={ t:Date.now(), state:'pending', verdict:null, win:0, mult:null,
-              shown:null, consumed:false, roundId:null };
+              shown:null, consumed:false, roundId:null, drop:null };
   window.__round=rnd;
 
   // Атомарная операция на сервере: списание ставки + жребий + выплата.
   // Если запрос не прошёл — раунда нет и деньги не тронуты.
-  tgCall('/api/play',{ game:game||'Игра', bet:bet, mult:(mult!=null?mult:undefined) })
+  // rnd.promise нужен кейсам: анимация обязана показать предмет, который
+  // выдал сервер, а не выбранный в браузере.
+  rnd.promise = tgCall('/api/play',{ game:game||'Игра', bet:bet, mult:(mult!=null?mult:undefined) })
     .then(r=>{
       rnd.state='done';
       rnd.verdict=r.verdict;
       rnd.win=(r.win|0);
       rnd.mult=r.mult;
       rnd.roundId=r.roundId;
+      rnd.drop=r.drop||null;
       if(typeof r.tokens==='number'){
         S.balance=r.tokens;
         try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
@@ -1167,6 +1173,7 @@ function place(bet,game,mult){
       rnd.consumed=true;
       showAppNotification((err&&err.message)||'Ставка не принята');
       tgLoadBalance();
+      throw err;              // кейс-обработчик должен узнать, что раунда не было
     });
 
   return rnd;
@@ -1329,32 +1336,86 @@ function evalBaitTrap(gameName, naturalWin, currentBet, targetMult){
   return naturalWin;
 }
 
-/* ==================== ИНВЕНТАРЬ И ПРОДАЖА ПРЕДМЕТОВ ==================== */
+/* ==================== ИНВЕНТАРЬ (СЕРВЕРНЫЙ) ====================
+   Предметы принадлежат СЕРВЕРУ: он их выдаёт, он же знает цену.
+   Раньше весь инвентарь жил в localStorage, и продажа просто прибавляла
+   токены у игрока в браузере. Сервер об этом не знал: на следующем раунде
+   баланс перезаписывался из его ответа, и токены исчезали, а предмет уже
+   был уничтожен. Игрок терял вещь и не получал ничего.
+   Теперь S.inventory — только КЭШ ответа /api/inventory.                    */
+
+/** Загружает инвентарь с сервера. В демо-режиме ничего не делаем. */
+function loadInventory(){
+  if(!IS_TG||!API_BASE) return Promise.resolve(S.inventory||[]);
+  return tgCall('/api/inventory').then(r=>{
+    S.inventory=(r.items||[]).map(it=>({ id:it.id, name:it.name, icon:it.icon,
+      price:it.price, tier:it.tier, caseName:it.caseName, wonAt:it.wonAt }));
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    save(); syncUI();
+    return S.inventory;
+  }).catch(err=>{
+    showAppNotification('Инвентарь не загрузился: '+((err&&err.message)||'ошибка сети'));
+    return S.inventory||[];
+  });
+}
+
 function sellInventoryItem(itemId){
-  S.inventory = S.inventory || [];
-  const idx = S.inventory.findIndex(it => it.id === itemId);
-  if(idx === -1) return;
-  const item = S.inventory[idx];
-  const itemPrice = item.price;
-  const itemName = item.name;
-  S.balance += itemPrice;
-  S.inventory.splice(idx, 1);
-  save();
-  syncUI();
-  tgHaptic('win');
+  const item = (S.inventory||[]).find(it => it.id === itemId);
+
+  // Демо-режим (нет сервера) — деньги ненастоящие, считаем локально
+  if(!IS_TG||!API_BASE){
+    if(!item) return;
+    S.balance += item.price;
+    S.inventory = S.inventory.filter(it => it.id !== itemId);
+    save(); syncUI(); tgHaptic('win');
+    return;
+  }
+  if(!item) return;
+
+  tgCall('/api/inventory/sell',{ itemId:itemId }).then(r=>{
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    S.inventory=(S.inventory||[]).filter(it=>it.id!==itemId);
+    save(); syncUI(); tgHaptic('win');
+    showAppNotification(`Продано: ${item.icon} ${item.name} · +${fmt((r.sold&&r.sold.price)||item.price)} ⬦`);
+  }).catch(err=>{
+    showAppNotification((err&&err.message)||'Не удалось продать предмет');
+    loadInventory();     // сервер — источник правды, приводим экран к нему
+  });
 }
 
 function sellAllInventory(){
-  if(!S.inventory || !S.inventory.length) return;
-  const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
-  const count = S.inventory.length;
-  if(confirm(`Продать все ${count} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
-    S.balance += totalVal;
-    S.inventory = [];
-    save();
-    syncUI();
-    tgHaptic('win');
+  const list = S.inventory || [];
+  if(!list.length) return;
+  const totalVal = list.reduce((sum, it) => sum + (it.price || 0), 0);
+
+  if(!IS_TG||!API_BASE){        // демо-режим
+    if(confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
+      S.balance += totalVal;
+      S.inventory = [];
+      save(); syncUI(); tgHaptic('win');
+    }
+    return;
   }
+
+  if(!confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)) return;
+  tgCall('/api/inventory/sell-all',{}).then(r=>{
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    S.inventory=[];
+    save(); syncUI(); tgHaptic('win');
+    showAppNotification(`Продано ${r.count} предмет(ов) · +${fmt(r.total)} ⬦`);
+  }).catch(err=>{
+    showAppNotification((err&&err.message)||'Не удалось продать инвентарь');
+    loadInventory();
+  });
 }
 
 function openItemDetailModal(it){
@@ -4884,30 +4945,16 @@ function gameCases(){
 
         const wasBoosted = !!testBoosts[curCaseId];
         testBoosts[curCaseId] = false;
-        place(curCase.cost, 'Кейс: ' + curCase.name);
+        const __rnd = place(curCase.cost, 'Кейс: ' + curCase.name);
         busy = true;
         clearCaseTimers();
 
-        // Выбираем выигрышный предмет по весам
-        let totalW = 0;
-        curCase.items.forEach(it => totalW += it.w);
-        let rnd = Math.random() * totalW;
-        let winItem = curCase.items[0];
-        let cum = 0;
-        for(let it of curCase.items){
-          cum += it.w;
-          if(rnd <= cum){
-            winItem = it;
-            break;
-          }
-        }
-        const natProfit = winItem.price >= curCase.cost;
-        const allowCaseProfit = evalBaitTrap('cases', natProfit, curCase.cost, +(winItem.price / curCase.cost).toFixed(2));
-        if(!allowCaseProfit && natProfit){
-          const cheapItems = curCase.items.filter(it => it.price < curCase.cost);
-          if(cheapItems.length) winItem = cheapItems[Math.floor(Math.random() * cheapItems.length)];
-        }
-
+        /* Дроп выдаёт СЕРВЕР, и лента обязана остановиться на ЕГО предмете.
+           Раньше клиент сам бросал веса и сам же решал, «сливать» ли раунд
+           (evalBaitTrap) — правкой клиента выбивался любой джекпот, а сервер
+           об этом не знал. Теперь сервер присылает drop, мы только показываем. */
+        const startSpin = (winItem, serverDrop) => {
+        if(!winItem) return;
         const isProfit = winItem.price >= curCase.cost;
         const diff = winItem.price - curCase.cost;
 
@@ -4979,9 +5026,11 @@ function gameCases(){
 
           tgHaptic(isProfit ? 'win' : 'light');
 
-          // Сохраняем выпавший предмет в инвентарь!
+          // Предмет УЖЕ в серверном инвентаре — он выдаётся в момент раунда.
+          // Локально его не создаём: id приходит от сервера, иначе продажа
+          // уйдёт с несуществующим id и предмет нельзя будет продать.
           const dropItem = {
-            id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            id: (serverDrop && serverDrop.id) || null,
             name: winItem.name,
             icon: winItem.icon,
             price: winItem.price,
@@ -4989,11 +5038,16 @@ function gameCases(){
             caseName: curCase.name,
             wonAt: Date.now()
           };
-          S.inventory = S.inventory || [];
-          S.inventory.unshift(dropItem);
-          if(S.inventory.length > 50) S.inventory = S.inventory.slice(0, 50);
-          save();
-          syncUI();
+          if(serverDrop){
+            loadInventory();            // предмет уже лежит на сервере
+          } else {
+            // Демо-режим (сервера нет) — инвентарь локальный, деньги ненастоящие
+            dropItem.id = 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            S.inventory = S.inventory || [];
+            S.inventory.unshift(dropItem);
+            if(S.inventory.length > 50) S.inventory = S.inventory.slice(0, 50);
+            save(); syncUI();
+          }
 
           res.className = `result ${isProfit ? 'good' : 'bad'}`;
           res.innerHTML = `
@@ -5026,6 +5080,43 @@ function gameCases(){
             openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + fmt(curCase.cost) + ' ⬦';
           }
         }, 5400);
+        };   // ← конец startSpin(winItem, serverDrop)
+
+        /* Предмет для ленты берём из СВОЕЙ таблицы по коду от сервера:
+           цены, иконки и редкость — проверенные, id предмета — серверный. */
+        const catalogItem = (drop) => {
+          if(!drop) return null;
+          const idx = String(drop.code || '').split('#')[1];
+          if(idx != null && curCase.items[+idx] && curCase.items[+idx].name === drop.name) return curCase.items[+idx];
+          return curCase.items.find(it => it.name === drop.name) || null;
+        };
+
+        /* Демо-режим: сервера нет — крутим локально, деньги ненастоящие. */
+        const localRoll = () => {
+          let totalW = 0; curCase.items.forEach(it => totalW += it.w);
+          const r = Math.random() * totalW;
+          let cum = 0;
+          for(const it of curCase.items){ cum += it.w; if(r <= cum) return it; }
+          return curCase.items[0];
+        };
+
+        if(!__rnd || !__rnd.promise){
+          startSpin(localRoll(), null);
+        } else {
+          openBtn.disabled = true;
+          openBtn.textContent = 'РУЛЕТКА КРУТИТСЯ…';
+          __rnd.promise.then(r => {
+            startSpin(catalogItem(r && r.drop) || localRoll(), (r && r.drop) || null);
+          }).catch(() => {
+            busy = false;
+            if(openBtn){
+              openBtn.disabled = false;
+              openBtn.textContent = 'ОТКРЫТЬ КЕЙС · ' + fmt(curCase.cost) + ' ⬦';
+            }
+            const resEl = q('#caseRes');
+            if(resEl){ resEl.className = 'result bad'; resEl.textContent = 'Раунд не состоялся — ставка не принята.'; }
+          });
+        }
       });
     }
   }

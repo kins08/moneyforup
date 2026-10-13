@@ -38,6 +38,21 @@ const C = {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/**
+ * Занят ли порт. Проверяем ПЕРЕД запуском: если на порту уже висит сервер
+ * от прошлого прогона (такое бывает после падения теста), новый bot.js не
+ * сможет забиндиться, а тест начнёт общаться с ЧУЖИМ сервером и его БД —
+ * и покажет расхождение, которого нет. Лучше найти свободный порт.
+ */
+function portBusy(port) {
+  return new Promise(resolve => {
+    const srv = require('net').createServer();
+    srv.once('error', () => resolve(true));
+    srv.once('listening', () => srv.close(() => resolve(false)));
+    srv.listen(port, '127.0.0.1');
+  });
+}
+
 /** Валидный initData для Telegram WebApp — HMAC-SHA256 от BOT_TOKEN, как в проде. */
 function makeInitData(botToken, userId) {
   const p = new URLSearchParams();
@@ -59,7 +74,15 @@ function makeInitData(botToken, userId) {
  * @param {object} [opts.env]             доп. переменные окружения для bot.js
  */
 async function startServer(opts = {}) {
-  const port = opts.port || 34519;
+  let port = opts.port || 34519;
+  // Ищем свободный порт, начиная с запрошенного
+  if (await portBusy(port)) {
+    const asked = port;
+    for (let p = port + 1; p < port + 20; p++) {
+      if (!(await portBusy(p))) { port = p; break; }
+    }
+    console.warn(`[harness] порт ${asked} занят (остался сервер от прошлого запуска?) — беру ${port}`);
+  }
   const botToken = opts.botToken || DEFAULT_BOT_TOKEN;
   const adminId = opts.adminId || 999999999;
   const users = opts.users || [];
@@ -67,7 +90,7 @@ async function startServer(opts = {}) {
 
   // ── Изолированная копия проекта ──────────────────────────────────────────
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
-  for (const f of ['bot.js', 'db.js', 'bets_monitor.js']) {
+  for (const f of ['bot.js', 'db.js', 'bets_monitor.js', 'items.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }

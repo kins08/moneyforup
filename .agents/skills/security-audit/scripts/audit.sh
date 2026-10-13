@@ -235,6 +235,7 @@ cat <<'EOF'
   4. Чинить по reference/fix-patterns.md, затем прогнать PoC повторно
 
 Проверка денежной логики на живом сервере (сильнее любого статического скана):
+  node .agents/skills/security-audit/scripts/e2e-inventory-test.js          # P1-5: инвентарь и цены на сервере
   node .agents/skills/security-audit/scripts/e2e-game-authority-test.js     # P0-1: исход раунда решает сервер
   node .agents/skills/security-audit/scripts/e2e-exploit-test.js            # P0-5: баланс применяется один раз
   node .agents/skills/security-audit/scripts/poc-db-double-write.js         # слой БД, без сервера
@@ -242,6 +243,10 @@ cat <<'EOF'
 
 ИНВАРИАНТ ПОСЛЕ ФИКСА P0-5: баланс меняется ТОЛЬКО через applyBalance()/setBalanceTo() в bot.js.
 db.saveUser() больше НЕ пишет tokens — выставить баланс через неё нельзя (это норма, не баг).
+
+ИНВАРИАНТ ПОСЛЕ ФИКСА P1-5: цены и выпадение предметов живут в items.js (сервер).
+Клиент не присылает ни цену, ни факт владения — только id предмета для продажи.
+Кейс: предмет И ЕСТЬ выплата, токены за раунд НЕ начисляются (иначе двойная выплата).
 
 ИНВАРИАНТ ПОСЛЕ ФИКСА P0-1: клиент присылает только ВЫБОР (game, bet, mult).
 Выигрыш, вердикт и множитель сверх границ игры сервер обязан игнорировать.

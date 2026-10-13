@@ -25,7 +25,28 @@ const APP_URL       = process.env.APP_URL || 'https://example.com/moneyforup-tg.
 const API_PORT      = +(process.env.PORT || process.env.API_PORT || 3000);
 const ADMIN_ID        = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
 const betsMonitor   = require('./bets_monitor');
+/* Требование к рантайму проверяем ЯВНО и здесь, а не только в package.json.
+   Почему: engines в package.json читает ещё и сборка Cloudflare, а ей Node 22
+   не нужен — статике всё равно. Требование «Node 22.13+» относится только к
+   рантайму бота, поэтому и живёт в рантайме. */
+const __node = process.versions.node.split('.').map(Number);
+const __nodeOk = (__node[0] === 22 && __node[1] >= 13) || (__node[0] === 23 && __node[1] >= 4) || __node[0] >= 24;
+if (!__nodeOk) {
+  console.error(
+    '\n[Старт] НУЖЕН ДРУГОЙ NODE.JS.\n' +
+    '  Сейчас: ' + process.version + '\n' +
+    '  Нужен:  22.13+ (или 23.4+, или 24+)\n\n' +
+    '  Причина: встроенный модуль node:sqlite доступен без флагов только с этих версий.\n' +
+    '  На 20 и ниже его нет; в 22.5–22.12 и 23.0–23.3 он за флагом --experimental-sqlite,\n' +
+    '  а бот не запускается с этим флагом.\n\n' +
+    '  Что делать: на хостинге бота выставить версию Node 22.13+ (например,\n' +
+    '  NODE_VERSION=22.13.0 в переменных окружения Render/Fly).\n'
+  );
+  process.exit(1);
+}
+
 const db            = require('./db');
+const items         = require('./items');   // серверный каталог кейсов и предметов
 
 function isAdmin(u) {
   if (!u || !ADMIN_ID) return false;
@@ -314,6 +335,71 @@ function gameConfig(rawName) {
  * Проводит раунд: списывает ставку, бросает жребий, начисляет выигрыш.
  * Возвращает результат для отображения. Клиент НЕ может повлиять на жребий.
  */
+/**
+ * Раунд в КЕЙСЕ. Отличие от остальных игр принципиальное:
+ * предмет И ЕСТЬ выигрыш, токены за раунд не начисляются.
+ *
+ * Почему так: EV предмета в кейсах 0.74–0.88 от цены кейса (см. caseRtp).
+ * Если вдобавок платить токены по обычной формуле, суммарный RTP станет ~1.7
+ * и кейс начнёт печатать деньги. Ценность забирается продажей предмета.
+ */
+function playCaseRound(u, c, rawBet, rawRoundId) {
+  const bet = Math.floor(Number(rawBet) || 0);
+  // Ставка обязана равняться цене кейса: иначе игрок откроет кейс за 10000,
+  // поставив 10 ⬦, и получит предмет со средним выигрышем ~8 750 ⬦.
+  if (bet !== c.cost) {
+    return { ok: false, error: `Кейс «${c.name}» стоит ${c.cost} ⬦` };
+  }
+  if (bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
+
+  const roundId = String(rawRoundId || '').trim() ||
+    ('C' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex'));
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(roundId)) return { ok: false, error: 'Некорректный идентификатор раунда' };
+  try {
+    if (db.getRound(roundId)) return { ok: false, error: 'Раунд уже проведён' };
+  } catch (_) { /* таблицы нет — не блокируем игру */ }
+
+  // Жребий предмета — серверный CSPRNG, веса из серверного каталога
+  const drop = items.rollItem(c.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+  if (!drop) return { ok: false, error: 'Кейс недоступен' };
+
+  // Деньги: списываем ровно цену кейса. Выигрыш придёт ПРОДАЖЕЙ предмета.
+  const r = applyBalance(u, -bet, 'game_round',
+    `Кейс «${c.name}» · раунд ${roundId} (ставка ${bet}, выпало: ${drop.name})`, roundId);
+  if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+
+  // Предмет кладём ПОСЛЕ успешного списания: иначе предмет был бы, а оплаты нет
+  let itemId = null;
+  try {
+    const saved = db.addInventoryItem({
+      userId: u.id, itemCode: drop.code, name: drop.name, icon: drop.icon,
+      price: drop.price, tier: drop.tier, caseId: c.id, caseName: c.name, roundId
+    });
+    itemId = saved.id;
+  } catch (e) {
+    console.error(`[Inventory] предмет не сохранён игроку ${u.id}: ${e.message}`);
+  }
+
+  const verdict = drop.price >= bet ? 'win' : 'lose';   // для анимации: отбился или нет
+  try {
+    db.saveRound({ roundId, userId: u.id, game: 'Кейс: ' + c.name, bet, mult: 1, win: 0,
+      status: 'settled', itemCode: drop.code, itemPrice: drop.price });
+  } catch (e) { console.error('[Round] не сохранён:', e.message); }
+
+  betsMonitor.recordBet({
+    userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+    game: 'Кейс: ' + c.name, betTokens: bet, winTokens: 0,
+    balanceAfter: u.tokens, totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
+  });
+
+  return {
+    ok: true, roundId, game: 'Кейс: ' + c.name, gameKey: 'case',
+    verdict, win: 0, mult: 1, tokens: u.tokens, case: c.id,
+    drop: { id: itemId, code: drop.code, name: drop.name, icon: drop.icon,
+            price: drop.price, tier: drop.tier, caseName: c.name }
+  };
+}
+
 function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
   const cfg = gameConfig(rawGame);
   const bet = Math.floor(Number(rawBet) || 0);
@@ -321,6 +407,10 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
     return { ok: false, error: `Ставка должна быть от ${cfg.minBet} до ${cfg.maxBet} ⬦` };
   }
   if (bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
+
+  // Кейсы живут по другой модели (предмет = выигрыш) — уводим их в отдельную ветку
+  const __case = items.findCaseByName(rawGame);
+  if (__case) return playCaseRound(u, __case, rawBet, rawRoundId);
 
   // Множитель — выбор игрока, но строго в границах игры
   let mult = Number(rawMult);
@@ -1487,8 +1577,77 @@ const server = http.createServer(async (req, res) => {
         verdict: res.verdict,   // 'win' | 'lose' — клиент обязан отрисовать ИМЕННО это
         win: res.win,
         mult: res.mult,
-        tokens: res.tokens
+        tokens: res.tokens,
+        // Для кейсов: какой предмет выпал. Клиент обязан показать ЭТОТ предмет,
+        // а не выбранный им самим — иначе анимация разойдётся с инвентарём.
+        drop: res.drop || null
       });
+    }
+
+    /* ── Инвентарь: список предметов игрока ──────────────────────────────────
+       Отдаём только НЕпроданное. Цены — из БД, куда они попали из серверного
+       каталога, а не из запроса клиента. */
+    if (url.pathname === '/api/inventory') {
+      const list = db.listInventory(u.id);
+      const tot = db.inventoryTotals(u.id);
+      return send(200, {
+        ok: true,
+        items: list.map(it => ({
+          id: it.id, code: it.item_code, name: it.name, icon: it.icon,
+          price: it.price, tier: it.tier, caseName: it.case_name, wonAt: it.acquired_at
+        })),
+        count: tot.count,
+        value: tot.value,
+        tokens: u.tokens
+      });
+    }
+
+    /* ── Инвентарь: продажа одного предмета ──────────────────────────────────
+       Начисление ровно один раз: предмет помечается проданным в той же
+       транзакции, что защищает от двух одновременных продаж. */
+    if (url.pathname === '/api/inventory/sell' && req.method === 'POST') {
+      const id = Math.floor(Number(body.itemId ?? body.id) || 0);
+      if (!id) return send(400, { error: 'Не указан предмет' });
+      const it = db.getInventoryItem(id);
+      // Чужой предмет и несуществующий отвечают одинаково: не подсказываем
+      // игроку, какие id существуют у других.
+      if (!it || Number(it.user_id) !== Number(u.id)) return send(404, { error: 'Предмет не найден' });
+      if (it.sold_at) return send(400, { error: 'Предмет уже продан' });
+
+      // Сначала помечаем проданным (атомарно, с условием sold_at IS NULL) —
+      // если не вышло, значит продали параллельно, и начислять нельзя.
+      if (!db.markInventorySold(id, u.id, it.price)) return send(400, { error: 'Предмет уже продан' });
+
+      const r = applyBalance(u, it.price, 'inventory_sale', `Продажа: ${it.name} (${it.case_name})`, 'inv' + id);
+      if (!r.ok) {
+        // Начисление не прошло — возвращаем предмет владельцу, иначе он пропадёт
+        try { db.db.prepare('UPDATE user_inventory SET sold_at = NULL, sold_for = NULL WHERE id = ?').run(id); } catch (_) {}
+        return send(500, { error: 'Не удалось начислить токены, повторите позже' });
+      }
+      return send(200, { ok: true, sold: { id, name: it.name, price: it.price }, tokens: u.tokens });
+    }
+
+    /* ── Инвентарь: продать всё ─────────────────────────────────────────────
+       Одно начисление на всю пачку (одна запись в ledger). */
+    if (url.pathname === '/api/inventory/sell-all' && req.method === 'POST') {
+      const list = db.listInventory(u.id);
+      if (!list.length) return send(400, { error: 'Инвентарь пуст' });
+      let total = 0;
+      const sold = [];
+      for (const it of list) {
+        if (!db.markInventorySold(it.id, u.id, it.price)) continue;   // продали параллельно — пропускаем
+        total += it.price;
+        sold.push({ id: it.id, name: it.name, price: it.price });
+      }
+      if (!total) return send(400, { error: 'Предметы уже проданы' });
+      const r = applyBalance(u, total, 'inventory_sale', `Продажа инвентаря: ${sold.length} шт`, 'invall' + Date.now());
+      if (!r.ok) {
+        for (const it of sold) {
+          try { db.db.prepare('UPDATE user_inventory SET sold_at = NULL, sold_for = NULL WHERE id = ?').run(it.id); } catch (_) {}
+        }
+        return send(500, { error: 'Не удалось начислить токены, повторите позже' });
+      }
+      return send(200, { ok: true, count: sold.length, total, sold, tokens: u.tokens });
     }
 
     /* Синхронизация баланса (строго READ-ONLY: клиент не может устанавливать баланс напрямую) */
