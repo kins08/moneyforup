@@ -2752,8 +2752,12 @@ function gameWheel(){
     const pointerAngle = -Math.PI / 2;
     const sectorCenter = targetIdx * arc + arc / 2;
     let finalTargetAngle = pointerAngle - sectorCenter;
-    while(finalTargetAngle < 0) finalTargetAngle += Math.PI * 2;
-    const totalTargetAngle = wheelAngle + extraRotations * Math.PI * 2 + (finalTargetAngle - (wheelAngle % (Math.PI * 2)));
+    finalTargetAngle = ((finalTargetAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+    const curNorm = ((wheelAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    let delta = finalTargetAngle - curNorm;
+    while(delta <= 0) delta += Math.PI * 2;
+    const totalTargetAngle = wheelAngle + (extraRotations * Math.PI * 2) + delta;
 
     const startTime = performance.now();
     const duration = 4800;
@@ -3980,13 +3984,15 @@ function gameJumper(){
     cancelAnimationFrame(raf);level=0;phase='idle';busy=false;
     positionBall();refresh();
   }
+  let jumperRnd = null;
   function jump(){
     if(busy)return;
     if(phase==='done')reset();
     if(phase==='idle'){
       if(S.balance<S.bet){jr.className='result bad';jr.textContent='Недостаточно токенов — пополни баланс.';return}
       roundBet=S.bet;
-      place(roundBet,'Попрыгун');phase='run';
+      jumperRnd = place(roundBet,'Попрыгун');
+      phase='run';
     }
     if(level>=12)return;
     busy=true;refresh();
@@ -4007,7 +4013,12 @@ function gameJumper(){
     const stepP = (m.p && m.p[level]) ? m.p[level] : 0.03;
     const nextMult = xn(level + 1);
     const naturalStepWin = Math.random() < stepP;
-    const willLand = evalBaitTrap('jumper', naturalStepWin, roundBet, nextMult);
+    let willLand;
+    if(jumperRnd && jumperRnd.verdict){
+      willLand = (jumperRnd.verdict === 'win');
+    } else {
+      willLand = evalBaitTrap('jumper', naturalStepWin, roundBet, nextMult);
+    }
     if(willLand){
       level++;
       positionBall();
@@ -4038,7 +4049,7 @@ function gameJumper(){
   }
   function auto(){
     const amount=Math.floor(roundBet*xn(12));
-    win(amount,'Попрыгун','предел ×'+fx(xn(12)));
+    win(amount,'Попрыгун','предел ×'+fx(xn(12)), jumperRnd);
     phase='done';
     jr.className='result good';
     jr.innerHTML='Верхний уровень — авто-забор <b style="color:'+band(xn(12))+'">×'+fx(xn(12))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
@@ -4047,7 +4058,7 @@ function gameJumper(){
   function take(){
     if(busy||phase!=='run'||level<1)return;
     const amount=Math.floor(roundBet*xn(level));
-    win(amount,'Попрыгун','кэшаут ×'+fx(xn(level)));
+    win(amount,'Попрыгун','кэшаут ×'+fx(xn(level)), jumperRnd);
     phase='done';busy=false;
     jr.className='result good';
     jr.innerHTML='Забрано на уровне '+level+': <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b> → <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+').';
@@ -4173,80 +4184,108 @@ function gameSpin(){
       if(busy)return;
       if(S.balance<S.bet){sr.className='result bad';sr.textContent='Недостаточно токенов — пополни баланс.';return}
       const roundBet = S.bet;
-      busy=true;place(roundBet,'Спин');
+      busy = true;
+      const rnd = place(roundBet, 'Спин');
       clearSpinTimers();
 
-      let pick=Math.random()*100,idx=0,cum=0;
-      for(let i=0;i<curM.w.length;i++){cum+=curM.w[i];if(pick<cum){idx=i;break}}
-      let v=curM.pay[idx];
-      const naturalWin = v >= 1;
-      const willWin = evalBaitTrap('spin', naturalWin, roundBet, Math.max(1.2, v));
-      if(!willWin && naturalWin){
-        const lossIdxs = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
-        if(lossIdxs.length) idx = lossIdxs[Math.floor(Math.random() * lossIdxs.length)];
-        v = curM.pay[idx];
-      } else if(willWin && !naturalWin){
-        const lowWinIdxs = curM.pay.map((p, i) => (p >= 1 && p <= 2) ? i : -1).filter(i => i !== -1);
-        if(lowWinIdxs.length) idx = lowWinIdxs[Math.floor(Math.random() * lowWinIdxs.length)];
-        v = curM.pay[idx];
-      }
-      const isLoss=v<1;
+      sr.className = 'result';
+      sr.textContent = 'Колесо вращается…';
+      qa('.lg').forEach(e => e.classList.remove('hit'));
 
-      // Находим топ множитель для тизера в случае проигрыша
-      let maxPay=-1, topXIdx=0;
-      for(let i=0; i<curM.pay.length; i++){
-        if(curM.pay[i]>maxPay){ maxPay=curM.pay[i]; topXIdx=i; }
-      }
-      const topLabel = lbl(maxPay);
+      // Запускаем первичное вращение
+      rot += 360 * 3;
+      wheel.style.transition = 'transform 4.6s cubic-bezier(0.12, 0.90, 0.15, 1)';
+      wheel.style.transform = 'rotate(' + rot + 'deg)';
 
-      // Тизер: при проигрыше стрелка останавливается у самого края сектора, граничащего с другим
-      const edgeOffset=isLoss?(Math.random()<0.5?0.16:0.84):0.5;
-      const cen=(idx+edgeOffset)*segAngle;
-      const curMod=((rot%360)+360)%360;
-      rot+=((-cen-curMod)%360+360)%360+360*6;
-      wheel.style.transform='rotate('+rot+'deg)';
-      sr.className='result';sr.textContent='Колесо вращается…';
-      qa('.lg').forEach(e=>e.classList.remove('hit'));
+      const waitPromise = (rnd && rnd.promise) ? rnd.promise.catch(() => {}) : Promise.resolve();
+      waitPromise.then(() => {
+        let isWin;
+        let finalAmt = 0;
+        if(rnd && rnd.verdict){
+          isWin = (rnd.verdict === 'win');
+          finalAmt = rnd.win || 0;
+        } else {
+          let pick = Math.random() * 100, cum = 0, defIdx = 0;
+          for(let i = 0; i < curM.w.length; i++){ cum += curM.w[i]; if(pick < cum){ defIdx = i; break; } }
+          isWin = evalBaitTrap('spin', curM.pay[defIdx] >= 1, roundBet, Math.max(1.2, curM.pay[defIdx]));
+        }
 
-      // Замедляющиеся тики стрелки
-      const tickTimes=[260,540,880,1280,1750,2290,2900,3580,4200];
-      tickTimes.forEach(t=>{
-        spinTimeouts.push(setTimeout(()=>{
-          if(dead||!busy)return;
-          const ptr=q('.pointer',a);
-          if(ptr){
-            ptr.style.transform='rotate(-12deg)';
-            setTimeout(()=>{if(ptr&&!ptr.classList.contains('tease-flutter'))ptr.style.transform='rotate(0deg)';},70);
+        let idx = 0;
+        if(isWin){
+          const winIdxs = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
+          if(finalAmt > 0){
+            const targetPay = finalAmt / roundBet;
+            winIdxs.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
+            idx = winIdxs[0];
+          } else {
+            idx = winIdxs[Math.floor(Math.random() * winIdxs.length)] || 0;
           }
-          tgHaptic('light');
-        },t));
+        } else {
+          const lossIdxs = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
+          idx = lossIdxs[Math.floor(Math.random() * lossIdxs.length)] || 0;
+        }
+
+        let v = curM.pay[idx];
+        const isLoss = !isWin;
+
+        // Находим топ множитель для тизера в случае проигрыша
+        let maxPay = -1, topXIdx = 0;
+        for(let i = 0; i < curM.pay.length; i++){
+          if(curM.pay[i] > maxPay){ maxPay = curM.pay[i]; topXIdx = i; }
+        }
+        const topLabel = lbl(maxPay);
+
+        const edgeOffset = isLoss ? (Math.random() < 0.5 ? 0.22 : 0.78) : 0.5;
+        const cen = (idx + edgeOffset) * segAngle;
+        const curMod = ((rot % 360) + 360) % 360;
+        rot += ((-cen - curMod) % 360 + 360) % 360 + 360 * 4;
+        wheel.style.transform = 'rotate(' + rot + 'deg)';
+
+        scheduleSpinFinish(idx, v, isLoss, topXIdx, topLabel, rnd);
       });
 
-      // Замедление в конце прокрута: мелькание большого Х
-      spinTimeouts.push(setTimeout(()=>{
-        if(dead||!busy)return;
-        if(isLoss){
-          const lgTop=q('#lg'+topXIdx,a);
-          if(lgTop)lgTop.classList.add('tease-flash');
-          const spans=qa('.wheel span',a);
-          if(spans[topXIdx])spans[topXIdx].classList.add('tease-flash');
-          const ptr=q('.pointer',a);
-          if(ptr)ptr.classList.add('tease-flutter');
-          sr.innerHTML='Колесо замедляется… <b style="color:#ffcf6b">★ Большой '+topLabel+' мелькает у стрелки!</b>';
-          tgHaptic('medium');
-        }
-      },3100));
+      function scheduleSpinFinish(idx, v, isLoss, topXIdx, topLabel, __rnd){
+        // Замедляющиеся тики стрелки
+        const tickTimes = [260, 540, 880, 1280, 1750, 2290, 2900, 3580, 4200];
+        tickTimes.forEach(t => {
+          spinTimeouts.push(setTimeout(() => {
+            if(dead || !busy) return;
+            const ptr = q('.pointer', a);
+            if(ptr){
+              ptr.style.transform = 'rotate(-12deg)';
+              setTimeout(() => { if(ptr && !ptr.classList.contains('tease-flutter')) ptr.style.transform = 'rotate(0deg)'; }, 70);
+            }
+            tgHaptic('light');
+          }, t));
+        });
 
-      timer=setTimeout(()=>{
-        if(dead)return;
-        busy=false;
-        clearSpinTimers();
-        const amount=Math.floor(roundBet*v);
-        const lg=q('#lg'+idx);if(lg)lg.classList.add('hit');
-        if(amount>0)win(amount,'Спин',lbl(v));
-        sr.className='result '+(amount>=roundBet?'good':'bad');
-        sr.innerHTML='Сектор '+(idx+1)+': <b style="color:'+band(v)+'">'+lbl(v)+'</b> → '+(amount>0?'выплата <b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'ставка '+roundBet+' ⬦ (≈ '+fmtRub(roundBet)+') не возвращается')+(isLoss?' · <span style="color:#ffcf6b">★ Большой '+topLabel+' пролетел в шаге от стрелки!</span>':'');
-      },4650);
+        // Замедление в конце прокрута: мелькание большого Х
+        spinTimeouts.push(setTimeout(() => {
+          if(dead || !busy) return;
+          if(isLoss){
+            const lgTop = q('#lg' + topXIdx, a);
+            if(lgTop) lgTop.classList.add('tease-flash');
+            const spans = qa('.wheel span', a);
+            if(spans[topXIdx]) spans[topXIdx].classList.add('tease-flash');
+            const ptr = q('.pointer', a);
+            if(ptr) ptr.classList.add('tease-flutter');
+            sr.innerHTML = 'Колесо замедляется… <b style="color:#ffcf6b">★ Большой ' + topLabel + ' мелькает у стрелки!</b>';
+            tgHaptic('medium');
+          }
+        }, 3100));
+
+        timer = setTimeout(() => {
+          if(dead) return;
+          busy = false;
+          clearSpinTimers();
+          const amount = (__rnd && __rnd.verdict === 'win') ? (__rnd.win || Math.floor(roundBet * v)) : (isLoss ? 0 : Math.floor(roundBet * v));
+          const lg = q('#lg' + idx);
+          if(lg) lg.classList.add('hit');
+          if(amount > 0) win(amount, 'Спин', lbl(v), __rnd);
+          sr.className = 'result ' + (amount >= roundBet ? 'good' : 'bad');
+          sr.innerHTML = 'Сектор ' + (idx + 1) + ': <b style="color:' + band(v) + '">' + lbl(v) + '</b> → ' + (amount > 0 ? 'выплата <b>+' + fmt(amount) + ' ⬦</b> (≈ ' + fmtRub(amount) + ')' : 'ставка ' + roundBet + ' ⬦ (≈ ' + fmtRub(roundBet) + ') не возвращается') + (isLoss ? ' · <span style="color:#ffcf6b">★ Большой ' + topLabel + ' пролетел в шаге от стрелки!</span>' : '');
+        }, 4650);
+      }
     }
     go.addEventListener('click',spin);
     wireBet(a,()=>{if(!busy)go.textContent='КРУТИТЬ · '+S.bet+' ⬦'});
@@ -4347,35 +4386,78 @@ function gameDrop(){
       if(busy)return;
       if(S.balance<S.bet){dr.className='result bad';dr.textContent='Недостаточно токенов — пополни баланс.';return}
       const roundBet = S.bet;
-      busy=true;place(roundBet,'Дроп');
-      qa('.slot').forEach(e=>e.classList.remove('hit'));
-      const rows=curM.rows;
-      const path=[0];let r=0;
-      for(let i=1;i<=rows;i++){r+=Math.random()<0.5?0:1;path.push(r)}
-      let slot=path[rows];
-      let v=curM.pay[slot];
-      const willWin = evalBaitTrap('drop', v >= 1, roundBet, Math.max(1.2, v));
-      if(!willWin && v >= 1){
-        const mid = Math.floor(curM.slots / 2);
-        slot = mid;
-        path[rows] = mid;
-      }
-      dr.className='result';dr.textContent='Шарик проходит развилки…';
-      const dur=2100,st=performance.now();
-      (function anim(now){
-        if(dead)return;
-        const pr=Math.min(1,(now-st)/dur);
-        draw(path,pr);
-        if(pr<1){raf=requestAnimationFrame(anim)}else{land(slot, roundBet)}
-      })(st);
+      busy = true;
+      const rnd = place(roundBet, 'Дроп');
+      qa('.slot').forEach(e => e.classList.remove('hit'));
+      dr.className = 'result';
+      dr.textContent = 'Шарик проходит развилки…';
+
+      const rows = curM.rows;
+      const waitPromise = (rnd && rnd.promise) ? rnd.promise.catch(() => {}) : Promise.resolve();
+
+      waitPromise.then(() => {
+        let isWin;
+        let finalAmt = 0;
+        if(rnd && rnd.verdict){
+          isWin = (rnd.verdict === 'win');
+          finalAmt = rnd.win || 0;
+        } else {
+          const randSlot = Math.floor(Math.random() * curM.slots);
+          isWin = evalBaitTrap('drop', curM.pay[randSlot] >= 1, roundBet, Math.max(1.2, curM.pay[randSlot]));
+        }
+
+        let slot = 0;
+        if(isWin){
+          const winSlots = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
+          if(finalAmt > 0){
+            const targetPay = finalAmt / roundBet;
+            winSlots.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
+            slot = winSlots[0];
+          } else {
+            slot = winSlots[Math.floor(Math.random() * winSlots.length)] || 0;
+          }
+        } else {
+          const lossSlots = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
+          slot = lossSlots[Math.floor(Math.random() * lossSlots.length)] || Math.floor(curM.slots / 2);
+        }
+
+        // Плавная траектория Plinko без телепортаций
+        const steps = [];
+        for(let i = 0; i < slot; i++) steps.push(1);
+        for(let i = 0; i < (rows - slot); i++) steps.push(0);
+        for(let i = steps.length - 1; i > 0; i--){
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = steps[i]; steps[i] = steps[j]; steps[j] = tmp;
+        }
+        const path = [0];
+        let curR = 0;
+        for(let i = 0; i < rows; i++){
+          curR += steps[i];
+          path.push(curR);
+        }
+
+        const dur = 2300, st = performance.now();
+        (function anim(now){
+          if(dead) return;
+          const pr = Math.min(1, (now - st) / dur);
+          draw(path, pr);
+          if(pr < 1){
+            raf = requestAnimationFrame(anim);
+          } else {
+            land(slot, roundBet, rnd);
+          }
+        })(st);
+      });
     }
-    function land(k, roundBet){
-      busy=false;
-      const sl=q('#ds'+k);if(sl)sl.classList.add('hit');
-      const v=curM.pay[k],amount=Math.floor(roundBet*v);
-      if(amount>0)win(amount,'Дроп','лунка '+(k+1)+' ×'+fx(v,v%1?1:0));
-      dr.className='result '+(amount>=roundBet?'good':'bad');
-      dr.innerHTML='Шарик упал в лунку '+(k+1)+': <b style="color:'+band(v)+'">×'+fx(v,v%1?1:0)+'</b> → '+(amount>0?'<b>+'+fmt(amount)+' ⬦</b> (≈ '+fmtRub(amount)+')':'возврат 0 ⬦ (ставка '+roundBet+' ⬦ ≈ '+fmtRub(roundBet)+')');
+    function land(k, roundBet, __rnd){
+      busy = false;
+      const sl = q('#ds' + k); if(sl) sl.classList.add('hit');
+      const v = curM.pay[k];
+      const isWin = (__rnd && __rnd.verdict) ? (__rnd.verdict === 'win') : (v >= 1);
+      const amount = (__rnd && __rnd.verdict === 'win') ? (__rnd.win || Math.floor(roundBet * v)) : (isWin ? Math.floor(roundBet * v) : 0);
+      if(amount > 0) win(amount, 'Дроп', 'лунка ' + (k + 1) + ' ×' + fx(v, v % 1 ? 1 : 0), __rnd);
+      dr.className = 'result ' + (amount >= roundBet ? 'good' : 'bad');
+      dr.innerHTML = 'Шарик упал в лунку ' + (k + 1) + ': <b style="color:' + band(v) + '">×' + fx(v, v % 1 ? 1 : 0) + '</b> → ' + (amount > 0 ? '<b>+' + fmt(amount) + ' ⬦</b> (≈ ' + fmtRub(amount) + ')' : 'возврат 0 ⬦ (ставка ' + roundBet + ' ⬦ ≈ ' + fmtRub(roundBet) + ')');
     }
     go.addEventListener('click',run);
     wireBet(a,()=>{if(!busy)go.textContent='СДЕЛАТЬ ДРОП · '+S.bet+' ⬦'});
@@ -4463,6 +4545,8 @@ function gameSkuf(){
       });
     }
 
+    let skufRnd = null;
+
     grid.addEventListener('click', e => {
       const cell = e.target.closest('.skuf-cell');
       if(!cell || busy || phase !== 'run') return;
@@ -4471,7 +4555,12 @@ function gameSkuf(){
 
       const nextMultCand = getMult(opened + 1);
       const naturalSafe = !skufIndices.has(idx);
-      const allowedSafe = evalBaitTrap('skuf', naturalSafe, roundBet, nextMultCand);
+      let allowedSafe;
+      if(skufRnd && skufRnd.verdict){
+        allowedSafe = (skufRnd.verdict === 'win');
+      } else {
+        allowedSafe = evalBaitTrap('skuf', naturalSafe, roundBet, nextMultCand);
+      }
       if(!allowedSafe && naturalSafe){
         skufIndices.add(idx);
       }
@@ -4507,7 +4596,7 @@ function gameSkuf(){
 
         const safeTotal = 25 - SKUF_MODES[curSkufMode].skufs;
         if(opened >= safeTotal){
-          win(winAmt, 'Скуф vs Альтушка', 'все Альтушки найдены');
+          win(winAmt, 'Скуф vs Альтушка', 'все Альтушки найдены', skufRnd);
           phase = 'done';
           res.innerHTML = `👑 <b>ВСЕ АЛЬТУШКИ НАЙДЕНЫ!</b> Выигрыш <b>+${fmt(winAmt)} ⬦</b>!`;
           take.disabled = true;
@@ -4524,7 +4613,7 @@ function gameSkuf(){
         return;
       }
       roundBet = S.bet;
-      place(roundBet, 'Скуф vs Альтушка');
+      skufRnd = place(roundBet, 'Скуф vs Альтушка');
       phase = 'run';
       opened = 0;
       openedSet.clear();
@@ -4546,7 +4635,7 @@ function gameSkuf(){
       if(phase !== 'run' || opened === 0) return;
       const finalMult = getMult(opened);
       const amount = Math.floor(roundBet * finalMult);
-      win(amount, 'Скуф vs Альтушка', `кэшаут ×${fx(finalMult)}`);
+      win(amount, 'Скуф vs Альтушка', `кэшаут ×${fx(finalMult)}`, skufRnd);
       phase = 'done';
       skufIndices.forEach(sIdx => {
         const sc = grid.children[sIdx];
@@ -4664,6 +4753,8 @@ function gameAvito(){
       });
     }
 
+    let avitoRnd = null;
+
     dealBtn.addEventListener('click', () => {
       if(busy) return;
       if(phase === 'idle' || phase === 'done'){
@@ -4674,7 +4765,7 @@ function gameAvito(){
           return;
         }
         roundBet = S.bet;
-        place(roundBet, 'Перекуп на Авито');
+        avitoRnd = place(roundBet, 'Перекуп на Авито');
         phase = 'run';
         step = 0;
         boxState = '';
@@ -4691,7 +4782,12 @@ function gameAvito(){
       setTimeout(() => {
         busy = false;
         const natAvitoWin = Math.random() < stepData.p;
-        const willAvitoWin = evalBaitTrap('avito', natAvitoWin, roundBet, stepData.mult);
+        let willAvitoWin;
+        if(avitoRnd && avitoRnd.verdict){
+          willAvitoWin = (avitoRnd.verdict === 'win');
+        } else {
+          willAvitoWin = evalBaitTrap('avito', natAvitoWin, roundBet, stepData.mult);
+        }
         if(willAvitoWin){
           step++;
           tgHaptic('light');
@@ -4702,7 +4798,7 @@ function gameAvito(){
           resMsg = `🤝 <b>Сделка успешна!</b> ${stepData.name} пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ⬦).`;
 
           if(step >= 3){
-            win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult));
+            win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult), avitoRnd);
             phase = 'done';
             resMsg = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Товар продан с максимальной наценкой: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ⬦</b>!`;
           }
@@ -4722,7 +4818,7 @@ function gameAvito(){
       if(phase !== 'run' || step === 0) return;
       const curMult = curLot.steps[step - 1].mult;
       const amount = Math.floor(roundBet * curMult);
-      win(amount, 'Перекуп на Авито', `кэшаут ×${fx(curMult)}`);
+      win(amount, 'Перекуп на Авито', `кэшаут ×${fx(curMult)}`, avitoRnd);
       phase = 'done';
       boxState = 'win';
       resClass = 'result good';
@@ -5507,9 +5603,12 @@ function gameCases(){
           }).join('');
 
           setTimeout(() => {
-            const cardW = 104;
-            const containerW = q('#caseRoulette').offsetWidth || 340;
-            const targetPos = (targetIndex * cardW) + (cardW / 2) - (containerW / 2);
+            const targetCard = strip.children[targetIndex];
+            const cardLeft = targetCard ? targetCard.offsetLeft : (targetIndex * 104);
+            const cardW = targetCard ? (targetCard.offsetWidth || 104) : 104;
+            const rouletteEl = q('#caseRoulette');
+            const containerW = rouletteEl ? (rouletteEl.clientWidth || rouletteEl.offsetWidth || 320) : 320;
+            const targetPos = Math.round(cardLeft + (cardW / 2) - (containerW / 2));
             strip.style.transition = 'transform 3.5s cubic-bezier(0.12, 0.8, 0.18, 1)';
             strip.style.transform = `translateX(-${targetPos}px)`;
 
@@ -6433,7 +6532,7 @@ function gameDice(){
     const lockedOver = Math.floor(1000000 * (1 - lockedChance / 100));
 
     isRolling = true;
-    place(roundBet, 'Dice', lockedPayout);   // множитель — выбор игрока, сервер его проверяет
+    const rnd = place(roundBet, 'Dice', lockedPayout);   // множитель — выбор игрока, сервер его проверяет
     tgHaptic('impact');
 
     const btnUnder = q('#btnDiceUnder', a);
@@ -6451,32 +6550,57 @@ function gameDice(){
       rollsCount++;
       const randN = Math.floor(Math.random() * 1000000);
       if(numEl) numEl.textContent = String(randN).padStart(6, '0');
-      if(rollsCount >= 8){
-        clearInterval(rollInterval);
-        finishRoll();
-      }
     }, 45);
 
-    function finishRoll(){
+    const minTime = 550;
+    const startTime = Date.now();
+    const waitPromise = (rnd && rnd.promise) ? rnd.promise.catch(() => {}) : Promise.resolve();
+
+    Promise.all([
+      waitPromise,
+      new Promise(res => setTimeout(res, minTime))
+    ]).then(() => {
+      clearInterval(rollInterval);
+      finishRoll(rnd);
+    });
+
+    function finishRoll(__rnd){
       isRolling = false;
       if(btnUnder) btnUnder.disabled = false;
       if(btnOver) btnOver.disabled = false;
 
-      let roll = Math.floor(Math.random() * 1000000);
-      const naturalWin = (side === 'under' && roll <= lockedUnder) || (side === 'over' && roll >= lockedOver);
-      const isWin = evalBaitTrap('dice', naturalWin, roundBet, lockedPayout);
-      if(isWin && !naturalWin){
-        roll = side === 'under' ? Math.floor(Math.random() * (lockedUnder + 1)) : lockedOver + Math.floor(Math.random() * (1000000 - lockedOver));
-      } else if(!isWin && naturalWin){
-        roll = side === 'under' ? Math.min(999999, lockedUnder + 1 + Math.floor(Math.random() * 2000)) : Math.max(0, lockedOver - 1 - Math.floor(Math.random() * 2000));
+      let isWin;
+      let winAmt;
+      if(__rnd && __rnd.verdict){
+        isWin = (__rnd.verdict === 'win');
+        winAmt = __rnd.win != null ? __rnd.win : Math.floor(roundBet * lockedPayout);
+      } else {
+        const localRoll = Math.floor(Math.random() * 1000000);
+        const naturalWin = (side === 'under' && localRoll <= lockedUnder) || (side === 'over' && localRoll >= lockedOver);
+        isWin = evalBaitTrap('dice', naturalWin, roundBet, lockedPayout);
+        winAmt = Math.floor(roundBet * lockedPayout);
+      }
+
+      let roll;
+      if(isWin){
+        if(side === 'under'){
+          roll = Math.floor(Math.random() * (lockedUnder + 1));
+        } else {
+          roll = lockedOver + Math.floor(Math.random() * (1000000 - lockedOver));
+        }
+      } else {
+        if(side === 'under'){
+          roll = lockedUnder + 1 + Math.floor(Math.random() * (1000000 - lockedUnder - 1));
+        } else {
+          roll = Math.floor(Math.random() * lockedOver);
+        }
       }
       lastRoll = roll;
       if(numEl) numEl.textContent = String(roll).padStart(6, '0');
 
       if(isWin){
         tgHaptic('win');
-        const winAmt = Math.floor(roundBet * lockedPayout);
-        win(winAmt, 'Dice', `${side==='under'?'Меньше':'Больше'} ×${lockedPayout}`);
+        win(winAmt, 'Dice', `${side==='under'?'Меньше':'Больше'} ×${lockedPayout}`, __rnd);
         if(numEl) numEl.className = 'dice-roll-num win';
         if(msgEl){
           msgEl.className = 'result good';
