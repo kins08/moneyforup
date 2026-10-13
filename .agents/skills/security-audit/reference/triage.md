@@ -115,7 +115,7 @@
 Вход:       POST /api/sync-balance  {"initData":"…","tokens":10000000,"game":"dice"}
 Условие:    наличие поля "game" отключает проверку скачка баланса
 Эффект:     баланс с 3 000 ⬦ → 10 000 000 ⬦ (1 000 000 ₽), далее /api/withdraw
-PoC:        scripts/poc-balance-bypass.js  → вывод кейса A/B
+PoC:        scripts/poc-balance-bypass.js  → РАЗДЕЛ 1 (живой сервер), кейсы A/B
 Фикс:       tokens приходят только от сервера; /api/sync-balance удалить
 Проверка:   повторный запуск PoC должен вернуть исходный баланс
 ```

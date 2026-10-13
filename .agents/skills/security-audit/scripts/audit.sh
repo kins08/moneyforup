@@ -230,15 +230,23 @@ cat <<'EOF'
 Дальше — вручную (скрипт тут бессилен):
   1. По каждому P0-маршруту пройти 4 вопроса из SKILL.md §4 Шаг 3
   2. Написать PoC и запустить локально:   node .agents/skills/security-audit/scripts/poc-balance-bypass.js
+     (этот PoC теперь бьёт по ЖИВОМУ серверу; exit 1 = эксплойт работает)
   3. Отсеять по reference/triage.md  →  FIX NOW / FIX SOON / Гипотезы
   4. Чинить по reference/fix-patterns.md, затем прогнать PoC повторно
 
 Проверка денежной логики на живом сервере (сильнее любого статического скана):
-  node .agents/skills/security-audit/scripts/e2e-exploit-test.js
-  node .agents/skills/security-audit/scripts/poc-db-double-write.js
+  node .agents/skills/security-audit/scripts/e2e-game-authority-test.js     # P0-1: исход раунда решает сервер
+  node .agents/skills/security-audit/scripts/e2e-exploit-test.js            # P0-5: баланс применяется один раз
+  node .agents/skills/security-audit/scripts/poc-db-double-write.js         # слой БД, без сервера
+Все три поднимают реальный bot.js в /tmp через scripts/lib/server-harness.js — прод не трогается.
 
 ИНВАРИАНТ ПОСЛЕ ФИКСА P0-5: баланс меняется ТОЛЬКО через applyBalance()/setBalanceTo() в bot.js.
 db.saveUser() больше НЕ пишет tokens — выставить баланс через неё нельзя (это норма, не баг).
+
+ИНВАРИАНТ ПОСЛЕ ФИКСА P0-1: клиент присылает только ВЫБОР (game, bet, mult).
+Выигрыш, вердикт и множитель сверх границ игры сервер обязан игнорировать.
+Сверка балансов: opening (50 ⬦ при регистрации, ВНЕ ledger) + SUM(ledger.amount) == users.tokens.
+Сравнивать SUM(ledger) с балансом напрямую НЕЛЬЗЯ — получишь ложное расхождение по каждому игроку.
 
 Базовая линия известных находок: reference/known-findings.md (не переоткрывать закрытое)
 EOF
