@@ -242,6 +242,24 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .vip-bar{height:100%;background:linear-gradient(90deg,#8b5cf6,#d946ef);border-radius:6px;transition:width .4s ease}
 .vip-sub{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600}
 
+/* ======== ТУРБО-БОНУС, NEAR-MISS И БЫСТРЫЙ ОТЫГРЫШ ======== */
+.near-miss-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:92%;max-width:390px;background:linear-gradient(135deg,#28151b,#180e12);border:1.5px solid rgba(239,68,68,.7);border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 36px rgba(0,0,0,.75),0 0 25px rgba(239,68,68,.35);z-index:9998;animation:nmtSlideIn .35s ease;backdrop-filter:blur(16px)}
+.near-miss-toast.hide{opacity:0;transform:translateX(-50%) translateY(-20px);transition:all .35s ease;pointer-events:none}
+@keyframes nmtSlideIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.near-miss-toast .nmt-flame{font-size:28px;animation:pulseTease .5s infinite alternate}
+.near-miss-toast .nmt-body{flex:1;min-width:0}
+.near-miss-toast .nmt-title{font-size:13.5px;font-weight:900;color:#fff;letter-spacing:.02em}
+.near-miss-toast .nmt-sub{font-size:11px;color:#fca5a5;margin-top:2px;line-height:1.3}
+.near-miss-toast .nmt-btn{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:11.5px;font-weight:850;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(239,68,68,.4);transition:transform .15s}
+.near-miss-toast .nmt-btn:active{transform:scale(.95)}
+
+.rev-amt-card{transition:all .2s ease}
+.rev-amt-card:hover{transform:translateY(-1px);background:rgba(255,255,255,.08)}
+.rev-amt-card.on{background:rgba(239,68,68,.12) !important;box-shadow:0 0 16px rgba(239,68,68,.25)}
+
+.turbo-offer-banner{transition:transform .2s ease,box-shadow .2s ease}
+.turbo-offer-banner:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,68,68,.3)}
+
 /* Колесо Фортуны карточка на витрине */
 .wheel-featured-card{background:linear-gradient(145deg,#1f1a30,#141022);border:1.5px solid rgba(168,85,247,.38);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s,border-color .2s;padding:15px 16px}
 .wheel-featured-card:hover{transform:translateY(-2px);border-color:rgba(168,85,247,.65)}
@@ -537,6 +555,27 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="muted small" style="margin:-8px 0 14px">10 ⬦ = 1 ₽ · баланс ≈ <b class="js-rub">5,00 ₽</b></div>
 <div class="actions"><button class="primary" data-nav="tokens">Токены</button><button class="secondary" data-nav="profile">Профиль</button></div>
 </div>
+
+<!-- Динамический оффер: Горячий бонус +25% на депозит (10 минут) -->
+<div class="turbo-offer-banner" id="gamesTurboOfferCard" style="background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(245,158,11,.15));border:1.5px solid rgba(239,68,68,.55);border-radius:20px;padding:13px 15px;margin-bottom:14px;cursor:pointer;box-shadow:0 8px 24px rgba(239,68,68,.25)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+      <div style="font-size:32px;line-height:1;animation:pulseTease .6s infinite alternate">🔥</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:900;background:#ef4444;color:#fff;padding:2px 7px;border-radius:6px;letter-spacing:.04em">ГОРЯЧИЙ ОФФЕР</span>
+          <b style="color:#fff;font-size:13.5px">+25% НА ДЕПОЗИТ</b>
+        </div>
+        <div class="muted small" style="margin-top:3px;font-size:11.5px;color:#fca5a5">Пополни от 150 ₽ в течение 10 мин и забери +25% токенов или Золотой кейс!</div>
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div class="turbo-timer-span" style="font-size:15px;font-weight:900;color:#ffcf6b;font-variant-numeric:tabular-nums;letter-spacing:.03em">09:59</div>
+      <button class="pillbtn" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:6px 11px;font-size:11.5px;font-weight:850;border-radius:10px;margin-top:4px">Забрать</button>
+    </div>
+  </div>
+</div>
+
 <!-- Обособленный верхний блок: Челлендж 24ч -->
 <div class="challenge-featured-card" data-game="challenge24">
   <div class="cfc-cover">
@@ -1183,6 +1222,9 @@ function place(bet,game,mult){
     // Демо-режим (без сервера) — баланс считаем локально
     S.balance-=bet;
     save();syncUI();
+    if(S.balance < 10){
+      setTimeout(() => openQuickRevengeModal('depleted', bet), 800);
+    }
     return null;
   }
 
@@ -1206,6 +1248,9 @@ function place(bet,game,mult){
         S.balance=r.tokens;
         try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
         syncUI();
+        if(r.tokens < 10 && (!r.win || r.win === 0)){
+          setTimeout(() => openQuickRevengeModal('depleted', bet), 800);
+        }
       }
       // Если анимация успела показать другой исход — не врём игроку
       if(rnd.shown && rnd.shown!==rnd.verdict){
@@ -1270,6 +1315,15 @@ function win(amount,game,note,rnd){
   // В серверном режиме: локальный расчёт "было + выигрыш" для отображения убран.
   // Баланс берётся ТОЛЬКО из ответа сервера (/api/record-bet и /api/balance).
   tgLoadBalance();
+
+  if(amount <= 0){
+    setTimeout(() => {
+      if((S.balance || 0) < 10){
+        openQuickRevengeModal('depleted', 0);
+      }
+    }, 850);
+  }
+
   return {paid, amount};
 }
 function deposit(tk,label,refBonus){
@@ -1400,6 +1454,380 @@ function evalBaitTrap(gameName, naturalWin, currentBet, targetMult){
   // Деньги всё равно уже посчитаны сервером: при расхождении игрок получит уведомление.
   if(rnd) rnd.shown = naturalWin ? 'win' : 'lose';
   return naturalWin;
+}
+
+/* ==================== ОРГАНИЧЕСКИЙ NEAR-MISS (ЭФФЕКТ «ПОЧТИ ЗАНОС») ====================
+   Когда раунд проигрышный (особенно на All-in или крупной ставке), визуальная часть
+   создаёт естественный драматизм: результат останавливается в правдоподобной близости
+   от выигрыша с ощутимым запасом (например, 15–25° в колесе, 2–4% в дайсе, 2 карточки в кейсах),
+   чтобы игрок не заподозрил искусственного «впритык на 1 пиксель».                       */
+function isNearMissEligible(bet){
+  const b = S.balance || 0;
+  // All-in (>= 45% баланса), крупная ставка (>= 200) или органический шанс 40% раундов
+  return (bet >= b * 0.45) || (bet >= 200) || (Math.random() < 0.40);
+}
+
+/* ==================== СИСТЕМА РЕТЕНШЕНА: ТУРБО-ОФФЕР, БЫСТРЫЙ ОТЫГРЫШ, NEAR-MISS ==================== */
+let __lastRevengeModalTime = 0;
+let __lastNearMissToastTime = 0;
+
+function applyQuickDeposit(amtRub, bonusTag, methodId){
+  screen('tokens');
+  const payInp = q('#payRub');
+  if(payInp){
+    payInp.value = amtRub;
+    payInp.dispatchEvent(new Event('input'));
+  }
+  qa('#payAmounts .chip').forEach(c => {
+    c.classList.toggle('on', +c.dataset.pa === +amtRub);
+  });
+  if(methodId !== undefined){
+    qa('#payMethods .chip').forEach(c => {
+      c.classList.toggle('on', +c.dataset.pm === +methodId);
+    });
+    const sbpRequisites = q('#sbpRequisites');
+    const promoBox = q('#promoBox');
+    const paySumBlock = q('#paySumBlock');
+    if(sbpRequisites) sbpRequisites.style.display = (methodId === 0 ? 'block' : 'none');
+    if(promoBox) promoBox.style.display = (methodId === 4 ? 'block' : 'none');
+    if(paySumBlock) paySumBlock.style.display = (methodId === 4 ? 'none' : 'block');
+  }
+  if(typeof paySync === 'function') paySync();
+  const payMsg = q('#payMsg');
+  if(payMsg && bonusTag){
+    payMsg.style.display = 'block';
+    payMsg.className = 'result good';
+    if(bonusTag === '25'){
+      payMsg.innerHTML = `🔥 <b>Активирован горячий бонус +25%!</b> При пополнении на ${amtRub} ₽ вы получите <b>+${fmt(Math.floor(amtRub * RATE * 0.25))} ⬦</b> сверху!`;
+    } else if(bonusTag === 'goldcase'){
+      payMsg.innerHTML = `🎁 <b>Активирован бесплатный золотой кейс!</b> При пополнении от 300 ₽ легендарный секретный бокс добавится в ваш профиль!`;
+    }
+  }
+  const target = q('#payGo') || q('#paySumBlock');
+  if(target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function triggerNearMissEffect(gameName, details, betAmt){
+  const now = Date.now();
+  if(now - __lastNearMissToastTime < 3000) return;
+  __lastNearMissToastTime = now;
+
+  try {
+    if(TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred('warning');
+    else tgHaptic('warning');
+  } catch(_) {}
+
+  showNearMissToast(gameName, details);
+
+  const b = S.balance || 0;
+  if(b < 10 || (betAmt && (betAmt >= 100 || betAmt >= b * 0.45))){
+    setTimeout(() => {
+      openQuickRevengeModal('near_miss', betAmt);
+    }, 850);
+  }
+}
+
+function showNearMissToast(gameName, details){
+  const existing = q('.near-miss-toast');
+  if(existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'near-miss-toast';
+  toast.innerHTML = `
+    <div class="nmt-flame">🔥</div>
+    <div class="nmt-body">
+      <div class="nmt-title">УДАЧА РЯДОМ! ⚡️</div>
+      <div class="nmt-sub">${details || 'Коэффициент сорвался в шаге от победы! Заряди баланс и забери куш!'}</div>
+    </div>
+    <button class="nmt-btn" id="btnNearMissRevenge">Отыграться</button>
+  `;
+  document.body.appendChild(toast);
+
+  const btn = q('#btnNearMissRevenge', toast);
+  if(btn){
+    btn.onclick = () => {
+      toast.remove();
+      openQuickRevengeModal('near_miss', 150);
+    };
+  }
+
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 400);
+  }, 4200);
+}
+
+function openQuickRevengeModal(reason, betAmt){
+  const now = Date.now();
+  if(now - __lastRevengeModalTime < 8000) return;
+  __lastRevengeModalTime = now;
+
+  const existing = q('.revenge-modal-wrap');
+  if(existing) existing.remove();
+
+  try {
+    if(TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred('warning');
+    else tgHaptic('warning');
+  } catch(_) {}
+
+  const modal = document.createElement('div');
+  modal.className = 'inv-modal-wrap revenge-modal-wrap';
+  modal.innerHTML = `
+    <div class="inv-modal-box revenge-modal-box" style="max-width:390px;padding:22px 18px;text-align:center;border:1.5px solid rgba(239,68,68,0.55);box-shadow:0 0 40px rgba(239,68,68,0.35),0 20px 50px rgba(0,0,0,0.85);background:linear-gradient(155deg,#24141b 0%,#150e12 60%,#0e090b 100%)">
+      <button class="inv-modal-close" id="btnRevClose">✕</button>
+      
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;font-size:11px;font-weight:900;padding:4px 10px;border-radius:10px;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">
+        <span style="animation:pulseTease .6s infinite alternate">🔥</span> ${reason === 'near_miss' ? 'ПОЧТИ ЗАНОС!' : 'ЗАРЯДИ БАНКРОЛЛ'}
+      </div>
+
+      <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;letter-spacing:-0.02em">
+        ${reason === 'near_miss' ? 'УДАЧА РЯДОМ — ОТЫГРАЙСЯ!' : 'ОТЫГРАЙСЯ В 1 КЛИК! ⚡️'}
+      </div>
+
+      <div class="muted small" style="margin-bottom:14px;line-height:1.45;color:#f3f4f6">
+        ${reason === 'near_miss'
+          ? 'Куш сорвался буквально в шаге! Не отпускай кураж — заряди баланс и забери свой занос прямо сейчас!'
+          : 'Баланс на нуле, но серия побед только начинается! Пополни счёт с горячим бонусом и вернись в игру!'}
+      </div>
+
+      <!-- Таймер горячего оффера -->
+      <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1px solid rgba(239,68,68,0.35);border-radius:14px;padding:10px 12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="text-align:left">
+          <div style="font-size:12px;font-weight:900;color:#fff;display:flex;align-items:center;gap:5px">
+            <span>⚡️ БОНУС +25% НА ДЕПОЗИТ</span>
+          </div>
+          <div class="muted" style="font-size:10.5px;color:#fca5a5">или Золотой кейс за деп от 300 ₽</div>
+        </div>
+        <div class="turbo-timer-span" style="font-size:16px;font-weight:900;color:#ffcf6b;font-variant-numeric:tabular-nums;letter-spacing:0.5px">09:59</div>
+      </div>
+
+      <!-- Быстрый выбор сумм -->
+      <div style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:left;margin-bottom:6px">ВЫБЕРИТЕ СУММУ ПОПОЛНЕНИЯ:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="rev-amt-card on" data-amt="150" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(239,68,68,0.8);border-radius:12px;padding:9px;cursor:pointer;text-align:left">
+          <div style="font-size:15px;font-weight:900;color:#fff">150 ₽</div>
+          <div style="font-size:11px;color:#3ddc96;font-weight:700">1 500 ⬦ · Быстрый старт</div>
+        </div>
+        <div class="rev-amt-card" data-amt="300" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px;cursor:pointer;text-align:left">
+          <div style="font-size:15px;font-weight:900;color:#ffcf6b">300 ₽</div>
+          <div style="font-size:11px;color:#ffcf6b;font-weight:700">3 000 ⬦ + 🎁 Золотой кейс</div>
+        </div>
+        <div class="rev-amt-card" data-amt="500" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px;cursor:pointer;text-align:left">
+          <div style="font-size:15px;font-weight:900;color:#fff">500 ₽</div>
+          <div style="font-size:11px;color:#ef4444;font-weight:800">6 250 ⬦ · Бонус +25%!</div>
+        </div>
+        <div class="rev-amt-card" data-amt="1000" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px;cursor:pointer;text-align:left">
+          <div style="font-size:15px;font-weight:900;color:#c084fc">1 000 ₽</div>
+          <div style="font-size:11px;color:#c084fc;font-weight:800">13 000 ⬦ + VIP-ранг!</div>
+        </div>
+      </div>
+
+      <!-- Кнопки моментальной оплаты -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        <button class="control rev-pay-btn" data-method="0" style="margin:0;background:linear-gradient(135deg,#ef4444,#dc2626);font-size:13.5px;font-weight:900;box-shadow:0 6px 20px rgba(239,68,68,0.4)">
+          ⚡️ СБП / КАРТА (В 1 КЛИК)
+        </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="control ghost rev-pay-btn" data-method="5" style="margin:0;font-size:12px;padding:9px 6px;border-color:rgba(255,255,255,0.2)">
+            🪙 Крипта (USDT)
+          </button>
+          <button class="control ghost rev-pay-btn" data-method="stars" style="margin:0;font-size:12px;padding:9px 6px;border-color:rgba(255,255,255,0.2)">
+            ⭐️ TG Stars
+          </button>
+        </div>
+      </div>
+
+      <button class="linkbtn" id="btnRevLater" style="font-size:12px;color:var(--muted);padding:4px">Позже, продолжить просмотр</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  let curSelectedAmt = 150;
+  qa('.rev-amt-card', modal).forEach(card => {
+    card.onclick = () => {
+      qa('.rev-amt-card', modal).forEach(c => {
+        c.classList.remove('on');
+        c.style.borderColor = 'rgba(255,255,255,0.1)';
+      });
+      card.classList.add('on');
+      card.style.borderColor = 'rgba(239,68,68,0.8)';
+      curSelectedAmt = +card.dataset.amt;
+      tgHaptic('light');
+    };
+  });
+
+  qa('.rev-pay-btn', modal).forEach(btn => {
+    btn.onclick = () => {
+      const method = btn.dataset.method;
+      modal.remove();
+      if(method === 'stars'){
+        applyQuickDeposit(curSelectedAmt, 'stars', 0);
+      } else {
+        const bonusTag = curSelectedAmt === 500 ? '25' : (curSelectedAmt === 300 ? 'goldcase' : '');
+        applyQuickDeposit(curSelectedAmt, bonusTag, +method);
+      }
+    };
+  });
+
+  const cBtn = q('#btnRevClose', modal);
+  if(cBtn) cBtn.onclick = () => modal.remove();
+  const lBtn = q('#btnRevLater', modal);
+  if(lBtn) lBtn.onclick = () => modal.remove();
+}
+
+function openBoostHubModal(){
+  const existing = q('.boost-hub-modal-wrap');
+  if(existing) existing.remove();
+
+  try { if(TG && TG.HapticFeedback) TG.HapticFeedback.impactOccurred('medium'); else tgHaptic('light'); } catch(_) {}
+
+  const depRub = S.totalDeposited || 0;
+  const vip = (typeof getVipInfo === 'function') ? getVipInfo(depRub) : null;
+  const leftRub = vip && vip.next ? Math.max(0, vip.next.depReq - depRub) : 0;
+  const leftTokens = leftRub * RATE;
+
+  const modal = document.createElement('div');
+  modal.className = 'inv-modal-wrap boost-hub-modal-wrap';
+  modal.innerHTML = `
+    <div class="inv-modal-box" style="max-width:390px;padding:22px 18px;text-align:left;border:1.5px solid rgba(255,207,107,0.45);box-shadow:0 0 35px rgba(255,207,107,0.25),0 20px 50px rgba(0,0,0,0.85);background:linear-gradient(155deg,#231d16 0%,#161310 60%,#0f0d0b 100%)">
+      <button class="inv-modal-close" id="btnBoostHubClose">✕</button>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:24px">🚀</span>
+        <div>
+          <div style="font-size:18px;font-weight:900;color:#fff">MUP BOOST-ЦЕНТР</div>
+          <div class="muted small" style="font-size:11px">Ускорители банка и эксклюзивные предложения</div>
+        </div>
+      </div>
+
+      <!-- VIP статус -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 12px;margin:12px 0 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>${vip ? vip.cur.icon : '🥉'}</span>
+            <b style="color:#fff;font-size:13px">${vip ? vip.cur.name : 'Бронза'}</b>
+            <span class="pill" style="font-size:10px;font-weight:800;color:#3ddc96">${vip ? vip.cur.cbPct.toFixed(1) : '2.0'}% кэшбэк</span>
+          </div>
+          <span class="muted small">${vip ? vip.pct : 0}%</span>
+        </div>
+        <div class="challenge-bar-wrap" style="height:6px;background:rgba(0,0,0,0.4);border-radius:6px;margin:8px 0 6px">
+          <div class="challenge-bar" style="height:100%;background:linear-gradient(90deg,#ffcf6b,#f59e0b);border-radius:6px;width:${vip ? vip.pct : 0}%"></div>
+        </div>
+        <div class="muted small" style="font-size:11px">
+          ${vip && vip.next ? `Вам не хватает всего <b>${fmt(leftTokens)} ⬦</b> (${fmt(leftRub)} ₽) до ранга «${vip.next.name}»!` : 'Максимальный ранг достигнут! 👑'}
+        </div>
+      </div>
+
+      <!-- Горячий оффер +25% -->
+      <div style="background:linear-gradient(135deg,rgba(239,68,68,0.22),rgba(245,158,11,0.15));border:1.5px solid rgba(239,68,68,0.5);border-radius:14px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:900;color:#fff;font-size:13.5px">🔥 БОНУС +25% НА ДЕПОЗИТ</div>
+          <div class="turbo-timer-span" style="font-size:14px;font-weight:900;color:#ffcf6b;font-variant-numeric:tabular-nums">09:59</div>
+        </div>
+        <div class="muted small" style="margin:4px 0 10px;font-size:11.5px;color:#fca5a5">
+          Пополни счёт от 150 ₽ в течение 10 минут и забери +25% токенов или Золотой кейс в подарок!
+        </div>
+
+        <!-- Предустановленные суммы -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <div class="boost-amt-card" data-amt="150" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:7px;cursor:pointer">
+            <div style="font-size:13.5px;font-weight:900;color:#fff">150 ₽</div>
+            <div style="font-size:10px;color:#3ddc96;font-weight:700">1 500 ⬦ · Старт</div>
+          </div>
+          <div class="boost-amt-card" data-amt="300" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:7px;cursor:pointer">
+            <div style="font-size:13.5px;font-weight:900;color:#ffcf6b">300 ₽</div>
+            <div style="font-size:10px;color:#ffcf6b;font-weight:700">3 000 ⬦ + 🎁 Кейс</div>
+          </div>
+          <div class="boost-amt-card on" data-amt="500" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(239,68,68,0.8);border-radius:10px;padding:7px;cursor:pointer">
+            <div style="font-size:13.5px;font-weight:900;color:#fff">500 ₽</div>
+            <div style="font-size:10px;color:#ef4444;font-weight:800">6 250 ⬦ · +25%!</div>
+          </div>
+          <div class="boost-amt-card" data-amt="1000" style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:7px;cursor:pointer">
+            <div style="font-size:13.5px;font-weight:900;color:#c084fc">1 000 ₽</div>
+            <div style="font-size:10px;color:#c084fc;font-weight:800">13 000 ⬦ + VIP</div>
+          </div>
+        </div>
+
+        <button class="control" id="btnBoostGoDeposit" style="margin:0;padding:10px;font-size:13px;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 15px rgba(239,68,68,0.4)">
+          ⚡️ ПОПОЛНИТЬ В 1 КЛИК (СБП/КАРТЫ)
+        </button>
+      </div>
+
+      <!-- Быстрый переход к режимам -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div class="item" id="boostGoHd" style="margin:0;padding:10px;cursor:pointer;border-color:rgba(255,255,255,0.1)">
+          <div style="font-size:20px;margin-bottom:2px">📦</div>
+          <b style="font-size:12.5px;color:#fff">Hot Drop</b>
+          <div class="muted small" style="font-size:10.5px">Ежечасный бокс</div>
+        </div>
+        <div class="item" id="boostGoCh" style="margin:0;padding:10px;cursor:pointer;border-color:rgba(255,255,255,0.1)">
+          <div style="font-size:20px;margin-bottom:2px">🎯</div>
+          <b style="font-size:12.5px;color:#fff">Челленджи</b>
+          <div class="muted small" style="font-size:10.5px">Стрик до 7 дней</div>
+        </div>
+      </div>
+
+      <button class="control ghost" id="btnBoostViewVip" style="width:100%;margin:0;font-size:12px;padding:9px;border-color:rgba(255,207,107,0.4);color:#ffcf6b">
+        👑 Все ранги кэшбэка & Рейкбек
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  let curBoostAmt = 500;
+  qa('.boost-amt-card', modal).forEach(card => {
+    card.onclick = () => {
+      qa('.boost-amt-card', modal).forEach(c => {
+        c.classList.remove('on');
+        c.style.borderColor = 'rgba(255,255,255,0.12)';
+      });
+      card.classList.add('on');
+      card.style.borderColor = 'rgba(239,68,68,0.8)';
+      curBoostAmt = +card.dataset.amt;
+      tgHaptic('light');
+    };
+  });
+
+  const cBtn = q('#btnBoostHubClose', modal);
+  if(cBtn) cBtn.onclick = () => modal.remove();
+  const depBtn = q('#btnBoostGoDeposit', modal);
+  if(depBtn) depBtn.onclick = () => {
+    modal.remove();
+    const bonusTag = curBoostAmt === 500 ? '25' : (curBoostAmt === 300 ? 'goldcase' : '');
+    applyQuickDeposit(curBoostAmt, bonusTag, 0);
+  };
+  const hdBtn = q('#boostGoHd', modal);
+  if(hdBtn) hdBtn.onclick = () => { modal.remove(); play('hotdrop'); };
+  const chBtn = q('#boostGoCh', modal);
+  if(chBtn) chBtn.onclick = () => { modal.remove(); play('challenge24'); };
+  const vipBtn = q('#btnBoostViewVip', modal);
+  if(vipBtn) vipBtn.onclick = () => { modal.remove(); showVipRanksModal(); };
+}
+
+/* Таймер динамического турбо-оффера (10 минут) */
+function initTurboOfferTimer(){
+  let end = 0;
+  try { end = Number(sessionStorage.getItem('turboOfferEnd') || 0); } catch(_) {}
+  const now = Date.now();
+  if(!end || end <= now){
+    end = now + 10 * 60 * 1000;
+    try { sessionStorage.setItem('turboOfferEnd', String(end)); } catch(_) {}
+  }
+  function update(){
+    const cur = Date.now();
+    let left = Math.max(0, end - cur);
+    if(left <= 0){
+      end = Date.now() + 10 * 60 * 1000;
+      try { sessionStorage.setItem('turboOfferEnd', String(end)); } catch(_) {}
+      left = 10 * 60 * 1000;
+    }
+    const mins = Math.floor(left / 60000);
+    const secs = Math.floor((left % 60000) / 1000);
+    const txt = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    qa('.turbo-timer-span').forEach(el => { el.textContent = txt; });
+  }
+  update();
+  setInterval(update, 1000);
 }
 
 /* ==================== ИНВЕНТАРЬ (СЕРВЕРНЫЙ) ====================
@@ -2468,10 +2896,11 @@ function syncVipUI(){
   if(info.next){
     if(barEl) barEl.style.width = info.pct + '%';
     const leftDep = info.next.depReq - (S.totalDeposited || 0);
-    if(nextEl) nextEl.textContent = `До «${info.next.name}»: ${fmt(leftDep)} ₽ (+${fmt(info.next.bonus)} ⬦)`;
+    const leftTk = leftDep * RATE;
+    if(nextEl) nextEl.innerHTML = `Вам не хватает всего <b>${fmt(leftTk)} ⬦</b> (${fmt(leftDep)} ₽) до ранга <b>«${info.next.name}»</b> (+${fmt(info.next.bonus)} ⬦)!`;
   } else {
     if(barEl) barEl.style.width = '100%';
-    if(nextEl) nextEl.textContent = 'Максимальный ранг достигнут!';
+    if(nextEl) nextEl.textContent = 'Максимальный ранг достигнут! 👑';
   }
 }
 
@@ -2691,6 +3120,14 @@ function gameWheel(){
     <button class="control" id="btnSpinWheel" style="margin-top:16px;background:linear-gradient(135deg,#9333ea,#7c3aed)">КРУТИТЬ БЕСПЛАТНО</button>
     <div class="result" id="wheelResult" style="margin-top:10px">Нажмите «КРУТИТЬ БЕСПЛАТНО», чтобы запустить колесо.</div>
 
+    <div id="wheelPromoWrap" style="margin-top:12px;display:none">
+      <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1.5px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px;text-align:center">
+        <div style="font-weight:900;color:#fff;font-size:13px">🔥 Не хотите ждать 12 часов?</div>
+        <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Зарядите баланс от 150 ₽ с бонусом +25% и крутите слоты без пауз!</div>
+        <button class="control" id="btnWheelDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ С БОНУСОМ +25%</button>
+      </div>
+    </div>
+
     <div class="item" style="margin-top:14px;text-align:left">
       <b>Секторы Колеса Фортуны:</b>
       <div class="statgrid" style="margin-top:8px">
@@ -2710,6 +3147,11 @@ function gameWheel(){
   function syncStatus(){
     const left = getWheelTimeLeft();
     updateWheelCardStatus();
+    const promoEl = q('#wheelPromoWrap', a);
+    if(promoEl) promoEl.style.display = (left > 0) ? 'block' : 'none';
+    const depEl = q('#btnWheelDeposit', a);
+    if(depEl) depEl.onclick = () => applyQuickDeposit(500, '25');
+
     if(spinBtn && !isWheelSpinning){
       if(left === 0){
         spinBtn.disabled = false;
@@ -2721,7 +3163,7 @@ function gameWheel(){
     }
   }
 
-  function startSpin(){
+  async function startSpin(){
     if(isWheelSpinning) return;
     const left = getWheelTimeLeft();
     if(left > 0) return;
@@ -2730,21 +3172,39 @@ function gameWheel(){
     if(spinBtn) { spinBtn.disabled = true; spinBtn.textContent = 'КОЛЕСО ВРАЩАЕТСЯ...'; }
     if(resEl) { resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
 
-    const rand = Math.random();
-    const depRub = S.totalDeposited || S.lastDeposit || 0;
     let targetIdx = 0;
-    if(depRub <= 0){
-      // Без депозитов выпадают только стартовые секторы +25 или +50 ⬦
-      targetIdx = (rand < 0.65) ? ((Math.random() < 0.5) ? 0 : 6) : ((Math.random() < 0.5) ? 1 : 4);
+    let prize = null;
+
+    if(IS_TG && API_BASE){
+      try {
+        const res = await tgCall('/api/claim-wheel', {});
+        if(!res || !res.ok){
+          throw new Error((res && res.error) || 'Ошибка получения награды');
+        }
+        targetIdx = res.targetIdx != null ? res.targetIdx : 0;
+        prize = WHEEL_SECTORS[targetIdx] || { val: res.prize || 25, label: `+${res.prize || 25} ⬦` };
+        if(res.balance != null) S.balance = res.balance;
+      } catch(e) {
+        isWheelSpinning = false;
+        if(spinBtn) { spinBtn.disabled = false; spinBtn.textContent = 'КРУТИТЬ БЕСПЛАТНО'; }
+        if(resEl) { resEl.className = 'result bad'; resEl.textContent = (e && e.message) || 'Ошибка спина'; }
+        return;
+      }
     } else {
-      if(rand < 0.45) targetIdx = (Math.random() < 0.5) ? 0 : 6;
-      else if(rand < 0.82) targetIdx = (Math.random() < 0.5) ? 1 : 4;
-      else if(rand < 0.94) targetIdx = 2;
-      else if(rand < 0.99) targetIdx = 3;
-      else targetIdx = 5;
+      const rand = Math.random();
+      const depRub = S.totalDeposited || S.lastDeposit || 0;
+      if(depRub <= 0){
+        targetIdx = (rand < 0.65) ? ((Math.random() < 0.5) ? 0 : 6) : ((Math.random() < 0.5) ? 1 : 4);
+      } else {
+        if(rand < 0.45) targetIdx = (Math.random() < 0.5) ? 0 : 6;
+        else if(rand < 0.82) targetIdx = (Math.random() < 0.5) ? 1 : 4;
+        else if(rand < 0.94) targetIdx = 2;
+        else if(rand < 0.99) targetIdx = 3;
+        else targetIdx = 5;
+      }
+      prize = WHEEL_SECTORS[targetIdx];
     }
 
-    const prize = WHEEL_SECTORS[targetIdx];
     const numSectors = WHEEL_SECTORS.length;
     const arc = (Math.PI * 2) / numSectors;
 
@@ -2779,7 +3239,11 @@ function gameWheel(){
         isWheelSpinning = false;
         S.lastWheelSpin = Date.now();
         S.wheelNotified = false;
-        win(prize.val, 'Колесо Фортуны', prize.label);
+        if(!IS_TG || !API_BASE){
+          win(prize.val, 'Колесо Фортуны', prize.label);
+        } else {
+          addHist('Колесо Фортуны · ' + prize.label, prize.val);
+        }
         save();
         syncUI();
         syncStatus();
@@ -2788,6 +3252,9 @@ function gameWheel(){
         if(resEl){
           resEl.className = 'result good';
           resEl.innerHTML = `🎉 <b>ПОЗДРАВЛЯЕМ!</b> Вы выиграли <b style="color:#ffcf6b">+${prize.val} ⬦</b> (${fmtRub(prize.val)})! Награда зачислена.`;
+        }
+        if(targetIdx === 6 || targetIdx === 0){
+          triggerNearMissEffect('Колесо Фортуны', 'Стрелка замерла буквально в одном секторе от ДЖЕКПОТА +1 000 ⬦!', 150);
         }
       }
     }
@@ -3600,6 +4067,7 @@ function gameRacket(){
     if(S.balance < B.bet){
       rr.className='result bad';
       rr.textContent=`Ставка #${num} (${B.bet} ⬦) не принята: не хватает токенов.`;
+      openQuickRevengeModal('depleted', 150);
       return;
     }
     B.lockedBet=B.bet;
@@ -3771,9 +4239,16 @@ function gameRacket(){
           if(hadActive){
             tgHaptic('lose');
             rr.className='result bad';
+            const nearMissText = (crash >= 1.75 && crash <= 2.25)
+              ? ` Ракета долетела до <b style="color:${band(crash)}">×${fx(crash)}</b> — немного не хватило до солидного куша! В следующем раунде шансы на высокий полёт растут.`
+              : '';
             rr.innerHTML=crash<=1
               ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Не забранные ставки сгорели.`
-              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Не забранные ставки сгорели.`;
+              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>.${nearMissText} Не забранные ставки сгорели.`;
+            const totalLost = (B1.inRound && !B1.cashed ? (B1.lockedBet || B1.bet || 0) : 0) + (B2.inRound && !B2.cashed ? (B2.lockedBet || B2.bet || 0) : 0);
+            if(crash >= 1.5 && totalLost > 0){
+              triggerNearMissEffect('Ракетка', `Ракета долетела до ×${fx(crash)} — ещё секунда и был бы куш!`, totalLost);
+            }
           }
         }
       }
@@ -3989,7 +4464,12 @@ function gameJumper(){
     if(busy)return;
     if(phase==='done')reset();
     if(phase==='idle'){
-      if(S.balance<S.bet){jr.className='result bad';jr.textContent='Недостаточно токенов — пополни баланс.';return}
+      if(S.balance<S.bet){
+        jr.className='result bad';
+        jr.textContent='Недостаточно токенов — пополни баланс.';
+        openQuickRevengeModal('depleted', 150);
+        return;
+      }
       roundBet=S.bet;
       jumperRnd = place(roundBet,'Попрыгун');
       phase='run';
@@ -4041,6 +4521,9 @@ function gameJumper(){
           phase='done';busy=false;tgHaptic('lose');
           jr.className='result bad';
           jr.innerHTML='Срыв на уровне '+(level+1)+'. Ставка '+roundBet+' ⬦ (≈ '+fmtRub(roundBet)+') потеряна.';
+          if(isNearMissEligible(roundBet) || level >= 2){
+            triggerNearMissEffect('Попрыгун', level >= 2 ? `Срыв на высоте ×${fx(xn(level))} — следующая ступень была в шаге!` : 'Срыв в начале прыжка!', roundBet);
+          }
           refresh();
           t2=setTimeout(()=>{if(dead)return;if(phase==='done')jr.innerHTML+=' <span class="muted">Жми «ПРЫЖОК» — новый заход.</span>'},500);
         }
@@ -4182,7 +4665,12 @@ function gameSpin(){
 
     function spin(){
       if(busy)return;
-      if(S.balance<S.bet){sr.className='result bad';sr.textContent='Недостаточно токенов — пополни баланс.';return}
+      if(S.balance<S.bet){
+        sr.className='result bad';
+        sr.textContent='Недостаточно токенов — пополни баланс.';
+        openQuickRevengeModal('depleted', 150);
+        return;
+      }
       const roundBet = S.bet;
       busy = true;
       const rnd = place(roundBet, 'Спин');
@@ -4235,7 +4723,8 @@ function gameSpin(){
         }
         const topLabel = lbl(maxPay);
 
-        const edgeOffset = isLoss ? (Math.random() < 0.5 ? 0.22 : 0.78) : 0.5;
+        // Органичный отступ: не на самом волоске (0.15), а в естественной зоне 0.30–0.38 или 0.62–0.70 (комфортное удаление от границы)
+        const edgeOffset = isLoss ? (isNearMissEligible(roundBet) ? (Math.random() < 0.5 ? 0.32 : 0.68) : 0.5) : 0.5;
         const cen = (idx + edgeOffset) * segAngle;
         const curMod = ((rot % 360) + 360) % 360;
         rot += ((-cen - curMod) % 360 + 360) % 360 + 360 * 4;
@@ -4284,6 +4773,9 @@ function gameSpin(){
           if(amount > 0) win(amount, 'Спин', lbl(v), __rnd);
           sr.className = 'result ' + (amount >= roundBet ? 'good' : 'bad');
           sr.innerHTML = 'Сектор ' + (idx + 1) + ': <b style="color:' + band(v) + '">' + lbl(v) + '</b> → ' + (amount > 0 ? 'выплата <b>+' + fmt(amount) + ' ⬦</b> (≈ ' + fmtRub(amount) + ')' : 'ставка ' + roundBet + ' ⬦ (≈ ' + fmtRub(roundBet) + ') не возвращается') + (isLoss ? ' · <span style="color:#ffcf6b">★ Большой ' + topLabel + ' пролетел в шаге от стрелки!</span>' : '');
+          if(isLoss && isNearMissEligible(roundBet)){
+            triggerNearMissEffect('Спин', `Большой ${topLabel} пролетел в шаге от стрелки!`, roundBet);
+          }
         }, 4650);
       }
     }
@@ -4384,7 +4876,12 @@ function gameDrop(){
 
     function run(){
       if(busy)return;
-      if(S.balance<S.bet){dr.className='result bad';dr.textContent='Недостаточно токенов — пополни баланс.';return}
+      if(S.balance<S.bet){
+        dr.className='result bad';
+        dr.textContent='Недостаточно токенов — пополни баланс.';
+        openQuickRevengeModal('depleted', 150);
+        return;
+      }
       const roundBet = S.bet;
       busy = true;
       const rnd = place(roundBet, 'Дроп');
@@ -4458,6 +4955,9 @@ function gameDrop(){
       if(amount > 0) win(amount, 'Дроп', 'лунка ' + (k + 1) + ' ×' + fx(v, v % 1 ? 1 : 0), __rnd);
       dr.className = 'result ' + (amount >= roundBet ? 'good' : 'bad');
       dr.innerHTML = 'Шарик упал в лунку ' + (k + 1) + ': <b style="color:' + band(v) + '">×' + fx(v, v % 1 ? 1 : 0) + '</b> → ' + (amount > 0 ? '<b>+' + fmt(amount) + ' ⬦</b> (≈ ' + fmtRub(amount) + ')' : 'возврат 0 ⬦ (ставка ' + roundBet + ' ⬦ ≈ ' + fmtRub(roundBet) + ')');
+      if(amount < roundBet && isNearMissEligible(roundBet)){
+        triggerNearMissEffect('Дроп', 'Шарик отскочил в лунку рядом с мега-множителем!', roundBet);
+      }
     }
     go.addEventListener('click',run);
     wireBet(a,()=>{if(!busy)go.textContent='СДЕЛАТЬ ДРОП · '+S.bet+' ⬦'});
@@ -4557,7 +5057,30 @@ function gameSkuf(){
       const naturalSafe = !skufIndices.has(idx);
       let allowedSafe;
       if(skufRnd && skufRnd.verdict){
-        allowedSafe = (skufRnd.verdict === 'win');
+        if(skufRnd.verdict === 'win'){
+          allowedSafe = true;
+        } else {
+          // Проигрышный раунд: на All-in / крупной ставке даём естественно открыть 2 клетки (до ×1.5–1.8),
+          // чтобы игрок почувствовал занос, и драматично завершаем на 3-й клетке — без подвоха!
+          if(isNearMissEligible(roundBet)){
+            if(opened < 2){
+              allowedSafe = true;
+              if(skufIndices.has(idx)){
+                skufIndices.delete(idx);
+                for(let k = 0; k < 25; k++){
+                  if(k !== idx && !openedSet.has(k) && !skufIndices.has(k)){
+                    skufIndices.add(k);
+                    break;
+                  }
+                }
+              }
+            } else {
+              allowedSafe = false;
+            }
+          } else {
+            allowedSafe = false;
+          }
+        }
       } else {
         allowedSafe = evalBaitTrap('skuf', naturalSafe, roundBet, nextMultCand);
       }
@@ -4581,6 +5104,9 @@ function gameSkuf(){
         go.disabled = false;
         go.textContent = 'НАЧАТЬ СНОВА · ' + S.bet + ' ⬦';
         take.disabled = true;
+        if(isNearMissEligible(roundBet) || opened >= 2){
+          triggerNearMissEffect('Скуф vs Альтушка', opened >= 2 ? `Вы уже забрались на ×${fx(getMult(opened))}! Альтушка была совсем рядом.` : 'Скуф подкрался в последний момент!', roundBet);
+        }
       } else {
         openedSet.add(idx);
         opened++;
@@ -4610,6 +5136,7 @@ function gameSkuf(){
       if(S.balance < S.bet){
         res.className = 'result bad';
         res.textContent = 'Недостаточно токенов — пополните баланс.';
+        openQuickRevengeModal('depleted', 150);
         return;
       }
       roundBet = S.bet;
@@ -4762,6 +5289,7 @@ function gameAvito(){
           resClass = 'result bad';
           resMsg = 'Недостаточно токенов — пополните баланс.';
           render();
+          openQuickRevengeModal('depleted', 150);
           return;
         }
         roundBet = S.bet;
@@ -4810,6 +5338,9 @@ function gameAvito(){
           resClass = 'result bad';
           resMsg = `💥 <b>Сделка сорвалась:</b> ${stepData.name}. Продавец заблокировал объявление, ставка ${roundBet} ⬦ сгорела.`;
           render();
+          if(isNearMissEligible(roundBet) || step >= 1){
+            triggerNearMissEffect('Перекуп на Авито', step >= 1 ? `Вы уже зафиксировали ×${fx(curLot.steps[step - 1].mult)}! Следующий шаг сорвался.` : 'Продавец отказал в последний миг!', roundBet);
+          }
         }
       }, 750);
     });
@@ -5373,6 +5904,7 @@ function gameCases(){
         if(S.balance < curCase.cost){
           const res = q('#caseRes');
           if(res){ res.className = 'result bad'; res.textContent = 'Недостаточно токенов — пополните баланс.'; }
+          openQuickRevengeModal('depleted', curCase.cost);
           return;
         }
 
@@ -5393,6 +5925,9 @@ function gameCases(){
 
         // Находим супер-дорогую вещь (топ джекпот) для тизера в случае проигрыша
         const sortedItems = [...curCase.items].sort((a, b) => b.price - a.price);
+        const topJackpot = sortedItems[0] || curCase.items[0];
+        // Органичный отступ: через 2 карточки (+2 или -2), чтобы он был виден в окне рулетки без подозрительного «впритык»
+        const teaserSlot = (Math.random() < 0.5) ? (targetIndex + 2) : (targetIndex - 2);
 
         // Генерируем ленту из 60 карточек
         const targetIndex = 45;
@@ -5400,6 +5935,8 @@ function gameCases(){
         for(let i = 0; i < 60; i++){
           if(i === targetIndex){
             stripItems.push(winItem);
+          } else if(i === teaserSlot && !isProfit && isNearMissEligible(curCase.cost)){
+            stripItems.push(topJackpot);
           } else {
             const randIt = curCase.items[Math.floor(Math.random() * curCase.items.length)];
             stripItems.push(randIt);
@@ -5495,6 +6032,10 @@ function gameCases(){
               <button class="control ghost" id="btnCaseSellInstant" style="flex:1;min-width:140px;margin:0;border-color:#3ddc96;color:#3ddc96;font-size:12.5px;padding:10px 12px">💰 ПРОДАТЬ (+${fmt(winItem.price)} ⬦)</button>
             </div>
           </div>`;
+
+          if(!isProfit && isNearMissEligible(curCase.cost)){
+            triggerNearMissEffect('Кейсы', `${topJackpot ? topJackpot.name : 'Главный приз'} был в двух карточках от победы!`, curCase.cost);
+          }
 
           const upBtn = q('#btnCaseUpgrade');
           if(upBtn) upBtn.onclick = () => {
@@ -5928,6 +6469,7 @@ function gameAuction(){
     if(S.balance < neededToLead){
       tgHaptic('error');
       const m=q('#aucMsg'); if(m){ m.className='result bad'; m.textContent=`Чтобы перебить ставку ${topBid} ⬦, нужно ещё ${neededToLead} ⬦!`; }
+      openQuickRevengeModal('depleted', 150);
       return;
     }
     place(neededToLead, 'Тайный аукцион');
@@ -6013,6 +6555,9 @@ function gameAuction(){
           msg.innerHTML=`Торги завершены. Лот забрал <b>${topBidder}</b> со ставкой ${topBid} ⬦. Попробуйте в следующем раунде!`;
         }
         addFeed(`Аукцион завершён. Победил ${topBidder}.`);
+        if(userBid > 0 && (isNearMissEligible(userBid) || (topBid - userBid <= 50))){
+          triggerNearMissEffect('Аукцион', `Вашу ставку перебили всего на ${topBid - userBid} ⬦!`, userBid);
+        }
       }
       const pBtn=q('#btnPlaceBid');
       if(pBtn){ pBtn.disabled=true; pBtn.textContent='ТОРГИ ЗАВЕРШЕНЫ'; }
@@ -6124,7 +6669,18 @@ function gameChallenge(targetSel){
         ${questsHTML}
       </div>
       <div class="result" id="chMsg" style="margin-top:14px">Выполняйте задания в играх MoneyForUp и забирайте бесплатные токены!</div>
+
+      <div id="chPromoWrap" style="margin-top:14px">
+        <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1.5px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px;text-align:center">
+          <div style="font-weight:900;color:#fff;font-size:13px">🔥 Хотите закрыть все квесты быстрее?</div>
+          <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Зарядите баланс от 150 ₽ с бонусом +25% и забирайте максимальный банкролл!</div>
+          <button class="control" id="btnChDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ С БОНУСОМ +25%</button>
+        </div>
+      </div>
     </div>`;
+
+    const chDep = q('#btnChDeposit', a);
+    if(chDep) chDep.onclick = () => applyQuickDeposit(500, '25');
 
     function getChallengeTimeLeft(){
       const now = new Date();
@@ -6142,7 +6698,14 @@ function gameChallenge(targetSel){
       streakBtn.onclick = () => {
         if(S.streakClaimedToday) return;
         S.streakClaimedToday = true;
-        S.balance += currReward;
+        if(IS_TG && API_BASE){
+          tgCall('/api/claim-challenge', { type: 'streak', amount: currReward }).then(res => {
+            if(res && res.balance != null) S.balance = res.balance;
+            syncUI(); save();
+          }).catch(()=>{});
+        } else {
+          S.balance += currReward;
+        }
         addHist(`Стрик (День ${S.challengeStreak})`, currReward);
         if(S.challengeStreak < 7) S.challengeStreak++;
         tgHaptic('win');
@@ -6159,7 +6722,15 @@ function gameChallenge(targetSel){
         const qObj = S.challengeQuests[idx];
         if(!qObj || qObj.claimed || qObj.prog < qObj.target) return;
         qObj.claimed = true;
-        S.balance += qObj.reward;
+        if(IS_TG && API_BASE){
+          tgCall('/api/claim-challenge', { type: 'quest', amount: qObj.reward, questId: qObj.id }).then(res => {
+            if(res && res.balance != null) S.balance = res.balance;
+            syncUI(); save();
+          }).catch(()=>{});
+        } else {
+          S.balance += qObj.reward;
+        }
+        addHist(`Квест: ${qObj.name}`, qObj.reward);
         tgHaptic('win');
         const allClaimed = S.challengeQuests && S.challengeQuests.every(q => q.claimed);
         if(allClaimed && !S.challengeNotified){
@@ -6257,6 +6828,14 @@ function gameHotDrop(){
         ${canOpen ? (isSpinning ? 'КРУТИТСЯ РУЛЕТКА…' : '🔥 ОТКРЫТЬ HOT DROP (БЕСПЛАТНО)') : '⏳ ПЕРЕЗАРЯДКА (' + fmtMs(left) + ')'}
       </button>
 
+      <div id="hdPromoWrap" style="margin-top:12px;${canOpen ? 'display:none' : ''}">
+        <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1.5px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px;text-align:center">
+          <div style="font-weight:900;color:#fff;font-size:13px">🔥 Не хотите ждать 60 минут?</div>
+          <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Зарядите баланс от 150 ₽ с бонусом +25% и выбивайте джекпоты в играх!</div>
+          <button class="control" id="btnHdDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ С БОНУСОМ +25%</button>
+        </div>
+      </div>
+
       <div id="hdWinArea"></div>
 
       <div class="result" id="hdMsg" style="margin-top:12px">
@@ -6273,9 +6852,11 @@ function gameHotDrop(){
       </div>
     </div>`;
 
+    const hdDep = q('#btnHdDeposit');
+    if(hdDep) hdDep.onclick = () => applyQuickDeposit(500, '25');
+
     const openBtn = q('#btnOpenHotDrop');
-    if(openBtn && canOpen && !isSpinning){
-      openBtn.onclick = () => {
+      openBtn.onclick = async () => {
         isSpinning = true;
         openBtn.disabled = true;
         openBtn.textContent = 'КРУТИТСЯ РУЛЕТКА…';
@@ -6284,24 +6865,46 @@ function gameHotDrop(){
         if(box) box.classList.add('shaking');
         tgHaptic('impact');
 
-        // Выбираем выпавший предмет (с весами, для игроков без депозита максимум 15-35 ⬦)
-        const hasDeposits = (S.totalDepositedRub || 0) > 0;
-        const weights = hasDeposits ? [35, 30, 20, 10, 5, 3, 0, 0] : [55, 35, 10, 0, 0, 0, 0, 0];
-        let totW = weights.reduce((a, b) => a + b, 0);
-        let rnd = Math.random() * totW;
-        let winIdx = 0, cum = 0;
-        for(let i = 0; i < weights.length; i++){
-          cum += weights[i];
-          if(rnd <= cum){ winIdx = i; break; }
+        let winItem = null;
+        if(IS_TG && API_BASE){
+          try {
+            const res = await tgCall('/api/claim-hotdrop', {});
+            if(!res || !res.ok) throw new Error((res && res.error) || 'Ошибка открытия');
+            const rewVal = res.reward || 25;
+            winItem = REWARD_TIERS.find(it => it.val === rewVal) || { val: rewVal, col: '#8b92ff', icon: '🎁', name: 'Награда' };
+            if(res.balance != null) S.balance = res.balance;
+          } catch(e) {
+            isSpinning = false;
+            if(box) box.classList.remove('shaking');
+            if(openBtn) { openBtn.disabled = false; openBtn.textContent = '🔥 ОТКРЫТЬ HOT DROP (БЕСПЛАТНО)'; }
+            const m = q('#hdMsg');
+            if(m) { m.className = 'result bad'; m.textContent = (e && e.message) || 'Ошибка Hot Drop'; }
+            return;
+          }
+        } else {
+          // Выбираем выпавший предмет (с весами, для игроков без депозита максимум 15-35 ⬦)
+          const hasDeposits = (S.totalDepositedRub || 0) > 0;
+          const weights = hasDeposits ? [35, 30, 20, 10, 5, 3, 0, 0] : [55, 35, 10, 0, 0, 0, 0, 0];
+          let totW = weights.reduce((a, b) => a + b, 0);
+          let rnd = Math.random() * totW;
+          let winIdx = 0, cum = 0;
+          for(let i = 0; i < weights.length; i++){
+            cum += weights[i];
+            if(rnd <= cum){ winIdx = i; break; }
+          }
+          winItem = REWARD_TIERS[winIdx];
         }
-        const winItem = REWARD_TIERS[winIdx];
 
         // Генерируем длинную ленту для прокрутки (40 карточек, выигрышная на индексе 30)
         const targetIdx = 30;
+        const topPrize = REWARD_TIERS[7]; // 500 ⬦ ДЖЕКПОТ
+        const teaserSlot = (Math.random() < 0.5) ? (targetIdx + 2) : (targetIdx - 2);
         const stripItems = [];
         for(let i = 0; i < 42; i++){
           if(i === targetIdx){
             stripItems.push(winItem);
+          } else if(i === teaserSlot && winItem.val < 250){
+            stripItems.push(topPrize);
           } else {
             stripItems.push(REWARD_TIERS[Math.floor(Math.random() * REWARD_TIERS.length)]);
           }
@@ -6345,7 +6948,13 @@ function gameHotDrop(){
           targetCard.classList.add('hd-win-hit');
 
           S.lastHotDrop = Date.now();
-          win(winItem.val, 'Hot Drop', winItem.name);
+          if(!IS_TG || !API_BASE){
+            win(winItem.val, 'Hot Drop', winItem.name);
+          } else {
+            addHist('Hot Drop · ' + winItem.name, winItem.val);
+          }
+          save();
+          syncUI();
 
           const winArea = q('#hdWinArea');
           if(winArea){
@@ -6362,6 +6971,10 @@ function gameHotDrop(){
           if(m){
             m.className = 'result good';
             m.innerHTML = `🎉 <b>HOT DROP ОТКРЫТ!</b> Вы получили <b>+${winItem.val} ⬦</b> (${winItem.name}).`;
+          }
+
+          if(winItem.val < 250){
+            triggerNearMissEffect('Hot Drop', 'Главный ДЖЕКПОТ 500 ⬦ пролетел всего в двух карточках от победы!', 150);
           }
 
           if(openBtn){
@@ -6522,6 +7135,7 @@ function gameDice(){
       tgHaptic('error');
       const m = q('#diceMsg', a);
       if(m){ m.className = 'result bad'; m.textContent = 'Недостаточно токенов на балансе!'; }
+      openQuickRevengeModal('depleted', 150);
       return;
     }
 
@@ -6589,10 +7203,20 @@ function gameDice(){
           roll = lockedOver + Math.floor(Math.random() * (1000000 - lockedOver));
         }
       } else {
-        if(side === 'under'){
-          roll = lockedUnder + 1 + Math.floor(Math.random() * (1000000 - lockedUnder - 1));
+        if(isNearMissEligible(roundBet)){
+          // Правдоподобный естественный запас: 1.5%–4.0% (15 000–40 000) — не впритык!
+          const naturalGap = 15000 + Math.floor(Math.random() * 25000);
+          if(side === 'under'){
+            roll = Math.min(999999, lockedUnder + naturalGap);
+          } else {
+            roll = Math.max(0, lockedOver - naturalGap);
+          }
         } else {
-          roll = Math.floor(Math.random() * lockedOver);
+          if(side === 'under'){
+            roll = lockedUnder + 1 + Math.floor(Math.random() * (1000000 - lockedUnder - 1));
+          } else {
+            roll = Math.floor(Math.random() * lockedOver);
+          }
         }
       }
       lastRoll = roll;
@@ -6612,6 +7236,9 @@ function gameDice(){
         if(msgEl){
           msgEl.className = 'result bad';
           msgEl.innerHTML = `Выпало <b>${String(roll).padStart(6,'0')}</b>. Ставка ${roundBet} ⬦ сгорела.`;
+        }
+        if(isNearMissEligible(roundBet)){
+          triggerNearMissEffect('Dice', `Выпало ${String(roll).padStart(6,'0')} — победное число было совсем рядом!`, roundBet);
         }
       }
     }
@@ -7025,6 +7652,7 @@ function gameUpgrader(){
       tgHaptic('error');
       const m = q('#upgResultMsg', a);
       if(m){ m.className = 'result bad'; m.textContent = 'Недостаточно токенов на балансе!'; }
+      openQuickRevengeModal('depleted', stakePrice);
       return;
     }
 
@@ -7108,8 +7736,23 @@ function gameUpgrader(){
       const margin = Math.min(0.22, winAngle * 0.2);
       targetRelAngle = margin + Math.random() * (winAngle - 2 * margin);
     } else {
-      const margin = Math.min(0.22, redSpan * 0.2);
-      targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
+      if(isNearMissEligible(stakePrice)){
+        // Органичный, не впритык, запас в 12°–24° (0.20–0.42 рад) — без подвоха
+        const gap = 0.20 + Math.random() * 0.22;
+        if(Math.random() < 0.55 && redSpan > gap + 0.15){
+          // Естественно перелетела зелёную зону вглубь красной
+          targetRelAngle = winAngle + gap;
+        } else if(redSpan > gap + 0.15){
+          // Не доехала до начала зелёной зоны
+          targetRelAngle = (2 * Math.PI) - gap;
+        } else {
+          const margin = Math.min(0.22, redSpan * 0.2);
+          targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
+        }
+      } else {
+        const margin = Math.min(0.22, redSpan * 0.2);
+        targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
+      }
     }
     const targetNormRot = ((2 * Math.PI - targetRelAngle) % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
     const currentNormRot = ((wheelRot % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
@@ -7153,6 +7796,9 @@ function gameUpgrader(){
             msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне. Ставка сгорела.`;
           }
           if(runBtn) runBtn.textContent = 'СТАВКА/ПРЕДМЕТ СГОРЕЛ ✕';
+          if(isNearMissEligible(stakePrice)){
+            triggerNearMissEffect('Апгрейдер', `Стрелка скользнула рядом с зоной успеха ×${curTgt.mult}!`, stakePrice);
+          }
         }
         selectedUpgraderItem = null;
         setTimeout(() => { if(!isSpinning) render(); }, 2200);
@@ -7183,7 +7829,6 @@ window.MONEYFORUP_DEBUG={state:S,TERMS,REF_PERCENT,CASHBACK_RANKS,BOT_NAME,genRe
 window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
 
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
-const startHash = (window.location.hash || '').replace('#', '');
 tgInit();tgRegister();tgLoadBalance();syncUI();   // баланс+реквизиты+инвентарь сразу, а не после первого раунда
 setInterval(()=>{if(IS_TG&&API_BASE&&!document.hidden)tgLoadBalance();},20000);  // баланс не устаревает, пока приложение открыто
 initLiveTicker();
@@ -7191,8 +7836,34 @@ updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);
 updateModesOnline();
 setInterval(updateModesOnline, 30000);
-if(startHash === 'auction' || startHash === 'challenge24' || startHash === 'hotdrop' || startHash === 'wheel' || startHash === 'dice'){
-  play(startHash);
+initTurboOfferTimer();
+
+const turboCard = q('#gamesTurboOfferCard');
+if(turboCard){
+  turboCard.addEventListener('click', () => {
+    applyQuickDeposit(500, '25');
+  });
+}
+
+const rawHash = (window.location.hash || '').replace(/^#/, '');
+const [hashRoute, hashQuery] = rawHash.split('?');
+const hashParams = new URLSearchParams(hashQuery || '');
+const searchParams = new URLSearchParams(window.location.search || '');
+
+const effectiveRoute = (hashRoute || '').toLowerCase();
+const startParam = (typeof TGSTART === 'string' ? TGSTART : '').toLowerCase();
+
+if(effectiveRoute === 'boost' || startParam === 'boost' || searchParams.get('boost') || hashParams.get('boost')){
+  screen('games');
+  setTimeout(() => openBoostHubModal(), 350);
+} else if(effectiveRoute === 'deposit' || effectiveRoute === 'tokens'){
+  screen('tokens');
+  const bonus = hashParams.get('bonus') || searchParams.get('bonus') || (startParam.startsWith('bonus') ? startParam.replace(/^bonus_?/, '') : '');
+  const parsedAmt = +(hashParams.get('amt') || searchParams.get('amt') || 0);
+  const targetAmt = parsedAmt > 0 ? parsedAmt : (bonus === '25' ? 500 : (bonus === 'goldcase' ? 300 : 150));
+  applyQuickDeposit(targetAmt, bonus);
+} else if(BUILD[hashRoute]){
+  play(hashRoute);
 } else {
   screen('games');
 }

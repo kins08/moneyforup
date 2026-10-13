@@ -346,20 +346,21 @@ function setBalanceTo(u, value, type, reason) {
 /* принимать от клиента, но обязательно проверять по границам игры.      */
 const GAMES = {
   // ключ (нормализованный)   границы ставки        границы множителя   edge
-  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.03, defaultMult: 1.95 },
-  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: 0.03, defaultMult: 2.0 },
-  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.03, defaultMult: 2.0 },
-  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.03, defaultMult: 2.0 },
-  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.04, defaultMult: 2.0 },
-  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.04, defaultMult: 2.0 },
-  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.05, defaultMult: 2.0 },
-  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.05, defaultMult: 2.0 },
-  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 1.8 },
-  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.04, defaultMult: 1.7 },
-  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 2.0 },
-  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 2.0 },
+  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.055, defaultMult: 1.95 },
+  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: 0.06,  defaultMult: 2.0 },
+  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
+  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
+  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
+  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
+  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
+  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
+  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 1.7 },
+  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
+  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
+  challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
   // Неизвестная игра: консервативный профиль вместо отказа — чтобы клиент не ломался
-  __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.10, defaultMult: 2.0 }
+  __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.08,  defaultMult: 2.0 }
 };
 
 /* ── Ракетка (Crash Game 24/7): детерминированная модель крушения по раундам ── */
@@ -405,7 +406,8 @@ function gameConfig(rawName) {
     'колесо_фортуны': 'wheel', 'скуг_vs_альтушка': 'skuf', 'скуф_vs_альтушка': 'skuf',
     'перекуп_на_авито': 'avito', 'апгрейд_кейса': 'cases', 'апгрейдер': 'upgrader',
     'тайный_аукцион': 'auction', 'ракетка': 'racket', 'hot_drop': 'hotdrop',
-    'дис': 'dice', 'кости': 'dice'
+    'дис': 'dice', 'кости': 'dice', 'челлендж': 'challenge', 'challenge24': 'challenge',
+    'челлендж_24ч': 'challenge'
   };
   const mapped = aliases[key];
   if (mapped && GAMES[mapped]) return { key: mapped, ...GAMES[mapped] };
@@ -609,6 +611,12 @@ async function creditDeposit(userId, tokens, source) {
     (u.notifications = u.notifications || []).push('🎁 Вам начислен бесплатный кейс за первый депозит!');
     try {
       bot.api.sendMessage(u.id, '🎁 Вам начислен <b>Бесплатный кейс за первый депозит</b>! Откройте его во вкладке «Кейсы».', { parse_mode: 'HTML' }).catch(() => {});
+    } catch (_) {}
+  } else if (rubAmt >= 300) {
+    u.freeCases = (u.freeCases || 0) + 1;
+    (u.notifications = u.notifications || []).push('🎁 Вам начислен подарочный Золотой кейс за пополнение от 300 ₽!');
+    try {
+      bot.api.sendMessage(u.id, '🎁 Вам начислен подарочный <b>Золотой кейс</b> за пополнение от 300 ₽! Откройте его во вкладке «Кейсы».', { parse_mode: 'HTML' }).catch(() => {});
     } catch (_) {}
   }
   u.lastDeposit = rubAmt;
@@ -1349,52 +1357,82 @@ bot.callbackQuery('adm_orders', async ctx => {
 });
 
 /* ---------- Команда /boost: Вариант 7, Вариант 10, Вариант 4 ---------- */
+/* ---------- VIP и Ранги кэшбэка в Telegram-боте ---------- */
+const VIP_RANKS_BOT = [
+  { id: 1, name: 'Бронза', icon: '🥉', depReq: 0, cbPct: 2.0 },
+  { id: 2, name: 'Серебро', icon: '🥈', depReq: 500, cbPct: 3.5, bonus: 250 },
+  { id: 3, name: 'Золото', icon: '🥇', depReq: 2000, cbPct: 5.0, bonus: 1000 },
+  { id: 4, name: 'Платина', icon: '💎', depReq: 5000, cbPct: 7.5, bonus: 3000 },
+  { id: 5, name: 'Бриллиант', icon: '👑', depReq: 15000, cbPct: 10.0, bonus: 10000 }
+];
+function botVipInfo(depRub) {
+  depRub = Math.max(0, depRub || 0);
+  let cur = VIP_RANKS_BOT[0], next = null;
+  for (let i = 0; i < VIP_RANKS_BOT.length; i++) {
+    if (depRub >= VIP_RANKS_BOT[i].depReq) {
+      cur = VIP_RANKS_BOT[i];
+      next = VIP_RANKS_BOT[i + 1] || null;
+    }
+  }
+  const leftRub = next ? Math.max(0, next.depReq - depRub) : 0;
+  const leftTokens = leftRub * TOKENS_PER_RUB;
+  const pct = next ? Math.min(100, Math.floor(((depRub - cur.depReq) / (next.depReq - cur.depReq)) * 100)) : 100;
+  const barFilled = Math.min(10, Math.floor(pct / 10));
+  const bar = '█'.repeat(barFilled) + '░'.repeat(10 - barFilled);
+  return { cur, next, leftRub, leftTokens, pct, bar };
+}
+
+/* ---------- Команда /boost: Супер-хаб ускорения и стимул к повторному депозиту ---------- */
 bot.command('boost', async ctx => {
   const u = user(ctx.from.id, ctx.from.first_name, ctx.from.username);
+  const depRub = u.totalDepositedRub || u.lastDeposit || 0;
+  const vip = botVipInfo(depRub);
+  const rakeback = Number(u.rakeback || 0).toFixed(2);
+  const rubBal = (u.tokens / TOKENS_PER_RUB).toFixed(2);
+
   const kb = new InlineKeyboard()
-    .webApp('⚡ Открыть Boost-Центр', `${APP_URL}#boost`)
+    .webApp('🔥 Забрать +25% к депу (500 ₽)', `${APP_URL}#tokens?amt=500&bonus=25`)
+    .webApp('🎁 Золотой кейс в подарок (300 ₽)', `${APP_URL}#tokens?amt=300&bonus=goldcase`)
     .row()
-    .text('🎯 Вариант 7: Челлендж 24ч', 'boost_v7')
-    .text('🔥 Вариант 10: Hot Drop', 'boost_v10')
+    .webApp('⚡️ Быстрый старт (150 ₽)', `${APP_URL}#tokens?amt=150`)
+    .webApp('💳 Все способы (СБП/Карты/Крипта)', `${APP_URL}#tokens`)
     .row()
-    .text('🤫 Вариант 4: Тайный аукцион', 'boost_v4');
+    .text('🔥 Hot Drop (Забрать)', 'boost_hotdrop')
+    .text('🎯 Челленджи 24ч', 'boost_challenge')
+    .row()
+    .text('🤫 Тайный аукцион', 'boost_auction')
+    .text('👑 VIP & Рейкбек', 'boost_vip')
+    .row()
+    .webApp('🚀 Открыть Boost-Центр в игре', `${APP_URL}#boost`);
 
   const text =
-    `⚡ <b>MUP BOOST CENTER — 3 режима ускорения токенов!</b>\n\n` +
-    `Привет, <b>${escHtml(ctx.from.first_name || 'Игрок')}</b>! Активируй бонусы и забирай дополнительный профит:\n\n` +
-    `🎯 <b>Вариант 7: «Челлендж за 24 часа» (Daily Challenge)</b>\n` +
-    `• 3 ежедневных задания с возрастающей наградой до <b>+150 ⬦</b>\n` +
-    `• Удерживай серию дней (Стрик 1..7 🔥)\n` +
-    `• Таймер сброса заданий: 24:00:00\n\n` +
-    `🔥 <b>Вариант 10: «Hot Drop» (Ежечасный Дроп)</b>\n` +
-    `• Бесплатный супер-бокс каждый час (таймер 60 минут)\n` +
-    `• Мгновенный шанс выбить от <b>15 до 500 ⬦</b> без депозита!\n` +
-    `• Забирай в один клик\n\n` +
-    `🤫 <b>Вариант 4: «Тайный аукцион» (Blind Auction)</b>\n` +
-    `• Закрытые торги вслепую за редкие сейфы и контейнеры токенов\n` +
-    `• Перебивай ставки соперников, блефуй и забирай банк с супер-дисконтом!\n\n` +
-    `Нажмите кнопку ниже для подробностей или запустите Mini App:`;
+    `🚀 <b>MUP TURBO-BOOST HUB · РАЗГОНИ СВОЙ БАНКРОЛЛ!</b> ⚡️\n\n` +
+    `Привет, <b>${escHtml(ctx.from.first_name || 'Игрок')}</b>! Твои персональные бонусы готовы к активации:\n\n` +
+    `👤 <b>Твой статус:</b>\n` +
+    `├ Баланс: <b>${Math.floor(u.tokens)} ⬦</b> (≈ ${rubBal} ₽)\n` +
+    `├ VIP-ранг: <b>${vip.cur.icon} ${vip.cur.name}</b> (кэшбэк <b>${vip.cur.cbPct}%</b>)\n` +
+    `├ Накопленный рейкбек: <b>${rakeback} ⬦</b>\n` +
+    (vip.next
+      ? `└ Прогресс: <code>[${vip.bar}]</code> ${vip.pct}%\n  <i>(всего ${vip.leftRub} ₽ до ${vip.next.name} +${vip.next.bonus} ⬦!)</i>\n\n`
+      : `└ Прогресс: <b>МАКСИМАЛЬНЫЙ РАНГ 👑</b>\n\n`) +
+    `🔥 <b>ГОРЯЧИЕ ОФФЕРЫ (ОГРАНИЧЕННОЕ ВРЕМЯ!):</b>\n` +
+    `💥 <b>ТУРБО-БОНУС +25% НА ДЕПОЗИТ</b>\n` +
+    `└ <i>Пополни от 150 ₽ в течение 10 минут и получи +25% токенов сверху на счёт!</i>\n\n` +
+    `🎁 <b>СЕКРЕТНЫЙ ЗОЛОТОЙ КЕЙС В ПОДАРОК</b>\n` +
+    `└ <i>При пополнении от 300 ₽ — мгновенный бонусный кейс с дропом до 15 000 ⬦!</i>\n\n` +
+    `📦 <b>ЕЖЕЧАСНЫЙ HOT DROP</b>\n` +
+    `└ <i>Бесплатный контейнер каждый час с гарантированным начислением!</i>\n\n` +
+    `🎯 <b>СТРИК-ЧЕЛЛЕНДЖ 24Ч</b>\n` +
+    `└ <i>3 ежедневных задания + растущий стрик наград до 7 дней!</i>\n\n` +
+    `🤫 <b>ТАЙНЫЙ АУКЦИОН</b>\n` +
+    `└ <i>Закрытые торги вслепую за редкие кибер-сейфы!</i>\n\n` +
+    `👇 Выберите ускорение ниже или зарядите баланс прямо сейчас:`;
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
 });
 
-bot.callbackQuery('boost_v7', async ctx => {
-  await ctx.answerCallbackQuery();
-  const u = user(ctx.from.id);
-  const kb = new InlineKeyboard().webApp('🎯 Открыть Челленджи в Mini App', `${APP_URL}#challenge24`);
-  const text =
-    `🎯 <b>Вариант 7: «Челлендж за 24 часа»</b>\n\n` +
-    `🔥 <b>Ваш статус:</b> День 1 / 7 · Стрик активен\n` +
-    `⏱ <b>Таймер до обновления:</b> 24:00:00\n\n` +
-    `<b>Задания на сегодня:</b>\n` +
-    `1. 🚀 «Гонка на Ракете» — сделать 3 кэшаута в Ракетке (+30 ⬦)\n` +
-    `2. 🤫 «Тайный Аукционер» — сделать ставку в Аукционе (+25 ⬦)\n` +
-    `3. 🔥 «Горячий Трофей» — забрать Hot Drop (+20 ⬦)\n\n` +
-    `<i>Выполняйте квесты прямо в игре и забирайте токены на баланс!</i>`;
-  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
-});
-
-bot.callbackQuery('boost_v10', async ctx => {
+/* Обработчики колбэков Boost */
+bot.callbackQuery(['boost_hotdrop', 'boost_v10'], async ctx => {
   await ctx.answerCallbackQuery();
   const u = user(ctx.from.id);
   const now = Date.now();
@@ -1404,39 +1442,91 @@ bot.callbackQuery('boost_v10', async ctx => {
   if (elapsed >= ONE_HOUR) {
     const rewards = [20, 35, 50, 75, 120, 250];
     const win = rewards[Math.floor(Math.random() * rewards.length)];
-    // Раньше бонус начислялся только в память и пропадал при рестарте (в БД не сохранялся)
     applyBalance(u, win, 'bonus_hotdrop_tg', 'Hot Drop в боте');
     u.lastHotDrop = now;
     try { db.saveUser(u); } catch (e) { console.error('saveUser (hotdrop tg):', e.message); }
-    const kb = new InlineKeyboard().webApp('🔥 Играть в MoneyForUp', APP_URL);
+    const kb = new InlineKeyboard()
+      .webApp('🔥 Умножить баланс (+25% на деп)', `${APP_URL}#tokens?bonus=25`)
+      .row()
+      .webApp('🎮 Играть в MoneyForUp', APP_URL);
     await ctx.reply(
       `🔥 <b>HOT DROP УСПЕШНО ОТКРЫТ!</b> 🎉\n\n` +
       `Вы открыли ежечасный дроп и получили: <b>+${win} ⬦</b> (~${(win / TOKENS_PER_RUB).toFixed(2)} ₽)!\n` +
       `Ваш баланс: <b>${Math.floor(u.tokens)} ⬦</b>\n\n` +
+      `⚡️ <i>Совет: Разгони выигрыш прямо сейчас! Пополни баланс от 150 ₽ с бонусом +25% и выбей x20 в Ракетке!</i>\n\n` +
       `⏱ Следующий бесплатный Hot Drop будет доступен через 60 минут.`,
       { parse_mode: 'HTML', reply_markup: kb }
     );
   } else {
     const leftMins = Math.ceil((ONE_HOUR - elapsed) / 60000);
-    const kb = new InlineKeyboard().webApp('🚀 Открыть в приложении', `${APP_URL}#hotdrop`);
+    const kb = new InlineKeyboard()
+      .webApp('⚡️ Забрать +25% к депозиту прямо сейчас', `${APP_URL}#tokens?bonus=25`)
+      .row()
+      .webApp('🚀 Открыть Hot Drop в приложении', `${APP_URL}#hotdrop`);
     await ctx.reply(
       `⏳ <b>Hot Drop пока на перезарядке!</b>\n\n` +
-      `До следующего бесплатного контейнера осталось: <b>${leftMins} мин.</b>\n` +
-      `Заходите в игру, запускайте Ракетку и крутите Спин!`,
+      `До следующего бесплатного контейнера осталось: <b>${leftMins} мин.</b>\n\n` +
+      `🔥 <b>Не хочешь ждать?</b> Заряди баланс в 1 клик с горячим бонусом <b>+25%</b> прямо сейчас и забирай крупные иксы в играх!`,
       { parse_mode: 'HTML', reply_markup: kb }
     );
   }
 });
 
-bot.callbackQuery('boost_v4', async ctx => {
+bot.callbackQuery(['boost_challenge', 'boost_v7'], async ctx => {
   await ctx.answerCallbackQuery();
-  const kb = new InlineKeyboard().webApp('🤫 Войти в Тайный аукцион', `${APP_URL}#auction`);
+  const u = user(ctx.from.id);
+  const kb = new InlineKeyboard()
+    .webApp('🎯 Открыть Челленджи в Mini App', `${APP_URL}#challenge24`)
+    .row()
+    .webApp('💳 Пополнить баланс для квестов', `${APP_URL}#tokens`);
   const text =
-    `🤫 <b>Вариант 4: «Тайный аукцион»</b>\n\n` +
+    `🎯 <b>Вариант 7: «Челлендж за 24 часа & Стрик»</b>\n\n` +
+    `🔥 <b>Ваш статус:</b> Серия активна · Стрик 1..7 дней\n` +
+    `⏱ <b>Таймер обновления заданий:</b> 24:00:00\n\n` +
+    `<b>Задания на сегодня:</b>\n` +
+    `1. 🚀 «Гонка на Ракете» — сделать 3 кэшаута в Ракетке (+30 ⬦)\n` +
+    `2. 🤫 «Тайный Аукционер» — сделать ставку в Аукционе (+25 ⬦)\n` +
+    `3. 🔥 «Горячий Трофей» — забрать Hot Drop (+20 ⬦)\n\n` +
+    `<i>Выполняйте квесты прямо в игре и забирайте токены на баланс!</i>`;
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+});
+
+bot.callbackQuery(['boost_auction', 'boost_v4'], async ctx => {
+  await ctx.answerCallbackQuery();
+  const kb = new InlineKeyboard()
+    .webApp('🤫 Войти в Тайный аукцион', `${APP_URL}#auction`)
+    .row()
+    .webApp('💳 Зарядить баланс для торгов', `${APP_URL}#tokens`);
+  const text =
+    `🤫 <b>Вариант 4: «Тайный аукцион» (Blind Auction)</b>\n\n` +
     `📦 <b>Текущий лот:</b> Секретный Кибер-Сейф MUP #088\n` +
     `💎 <b>Содержимое:</b> от 500 до 1 500 ⬦\n` +
     `⏱ <b>Статус торгов:</b> Идёт приём тайных ставок\n\n` +
-    `Делайте ставки вслепую, блефуйте и забирайте сейф по лучшей цене!`;
+    `Делайте ставки вслепую, блефуйте и забирайте сейф по лучшей цене с супер-дисконтом!`;
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+});
+
+bot.callbackQuery('boost_vip', async ctx => {
+  await ctx.answerCallbackQuery();
+  const u = user(ctx.from.id);
+  const depRub = u.totalDepositedRub || u.lastDeposit || 0;
+  const vip = botVipInfo(depRub);
+  const rakeback = Number(u.rakeback || 0).toFixed(2);
+  const kb = new InlineKeyboard()
+    .webApp('⚡️ Повысить ранг пополнением', `${APP_URL}#tokens`)
+    .row()
+    .webApp('🎮 Играть в MoneyForUp', APP_URL);
+  const text =
+    `👑 <b>VIP-КЭШБЭК & СИСТЕМА РАНГОВ MONEYFORUP</b>\n\n` +
+    `👤 <b>Ваш статус:</b>\n` +
+    `├ Текущий ранг: <b>${vip.cur.icon} ${vip.cur.name}</b>\n` +
+    `├ Пожизненный кэшбэк: <b>${vip.cur.cbPct}%</b> на каждое пополнение!\n` +
+    `├ Накопленный рейкбек: <b>${rakeback} ⬦</b> (0.5% с каждой ставки)\n` +
+    (vip.next
+      ? `├ До ранга <b>${vip.next.icon} ${vip.next.name}</b>: всего <b>${vip.leftRub} ₽</b> (${vip.leftTokens} ⬦)\n` +
+        `└ Прогресс: <code>[${vip.bar}]</code> ${vip.pct}%\n\n`
+      : `└ Прогресс: <b>МАКСИМАЛЬНЫЙ РАНГ ДОСТИГНУТ! 💎</b>\n\n`) +
+    `🔥 <i>Повышайте ранг — получайте повышенный кэшбэк до 10% и щедрые бонусы токенами на каждом уровне!</i>`;
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
 });
 
@@ -1666,6 +1756,8 @@ const server = http.createServer(async (req, res) => {
       easycashClaimed: !!u.easycashClaimed,
       rakeback: +(Number(u.rakeback || 0).toFixed(2)),
       freeCases: Math.floor(Number(u.freeCases || 0)),
+      lastHotDrop: u.lastHotDrop || 0,
+      lastWheelSpin: u.lastWheelSpin || 0,
       isAdmin: isAdmin(tgUser),
       notifications: (u.notifications || []).slice(-5)
     };
@@ -1820,7 +1912,7 @@ const server = http.createServer(async (req, res) => {
       const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
 
       // Ракета разбилась до того, как игрок нажал кэшаут
-      if (clientMult > serverCrash + 0.05) {
+      if (serverCrash <= 1.00 || clientMult > serverCrash) {
         return send(400, { error: `Ракета уже взорвалась на ×${serverCrash}. Ставка сгорела.` });
       }
 
@@ -2235,6 +2327,58 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, reward: win, balance: u.tokens });
     }
 
+    /* Бесплатный спин в Колесе Фортуны (раз в 12 часов) */
+    if (url.pathname === '/api/claim-wheel' && req.method === 'POST') {
+      if (!checkRateLimit(`claim-wheel:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      const now = Date.now();
+      const COOLDOWN = 12 * 3600 * 1000;
+      u.lastWheelSpin = u.lastWheelSpin || 0;
+      if (now - u.lastWheelSpin < COOLDOWN) {
+        const leftSec = Math.ceil((COOLDOWN - (now - u.lastWheelSpin)) / 1000);
+        const leftM = Math.ceil(leftSec / 60);
+        return send(400, { error: `Колесо перезаряжается. Подождите ${leftM} мин.` });
+      }
+      const depRub = u.totalDepositedRub || u.lastDeposit || 0;
+      let targetIdx = 0;
+      const rand = Math.random();
+      if (depRub <= 0) {
+        targetIdx = (rand < 0.65) ? ((Math.random() < 0.5) ? 0 : 6) : ((Math.random() < 0.5) ? 1 : 4);
+      } else {
+        if (rand < 0.45) targetIdx = (Math.random() < 0.5) ? 0 : 6;
+        else if (rand < 0.82) targetIdx = (Math.random() < 0.5) ? 1 : 4;
+        else if (rand < 0.94) targetIdx = 2;
+        else if (rand < 0.99) targetIdx = 3;
+        else targetIdx = 5;
+      }
+      const WHEEL_PRIZES = [25, 50, 100, 250, 50, 500, 25, 1000];
+      const prize = WHEEL_PRIZES[targetIdx] || 25;
+      const r = applyBalance(u, prize, 'bonus_wheel', 'Колесо Фортуны');
+      if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
+      u.lastWheelSpin = now;
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (wheel):', e.message); }
+      return send(200, { ok: true, prize, targetIdx, balance: u.tokens });
+    }
+
+    /* Награды за челленджи и ежедневный стрик */
+    if (url.pathname === '/api/claim-challenge' && req.method === 'POST') {
+      if (!checkRateLimit(`claim-ch:${u.id}`, 20, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      const type = String(body.type || 'quest');
+      const amt = Math.min(250, Math.max(10, Math.floor(Number(body.amount) || 20)));
+      const now = Date.now();
+      if (type === 'streak') {
+        const ONE_DAY = 20 * 3600 * 1000;
+        u.lastStreakAt = u.lastStreakAt || 0;
+        if (now - u.lastStreakAt < ONE_DAY) {
+          return send(400, { error: 'Стрик-бонус уже получен сегодня' });
+        }
+        u.lastStreakAt = now;
+      }
+      const r = applyBalance(u, amt, 'bonus_challenge', type === 'streak' ? 'Ежедневный стрик' : 'Челлендж 24ч');
+      if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
+      try { db.saveUser(u); } catch (_) {}
+      return send(200, { ok: true, amount: amt, balance: u.tokens });
+    }
+
     /* оплата: требуется принятое соглашение */
     if (url.pathname === '/api/invoice' && req.method === 'POST') {
       if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
@@ -2267,7 +2411,9 @@ const server = http.createServer(async (req, res) => {
       if (!plategaOn()) return send(503, { error: 'Platega не настроена' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
+      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
+      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
+      if (tokens > maxAllowed) tokens = maxAllowed;
       try {
         return send(200, await plategaCreate(u, rub, tokens, tgUser.first_name));
       } catch (e) {
@@ -2292,7 +2438,9 @@ const server = http.createServer(async (req, res) => {
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
+      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
+      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
+      if (tokens > maxAllowed) tokens = maxAllowed;
       try {
         const inv = await createCoinsoInvoice(u.id, tokens, rub);
         return send(200, inv);
@@ -2313,7 +2461,9 @@ const server = http.createServer(async (req, res) => {
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
       const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
-      const tokens = rub * TOKENS_PER_RUB;
+      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
+      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
+      if (tokens > maxAllowed) tokens = maxAllowed;
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();
       const sender = String(body.sender || '').trim();
