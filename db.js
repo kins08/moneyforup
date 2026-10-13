@@ -110,7 +110,7 @@ const stmts = {
   `),
   updateUser: db.prepare(`
     UPDATE users SET
-      num_id = ?, name = ?, username = ?, tokens = ?, staked = ?, stake_since = ?, accrued_base = ?,
+      num_id = ?, name = ?, username = ?, staked = ?, stake_since = ?, accrued_base = ?,
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
       easycash_claimed = ?, code = ?
@@ -169,14 +169,32 @@ function getUser(id) {
   };
 }
 
+/* Баланс — единый источник истины в БД.
+   Предупреждаем о рассинхроне один раз на игрока, чтобы не заспамить лог. */
+const driftWarned = new Set();
+function warnBalanceDrift(userId, memTokens, dbTokens) {
+  if (driftWarned.has(userId)) return;
+  driftWarned.add(userId);
+  console.warn(
+    `[Ledger] Рассинхрон баланса игрока ${userId}: в памяти ${memTokens} ⬦, в БД ${dbTokens} ⬦. ` +
+    `Взят баланс из БД. Меняйте баланс только через atomicBalanceChange().`
+  );
+}
+
 function saveUser(u) {
   const existing = stmts.getUser.get(u.id);
   if (existing) {
+    // ЗАЩИТА ОТ ДВОЙНОГО ПРИМЕНЕНИЯ БАЛАНСА.
+    // saveUser НЕ пишет tokens (этой колонки нет в UPDATE). Если память и БД разошлись —
+    // это пропущенный вызов atomicBalanceChange(): берём баланс из БД и предупреждаем.
+    if (Number(u.tokens) !== Number(existing.tokens)) {
+      warnBalanceDrift(u.id, u.tokens, existing.tokens);
+      u.tokens = existing.tokens;
+    }
     stmts.updateUser.run(
       u.numId || 0,
       u.name || '',
       u.username || '',
-      Math.floor(u.tokens || 0),
       u.staked || 0,
       u.stakeSince || 0,
       u.accruedBase || 0,

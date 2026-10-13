@@ -233,46 +233,68 @@ const countInvited = id => db.countInvited(Number(id));
 const stakeAccrued = u => (u.accruedBase || 0) +
   (u.staked > 0 && u.stakeSince ? u.staked * STAKE_RATE * Math.max(0, Date.now() - u.stakeSince) / DAY_MS : 0);
 
+/* ------------------------------------------------------------------ */
+/* Единый путь изменения баланса: ledger -> память                     */
+/* ------------------------------------------------------------------ */
+/* Баланс меняется ТОЛЬКО здесь и в setBalanceTo(). В db.js saveUser()  */
+/* физически не пишет tokens, поэтому двойное применение delta         */
+/* (saveUser + atomicBalanceChange) стало невозможным по конструкции.  */
+function applyBalance(u, delta, type, reason, refId = '') {
+  delta = Math.floor(Number(delta) || 0);
+  if (!delta) return { ok: true, changed: false, balance: u.tokens };
+  try {
+    const res = db.atomicBalanceChange(u.id, delta, type, reason, refId);
+    u.tokens = res.balanceAfter;               // память следует за БД, а не наоборот
+    return { ok: true, changed: true, balance: res.balanceAfter };
+  } catch (e) {
+    // НЕ глотаем: ошибка записи денег обязана быть видимой
+    console.error(`[Ledger] ${type} игроку ${u.id} (${delta > 0 ? '+' : ''}${delta} ⬦): ${e.message}`);
+    return { ok: false, error: e.message, balance: u.tokens };
+  }
+}
+
+/* Установить баланс в конкретное значение (сброс/штраф античита) — тоже через ledger */
+function setBalanceTo(u, value, type, reason) {
+  value = Math.max(0, Math.floor(Number(value) || 0));
+  return applyBalance(u, value - Math.floor(u.tokens || 0), type, reason);
+}
+
 function stakeAdd(u, v) {
   v = Math.floor(Number(v) || 0);
   if (v <= 0) return { error: 'Сумма должна быть больше нуля' };
   if (v > u.tokens) return { error: 'Недостаточно токенов на балансе' };
-  u.accruedBase = stakeAccrued(u);          // сохраняем уже накопленное
-  u.tokens -= v;
+  const accrued = stakeAccrued(u);          // считаем ДО изменения стейка
+  const r = applyBalance(u, -v, 'stake_add', 'Добавлено в стейкинг');
+  if (!r.ok) return { error: 'Не удалось изменить баланс, попробуйте позже' };
+  u.accruedBase = accrued;
   u.staked += v;
   u.stakeSince = Date.now();
-  try {
-    db.atomicBalanceChange(u.id, -v, 'stake_add', 'Добавлено в стейкинг');
-  } catch (_) {}
-  try { db.saveUser(u); } catch (_) {}
+  try { db.saveUser(u); } catch (e) { console.error('saveUser (stake_add):', e.message); }
   return { staked: u.staked, tokens: u.tokens, accrued: u.accruedBase };
 }
 function stakeClaim(u) {
   const acc = stakeAccrued(u);
-  if (acc < 0.01) return { error: 'Пока нечего забирать' };
-  const tkAcc = Math.floor(acc);
-  u.tokens += acc; u.accruedBase = 0; u.stakeSince = Date.now();
-  if (tkAcc > 0) {
-    try {
-      db.atomicBalanceChange(u.id, tkAcc, 'stake_claim', 'Начисление процентов стейкинга');
-    } catch (_) {}
-  }
-  try { db.saveUser(u); } catch (_) {}
-  return { claimed: acc, tokens: u.tokens };
+  const tkAcc = Math.floor(acc);            // на баланс идёт только целое число токенов
+  if (tkAcc <= 0) return { error: 'Пока нечего забирать' };
+  const r = applyBalance(u, tkAcc, 'stake_claim', 'Начисление процентов стейкинга');
+  if (!r.ok) return { error: 'Не удалось изменить баланс, попробуйте позже' };
+  u.accruedBase = acc - tkAcc;              // дробный остаток не теряем — дозреет
+  u.stakeSince = Date.now();
+  try { db.saveUser(u); } catch (e) { console.error('saveUser (stake_claim):', e.message); }
+  return { claimed: tkAcc, tokens: u.tokens };
 }
 function stakeRemove(u, all) {
   const acc = stakeAccrued(u), body = u.staked;
-  if (!body && acc < 0.01) return { error: 'Стейкинг пуст' };
   const take = all === false ? 0 : body;
-  u.tokens += take + acc;
+  const gross = Math.floor(take + acc);
+  if (gross <= 0) return { error: 'Стейкинг пуст' };
+  const r = applyBalance(u, gross, 'stake_remove', 'Снятие из стейкинга');
+  if (!r.ok) return { error: 'Не удалось изменить баланс, попробуйте позже' };
   u.staked -= take;
-  u.accruedBase = 0;
+  u.accruedBase = (take + acc) - gross;     // дробный остаток остаётся на стейкере
   u.stakeSince = u.staked ? Date.now() : 0;
-  try {
-    db.atomicBalanceChange(u.id, Math.floor(take + acc), 'stake_remove', 'Снятие из стейкинга');
-  } catch (_) {}
-  try { db.saveUser(u); } catch (_) {}
-  return { removed: take + acc, tokens: u.tokens, staked: u.staked };
+  try { db.saveUser(u); } catch (e) { console.error('saveUser (stake_remove):', e.message); }
+  return { removed: gross, tokens: u.tokens, staked: u.staked };
 }
 
 /* ------------------------------------------------------------------ */
@@ -280,17 +302,18 @@ function stakeRemove(u, all) {
 /* ------------------------------------------------------------------ */
 async function creditDeposit(userId, tokens, source) {
   const u = user(userId);
-  try {
-    db.atomicBalanceChange(userId, tokens, 'deposit', `Пополнение через ${source}`, '');
-    u.tokens += tokens;
-  } catch (_) {
-    u.tokens += tokens;
+  // Делаем зачисление ДО всего остального и не подменяем его памятью при сбое:
+  // если запись в ledger не прошла — депозит не зачислен, и вызывающий код обязан это увидеть.
+  const credit = applyBalance(u, tokens, 'deposit', `Пополнение через ${source}`, '');
+  if (!credit.ok) {
+    console.error(`[Deposit] НЕ зачислено ${tokens} ⬦ игроку ${userId}: ${credit.error}`);
+    return { tokens, refPaid: 0, refErr: credit.error, credited: false };
   }
   const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
   u.lastDeposit = rubAmt;
   u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
   u.lastDepositId = (u.lastDepositId || 0) + 1;
-  try { db.saveUser(u); } catch (_) {}
+  try { db.saveUser(u); } catch (e) { console.error('saveUser (deposit):', e.message); }
   try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
@@ -299,23 +322,23 @@ async function creditDeposit(userId, tokens, source) {
     if (Number(u.ref) !== u.id) {                              // самоприглашение отсекаем
       refPaid = Math.floor(tokens * REF_PERCENT / 100);
       if (refPaid > 0) {
-        try {
-          db.atomicBalanceChange(refId, refPaid, 'referral', `15% от депозита игрока ID ${u.id}`, String(u.id));
-          referrer.tokens += refPaid;
-        } catch (_) {
-          referrer.tokens += refPaid;
+        const rp = applyBalance(referrer, refPaid, 'referral', `15% от депозита игрока ID ${u.id}`, String(u.id));
+        if (rp.ok) {
+          referrer.refEarned = (referrer.refEarned || 0) + refPaid;
+          referrer.refInvited = countInvited(referrer.id);
+          try { db.saveUser(referrer); } catch (e) { console.error('saveUser (referral):', e.message); }
+          try {
+            await bot.api.sendMessage(referrer.id,
+              `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
+          } catch (e) { refErr = e.message; }
+        } else {
+          // Не начислено — не сообщаем о начислении и не делаем вид, что оно было
+          refPaid = 0; refErr = rp.error;
         }
-        referrer.refEarned = (referrer.refEarned || 0) + refPaid;
-        referrer.refInvited = countInvited(referrer.id);
-        try { db.saveUser(referrer); } catch (_) {}
-        try {
-          await bot.api.sendMessage(referrer.id,
-            `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
-        } catch (e) { refErr = e.message; }
       }
     }
   }
-  return { tokens, refPaid, refErr };
+  return { tokens, refPaid, refErr, credited: true };
 }
 
 /* ------------------------------------------------------------------ */
@@ -359,9 +382,8 @@ function applyPromo(userId, rawCode) {
   if (!code) return { ok: false, error: 'Введите промокод' };
   const res = db.atomicApplyPromo(userId, code);
   if (res.ok) {
-    const u = user(userId);
-    u.tokens = res.newBalance;
-    try { db.saveUser(u); } catch (_) {}
+    // atomicApplyPromo уже записала баланс и ledger в одной транзакции — синхронизируем память
+    user(userId).tokens = res.newBalance;   // ledger-ok: значение прочитано из БД внутри транзакции
   }
   return res;
 }
@@ -423,9 +445,13 @@ async function plategaCredit(txId, orderIdFromHook) {
   const order = orderId ? orders.get(String(orderId)) : null;
   if (!order) return { paid: true, credited: false, error: 'заказ не найден', tokens: 0 };
   if (order.status === 'paid') return { paid: true, already: true, tokens: order.tokens };
+  const r = await creditDeposit(order.userId, order.tokens, 'Platega');
+  if (!r.credited) {
+    // Зачисление не прошло — НЕ помечаем заказ оплаченным, чтобы вебхук повторился
+    return { paid: true, credited: false, retry: true, error: r.refErr, tokens: order.tokens };
+  }
   order.status = 'paid';
   if (local) local.status = 'paid';
-  const r = await creditDeposit(order.userId, order.tokens, 'Platega');
   await notifyPaid(order.userId, order.tokens, r.refPaid, 'Platega');
   return { paid: true, credited: true, tokens: order.tokens, refPaid: r.refPaid };
 }
@@ -477,8 +503,9 @@ async function checkCoinsoInvoice(invoiceId, orderId) {
     if (data && (data.status === 'paid' || (data.data && data.data.status === 'paid'))) {
       const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === invoiceId);
       if (saved && !saved.credited) {
-        saved.credited = true;
         const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+        if (!r.credited) return { paid: true, credited: false, error: r.refErr };
+        saved.credited = true;
         await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
         coinsoOrders.delete(orderId);
         return { paid: true, credited: true, tokens: saved.tokens, refPaid: r.refPaid };
@@ -747,12 +774,11 @@ async function processOrderAction(orderId, action) {
       try { db.updateOrderStatus(orderId, 'rejected'); } catch (_) {}
       // Возвращаем токены только если у игрока были реальные депозиты, иначе сбрасываем накрутку
       if ((u.totalDepositedRub || u.lastDeposit || 0) > 0) {
-        u.tokens += order.tokens;
-        try { db.atomicBalanceChange(u.id, order.tokens, 'refund_withdraw', `Возврат отклоненного вывода #${orderId}`); } catch (_) {}
+        applyBalance(u, order.tokens, 'refund_withdraw', `Возврат отклоненного вывода #${orderId}`);
       } else {
-        u.tokens = Math.min(u.tokens, START_TOKENS);
+        setBalanceTo(u, Math.min(u.tokens, START_TOKENS), 'anticheat_reset', `Сброс накрутки по заявке #${orderId}`);
       }
-      try { db.saveUser(u); } catch (_) {}
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (refund):', e.message); }
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -770,10 +796,14 @@ async function processOrderAction(orderId, action) {
     // Заявка на пополнение
     const u = user(order.userId);
     if (action === 'ok' || action === 'approve') {
+      // Сначала зачисляем, и только при успехе помечаем заявку оплаченной
+      const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
+      if (!r.credited) {
+        return { ok: false, error: 'Не удалось зачислить баланс — заявка оставлена в ожидании: ' + (r.refErr || '') };
+      }
       order.status = 'paid';
       order.completedAt = Date.now();
       try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
-      const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -914,12 +944,16 @@ bot.callbackQuery('adm_wipe_cheaters', async ctx => {
   if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
   let wipedCount = 0;
   let canceledWithdrawals = 0;
+  // ВАЖНО: раньше правки шли только в память и после перехода на SQLite не сохранялись вовсе.
   for (const [uid, u] of users.entries()) {
     if (isAdmin(u)) continue;
     const dep = u.totalDepositedRub || u.lastDeposit || 0;
     if (dep <= 0 && u.tokens > 400) {
-      u.tokens = START_TOKENS;
-      wipedCount++;
+      const r = setBalanceTo(u, START_TOKENS, 'anticheat_wipe', 'Массовая очистка накрученных балансов');
+      if (r.ok && r.changed) {
+        try { db.saveUser(u); } catch (e) { console.error('saveUser (wipe):', e.message); }
+        wipedCount++;
+      }
     }
   }
   for (const [id, o] of orders.entries()) {
@@ -929,7 +963,11 @@ bot.callbackQuery('adm_wipe_cheaters', async ctx => {
       if (dep <= 0) {
         o.status = 'rejected';
         o.completedAt = Date.now();
-        if (usr) usr.tokens = START_TOKENS;
+        try { db.updateOrderStatus(id, 'rejected'); } catch (_) {}
+        if (usr) {
+          const r = setBalanceTo(usr, START_TOKENS, 'anticheat_reset', `Отклонён фейк-вывод #${id}`);
+          if (r.ok) { try { db.saveUser(usr); } catch (e) { console.error('saveUser (wipe wd):', e.message); } }
+        }
         canceledWithdrawals++;
       }
     }
@@ -1036,8 +1074,10 @@ bot.callbackQuery('boost_v10', async ctx => {
   if (elapsed >= ONE_HOUR) {
     const rewards = [20, 35, 50, 75, 120, 250];
     const win = rewards[Math.floor(Math.random() * rewards.length)];
-    u.tokens += win;
+    // Раньше бонус начислялся только в память и пропадал при рестарте (в БД не сохранялся)
+    applyBalance(u, win, 'bonus_hotdrop_tg', 'Hot Drop в боте');
     u.lastHotDrop = now;
+    try { db.saveUser(u); } catch (e) { console.error('saveUser (hotdrop tg):', e.message); }
     const kb = new InlineKeyboard().webApp('🔥 Играть в MoneyForUp', APP_URL);
     await ctx.reply(
       `🔥 <b>HOT DROP УСПЕШНО ОТКРЫТ!</b> 🎉\n\n` +
@@ -1148,7 +1188,12 @@ const server = http.createServer(async (req, res) => {
       const mid = String(req.headers['x-merchantid'] || ''), sec = String(req.headers['x-secret'] || '');
       if (!plategaOn() || mid !== PLATEGA_MERCHANT_ID || sec !== PLATEGA_SECRET) return send(403, { error: 'bad credentials' });
       const status = String(body.status || '').toUpperCase();
-      if (status === 'CONFIRMED') return send(200, { ok: true, ...(await plategaCredit(body.id, body.payload)) });
+      if (status === 'CONFIRMED') {
+        const res = await plategaCredit(body.id, body.payload);
+        // 500 заставит Platega повторить вебхук — зачисление не потеряется
+        if (res.retry) return send(500, { error: 'credit failed, retry', ...res });
+        return send(200, { ok: true, ...res });
+      }
       if (status === 'CANCELED' || status === 'CHARGEBACKED') {
         const order = orders.get(String(body.payload || ''));
         if (order && order.status !== 'paid') order.status = status === 'CANCELED' ? 'canceled' : 'chargeback';
@@ -1177,8 +1222,13 @@ const server = http.createServer(async (req, res) => {
       if (status === 'payment.success' || status === 'paid') {
         const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === upd.invoice_id);
         if (saved && !saved.credited) {
-          saved.credited = true;
           const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+          if (!r.credited) {
+            // Флаг НЕ выставляем: пусть Coinso повторит вебхук и зачисление пройдёт
+            console.error('[Coinso Webhook] Зачисление не удалось, ожидаем повтор вебхука');
+            return send(500, { error: 'credit failed, retry' });
+          }
+          saved.credited = true;
           await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
           coinsoOrders.delete(orderId);
           console.log(`[Coinso Webhook] Успешное зачисление: +${saved.tokens} токенов пользователю ${saved.userId}`);
@@ -1230,9 +1280,13 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (foundOrder) {
+        // Сначала зачисляем; при сбое возвращаем 500, чтобы автоматика повторила запрос
+        const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
+        if (!r.credited) {
+          return send(500, { error: 'credit failed, retry', amount: amountRub });
+        }
         foundOrder.status = 'paid';
         try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
-        const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
         await bot.api.sendMessage(foundOrder.userId,
           `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${foundOrder.tokens} ⬦</b> (${foundOrder.rub} ₽)!\nПриятной игры в MoneyForUp!`,
           { parse_mode: 'HTML' }
@@ -1333,14 +1387,11 @@ const server = http.createServer(async (req, res) => {
         winTk = Math.max(0, 350 - Math.max(0, Math.floor(u.tokens || 0) - betTk));
       }
 
-      const delta = nextTk - u.tokens;
-      u.tokens = nextTk;
-      try { db.saveUser(u); } catch (_) {}
-      if (delta !== 0) {
-        try {
-          db.atomicBalanceChange(u.id, delta, 'game_bet', `Игра: ${gameName} (ставка: ${betTk}, выигрыш: ${winTk})`);
-        } catch (_) {}
-      }
+      // Баланс меняется РОВНО ОДИН РАЗ и только через ledger.
+      // Раньше здесь были saveUser() + atomicBalanceChange(), из-за чего delta применялась дважды.
+      const delta = nextTk - Math.floor(u.tokens || 0);
+      const r = applyBalance(u, delta, 'game_bet', `Игра: ${gameName} (ставка: ${betTk}, выигрыш: ${winTk})`);
+      if (!r.ok) return send(500, { error: 'Не удалось обновить баланс, повторите запрос' });
 
       betsMonitor.recordBet({
         userId: u.id,
@@ -1451,10 +1502,10 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      u.tokens += 50;
+      const r = applyBalance(u, 50, 'bonus_channel', 'Подписка на канал @moneyforup');
+      if (!r.ok) return send(500, { error: 'Не удалось начислить бонус, попробуйте позже' });
       u.easycashClaimed = true;
-      try { db.saveUser(u); } catch (_) {}
-      try { db.atomicBalanceChange(u.id, 50, 'bonus_channel', 'Подписка на канал @moneyforup'); } catch (_) {}
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (channel):', e.message); }
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
 
@@ -1474,11 +1525,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       const cashback = Math.max(1, Math.floor(u.lastDeposit * 0.05));
-      u.tokens += cashback;
+      const r = applyBalance(u, cashback, 'bonus_cashback', 'Еженедельный кэшбэк 5%');
+      if (!r.ok) return send(500, { error: 'Не удалось начислить кэшбэк, попробуйте позже' });
       u.cashbackClaimedDepositId = u.lastDepositId;
       u.lastCashbackAt = now;
-      try { db.saveUser(u); } catch (_) {}
-      try { db.atomicBalanceChange(u.id, cashback, 'bonus_cashback', 'Еженедельный кэшбэк 5%'); } catch (_) {}
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (cashback):', e.message); }
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
@@ -1503,9 +1554,9 @@ const server = http.createServer(async (req, res) => {
           details: `запросил ${rub} ₽ (${rub * TOKENS_PER_RUB} ⬦) на ${details}`
         });
         if (u.tokens > 400) {
-          u.tokens = START_TOKENS;
+          setBalanceTo(u, START_TOKENS, 'anticheat_reset', 'Сброс накрученного баланса (вывод без депозитов)');
         }
-        try { db.saveUser(u); } catch (_) {}
+        try { db.saveUser(u); } catch (e) { console.error('saveUser (anticheat):', e.message); }
         if (ADMIN_ID) {
           const dossier = betsMonitor.getPlayerDossier(u.id, u);
           bot.api.sendMessage(
@@ -1533,9 +1584,9 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Укажите корректные реквизиты для вывода (номер карты, телефон СБП или кошелёк)' });
       }
 
-      u.tokens -= neededTokens;
-      try { db.saveUser(u); } catch (_) {}
-      try { db.atomicBalanceChange(u.id, -neededTokens, 'withdraw', `Заявка на вывод ${rub} ₽ на ${details}`); } catch (_) {}
+      // Списание ровно один раз; при сбое записи заявку НЕ создаём
+      const wr = applyBalance(u, -neededTokens, 'withdraw', `Заявка на вывод ${rub} ₽ на ${details}`);
+      if (!wr.ok) return send(500, { error: 'Не удалось списать баланс, попробуйте позже' });
       const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
       const wdOrder = {
         id: orderId,
@@ -1619,10 +1670,10 @@ const server = http.createServer(async (req, res) => {
       }
       const rewards = [20, 25, 35, 50, 75, 100, 250];
       const win = rewards[Math.floor(Math.random() * rewards.length)];
-      u.tokens += win;
+      const r = applyBalance(u, win, 'bonus_hotdrop', 'Hot Drop');
+      if (!r.ok) return send(500, { error: 'Не удалось начислить награду, попробуйте позже' });
       u.lastHotDrop = now;
-      try { db.saveUser(u); } catch (_) {}
-      try { db.atomicBalanceChange(u.id, win, 'bonus_hotdrop', 'Hot Drop'); } catch (_) {}
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (hotdrop):', e.message); }
       return send(200, { ok: true, reward: win, balance: u.tokens });
     }
 
