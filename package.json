@@ -22,6 +22,7 @@
     "grammy": "^1.30.0"
   },
   "devDependencies": {
-    "jsdom": "^30.1.2"
+    "jsdom": "^30.1.2",
+    "wrangler": "4.150.0"
   }
 }
