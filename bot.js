@@ -17,15 +17,28 @@ if (typeof process.loadEnvFile === 'function') {
   try { process.loadEnvFile(); } catch (_) {}
 }
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const { Bot, InlineKeyboard } = require('grammy');
 
 const BOT_TOKEN     = process.env.BOT_TOKEN;
 const APP_URL       = process.env.APP_URL || 'https://example.com/moneyforup-tg.html';
-const API_PORT      = +(process.env.APP_PORT || process.env.API_PORT || 3000);
-const ADMIN_ID      = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
+const API_PORT      = +(process.env.PORT || process.env.API_PORT || 3000);
+let ADMIN_ID        = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
+const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || 'lev_god').replace(/^@/, '').toLowerCase();
+const betsMonitor   = require('./bets_monitor');
+
+function isAdmin(u) {
+  if (!u) return false;
+  if (ADMIN_ID && Number(u.id) === ADMIN_ID) return true;
+  if (u.username && String(u.username).replace(/^@/, '').toLowerCase() === ADMIN_USERNAME) {
+    if (!ADMIN_ID && u.id) {
+      ADMIN_ID = Number(u.id);
+      console.log('[Admin] Автоматически привязан ADMIN_ID по @' + ADMIN_USERNAME + ':', ADMIN_ID);
+    }
+    return true;
+  }
+  return false;
+}
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
@@ -33,22 +46,10 @@ const PLATEGA_MERCHANT_ID = process.env.PLATEGA_MERCHANT_ID || '';
 const PLATEGA_SECRET      = process.env.PLATEGA_SECRET || '';
 const PLATEGA_API         = process.env.PLATEGA_API || 'https://app.platega.io';
 
-/* Heleket (криптовалюта). Документация: heleket.com */
-const HELEKET_MERCHANT_ID = process.env.HELEKET_MERCHANT_ID || '';
-const HELEKET_API_KEY     = process.env.HELEKET_API_KEY || '';
-const HELEKET_API         = (process.env.HELEKET_API || 'https://api.heleket.com').replace(/\/+$/, '');
-const heleketOn           = () => !!(HELEKET_MERCHANT_ID && HELEKET_API_KEY);
-const heleketOrders       = new Map(); // uuid -> { orderId, userId, tokens, rub, status }
-
-/* CryptoBot (Crypto Pay). Бот: @CryptoBot */
-const CRYPTOBOT_TOKEN     = process.env.CRYPTOBOT_TOKEN || '';
-const CRYPTOBOT_API       = (process.env.CRYPTOBOT_API || 'https://pay.crypt.bot').replace(/\/+$/, '');
-const cryptobotOrders     = new Map(); // invoice_id -> { userId, tokens, rub, status }
-
 /* Coinso (CryptoProc: Криптовалюта USDT, TON, BTC и др.). Кабинет: coinso.io → Настройки проекта → Интеграция */
-const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '';
-const COINSO_API_KEY     = process.env.COINSO_API_KEY || '';
-const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '';
+const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '279786097';
+const COINSO_API_KEY     = process.env.COINSO_API_KEY || '66b9617c7e746616694bf40248a83e47';
+const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '20a010394423b5a409b667feae26c31c';
 const COINSO_API         = (process.env.COINSO_API || 'https://coinso.io/api').replace(/\/+$/, '');
 const coinsoOrders       = new Map(); // orderId -> { userId, tokens, rub, invoice_id, credited }
 
@@ -63,26 +64,15 @@ const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
 
-const hasBotToken = Boolean(BOT_TOKEN && BOT_TOKEN.length > 20 && BOT_TOKEN.includes(':'));
-
-let bot;
-if (hasBotToken) {
-  bot = new Bot(BOT_TOKEN);
-} else {
-  console.warn('Валидный BOT_TOKEN не задан. Telegram бот запущен в режиме заглушки (опрос Telegram отключён). Веб-интерфейс и API активны.');
-  bot = {
-    api: {
-      sendMessage: async () => {},
-      createInvoiceLink: async () => 'https://t.me/dummy_invoice',
-      setMyDescription: async () => {},
-      setMyShortDescription: async () => {}
-    },
-    command: () => {},
-    callbackQuery: () => {},
-    on: () => {},
-    start: () => {}
-  };
+if (!BOT_TOKEN) {
+  console.error('================================================================');
+  console.error('ОШИБКА: Не задан BOT_TOKEN в переменных окружения!');
+  console.error('На Render.com: откройте ваш Web Service -> Environment -> добавьте BOT_TOKEN=токен_бота');
+  console.error('================================================================');
+  process.exit(1);
 }
+
+const bot = new Bot(BOT_TOKEN);
 
 /* ------------------------------------------------------------------ */
 /* Хранилище (демо). Заменить на Postgres/SQLite — см. README.md        */
@@ -134,8 +124,8 @@ function user(id, name, username) {
     const numId = nextPlayerId++;
     users.set(id, { id, numId, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
                     ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
-                    lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-                    easycashClaimed: false });
+                    totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
+                    easycashClaimed: false, notifications: [] });
     byCode.set(code, id);
   }
   const u = users.get(id);
@@ -145,81 +135,6 @@ function user(id, name, username) {
   if (name) u.name = name;
   if (username) u.username = username;      // @username из Telegram — для привязки профиля
   return u;
-}
-
-/* ------------------------------------------------------------------ */
-/* Транзакционный журнал (Ledger), идемпотентность и блокировка      */
-/* ------------------------------------------------------------------ */
-const ledger = [];             // глобальный журнал транзакций
-const userLedger = new Map();  // userId -> [tx, tx, ...]
-const userLocks = new Map();   // userId -> Promise цепочки для взаимного исключения (mutex)
-const idempotencyStore = new Map(); // key -> { status, body, createdAt }
-const gameSessions = new Map(); // sessionId -> { sessionId, userId, game, bet, status, ... }
-
-/* Атомарная блокировка по пользователю (защита от race condition и параллельных кликов) */
-async function withUserLock(userId, fn) {
-  const prev = userLocks.get(userId) || Promise.resolve();
-  let release;
-  const current = new Promise(r => release = r);
-  userLocks.set(userId, prev.then(() => current));
-  try {
-    await prev;
-    return await fn();
-  } finally {
-    release();
-    if (userLocks.get(userId) === current) userLocks.delete(userId);
-  }
-}
-
-/* Запись транзакции в журнал для аудита и сверки баланса */
-function recordTransaction(userId, type, reason, delta, balanceBefore, balanceAfter, meta = {}) {
-  const id = 'TX_' + Date.now().toString(36).toUpperCase() + '_' + crypto.randomBytes(3).toString('hex').toUpperCase();
-  const entry = {
-    id,
-    userId,
-    type,       // 'credit' | 'debit'
-    reason,     // 'game_bet' | 'game_win' | 'game_refund' | 'deposit' | 'withdraw' | 'stake_add' | 'stake_claim' | 'stake_remove' | 'promo' | 'bonus'
-    delta,
-    balanceBefore,
-    balanceAfter,
-    meta,
-    createdAt: Date.now()
-  };
-  ledger.push(entry);
-  if (!userLedger.has(userId)) userLedger.set(userId, []);
-  userLedger.get(userId).unshift(entry);
-  if (userLedger.get(userId).length > 200) userLedger.get(userId).pop();
-  return entry;
-}
-
-/* Атомарное изменение баланса пользователя с валидацией остатка и логированием */
-function applyBalanceDelta(u, delta, reason, meta = {}) {
-  delta = Math.round(Number(delta) || 0);
-  if (delta === 0) return { ok: true, balance: u.tokens };
-  if (delta < 0 && (u.tokens + delta < 0)) {
-    return { ok: false, error: 'Недостаточно токенов на балансе', balance: u.tokens };
-  }
-  const before = u.tokens;
-  u.tokens += delta;
-  const after = u.tokens;
-  const tx = recordTransaction(u.id, delta >= 0 ? 'credit' : 'debit', reason, delta, before, after, meta);
-  return { ok: true, balance: u.tokens, tx };
-}
-
-/* Генератор серверного коэффициента для Ракетки с Provably Fair гарантией */
-function sampleServerCrash() {
-  const r = Math.random();
-  if (r < 0.08) return 1.00;
-  if (r < 0.14) return +(1.01 + ((r - 0.08) / 0.06) * 0.09).toFixed(2);
-  if (r < 0.29) return +(1.10 + ((r - 0.14) / 0.15) * 0.20).toFixed(2);
-  if (r < 0.53) return +(1.30 + ((r - 0.29) / 0.24) * 0.25).toFixed(2);
-  if (r < 0.73) return +(1.55 + ((r - 0.53) / 0.20) * 0.20).toFixed(2);
-  if (r < 0.79) return +(1.75 + ((r - 0.73) / 0.06) * 0.25).toFixed(2);
-  if (r < 0.89) return +(2.00 + ((r - 0.79) / 0.10) * 0.30).toFixed(2);
-  if (r < 0.98) return +(2.30 + ((r - 0.89) / 0.09) * 0.69).toFixed(2);
-  const t0 = Math.log(3.5) / 0.18;
-  const rLong = (r - 0.98) / 0.02;
-  return +Math.exp(0.18 * (t0 + rLong * (12 - t0))).toFixed(2);
 }
 
 /* ------------------------------------------------------------------ */
@@ -235,32 +150,26 @@ function stakeAdd(u, v) {
   v = Math.floor(Number(v) || 0);
   if (v <= 0) return { error: 'Сумма должна быть больше нуля' };
   if (v > u.tokens) return { error: 'Недостаточно токенов на балансе' };
-  const before = u.tokens;
   u.accruedBase = stakeAccrued(u);          // сохраняем уже накопленное
   u.tokens -= v;
   u.staked += v;
   u.stakeSince = Date.now();
-  recordTransaction(u.id, 'debit', 'stake_add', -v, before, u.tokens, { staked: u.staked });
   return { staked: u.staked, tokens: u.tokens, accrued: u.accruedBase };
 }
 function stakeClaim(u) {
   const acc = stakeAccrued(u);
   if (acc < 0.01) return { error: 'Пока нечего забирать' };
-  const before = u.tokens;
   u.tokens += acc; u.accruedBase = 0; u.stakeSince = Date.now();
-  recordTransaction(u.id, 'credit', 'stake_claim', acc, before, u.tokens, {});
   return { claimed: acc, tokens: u.tokens };
 }
 function stakeRemove(u, all) {
   const acc = stakeAccrued(u), body = u.staked;
   if (!body && acc < 0.01) return { error: 'Стейкинг пуст' };
   const take = all === false ? 0 : body;
-  const before = u.tokens;
   u.tokens += take + acc;
   u.staked -= take;
   u.accruedBase = 0;
   u.stakeSince = u.staked ? Date.now() : 0;
-  recordTransaction(u.id, 'credit', 'stake_remove', take + acc, before, u.tokens, { stakedReturned: take, accrued: acc });
   return { removed: take + acc, tokens: u.tokens, staked: u.staked };
 }
 
@@ -269,22 +178,21 @@ function stakeRemove(u, all) {
 /* ------------------------------------------------------------------ */
 async function creditDeposit(userId, tokens, source) {
   const u = user(userId);
-  const before = u.tokens;
   u.tokens += tokens;
-  u.lastDeposit = Math.round(tokens / TOKENS_PER_RUB);
+  const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
+  u.lastDeposit = rubAmt;
+  u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
+  try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
   u.lastDepositId = (u.lastDepositId || 0) + 1;
-  recordTransaction(u.id, 'credit', 'deposit', tokens, before, u.tokens, { source });
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
   if (refId) {
     const referrer = user(refId);                              // реферер мог ещё не открыть бота — создаём запись
     if (Number(u.ref) !== u.id) {                              // самоприглашение отсекаем
       refPaid = Math.floor(tokens * REF_PERCENT / 100);
-      const refBefore = referrer.tokens;
       referrer.tokens += refPaid;
       referrer.refEarned = (referrer.refEarned || 0) + refPaid;
       referrer.refInvited = countInvited(referrer.id);
-      recordTransaction(referrer.id, 'credit', 'referral_bonus', refPaid, refBefore, referrer.tokens, { fromUserId: u.id, sourceDeposit: tokens });
       try {
         await bot.api.sendMessage(referrer.id,
           `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
@@ -298,23 +206,7 @@ async function creditDeposit(userId, tokens, source) {
 /* Проверка initData                                                   */
 /* ------------------------------------------------------------------ */
 function checkInitData(initData) {
-  if (!initData || typeof initData !== 'string') {
-    if (!BOT_TOKEN && process.env.NODE_ENV !== 'production') {
-      return { id: 10001, first_name: 'Игрок', username: 'player' };
-    }
-    return null;
-  }
-  if (!BOT_TOKEN) {
-    if (initData === 'demo') {
-      return { id: 10001, first_name: 'Игрок', username: 'player' };
-    }
-    try {
-      const params = new URLSearchParams(initData);
-      return JSON.parse(params.get('user') || '{}');
-    } catch {
-      return { id: 10001, first_name: 'Игрок', username: 'player' };
-    }
-  }
+  if (!initData || typeof initData !== 'string') return null;
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
   if (!hash) return null;
@@ -325,7 +217,7 @@ function checkInitData(initData) {
   if (calc.length !== hash.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(calc), Buffer.from(hash))) return null;
   const authDate = Number(params.get('auth_date') || 0) * 1000;
-  if (!authDate || Date.now() - authDate > 24 * 3600 * 1000 || authDate > Date.now() + 60000) return null;
+  if (!authDate || Date.now() - authDate > 24 * 3600 * 1000) return null;
   try { return JSON.parse(params.get('user') || '{}'); } catch { return null; }
 }
 
@@ -379,9 +271,7 @@ function applyPromo(userId, rawCode) {
 
   promo.usedBy.add(userId);
   const u = user(userId);
-  const before = u.tokens;
   u.tokens = (u.tokens || 0) + promo.tokens;
-  recordTransaction(u.id, 'credit', 'promo', promo.tokens, before, u.tokens, { code: promo.code });
 
   return {
     ok: true,
@@ -455,111 +345,6 @@ async function plategaCredit(txId, orderIdFromHook) {
   const r = await creditDeposit(order.userId, order.tokens, 'Platega');
   await notifyPaid(order.userId, order.tokens, r.refPaid, 'Platega');
   return { paid: true, credited: true, tokens: order.tokens, refPaid: r.refPaid };
-}
-
-/* ------------------------------------------------------------------ */
-/* Heleket — приём крипты (USDT, TON, BTC, ETH)                       */
-/* ------------------------------------------------------------------ */
-function heleketSign(bodyStr, key) {
-  const b64 = Buffer.from(bodyStr, 'utf8').toString('base64');
-  return crypto.createHash('md5').update(b64 + key).digest('hex');
-}
-
-async function heleketCreate(u, rub, tokens) {
-  if (!heleketOn()) throw new Error('Heleket не настроен');
-  const orderId = 'HL_' + Date.now() + '_' + u.id;
-  const payload = {
-    amount: rub.toFixed(2),
-    currency: 'RUB',
-    order_id: orderId,
-    url_callback: `${PUBLIC_URL}/heleket-webhook`
-  };
-  const rawBody = JSON.stringify(payload);
-  const sign = heleketSign(rawBody, HELEKET_API_KEY);
-  const res = await fetch(`${HELEKET_API}/v1/payment`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'merchant': HELEKET_MERCHANT_ID,
-      'sign': sign
-    },
-    body: rawBody
-  });
-  const data = await res.json().catch(() => ({}));
-  if (data.state !== 0 || !data.result || !data.result.url) {
-    throw new Error('Heleket: ' + (data.message || JSON.stringify(data)));
-  }
-  const uuid = data.result.uuid;
-  orders.set(orderId, { userId: u.id, tokens, rub, status: 'pending', source: 'Heleket', uuid });
-  heleketOrders.set(uuid, { orderId, userId: u.id, tokens, rub, status: 'pending' });
-  return {
-    pay_url: data.result.url,
-    invoice_id: uuid,
-    order_id: orderId,
-    tokens
-  };
-}
-
-async function heleketCredit(uuid, orderIdFromHook) {
-  const local = heleketOrders.get(String(uuid));
-  const orderId = (local && local.orderId) || orderIdFromHook;
-  const order = orderId ? orders.get(String(orderId)) : null;
-  if (!order) return { paid: true, credited: false, error: 'заказ не найден', tokens: 0 };
-  if (order.status === 'paid') return { paid: true, already: true, tokens: order.tokens };
-  order.status = 'paid';
-  if (local) local.status = 'paid';
-  const r = await creditDeposit(order.userId, order.tokens, 'Heleket');
-  await notifyPaid(order.userId, order.tokens, r.refPaid, 'Heleket');
-  return { paid: true, credited: true, tokens: order.tokens, refPaid: r.refPaid };
-}
-
-async function checkHeleketInvoice(uuid) {
-  if (!uuid) return { paid: false };
-  try {
-    const rawBody = JSON.stringify({ uuid });
-    const sign = heleketSign(rawBody, HELEKET_API_KEY);
-    const res = await fetch(`${HELEKET_API}/v1/payment/info`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'merchant': HELEKET_MERCHANT_ID,
-        'sign': sign
-      },
-      body: rawBody
-    });
-    const data = await res.json().catch(() => ({}));
-    if (data.state === 0 && data.result && (data.result.payment_status === 'paid' || data.result.status === 'paid')) {
-      const cr = await heleketCredit(uuid, data.result.order_id);
-      return { paid: true, credited: cr.credited, already: cr.already, tokens: cr.tokens };
-    }
-    return { paid: false, status: data.result ? data.result.payment_status : 'pending' };
-  } catch (e) {
-    return { paid: false, error: e.message };
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* CryptoBot (Crypto Pay)                                              */
-/* ------------------------------------------------------------------ */
-async function createCryptoInvoice(userId, rub, tokens) {
-  const invId = Date.now();
-  const payUrl = `https://t.me/CryptoBot?start=IV${invId}`;
-  cryptobotOrders.set(Number(invId), { userId, rub, tokens, status: 'pending' });
-  return { pay_url: payUrl, invoice_id: invId, tokens };
-}
-
-async function checkCryptoInvoice(invoiceId) {
-  const ord = cryptobotOrders.get(Number(invoiceId));
-  if (ord) {
-    if (ord.status !== 'paid') {
-      ord.status = 'paid';
-      const r = await creditDeposit(ord.userId, ord.tokens, 'CryptoBot');
-      await notifyPaid(ord.userId, ord.tokens, r.refPaid, 'CryptoBot');
-      return { paid: true, credited: true, tokens: ord.tokens };
-    }
-    return { paid: true, already: true, tokens: ord.tokens };
-  }
-  return { paid: true, tokens: 3000 };
 }
 
 /* ------------------------------------------------------------------ */
@@ -735,7 +520,7 @@ bot.command('promo', async ctx => {
 });
 
 bot.command('addpromo', async ctx => {
-  if (!ADMIN_ID || ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
   const parts = (ctx.match || '').trim().split(/\s+/);
   const [code, tokensStr, maxUsesStr] = parts;
   if (!code || !tokensStr) {
@@ -765,7 +550,7 @@ bot.command('addpromo', async ctx => {
 });
 
 bot.command(['promos', 'promocodes'], async ctx => {
-  if (!ADMIN_ID || ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
   if (promoCodes.size === 0) return ctx.reply('Промокодов пока нет. Создайте: /addpromo КОД ТОКЕНЫ МАКС');
   let text = '🎟 <b>Список активных промокодов:</b>\n\n';
   for (const [code, p] of promoCodes.entries()) {
@@ -777,7 +562,7 @@ bot.command(['promos', 'promocodes'], async ctx => {
 });
 
 bot.command('delpromo', async ctx => {
-  if (!ADMIN_ID || ctx.from.id !== ADMIN_ID) return ctx.reply('⛔ Доступ только для администратора.');
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
   const code = (ctx.match || '').trim().toUpperCase();
   if (!code) return ctx.reply('Используйте: /delpromo КОД');
   if (!promoCodes.has(code)) return ctx.reply(`Промокод «${code}» не найден.`);
@@ -837,36 +622,264 @@ bot.command('sbp', async ctx => {
   );
 });
 
-bot.callbackQuery(/^ok:(\d+)$/, async ctx => {
-  const order = orders.get(ctx.match[1]);
-  if (!order) return ctx.answerCallbackQuery('Заявка не найдена');
-  if (order.status === 'paid') return ctx.answerCallbackQuery('Уже зачислено');
-  order.status = 'paid';
-  const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
+async function processOrderAction(orderId, action) {
+  const order = orders.get(String(orderId));
+  if (!order) return { ok: false, error: 'Заявка не найдена' };
+  if (order.status !== 'pending') return { ok: false, error: 'Заявка уже обработана (' + order.status + ')' };
+
+  if (order.type === 'withdraw') {
+    const u = user(order.userId);
+    if (action === 'wd_ok' || action === 'approve') {
+      order.status = 'paid';
+      order.completedAt = Date.now();
+      try { betsMonitor.recordCashflow('withdraw', order.rub, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
+      u.notifications = u.notifications || [];
+      u.notifications.push({
+        id: 'notif_' + Date.now(),
+        text: `✅ Ваша заявка на вывод ${order.rub} ₽ успешно выполнена! Средства отправлены на реквизиты: ${order.details}`,
+        t: Date.now()
+      });
+      await bot.api.sendMessage(order.userId,
+        `✅ <b>Ваша заявка на вывод №${orderId} выполнена!</b> ☑️\n\n` +
+        `├ Сумма выплаты: <b>${order.rub} ₽</b> (${order.tokens} ⬦)\n` +
+        `├ Способ: <b>${order.method}</b>\n` +
+        `└ Реквизиты: <code>${order.details}</code>\n\n` +
+        `Средства успешно отправлены! Спасибо за игру в MoneyForUp! 🚀`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+      return { ok: true, status: 'paid', order };
+    } else {
+      order.status = 'rejected';
+      order.completedAt = Date.now();
+      // Возвращаем токены только если у игрока были реальные депозиты, иначе сбрасываем накрутку
+      if ((u.totalDepositedRub || u.lastDeposit || 0) > 0) {
+        u.tokens += order.tokens;
+      } else {
+        u.tokens = Math.min(u.tokens, START_TOKENS);
+      }
+      u.notifications = u.notifications || [];
+      u.notifications.push({
+        id: 'notif_' + Date.now(),
+        text: `⚠️ Заявка на вывод ${order.rub} ₽ отклонена.`,
+        t: Date.now()
+      });
+      await bot.api.sendMessage(order.userId,
+        `⚠️ <b>Заявка на вывод №${orderId} на ${order.rub} ₽ отклонена.</b>\n` +
+        `Проверьте условия вывода и реквизиты или напишите @lev_god.`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+      return { ok: true, status: 'rejected', order };
+    }
+  } else {
+    // Заявка на пополнение
+    const u = user(order.userId);
+    if (action === 'ok' || action === 'approve') {
+      order.status = 'paid';
+      order.completedAt = Date.now();
+      const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
+      u.notifications = u.notifications || [];
+      u.notifications.push({
+        id: 'notif_' + Date.now(),
+        text: `🎉 Пополнение подтверждено! Зачислено +${order.tokens} ⬦ (${order.rub} ₽).`,
+        t: Date.now()
+      });
+      await bot.api.sendMessage(order.userId,
+        `🎉 Оплата получена: <b>+${order.tokens} ⬦</b> (${order.rub} ₽)${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}!\nБаланс успешно пополнен.`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+      return { ok: true, status: 'paid', order, refPaid: r.refPaid };
+    } else {
+      order.status = 'rejected';
+      order.completedAt = Date.now();
+      u.notifications = u.notifications || [];
+      u.notifications.push({
+        id: 'notif_' + Date.now(),
+        text: `⚠️ Заявка на пополнение №${orderId} (${order.rub} ₽) отклонена администратором.`,
+        t: Date.now()
+      });
+      await bot.api.sendMessage(order.userId,
+        `⚠️ Заявка №${orderId} на ${order.rub} ₽ отклонена. Если возник вопрос — напишите администратору @lev_god.`
+      ).catch(() => {});
+      return { ok: true, status: 'rejected', order };
+    }
+  }
+}
+
+bot.callbackQuery(/^ok:(.+)$/, async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только администратор может подтверждать пополнения!', show_alert: true });
+  const res = await processOrderAction(ctx.match[1], 'ok');
+  if (!res.ok) return ctx.answerCallbackQuery({ text: res.error, show_alert: true });
   await ctx.answerCallbackQuery('Зачислено ✅');
   await ctx.editMessageText(
-    (ctx.callbackQuery.message.text || '') + '\n\n✅ <b>Оплата подтверждена! Зачислено +' + order.tokens + ' ⬦</b>',
-    { parse_mode: 'HTML' }
-  );
-  await bot.api.sendMessage(order.userId,
-    `🎉 Оплата получена: <b>+${order.tokens} ⬦</b> (${order.rub} ₽)${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}!\nБаланс успешно пополнен.`,
+    (ctx.callbackQuery.message.text || '') + '\n\n✅ <b>Оплата подтверждена! Зачислено +' + res.order.tokens + ' ⬦</b>',
     { parse_mode: 'HTML' }
   ).catch(() => {});
 });
 
-bot.callbackQuery(/^no:(\d+)$/, async ctx => {
-  const order = orders.get(ctx.match[1]);
-  if (!order) return ctx.answerCallbackQuery('Заявка не найдена');
-  if (order.status !== 'pending') return ctx.answerCallbackQuery('Заявка уже обработана');
-  order.status = 'rejected';
+bot.callbackQuery(/^no:(.+)$/, async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только администратор может отклонять заявки!', show_alert: true });
+  const res = await processOrderAction(ctx.match[1], 'no');
+  if (!res.ok) return ctx.answerCallbackQuery({ text: res.error, show_alert: true });
   await ctx.answerCallbackQuery('Отклонено ❌');
   await ctx.editMessageText(
     (ctx.callbackQuery.message.text || '') + '\n\n❌ <b>Заявка отклонена администратором</b>',
     { parse_mode: 'HTML' }
-  );
-  await bot.api.sendMessage(order.userId,
-    `⚠️ Заявка №${ctx.match[1]} на ${order.rub} ₽ отклонена. Если возник вопрос — напишите администратору @lev_god.`
   ).catch(() => {});
+});
+
+bot.callbackQuery(/^wd_ok:(.+)$/, async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только администратор может подтверждать выводы!', show_alert: true });
+  const res = await processOrderAction(ctx.match[1], 'wd_ok');
+  if (!res.ok) return ctx.answerCallbackQuery({ text: res.error, show_alert: true });
+  await ctx.answerCallbackQuery('Вывод отмечен выполненным ☑️ Уведомление отправлено!');
+  await ctx.editMessageText(
+    (ctx.callbackQuery.message.text || '') + '\n\n☑️ <b>ВЫПЛАЧЕНО (галочка поставлена, игрок уведомлён)</b>',
+    { parse_mode: 'HTML' }
+  ).catch(() => {});
+});
+
+bot.callbackQuery(/^wd_no:(.+)$/, async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только администратор может отклонять выводы!', show_alert: true });
+  const res = await processOrderAction(ctx.match[1], 'wd_no');
+  if (!res.ok) return ctx.answerCallbackQuery({ text: res.error, show_alert: true });
+  await ctx.answerCallbackQuery('Вывод отклонён ❌');
+  await ctx.editMessageText(
+    (ctx.callbackQuery.message.text || '') + '\n\n❌ <b>Вывод отклонён администратором</b>',
+    { parse_mode: 'HTML' }
+  ).catch(() => {});
+});
+
+/* ---------- Команды администратора: /stats, /pnl, /admin, /orders, /games, /players, /audit ---------- */
+function getAdminStatsKeyboard() {
+  return new InlineKeyboard()
+    .text('📊 Сводка 12ч', 'adm_stats:12')
+    .text('📅 Сводка 24ч', 'adm_stats:24')
+    .text('🏦 За всё время', 'adm_stats:0')
+    .row()
+    .text('🎮 Отчёт по играм', 'adm_games')
+    .text('👥 Отчёт по игрокам', 'adm_players')
+    .row()
+    .text('🛡 Античит / Аудит', 'adm_audit')
+    .text('📋 Активные заявки', 'adm_orders')
+    .row()
+    .text('🧹 Обнулить накрутчиков (0 деп)', 'adm_wipe_cheaters');
+}
+
+bot.command(['stats', 'pnl', 'admin', 'orders'], async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  const report = betsMonitor.formatTelegramReport(12);
+  await ctx.reply(report, { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.command('games', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatGamesReport(0), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.command('players', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatPlayersReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.command('audit', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.callbackQuery(/^adm_stats:(\d+)$/, async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  const hours = Number(ctx.match[1] || 12);
+  await ctx.answerCallbackQuery('Обновляю сводку...');
+  const report = betsMonitor.formatTelegramReport(hours);
+  await ctx.editMessageText(report, { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_games', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Отчёт по играм...');
+  await ctx.editMessageText(betsMonitor.formatGamesReport(0), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_players', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Отчёт по игрокам...');
+  await ctx.editMessageText(betsMonitor.formatPlayersReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_audit', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Аудит безопасности...');
+  await ctx.editMessageText(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_wipe_cheaters', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  let wipedCount = 0;
+  let canceledWithdrawals = 0;
+  for (const [uid, u] of users.entries()) {
+    if (isAdmin(u)) continue;
+    const dep = u.totalDepositedRub || u.lastDeposit || 0;
+    if (dep <= 0 && u.tokens > 400) {
+      u.tokens = START_TOKENS;
+      wipedCount++;
+    }
+  }
+  for (const [id, o] of orders.entries()) {
+    if (o.type === 'withdraw' && o.status === 'pending') {
+      const usr = users.get(o.userId);
+      const dep = (usr && (usr.totalDepositedRub || usr.lastDeposit)) || 0;
+      if (dep <= 0) {
+        o.status = 'rejected';
+        o.completedAt = Date.now();
+        if (usr) usr.tokens = START_TOKENS;
+        canceledWithdrawals++;
+      }
+    }
+  }
+  await ctx.answerCallbackQuery(`Очищено аккаунтов: ${wipedCount}, отклонено фейк-выводов: ${canceledWithdrawals}`, { show_alert: true });
+  await ctx.editMessageText(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_orders', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery();
+  const pending = [...orders.entries()].filter(([_, o]) => o.status === 'pending');
+  if (pending.length === 0) {
+    return ctx.reply('✅ Активных ожидающих заявок на пополнение или вывод сейчас нет.');
+  }
+  for (const [id, o] of pending.slice(0, 15)) {
+    const u = users.get(o.userId) || { name: 'ID ' + o.userId };
+    if (o.type === 'withdraw') {
+      const dossier = betsMonitor.getPlayerDossier(o.userId, u);
+      await ctx.reply(
+        `💸 <b>Ожидает вывода #${id}</b>\n` +
+        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
+        `├ Сумма: <b>${o.rub} ₽</b> (${o.tokens} ⬦)\n` +
+        `├ Способ: <b>${o.method}</b>\n` +
+        `└ Реквизиты: <code>${o.details}</code>\n\n` +
+        dossier,
+        {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard()
+            .text('☑️ Выплачено (галочка)', 'wd_ok:' + id)
+            .text('❌ Отклонить', 'wd_no:' + id)
+        }
+      );
+    } else {
+      await ctx.reply(
+        `💳 <b>Ожидает пополнения #${id}</b>\n` +
+        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
+        `├ Сумма: <b>${o.rub} ₽</b> (+${o.tokens} ⬦)\n` +
+        `└ Способ: <b>${o.bank || o.source || 'СБП'}</b>`,
+        {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard()
+            .text('✅ Подтвердить', 'ok:' + id)
+            .text('❌ Отклонить', 'no:' + id)
+        }
+      );
+    }
+  }
 });
 
 /* ---------- Команда /boost: Вариант 7, Вариант 10, Вариант 4 ---------- */
@@ -987,47 +1000,6 @@ function readBody(req) {
 }
 function readJson(req) { return readBody(req).then(b => { try { return JSON.parse(b || '{}'); } catch { return {}; } }); }
 
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.webp': 'image/webp',
-  '.txt': 'text/plain; charset=utf-8'
-};
-
-function serveStatic(req, res, pathname) {
-  let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-  if (safePath === '/' || safePath === '' || safePath === '\\' || safePath === '.') safePath = '/index.html';
-
-  const candidates = [
-    path.join(__dirname, 'public', safePath),
-    path.join(__dirname, safePath)
-  ];
-
-  for (const filePath of candidates) {
-    try {
-      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        const ext = path.extname(filePath).toLowerCase();
-        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-        res.writeHead(200, {
-          'Content-Type': contentType,
-          'Access-Control-Allow-Origin': '*'
-        });
-        fs.createReadStream(filePath).pipe(res);
-        return true;
-      }
-    } catch {}
-  }
-  return false;
-}
-
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const send = (code, obj) => {
@@ -1037,9 +1009,34 @@ const server = http.createServer(async (req, res) => {
   };
   if (req.method === 'OPTIONS') return send(204, {});
 
-  // Статические файлы (UI приложения, ассеты, манифест)
-  if (req.method === 'GET' && !url.pathname.startsWith('/api') && !url.pathname.includes('webhook')) {
-    if (serveStatic(req, res, url.pathname)) return;
+  // Если открыли адрес в обычном браузере — отдаём красивую страницу статуса
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(`<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyForUp Backend</title>
+  <style>
+    body { margin: 0; background: #0b0e14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+    .card { background: #161c28; border: 1px solid #2a3449; border-radius: 20px; padding: 36px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .badge { display: inline-block; padding: 6px 14px; background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 999px; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
+    h1 { margin: 0 0 12px; font-size: 26px; color: #fff; }
+    p { margin: 0 0 24px; color: #94a3b8; font-size: 15px; line-height: 1.6; }
+    .btn { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #00e5ff, #0072ff); color: #fff; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 15px; transition: transform 0.2s; box-shadow: 0 8px 20px rgba(0,114,255,0.4); }
+    .btn:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">● СЕРВЕР РАБОТАЕТ (ONLINE)</div>
+    <h1>MoneyForUp API & Bot</h1>
+    <p>Бэкенд на Render успешно запущен и обрабатывает запросы Telegram-бота, стейкинга и платежей.</p>
+    <a href="${APP_URL || '#'}" class="btn" target="_blank" rel="noopener">🎮 Открыть сайт с играми (Cloudflare)</a>
+  </div>
+</body>
+</html>`);
   }
 
   try {
@@ -1058,25 +1055,6 @@ const server = http.createServer(async (req, res) => {
         const order = orders.get(String(body.payload || ''));
         if (order && order.status !== 'paid') order.status = status === 'CANCELED' ? 'canceled' : 'chargeback';
         const local = plategaTx.get(String(body.id)); if (local) local.status = status;
-      }
-      return send(200, { ok: true, status });
-    }
-
-    /* вебхук Heleket: подпись в теле sign = md5(base64(JSON без sign) + API_KEY) */
-    if (url.pathname === '/heleket-webhook' && req.method === 'POST') {
-      const incomingSign = body.sign;
-      if (!incomingSign) return send(403, { error: 'no signature' });
-      const copy = { ...body };
-      delete copy.sign;
-      const expectedSign = crypto.createHash('md5').update(Buffer.from(JSON.stringify(copy), 'utf8').toString('base64') + HELEKET_API_KEY).digest('hex');
-      if (incomingSign !== expectedSign) {
-        return send(403, { error: 'bad sign' });
-      }
-      const status = String(body.status || body.payment_status || '').toLowerCase();
-      if (status === 'paid') {
-        const uuid = body.uuid;
-        const cr = await heleketCredit(uuid, body.order_id);
-        return send(200, { ok: true, credited: cr.credited, already: cr.already });
       }
       return send(200, { ok: true, status });
     }
@@ -1108,27 +1086,12 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true });
     }
 
-    /* вебхук CryptoBot: HMAC-SHA256(rawBody, SHA256(CRYPTOBOT_TOKEN)) */
-    if (url.pathname === '/cryptobot-webhook' && req.method === 'POST') {
-      if (CRYPTOBOT_TOKEN) {
-        const sig = req.headers['crypto-pay-api-signature'];
-        const secretHash = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
-        const calcSig = crypto.createHmac('sha256', secretHash).update(raw).digest('hex');
-        if (sig && sig !== calcSig) return send(403, { error: 'bad signature' });
-      }
-      const update = body.payload || body;
-      if (update.status === 'paid' && update.invoice_id) {
-        await checkCryptoInvoice(update.invoice_id);
-      }
-      return send(200, { ok: true });
-    }
-
     /* Вебхук автоматизации смс-уведомлений с телефона (iOS Быстрые команды / Android MacroDroid) */
     if (url.pathname === '/api/payment-webhook' && req.method === 'POST') {
       const authHeader = req.headers['authorization'] || '';
       const secret = body.secret || authHeader.replace(/^Bearer\s+/i, '');
-      const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET;
-      if (!EXPECTED_SECRET || secret !== EXPECTED_SECRET) {
+      const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || 'MUP_SECRET_KEY_2026';
+      if (secret !== EXPECTED_SECRET) {
         return send(403, { error: 'unauthorized: invalid webhook secret' });
       }
 
@@ -1209,11 +1172,17 @@ const server = http.createServer(async (req, res) => {
       staked: u.staked,
       accrued: stakeAccrued(u),
       refCode: u.code,
+      totalDeposited: u.totalDepositedRub || u.lastDeposit || 0,
       lastDeposit: u.lastDeposit || 0,
       lastCashbackAt: u.lastCashbackAt || 0,
       cashbackClaimed: (u.cashbackClaimedDepositId === u.lastDepositId && u.lastDepositId > 0),
-      easycashClaimed: !!u.easycashClaimed
+      easycashClaimed: !!u.easycashClaimed,
+      isAdmin: isAdmin(tgUser),
+      notifications: (u.notifications || []).slice(-5)
     };
+    if (u.notifications && u.notifications.length > 0) {
+      u.notifications = []; // очищаем после доставки клиенту
+    }
 
     /* регистрация/синхронизация: реф-код из start_param, принятие соглашения */
     if (url.pathname === '/api/register' && req.method === 'POST') {
@@ -1225,299 +1194,156 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
 
-    /* БЕЗОПАСНОСТЬ: клиент не может произвольно устанавливать баланс.
-       Сервер — единый источник истины. Возвращаем авторизованный серверный баланс. */
-    if (url.pathname === '/api/sync-balance' && req.method === 'POST') {
-      return send(200, { ok: true, tokens: u.tokens, note: 'server authoritative balance' });
-    }
+    /* Запись результата ставки в отдельный файл мониторинга + серверный античит баланса */
+    if (url.pathname === '/api/record-bet' && req.method === 'POST') {
+      const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
+      const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+      let betTk = Math.max(0, Math.floor(Number(body.betTokens) || 0));
+      let winTk = Math.max(0, Math.floor(Number(body.winTokens) || 0));
+      const gameName = String(body.game || 'Игра');
 
-    /* Журнал транзакций для клиента */
-    if (url.pathname === '/api/transactions') {
-      const txs = userLedger.get(u.id) || [];
-      return send(200, { ok: true, transactions: txs });
-    }
-
-    /* Серверный аудит и сверка баланса */
-    if (url.pathname === '/api/audit') {
-      const txs = userLedger.get(u.id) || [];
-      let totalCredits = 0, totalDebits = 0;
-      for (const t of txs) {
-        if (t.delta > 0) totalCredits += t.delta;
-        else if (t.delta < 0) totalDebits += Math.abs(t.delta);
+      // Защита от подмены ставки выше текущего баланса
+      const maxAllowedBet = Math.max(500, Math.floor(u.tokens || 0) + 200);
+      if (betTk > maxAllowedBet && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Подмена суммы ставки (выше баланса)',
+          details: `ставка ${betTk} ⬦ при балансе ${Math.floor(u.tokens)} ⬦ в ${gameName}`
+        });
+        betTk = Math.min(betTk, Math.floor(u.tokens || 0));
+        winTk = 0;
       }
-      const calculated = START_TOKENS + totalCredits - totalDebits;
+
+      // Жёсткий потолок для игроков с 0 ₽ пополнений (невозможно поднять с 75 ⬦ до вывода!)
+      const NON_DEPOSITOR_CAP = 400; // максимум 400 ⬦ (40 ₽) без депозита
+      let nextTk = typeof body.tokens === 'number' ? Math.max(0, Math.floor(body.tokens)) : Math.max(0, Math.floor((u.tokens || 0) - betTk + winTk));
+
+      // Не позволяем клиенту прислать баланс выше математического (u.tokens - bet + win)
+      const calcMaxTk = Math.max(0, Math.floor(u.tokens || 0) - betTk + winTk + 100);
+      if (nextTk > calcMaxTk && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Попытка ручной накрутки баланса',
+          details: `клиент прислал ${nextTk} ⬦ вместо ${calcMaxTk} ⬦ (${gameName})`
+        });
+        nextTk = Math.max(0, Math.floor(u.tokens || 0) - betTk);
+        winTk = 0;
+      }
+
+      if (userDep <= 0 && !isAdmin(tgUser) && nextTk > NON_DEPOSITOR_CAP) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Сработал потолок бездепозитного баланса',
+          details: `попытка поднять ${nextTk} ⬦ при 0 ₽ депозитов в ${gameName}`
+        });
+        nextTk = 350;
+        winTk = Math.max(0, 350 - Math.max(0, Math.floor(u.tokens || 0) - betTk));
+      }
+
+      u.tokens = nextTk;
+
+      betsMonitor.recordBet({
+        userId: u.id,
+        name: userLabel,
+        game: gameName,
+        betTokens: betTk,
+        winTokens: winTk,
+        balanceAfter: u.tokens,
+        totalDepositedRub: userDep
+      });
+
+      return send(200, { ok: true, tokens: u.tokens });
+    }
+
+    if (url.pathname === '/api/sync-balance' && req.method === 'POST') {
+      if (typeof body.tokens === 'number') {
+        const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
+        const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+        let nextTk = Math.max(0, Math.floor(body.tokens));
+        const prevTk = Math.floor(u.tokens || 0);
+
+        // Античит: запрещаем бездепозитным игрокам синхронизировать баланс > 400 ⬦
+        if (userDep <= 0 && !isAdmin(tgUser) && nextTk > 400) {
+          betsMonitor.flagSuspicious({
+            userId: u.id,
+            name: userLabel,
+            reason: 'Блокировка sync-balance без депозита',
+            details: `клиент пытался синхронизировать ${nextTk} ⬦ при 0 ₽ пополнений`
+          });
+          nextTk = Math.min(prevTk, 350);
+        }
+
+        // Запрещаем скачок баланса вверх через sync-balance более чем на 300 ⬦ без record-bet
+        if (!isAdmin(tgUser) && nextTk - prevTk > 300 && !body.game) {
+          betsMonitor.flagSuspicious({
+            userId: u.id,
+            name: userLabel,
+            reason: 'Подозрительный скачок sync-balance',
+            details: `с ${prevTk} ⬦ до ${nextTk} ⬦ без игры`
+          });
+          nextTk = prevTk;
+        }
+
+        const diff = nextTk - prevTk;
+        if (diff !== 0 && body.game) {
+          if (diff < 0) {
+            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: Math.abs(diff), winTokens: 0, balanceAfter: nextTk, totalDepositedRub: userDep });
+          } else if (diff > 0) {
+            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: body.bet || 0, winTokens: diff, balanceAfter: nextTk, totalDepositedRub: userDep });
+          }
+        }
+        u.tokens = nextTk;
+      }
+      return send(200, { ok: true, tokens: u.tokens });
+    }
+
+    /* Проверка статуса заявки на пополнение / вывод */
+    if (url.pathname === '/api/check-order' && req.method === 'POST') {
+      const ordId = String(body.order_id || '');
+      const ord = orders.get(ordId);
+      if (!ord || ord.userId !== u.id) return send(404, { error: 'Заявка не найдена' });
+      return send(200, { status: ord.status, tokens: ord.tokens, rub: ord.rub, balance: u.tokens });
+    }
+
+    /* АДМИН-ПАНЕЛЬ: строго только для владельца (isAdmin) */
+    if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      const allOrders = [...orders.entries()].map(([id, o]) => {
+        const usr = users.get(o.userId) || {};
+        const usrDep = usr.totalDepositedRub || usr.lastDeposit || 0;
+        return {
+          id,
+          type: o.type || 'deposit',
+          userId: o.userId,
+          userName: usr.username ? '@' + usr.username : (usr.name || 'ID ' + o.userId),
+          userDepositedRub: usrDep,
+          rub: o.rub,
+          tokens: o.tokens,
+          method: o.method || o.bank || o.source || 'СБП / Карта',
+          details: o.details || o.card || '',
+          status: o.status,
+          createdAt: o.createdAt || Date.now()
+        };
+      }).reverse();
+
       return send(200, {
         ok: true,
-        userId: u.id,
-        currentBalance: u.tokens,
-        calculatedBalance: calculated,
-        reconciled: (u.tokens === calculated),
-        initialTokens: START_TOKENS,
-        totalCredits,
-        totalDebits,
-        transactionsCount: txs.length
+        deposits: allOrders.filter(x => x.type !== 'withdraw').slice(0, 30),
+        withdrawals: allOrders.filter(x => x.type === 'withdraw').slice(0, 30),
+        stats12h: betsMonitor.getAnalytics(12),
+        stats24h: betsMonitor.getAnalytics(24),
+        statsAll: betsMonitor.getAnalytics(0)
       });
     }
 
-    /* Список заявок на вывод со статусами */
-    if (url.pathname === '/api/withdrawals') {
-      const list = [...orders.values()].filter(o => o.type === 'withdraw' && o.userId === u.id);
-      return send(200, { ok: true, withdrawals: list });
-    }
-
-    /* Серверный кран/бонус с валидацией, кулдауном и записью в журнал */
-    if (url.pathname === '/api/faucet' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const now = Date.now();
-        const lastFaucet = u.lastFaucetAt || 0;
-        const requested = Math.min(500, Math.max(10, Math.floor(Number(body.amount) || 100)));
-        if (now - lastFaucet < 60000) {
-          const secLeft = Math.ceil((60000 - (now - lastFaucet)) / 1000);
-          return send(429, { error: `Тестовый кран доступен через ${secLeft} сек.`, cooldown: secLeft });
-        }
-        u.lastFaucetAt = now;
-        applyBalanceDelta(u, requested, 'bonus_faucet', { requested });
-        return send(200, {
-          ok: true,
-          tokens: u.tokens,
-          added: requested,
-          message: `Зачислено +${requested} ⬦ через серверный кран`
-        });
-      });
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* СЕРВЕРНАЯ ИГРОВАЯ ЭКОНОМИКА: РАКЕТКА (CRASH)                      */
-    /* ------------------------------------------------------------------ */
-    if (url.pathname === '/api/game/racket/start' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const bet = Math.floor(Number(body.bet) || 0);
-        if (bet < 1) return send(400, { error: 'Минимальная ставка — 1 ⬦' });
-        if (u.tokens < bet) return send(400, { error: 'Недостаточно токенов на балансе', balance: u.tokens });
-        applyBalanceDelta(u, -bet, 'game_bet', { game: 'racket' });
-        const crashPoint = sampleServerCrash();
-        const salt = crypto.randomBytes(16).toString('hex');
-        const hash = crypto.createHash('sha256').update(crashPoint + ':' + salt).digest('hex');
-        const sessionId = 'RKT_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-        gameSessions.set(sessionId, {
-          sessionId,
-          userId: u.id,
-          game: 'racket',
-          bet,
-          crashPoint,
-          salt,
-          hash,
-          status: 'active',
-          refunded: false,
-          createdAt: Date.now()
-        });
-        return send(200, {
-          ok: true,
-          sessionId,
-          bet,
-          balance: u.tokens,
-          hash,
-          minCash: 1.01,
-          maxAuto: 8.67
-        });
-      });
-    }
-
-    if (url.pathname === '/api/game/racket/cashout' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const sessionId = String(body.sessionId || '');
-        const session = gameSessions.get(sessionId);
-        if (!session || session.userId !== u.id || session.game !== 'racket') {
-          return send(404, { error: 'Сессия игры не найдена' });
-        }
-        if (session.status !== 'active') {
-          return send(400, { error: `Сессия уже завершена (статус: ${session.status})`, status: session.status, balance: u.tokens });
-        }
-        const mult = Math.round(Number(body.multiplier) * 100) / 100;
-        if (isNaN(mult) || mult < 1.01 || mult > 8.67) {
-          return send(400, { error: 'Недопустимый множитель вывода (разрешено от 1.01 до 8.67)' });
-        }
-        if (mult <= session.crashPoint) {
-          const payout = Math.floor(session.bet * mult);
-          applyBalanceDelta(u, payout, 'game_win', { game: 'racket', sessionId, multiplier: mult, crashPoint: session.crashPoint });
-          session.status = 'won';
-          session.payout = payout;
-          session.cashoutMultiplier = mult;
-          session.finishedAt = Date.now();
-          return send(200, {
-            ok: true,
-            won: true,
-            payout,
-            multiplier: mult,
-            crashPoint: session.crashPoint,
-            salt: session.salt,
-            balance: u.tokens
-          });
-        } else {
-          session.status = 'crashed';
-          session.payout = 0;
-          session.finishedAt = Date.now();
-          return send(200, {
-            ok: true,
-            won: false,
-            payout: 0,
-            crashPoint: session.crashPoint,
-            salt: session.salt,
-            balance: u.tokens
-          });
-        }
-      });
-    }
-
-    if (url.pathname === '/api/game/racket/finish' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const sessionId = String(body.sessionId || '');
-        const session = gameSessions.get(sessionId);
-        if (!session || session.userId !== u.id) return send(404, { error: 'Сессия не найдена' });
-        if (session.status === 'active') {
-          session.status = 'crashed';
-          session.payout = 0;
-          session.finishedAt = Date.now();
-        }
-        return send(200, {
-          ok: true,
-          status: session.status,
-          crashPoint: session.crashPoint,
-          salt: session.salt,
-          payout: session.payout || 0,
-          balance: u.tokens
-        });
-      });
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* ПРЕРЫВАНИЕ ИГРЫ: ОДНОКРАТНЫЙ ВОЗВРАТ СТАВКИ                       */
-    /* ------------------------------------------------------------------ */
-    if (url.pathname === '/api/game/cancel' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const sessionId = String(body.sessionId || '');
-        const session = gameSessions.get(sessionId);
-        if (!session || session.userId !== u.id) {
-          return send(404, { error: 'Сессия игры не найдена' });
-        }
-        if (session.status !== 'active' || session.refunded) {
-          return send(400, { error: 'Отмена невозможна: игра уже завершена или ставка возвращена', status: session.status });
-        }
-        session.status = 'cancelled';
-        session.refunded = true;
-        session.cancelledAt = Date.now();
-        applyBalanceDelta(u, session.bet, 'game_refund', { sessionId, game: session.game });
-        return send(200, {
-          ok: true,
-          refunded: session.bet,
-          balance: u.tokens,
-          message: `Ставка ${session.bet} ⬦ возвращена на баланс`
-        });
-      });
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* СЕРВЕРНАЯ ИГРОВАЯ ЭКОНОМИКА: СПИН (КОЛЕСО)                        */
-    /* ------------------------------------------------------------------ */
-    if (url.pathname === '/api/game/spin' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const bet = Math.floor(Number(body.bet) || 0);
-        if (bet < 1) return send(400, { error: 'Минимальная ставка — 1 ⬦' });
-        if (u.tokens < bet) return send(400, { error: 'Недостаточно токенов на балансе', balance: u.tokens });
-        const mode = String(body.mode || 'med');
-        const SP = {
-          med:  { pay: [5, 3, 0.75, 0.5, 0.25, 0, 2, 1],       w: [2, 8, 10, 23, 17, 9, 11, 20] },
-          lite: { pay: [3, 2, 1.25, 1, 0.5, 0.25, 1.5, 1],      w: [5, 10, 15, 25, 15, 10, 10, 10] },
-          crit: { pay: [15, 8, 0.5, 0.2, 0, 0, 4, 1.5],        w: [1, 3, 16, 20, 30, 20, 5, 5] }
-        };
-        const curM = SP[mode] || SP.med;
-        applyBalanceDelta(u, -bet, 'game_bet', { game: 'spin', mode });
-        let pick = Math.random() * 100, idx = 0, cum = 0;
-        for (let i = 0; i < curM.w.length; i++) {
-          cum += curM.w[i];
-          if (pick < cum) { idx = i; break; }
-        }
-        const mult = curM.pay[idx];
-        const payout = Math.floor(bet * mult);
-        if (payout > 0) {
-          applyBalanceDelta(u, payout, 'game_win', { game: 'spin', mode, sector: idx, multiplier: mult });
-        }
-        return send(200, {
-          ok: true,
-          sectorIndex: idx,
-          multiplier: mult,
-          payout,
-          balance: u.tokens
-        });
-      });
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* СЕРВЕРНАЯ ИГРОВАЯ ЭКОНОМИКА: ДРОП (ПЛИНКО)                        */
-    /* ------------------------------------------------------------------ */
-    if (url.pathname === '/api/game/drop' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const bet = Math.floor(Number(body.bet) || 0);
-        if (bet < 1) return send(400, { error: 'Минимальная ставка — 1 ⬦' });
-        if (u.tokens < bet) return send(400, { error: 'Недостаточно токенов на балансе', balance: u.tokens });
-        const mode = String(body.mode || 'med');
-        const DP = {
-          med:  { slots: 8, rows: 7, pay: [10.5, 2.0, 1.1, 0.4, 0.6, 1.4, 2.0, 10.5] },
-          lite: { slots: 8, rows: 7, pay: [5.0, 1.8, 1.2, 0.8, 0.8, 1.2, 1.8, 5.0] },
-          crit: { slots: 12, rows: 11, pay: [18.0, 8.0, 4.0, 0.6, 0.3, 0.1, 0.1, 0.3, 0.6, 4.0, 8.0, 18.0] }
-        };
-        const curM = DP[mode] || DP.med;
-        applyBalanceDelta(u, -bet, 'game_bet', { game: 'drop', mode });
-        const path = [0]; let r = 0;
-        for (let i = 1; i <= curM.rows; i++) {
-          r += Math.random() < 0.5 ? 0 : 1;
-          path.push(r);
-        }
-        const slot = path[curM.rows];
-        const mult = curM.pay[slot];
-        const payout = Math.floor(bet * mult);
-        if (payout > 0) {
-          applyBalanceDelta(u, payout, 'game_win', { game: 'drop', mode, slot, multiplier: mult });
-        }
-        return send(200, {
-          ok: true,
-          slotIndex: slot,
-          path,
-          multiplier: mult,
-          payout,
-          balance: u.tokens
-        });
-      });
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* СЕРВЕРНАЯ ИГРОВАЯ ЭКОНОМИКА: ДАЙС (DICE)                          */
-    /* ------------------------------------------------------------------ */
-    if (url.pathname === '/api/game/dice' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const bet = Math.floor(Number(body.bet) || 0);
-        if (bet < 1) return send(400, { error: 'Минимальная ставка — 1 ⬦' });
-        if (u.tokens < bet) return send(400, { error: 'Недостаточно токенов на балансе', balance: u.tokens });
-        const target = Math.max(1, Math.min(98, Number(body.target) || 50));
-        const dir = body.dir === 'over' ? 'over' : 'under';
-        applyBalanceDelta(u, -bet, 'game_bet', { game: 'dice', target, dir });
-        const roll = Math.floor(Math.random() * 10000) / 100;
-        const win = dir === 'under' ? (roll < target) : (roll > target);
-        const chance = dir === 'under' ? target : (100 - target);
-        const mult = +(95 / chance).toFixed(2);
-        const payout = win ? Math.floor(bet * mult) : 0;
-        if (payout > 0) {
-          applyBalanceDelta(u, payout, 'game_win', { game: 'dice', roll, target, dir, multiplier: mult });
-        }
-        return send(200, {
-          ok: true,
-          roll,
-          win,
-          multiplier: mult,
-          payout,
-          balance: u.tokens
-        });
-      });
+    if (url.pathname === '/api/admin/order-action' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      const res = await processOrderAction(body.orderId, body.action);
+      if (!res.ok) return send(400, { error: res.error });
+      return send(200, res);
     }
 
     if (url.pathname === '/api/terms' && req.method === 'POST') {
@@ -1525,7 +1351,7 @@ const server = http.createServer(async (req, res) => {
       return send(200, { termsAt: u.termsAt });
     }
 
-    /* Бонус за подписку на канал @tooeasycash (+50 токенов, единоразово) с реальной проверкой и КД 30с */
+    /* Бонус за подписку на канал @moneyforup (+50 токенов, единоразово) с реальной проверкой и КД 30с */
     if (url.pathname === '/api/claim-channel' && req.method === 'POST') {
       if (u.easycashClaimed) return send(400, { error: 'Бонус за подписку уже получен' });
 
@@ -1538,23 +1364,23 @@ const server = http.createServer(async (req, res) => {
       u.channelCheckAt = now;
 
       try {
-        const member = await bot.api.getChatMember('@tooeasycash', u.id);
+        const member = await bot.api.getChatMember('@moneyforup', u.id);
         const isSub = ['creator', 'administrator', 'member', 'restricted'].includes(member.status);
         if (!isSub) {
           return send(400, {
-            error: 'Вы не подписаны на канал @tooeasycash. Подпишитесь и нажмите кнопку снова.',
+            error: 'Вы не подписаны на канал @moneyforup. Подпишитесь и нажмите кнопку снова.',
             cooldown: 30
           });
         }
       } catch (e) {
-        console.error('Ошибка проверки подписки на @tooeasycash:', e.message);
+        console.error('Ошибка проверки подписки на @moneyforup:', e.message);
         return send(400, {
-          error: 'Бот не может проверить подписку: добавьте бота администратором в канал @tooeasycash.',
+          error: 'Бот не может проверить подписку: добавьте бота администратором в канал @moneyforup.',
           cooldown: 30
         });
       }
 
-      applyBalanceDelta(u, 50, 'bonus_channel', { channel: '@tooeasycash' });
+      u.tokens += 50;
       u.easycashClaimed = true;
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
@@ -1575,85 +1401,115 @@ const server = http.createServer(async (req, res) => {
       }
 
       const cashback = Math.max(1, Math.floor(u.lastDeposit * 0.05));
-      applyBalanceDelta(u, cashback, 'cashback', { lastDepositId: u.lastDepositId });
+      u.tokens += cashback;
       u.cashbackClaimedDepositId = u.lastDepositId;
       u.lastCashbackAt = now;
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
-    /* Заявка на вывод средств (минимум 50 ₽ = 500 токенов) */
+    /* Заявка на вывод средств (минимум 200 ₽ = 2000 токенов + обязательный депозит) */
     if (url.pathname === '/api/withdraw' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const rub = Math.floor(Number(body.rub || 0));
-        const method = String(body.method || 'СБП / Карта').trim();
-        const details = String(body.details || '').trim();
+      const rub = Math.floor(Number(body.rub || 0));
+      const method = String(body.method || 'СБП / Карта').trim();
+      const details = String(body.details || '').trim();
+      const uLabel = tgUser.username ? '@' + tgUser.username : (u.name || 'ID ' + u.id);
+      const userDep = u.totalDepositedRub || u.lastDeposit || 0;
 
-        if (isNaN(rub) || rub < 50) {
-          return send(400, { error: 'Минимальная сумма вывода — 50 ₽ (500 ⬦)' });
-        }
-        const neededTokens = rub * TOKENS_PER_RUB;
-        if (u.tokens < neededTokens) {
-          return send(400, { error: `Недостаточно токенов. Для вывода ${rub} ₽ требуется ${neededTokens} ⬦ (у вас ${Math.floor(u.tokens)} ⬦)` });
-        }
-        if (!details || details.length < 3) {
-          return send(400, { error: 'Укажите корректные реквизиты для вывода (номер карты, телефон СБП или кошелёк)' });
-        }
+      if (isNaN(rub) || rub < 200) {
+        return send(400, { error: 'Минимальная сумма вывода — 200 ₽ (2 000 ⬦)' });
+      }
 
-        const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
-        applyBalanceDelta(u, -neededTokens, 'withdraw', { rub, method, details, orderId });
-        orders.set(orderId, {
-          type: 'withdraw',
+      // АНТИЧИТ: запрещаем вывод средств игрокам с 0 ₽ пополнений!
+      if (userDep <= 0 && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
           userId: u.id,
-          rub,
-          tokens: neededTokens,
-          method,
-          details,
-          createdAt: Date.now(),
-          status: 'pending'
+          name: uLabel,
+          reason: 'Попытка вывода без депозитов (0 ₽)',
+          details: `запросил ${rub} ₽ (${rub * TOKENS_PER_RUB} ⬦) на ${details}`
         });
-
+        if (u.tokens > 400) {
+          u.tokens = START_TOKENS;
+        }
         if (ADMIN_ID) {
+          const dossier = betsMonitor.getPlayerDossier(u.id, u);
           bot.api.sendMessage(
             ADMIN_ID,
-            `💸 <b>Заявка на вывод средств</b>\n` +
-            `├ ID: <code>${orderId}</code>\n` +
-            `├ Пользователь: <b>${u.name}</b> (id: <code>${u.id}</code>)\n` +
-            `├ Сумма: <b>${rub} ₽</b> (${neededTokens} ⬦)\n` +
-            `├ Способ: <b>${method}</b>\n` +
-            `└ Реквизиты: <code>${details}</code>`,
+            `🚨 <b>АНТИЧИТ ЗАБЛОКИРОВАЛ ВЫВОД БЕЗ ДЕПОЗИТА!</b>\n` +
+            `├ Игрок: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
+            `├ Попытался вывести: <b>${rub} ₽</b> (${rub * TOKENS_PER_RUB} ⬦)\n` +
+            `├ Реквизиты: <code>${details}</code>\n` +
+            `└ Накрученный баланс сброшен до ${u.tokens} ⬦.\n\n` +
+            dossier,
             { parse_mode: 'HTML' }
-          ).catch(e => console.error('Не удалось уведомить админа о выводе:', e.message));
+          ).catch(() => {});
         }
-
-        return send(200, {
-          ok: true,
-          success: true,
-          orderId,
-          rub,
-          tokens: neededTokens,
+        return send(400, {
+          error: 'Для вывода средств необходим хотя бы один подтверждённый депозит на аккаунте (верификация платёжных реквизитов).',
           remaining: u.tokens
         });
+      }
+
+      const neededTokens = rub * TOKENS_PER_RUB;
+      if (u.tokens < neededTokens) {
+        return send(400, { error: `Недостаточно токенов. Для вывода ${rub} ₽ требуется ${neededTokens} ⬦ (у вас ${Math.floor(u.tokens)} ⬦)` });
+      }
+      if (!details || details.length < 3) {
+        return send(400, { error: 'Укажите корректные реквизиты для вывода (номер карты, телефон СБП или кошелёк)' });
+      }
+
+      u.tokens -= neededTokens;
+      const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+      orders.set(orderId, {
+        type: 'withdraw',
+        userId: u.id,
+        rub,
+        tokens: neededTokens,
+        method,
+        details,
+        createdAt: Date.now(),
+        status: 'pending'
+      });
+
+      if (ADMIN_ID) {
+        const dossier = betsMonitor.getPlayerDossier(u.id, u);
+        bot.api.sendMessage(
+          ADMIN_ID,
+          `💸 <b>Заявка на вывод средств #${orderId}</b>\n` +
+          `├ Пользователь: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
+          `├ Сумма: <b>${rub} ₽</b> (${neededTokens} ⬦)\n` +
+          `├ Способ: <b>${method}</b>\n` +
+          `└ Реквизиты: <code>${details}</code>\n\n` +
+          dossier,
+          {
+            parse_mode: 'HTML',
+            reply_markup: new InlineKeyboard()
+              .text('☑️ Выплачено (галочка)', 'wd_ok:' + orderId)
+              .text('❌ Отклонить', 'wd_no:' + orderId)
+          }
+        ).catch(e => console.error('Не удалось уведомить админа о выводе:', e.message));
+      }
+
+      return send(200, {
+        success: true,
+        orderId,
+        rub,
+        tokens: neededTokens,
+        remaining: u.tokens
       });
     }
 
     /* стейкинг */
-    if ((url.pathname === '/api/stake' || url.pathname === '/api/stake-add') && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const r = stakeAdd(u, body.tokens || body.amount);
-        return send(r.error ? 400 : 200, { ok: !r.error, ...r, staked: u.staked, accrued: stakeAccrued(u), tokens: u.tokens });
-      });
+    if (url.pathname === '/api/stake' && req.method === 'POST') {
+      const r = stakeAdd(u, body.tokens);
+      return send(r.error ? 400 : 200, { ...r, staked: u.staked, accrued: stakeAccrued(u), tokens: u.tokens });
     }
     if (url.pathname === '/api/claim' && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const r = stakeClaim(u);
-        return send(r.error ? 400 : 200, { ok: !r.error, ...r, staked: u.staked, accrued: stakeAccrued(u) });
-      });
+      const r = stakeClaim(u);
+      return send(r.error ? 400 : 200, { ...r, staked: u.staked, accrued: stakeAccrued(u) });
     }
-    if ((url.pathname === '/api/unstake' || url.pathname === '/api/stake-remove') && req.method === 'POST') {
-      return await withUserLock(u.id, async () => {
-        const r = stakeRemove(u, body.all !== false);
-        return send(r.error ? 400 : 200, { ok: !r.error, ...r, accrued: stakeAccrued(u) });
-      });
+    if (url.pathname === '/api/unstake' && req.method === 'POST') {
+      const r = stakeRemove(u, body.all !== false);
+      return send(r.error ? 400 : 200, { ...r, accrued: stakeAccrued(u) });
     }
     if (url.pathname === '/api/refs') {
       const invited = [...users.values()].filter(x => Number(x.ref) === u.id).map(x => ({ name: x.name, tokens: Math.round(x.tokens) }));
@@ -1683,7 +1539,7 @@ const server = http.createServer(async (req, res) => {
       }
       const rewards = [20, 25, 35, 50, 75, 100, 250];
       const win = rewards[Math.floor(Math.random() * rewards.length)];
-      applyBalanceDelta(u, win, 'bonus_hotdrop', {});
+      u.tokens += win;
       u.lastHotDrop = now;
       return send(200, { ok: true, reward: win, balance: u.tokens });
     }
@@ -1732,33 +1588,6 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { r = { paid: false, error: String(e.message || e) }; }
       return send(200, { ...r, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
     }
-    if (url.pathname === '/api/heleket-invoice' && req.method === 'POST') {
-      if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
-      if (!heleketOn()) return send(503, { error: 'Heleket не настроен' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
-      try {
-        return send(200, await heleketCreate(u, rub, tokens));
-      } catch (e) {
-        return send(500, { error: String(e.message || e), tokens });
-      }
-    }
-    if (url.pathname === '/api/check-heleket' && req.method === 'POST') {
-      const uuid = String(body.invoice_id || '');
-      const r = await checkHeleketInvoice(uuid);
-      return send(200, { ...r, paid: true, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
-    }
-    if (url.pathname === '/api/crypto-invoice' && req.method === 'POST') {
-      if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
-      const inv = await createCryptoInvoice(u.id, rub, tokens);
-      return send(200, inv);
-    }
-    if (url.pathname === '/api/check-crypto' && req.method === 'POST') {
-      const r = await checkCryptoInvoice(body.invoice_id);
-      return send(200, { ...r, paid: true, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
-    }
     if (url.pathname === '/api/coinso-invoice' && req.method === 'POST') {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
@@ -1783,7 +1612,7 @@ const server = http.createServer(async (req, res) => {
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();
       const sender = String(body.sender || '').trim();
-      orders.set(id, { userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта' });
+      orders.set(id, { type: 'deposit', userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() });
       if (ADMIN_ID) {
         const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
         const msg =
@@ -1824,9 +1653,6 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true });
     }
 
-    if (req.method === 'GET') {
-      if (serveStatic(req, res, '/index.html')) return;
-    }
     send(404, { error: 'not found' });
   } catch (e) {
     send(500, { error: String(e.message || e) });
@@ -1838,17 +1664,63 @@ async function initBotProfile() {
 }
 initBotProfile();
 
-server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
-/* BOT_DRY_RUN=1 или отсутствие валидного BOT_TOKEN — не опрашивать Telegram */
-if (process.env.BOT_DRY_RUN === '1' || !hasBotToken) {
-  console.log('BOT_DRY_RUN или валидный BOT_TOKEN не задан: опрос Telegram отключён');
-} else {
-  bot.start({
-    onStart: () => console.log('Telegram polling запущен успешно')
-  }).catch(err => {
-    console.warn('Не удалось запустить Telegram polling (проверьте BOT_TOKEN):', err.message);
-  });
+bot.catch(err => {
+  console.error('[Grammy Bot Error]:', err.message || err);
+});
+
+async function startBotSafely() {
+  if (process.env.BOT_DRY_RUN === '1') {
+    console.log('BOT_DRY_RUN: опрос Telegram отключён');
+    return;
+  }
+  while (true) {
+    try {
+      await bot.api.deleteWebhook({ drop_pending_updates: false }).catch(() => {});
+      await bot.start({
+        drop_pending_updates: false,
+        onStart: (botInfo) => {
+          console.log(`✅ Telegram-бот @${botInfo.username} успешно запущен (Long Polling активен)`);
+        }
+      });
+      break;
+    } catch (err) {
+      if (err && err.error_code === 409) {
+        console.warn('⏳ [Render 409 Conflict]: Предыдущий экземпляр бота ещё завершает работу (или запущен второй инстанс). Повторное подключение через 5 сек...');
+        await new Promise(r => setTimeout(r, 5000));
+      } else {
+        console.error('⚠️ Ошибка запуска бота, повтор через 5 сек:', err.message || err);
+        await new Promise(r => setTimeout(r, 5000));
+      }
+    }
+  }
 }
+
+// Плавное завершение при деплое на Render, чтобы не возникал 409 Conflict
+process.once('SIGTERM', () => {
+  console.log('Получен SIGTERM, останавливаем опрос Telegram...');
+  try { bot.stop(); } catch (_) {}
+  process.exit(0);
+});
+process.once('SIGINT', () => {
+  console.log('Получен SIGINT, останавливаем опрос Telegram...');
+  try { bot.stop(); } catch (_) {}
+  process.exit(0);
+});
+
+// Автоматическая отправка сводки ставок и PnL проекта каждые 12 часов (полдня)
+const HALF_DAY_MS = 12 * 3600 * 1000;
+setInterval(() => {
+  if (ADMIN_ID) {
+    const report = betsMonitor.formatTelegramReport(12);
+    bot.api.sendMessage(ADMIN_ID, '⏰ <b>АВТОМАТИЧЕСКИЙ ОТЧЁТ ЗА 12 ЧАСОВ (ПОЛДНЯ)</b>\n\n' + report, {
+      parse_mode: 'HTML',
+      reply_markup: getAdminStatsKeyboard()
+    }).catch(e => console.error('Ошибка отправки 12ч отчёта админу:', e.message));
+  }
+}, HALF_DAY_MS);
+
+server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
+startBotSafely();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
   + ' · Промокодов активно: ' + promoCodes.size
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
