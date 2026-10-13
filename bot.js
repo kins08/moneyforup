@@ -124,7 +124,7 @@ function user(id, name, username) {
     const numId = nextPlayerId++;
     users.set(id, { id, numId, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
                     ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
-                    lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
+                    totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
                     easycashClaimed: false, notifications: [] });
     byCode.set(code, id);
   }
@@ -181,7 +181,8 @@ async function creditDeposit(userId, tokens, source) {
   u.tokens += tokens;
   const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
   u.lastDeposit = rubAmt;
-  try { betsMonitor.recordCashflow('deposit', rubAmt); } catch (_) {}
+  u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
+  try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
   u.lastDepositId = (u.lastDepositId || 0) + 1;
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
@@ -631,7 +632,7 @@ async function processOrderAction(orderId, action) {
     if (action === 'wd_ok' || action === 'approve') {
       order.status = 'paid';
       order.completedAt = Date.now();
-      try { betsMonitor.recordCashflow('withdraw', order.rub); } catch (_) {}
+      try { betsMonitor.recordCashflow('withdraw', order.rub, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -650,16 +651,21 @@ async function processOrderAction(orderId, action) {
     } else {
       order.status = 'rejected';
       order.completedAt = Date.now();
-      u.tokens += order.tokens;
+      // Возвращаем токены только если у игрока были реальные депозиты, иначе сбрасываем накрутку
+      if ((u.totalDepositedRub || u.lastDeposit || 0) > 0) {
+        u.tokens += order.tokens;
+      } else {
+        u.tokens = Math.min(u.tokens, START_TOKENS);
+      }
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
-        text: `⚠️ Заявка на вывод ${order.rub} ₽ отклонена. Токены (+${order.tokens} ⬦) возвращены на ваш баланс.`,
+        text: `⚠️ Заявка на вывод ${order.rub} ₽ отклонена.`,
         t: Date.now()
       });
       await bot.api.sendMessage(order.userId,
         `⚠️ <b>Заявка на вывод №${orderId} на ${order.rub} ₽ отклонена.</b>\n` +
-        `Токены (<b>+${order.tokens} ⬦</b>) возвращены на ваш игровой баланс. Проверьте реквизиты или напишите @lev_god.`,
+        `Проверьте условия вывода и реквизиты или напишите @lev_god.`,
         { parse_mode: 'HTML' }
       ).catch(() => {});
       return { ok: true, status: 'rejected', order };
@@ -736,21 +742,27 @@ bot.callbackQuery(/^wd_no:(.+)$/, async ctx => {
   if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только администратор может отклонять выводы!', show_alert: true });
   const res = await processOrderAction(ctx.match[1], 'wd_no');
   if (!res.ok) return ctx.answerCallbackQuery({ text: res.error, show_alert: true });
-  await ctx.answerCallbackQuery('Вывод отклонён, токены возвращены игроку ❌');
+  await ctx.answerCallbackQuery('Вывод отклонён ❌');
   await ctx.editMessageText(
-    (ctx.callbackQuery.message.text || '') + '\n\n❌ <b>Вывод отклонён (токены возвращены на баланс игрока)</b>',
+    (ctx.callbackQuery.message.text || '') + '\n\n❌ <b>Вывод отклонён администратором</b>',
     { parse_mode: 'HTML' }
   ).catch(() => {});
 });
 
-/* ---------- Команды администратора: /stats, /pnl, /admin, /orders ---------- */
+/* ---------- Команды администратора: /stats, /pnl, /admin, /orders, /games, /players, /audit ---------- */
 function getAdminStatsKeyboard() {
   return new InlineKeyboard()
-    .text('📊 Сводка 12ч (полдня)', 'adm_stats:12')
-    .text('📅 Сводка 24ч (день)', 'adm_stats:24')
-    .row()
+    .text('📊 Сводка 12ч', 'adm_stats:12')
+    .text('📅 Сводка 24ч', 'adm_stats:24')
     .text('🏦 За всё время', 'adm_stats:0')
-    .text('📋 Активные заявки', 'adm_orders');
+    .row()
+    .text('🎮 Отчёт по играм', 'adm_games')
+    .text('👥 Отчёт по игрокам', 'adm_players')
+    .row()
+    .text('🛡 Античит / Аудит', 'adm_audit')
+    .text('📋 Активные заявки', 'adm_orders')
+    .row()
+    .text('🧹 Обнулить накрутчиков (0 деп)', 'adm_wipe_cheaters');
 }
 
 bot.command(['stats', 'pnl', 'admin', 'orders'], async ctx => {
@@ -759,12 +771,73 @@ bot.command(['stats', 'pnl', 'admin', 'orders'], async ctx => {
   await ctx.reply(report, { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
 });
 
+bot.command('games', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatGamesReport(0), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.command('players', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatPlayersReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
+bot.command('audit', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
+});
+
 bot.callbackQuery(/^adm_stats:(\d+)$/, async ctx => {
   if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
   const hours = Number(ctx.match[1] || 12);
   await ctx.answerCallbackQuery('Обновляю сводку...');
   const report = betsMonitor.formatTelegramReport(hours);
   await ctx.editMessageText(report, { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_games', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Отчёт по играм...');
+  await ctx.editMessageText(betsMonitor.formatGamesReport(0), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_players', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Отчёт по игрокам...');
+  await ctx.editMessageText(betsMonitor.formatPlayersReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_audit', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  await ctx.answerCallbackQuery('Аудит безопасности...');
+  await ctx.editMessageText(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
+});
+
+bot.callbackQuery('adm_wipe_cheaters', async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
+  let wipedCount = 0;
+  let canceledWithdrawals = 0;
+  for (const [uid, u] of users.entries()) {
+    if (isAdmin(u)) continue;
+    const dep = u.totalDepositedRub || u.lastDeposit || 0;
+    if (dep <= 0 && u.tokens > 400) {
+      u.tokens = START_TOKENS;
+      wipedCount++;
+    }
+  }
+  for (const [id, o] of orders.entries()) {
+    if (o.type === 'withdraw' && o.status === 'pending') {
+      const usr = users.get(o.userId);
+      const dep = (usr && (usr.totalDepositedRub || usr.lastDeposit)) || 0;
+      if (dep <= 0) {
+        o.status = 'rejected';
+        o.completedAt = Date.now();
+        if (usr) usr.tokens = START_TOKENS;
+        canceledWithdrawals++;
+      }
+    }
+  }
+  await ctx.answerCallbackQuery(`Очищено аккаунтов: ${wipedCount}, отклонено фейк-выводов: ${canceledWithdrawals}`, { show_alert: true });
+  await ctx.editMessageText(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() }).catch(() => {});
 });
 
 bot.callbackQuery('adm_orders', async ctx => {
@@ -777,12 +850,14 @@ bot.callbackQuery('adm_orders', async ctx => {
   for (const [id, o] of pending.slice(0, 15)) {
     const u = users.get(o.userId) || { name: 'ID ' + o.userId };
     if (o.type === 'withdraw') {
+      const dossier = betsMonitor.getPlayerDossier(o.userId, u);
       await ctx.reply(
         `💸 <b>Ожидает вывода #${id}</b>\n` +
-        `├ Игрок: <b>${u.name}</b> (<code>${o.userId}</code>)\n` +
+        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
         `├ Сумма: <b>${o.rub} ₽</b> (${o.tokens} ⬦)\n` +
         `├ Способ: <b>${o.method}</b>\n` +
-        `└ Реквизиты: <code>${o.details}</code>`,
+        `└ Реквизиты: <code>${o.details}</code>\n\n` +
+        dossier,
         {
           parse_mode: 'HTML',
           reply_markup: new InlineKeyboard()
@@ -793,7 +868,7 @@ bot.callbackQuery('adm_orders', async ctx => {
     } else {
       await ctx.reply(
         `💳 <b>Ожидает пополнения #${id}</b>\n` +
-        `├ Игрок: <b>${u.name}</b> (<code>${o.userId}</code>)\n` +
+        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
         `├ Сумма: <b>${o.rub} ₽</b> (+${o.tokens} ⬦)\n` +
         `└ Способ: <b>${o.bank || o.source || 'СБП'}</b>`,
         {
@@ -1097,6 +1172,7 @@ const server = http.createServer(async (req, res) => {
       staked: u.staked,
       accrued: stakeAccrued(u),
       refCode: u.code,
+      totalDeposited: u.totalDepositedRub || u.lastDeposit || 0,
       lastDeposit: u.lastDeposit || 0,
       lastCashbackAt: u.lastCashbackAt || 0,
       cashbackClaimed: (u.cashbackClaimedDepositId === u.lastDepositId && u.lastDepositId > 0),
@@ -1118,35 +1194,105 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
 
-    /* Запись результата ставки в отдельный файл мониторинга + синхронизация баланса */
+    /* Запись результата ставки в отдельный файл мониторинга + серверный античит баланса */
     if (url.pathname === '/api/record-bet' && req.method === 'POST') {
-      const betTk = Math.max(0, Math.floor(Number(body.betTokens) || 0));
-      const winTk = Math.max(0, Math.floor(Number(body.winTokens) || 0));
+      const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
+      const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+      let betTk = Math.max(0, Math.floor(Number(body.betTokens) || 0));
+      let winTk = Math.max(0, Math.floor(Number(body.winTokens) || 0));
       const gameName = String(body.game || 'Игра');
+
+      // Защита от подмены ставки выше текущего баланса
+      const maxAllowedBet = Math.max(500, Math.floor(u.tokens || 0) + 200);
+      if (betTk > maxAllowedBet && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Подмена суммы ставки (выше баланса)',
+          details: `ставка ${betTk} ⬦ при балансе ${Math.floor(u.tokens)} ⬦ в ${gameName}`
+        });
+        betTk = Math.min(betTk, Math.floor(u.tokens || 0));
+        winTk = 0;
+      }
+
+      // Жёсткий потолок для игроков с 0 ₽ пополнений (невозможно поднять с 75 ⬦ до вывода!)
+      const NON_DEPOSITOR_CAP = 400; // максимум 400 ⬦ (40 ₽) без депозита
+      let nextTk = typeof body.tokens === 'number' ? Math.max(0, Math.floor(body.tokens)) : Math.max(0, Math.floor((u.tokens || 0) - betTk + winTk));
+
+      // Не позволяем клиенту прислать баланс выше математического (u.tokens - bet + win)
+      const calcMaxTk = Math.max(0, Math.floor(u.tokens || 0) - betTk + winTk + 100);
+      if (nextTk > calcMaxTk && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Попытка ручной накрутки баланса',
+          details: `клиент прислал ${nextTk} ⬦ вместо ${calcMaxTk} ⬦ (${gameName})`
+        });
+        nextTk = Math.max(0, Math.floor(u.tokens || 0) - betTk);
+        winTk = 0;
+      }
+
+      if (userDep <= 0 && !isAdmin(tgUser) && nextTk > NON_DEPOSITOR_CAP) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: userLabel,
+          reason: 'Сработал потолок бездепозитного баланса',
+          details: `попытка поднять ${nextTk} ⬦ при 0 ₽ депозитов в ${gameName}`
+        });
+        nextTk = 350;
+        winTk = Math.max(0, 350 - Math.max(0, Math.floor(u.tokens || 0) - betTk));
+      }
+
+      u.tokens = nextTk;
+
       betsMonitor.recordBet({
         userId: u.id,
-        name: tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id)),
+        name: userLabel,
         game: gameName,
         betTokens: betTk,
-        winTokens: winTk
+        winTokens: winTk,
+        balanceAfter: u.tokens,
+        totalDepositedRub: userDep
       });
-      if (typeof body.tokens === 'number') {
-        u.tokens = Math.max(0, Math.floor(body.tokens));
-      }
+
       return send(200, { ok: true, tokens: u.tokens });
     }
 
     if (url.pathname === '/api/sync-balance' && req.method === 'POST') {
       if (typeof body.tokens === 'number') {
-        const nextTk = Math.max(0, Math.floor(body.tokens));
+        const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
+        const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+        let nextTk = Math.max(0, Math.floor(body.tokens));
         const prevTk = Math.floor(u.tokens || 0);
+
+        // Античит: запрещаем бездепозитным игрокам синхронизировать баланс > 400 ⬦
+        if (userDep <= 0 && !isAdmin(tgUser) && nextTk > 400) {
+          betsMonitor.flagSuspicious({
+            userId: u.id,
+            name: userLabel,
+            reason: 'Блокировка sync-balance без депозита',
+            details: `клиент пытался синхронизировать ${nextTk} ⬦ при 0 ₽ пополнений`
+          });
+          nextTk = Math.min(prevTk, 350);
+        }
+
+        // Запрещаем скачок баланса вверх через sync-balance более чем на 300 ⬦ без record-bet
+        if (!isAdmin(tgUser) && nextTk - prevTk > 300 && !body.game) {
+          betsMonitor.flagSuspicious({
+            userId: u.id,
+            name: userLabel,
+            reason: 'Подозрительный скачок sync-balance',
+            details: `с ${prevTk} ⬦ до ${nextTk} ⬦ без игры`
+          });
+          nextTk = prevTk;
+        }
+
         const diff = nextTk - prevTk;
-        // Если баланс изменился, а ставка ещё не была записана через /api/record-bet, фиксируем в статистике
         if (diff !== 0 && body.game) {
           if (diff < 0) {
-            betsMonitor.recordBet({ userId: u.id, name: tgUser.username ? '@' + tgUser.username : u.name, game: body.game, betTokens: Math.abs(diff), winTokens: 0 });
+            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: Math.abs(diff), winTokens: 0, balanceAfter: nextTk, totalDepositedRub: userDep });
           } else if (diff > 0) {
-            betsMonitor.recordBet({ userId: u.id, name: tgUser.username ? '@' + tgUser.username : u.name, game: body.game, betTokens: body.bet || 0, winTokens: diff });
+            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: body.bet || 0, winTokens: diff, balanceAfter: nextTk, totalDepositedRub: userDep });
           }
         }
         u.tokens = nextTk;
@@ -1167,11 +1313,13 @@ const server = http.createServer(async (req, res) => {
       if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
       const allOrders = [...orders.entries()].map(([id, o]) => {
         const usr = users.get(o.userId) || {};
+        const usrDep = usr.totalDepositedRub || usr.lastDeposit || 0;
         return {
           id,
           type: o.type || 'deposit',
           userId: o.userId,
           userName: usr.username ? '@' + usr.username : (usr.name || 'ID ' + o.userId),
+          userDepositedRub: usrDep,
           rub: o.rub,
           tokens: o.tokens,
           method: o.method || o.bank || o.source || 'СБП / Карта',
@@ -1259,15 +1407,48 @@ const server = http.createServer(async (req, res) => {
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
-    /* Заявка на вывод средств (минимум 200 ₽ = 2000 токенов) */
+    /* Заявка на вывод средств (минимум 200 ₽ = 2000 токенов + обязательный депозит) */
     if (url.pathname === '/api/withdraw' && req.method === 'POST') {
       const rub = Math.floor(Number(body.rub || 0));
       const method = String(body.method || 'СБП / Карта').trim();
       const details = String(body.details || '').trim();
+      const uLabel = tgUser.username ? '@' + tgUser.username : (u.name || 'ID ' + u.id);
+      const userDep = u.totalDepositedRub || u.lastDeposit || 0;
 
       if (isNaN(rub) || rub < 200) {
         return send(400, { error: 'Минимальная сумма вывода — 200 ₽ (2 000 ⬦)' });
       }
+
+      // АНТИЧИТ: запрещаем вывод средств игрокам с 0 ₽ пополнений!
+      if (userDep <= 0 && !isAdmin(tgUser)) {
+        betsMonitor.flagSuspicious({
+          userId: u.id,
+          name: uLabel,
+          reason: 'Попытка вывода без депозитов (0 ₽)',
+          details: `запросил ${rub} ₽ (${rub * TOKENS_PER_RUB} ⬦) на ${details}`
+        });
+        if (u.tokens > 400) {
+          u.tokens = START_TOKENS;
+        }
+        if (ADMIN_ID) {
+          const dossier = betsMonitor.getPlayerDossier(u.id, u);
+          bot.api.sendMessage(
+            ADMIN_ID,
+            `🚨 <b>АНТИЧИТ ЗАБЛОКИРОВАЛ ВЫВОД БЕЗ ДЕПОЗИТА!</b>\n` +
+            `├ Игрок: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
+            `├ Попытался вывести: <b>${rub} ₽</b> (${rub * TOKENS_PER_RUB} ⬦)\n` +
+            `├ Реквизиты: <code>${details}</code>\n` +
+            `└ Накрученный баланс сброшен до ${u.tokens} ⬦.\n\n` +
+            dossier,
+            { parse_mode: 'HTML' }
+          ).catch(() => {});
+        }
+        return send(400, {
+          error: 'Для вывода средств необходим хотя бы один подтверждённый депозит на аккаунте (верификация платёжных реквизитов).',
+          remaining: u.tokens
+        });
+      }
+
       const neededTokens = rub * TOKENS_PER_RUB;
       if (u.tokens < neededTokens) {
         return send(400, { error: `Недостаточно токенов. Для вывода ${rub} ₽ требуется ${neededTokens} ⬦ (у вас ${Math.floor(u.tokens)} ⬦)` });
@@ -1290,14 +1471,15 @@ const server = http.createServer(async (req, res) => {
       });
 
       if (ADMIN_ID) {
-        const uLabel = tgUser.username ? '@' + tgUser.username : (u.name || 'ID ' + u.id);
+        const dossier = betsMonitor.getPlayerDossier(u.id, u);
         bot.api.sendMessage(
           ADMIN_ID,
           `💸 <b>Заявка на вывод средств #${orderId}</b>\n` +
           `├ Пользователь: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
           `├ Сумма: <b>${rub} ₽</b> (${neededTokens} ⬦)\n` +
           `├ Способ: <b>${method}</b>\n` +
-          `└ Реквизиты: <code>${details}</code>`,
+          `└ Реквизиты: <code>${details}</code>\n\n` +
+          dossier,
           {
             parse_mode: 'HTML',
             reply_markup: new InlineKeyboard()

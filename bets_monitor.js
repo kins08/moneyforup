@@ -1,6 +1,7 @@
 /**
- * Мониторинг выигранных и проигранных ставок игроков + анализ итогового PnL проекта (+ или -).
- * Сохраняет историю и агрегаты в отдельный файл bets_stats.json и формирует сводки для Telegram.
+ * Мониторинг выигранных и проигранных ставок игроков, детальная аналитика по играм и игрокам,
+ * античит-аудит и анализ итогового PnL проекта (+ или -).
+ * Сохраняет историю, профили игроков и агрегаты в отдельный файл bets_stats.json и формирует сводки для Telegram.
  */
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +19,8 @@ let store = {
   totalProjectNetTokens: 0, // Положительное = проект в плюсе (игроки проиграли больше, чем выиграли)
   totalDepositsRub: 0,
   totalWithdrawalsRub: 0,
+  players: {}, // uid -> { uid, name, betsCount, wonCount, lostCount, wageredTk, payoutTk, netPlayerTk, depositsRub, withdrawalsRub, currentBalanceTk, maxSingleWinTk, maxSingleWinGame, games: {}, suspiciousFlags: [], lastActiveAt }
+  suspiciousEvents: [], // последние 200 античит-событий
   history: [] // последние 5000 записей: { t, uid, name, game, bet, win, netProject }
 };
 
@@ -29,6 +32,8 @@ function loadStore() {
       if (data && typeof data === 'object') {
         store = Object.assign(store, data);
         if (!Array.isArray(store.history)) store.history = [];
+        if (!Array.isArray(store.suspiciousEvents)) store.suspiciousEvents = [];
+        if (!store.players || typeof store.players !== 'object') store.players = {};
       }
     }
   } catch (e) {
@@ -52,18 +57,73 @@ function saveStore() {
 
 loadStore();
 
+function ensurePlayer(uid, name) {
+  const key = String(uid || 0);
+  if (!store.players[key]) {
+    store.players[key] = {
+      uid: Number(uid) || 0,
+      name: String(name || 'Игрок').slice(0, 40),
+      betsCount: 0,
+      wonCount: 0,
+      lostCount: 0,
+      wageredTk: 0,
+      payoutTk: 0,
+      netPlayerTk: 0,
+      depositsRub: 0,
+      withdrawalsRub: 0,
+      currentBalanceTk: 50,
+      maxSingleWinTk: 0,
+      maxSingleWinGame: '',
+      games: {},
+      suspiciousFlags: [],
+      lastActiveAt: Date.now()
+    };
+  }
+  const p = store.players[key];
+  if (name && name !== 'Игрок') p.name = String(name).slice(0, 40);
+  p.lastActiveAt = Date.now();
+  if (!p.games) p.games = {};
+  if (!Array.isArray(p.suspiciousFlags)) p.suspiciousFlags = [];
+  return p;
+}
+
+/**
+ * Фиксация подозрительной активности / срабатывания античита
+ */
+function flagSuspicious({ userId, name, reason, details }) {
+  const p = ensurePlayer(userId, name);
+  const flagStr = `${reason}${details ? ' (' + details + ')' : ''}`;
+  if (!p.suspiciousFlags.includes(flagStr)) {
+    p.suspiciousFlags.push(flagStr);
+    if (p.suspiciousFlags.length > 15) p.suspiciousFlags = p.suspiciousFlags.slice(-15);
+  }
+  store.suspiciousEvents.push({
+    t: Date.now(),
+    uid: Number(userId) || 0,
+    name: p.name,
+    reason,
+    details: details || ''
+  });
+  if (store.suspiciousEvents.length > 200) {
+    store.suspiciousEvents = store.suspiciousEvents.slice(-200);
+  }
+  saveStore();
+}
+
 /**
  * Запись одиночной ставки игрока
- * @param {object} p - { userId, name, game, betTokens, winTokens }
+ * @param {object} p - { userId, name, game, betTokens, winTokens, balanceAfter, totalDepositedRub }
  */
-function recordBet({ userId, name, game, betTokens, winTokens }) {
+function recordBet({ userId, name, game, betTokens, winTokens, balanceAfter, totalDepositedRub }) {
   const bet = Math.max(0, Math.round(Number(betTokens) || 0));
   const win = Math.max(0, Math.round(Number(winTokens) || 0));
   if (bet <= 0 && win <= 0) return null;
 
-  const isPlayerWin = win >= bet && win > 0;
+  const isPlayerWin = win > bet && win > 0;
   // Для проекта: сколько поставили минус сколько выплатили
   const netProject = bet - win;
+  const netPlayer = win - bet;
+  const gameClean = String(game || 'Игра').slice(0, 32);
 
   store.totalBetsCount += 1;
   if (isPlayerWin) store.wonBetsCount += 1;
@@ -73,11 +133,50 @@ function recordBet({ userId, name, game, betTokens, winTokens }) {
   store.totalPayoutTokens += win;
   store.totalProjectNetTokens += netProject;
 
+  // Обновляем детальный профиль игрока
+  if (userId) {
+    const p = ensurePlayer(userId, name);
+    p.betsCount += 1;
+    if (isPlayerWin) p.wonCount += 1;
+    else p.lostCount += 1;
+    p.wageredTk += bet;
+    p.payoutTk += win;
+    p.netPlayerTk += netPlayer;
+    if (typeof balanceAfter === 'number') p.currentBalanceTk = Math.round(balanceAfter);
+    if (typeof totalDepositedRub === 'number' && totalDepositedRub > p.depositsRub) {
+      p.depositsRub = totalDepositedRub;
+    }
+    if (win > p.maxSingleWinTk) {
+      p.maxSingleWinTk = win;
+      p.maxSingleWinGame = gameClean;
+    }
+    if (!p.games[gameClean]) {
+      p.games[gameClean] = { count: 0, won: 0, lost: 0, wageredTk: 0, payoutTk: 0, netPlayerTk: 0 };
+    }
+    const pg = p.games[gameClean];
+    pg.count += 1;
+    if (isPlayerWin) pg.won += 1;
+    else pg.lost += 1;
+    pg.wageredTk += bet;
+    pg.payoutTk += win;
+    pg.netPlayerTk += netPlayer;
+
+    // Проверка на аномалии
+    if ((p.depositsRub || 0) <= 0 && p.netPlayerTk > 500) {
+      flagSuspicious({
+        userId,
+        name: p.name,
+        reason: 'Высокий профит без депозита',
+        details: `+${p.netPlayerTk} ⬦ в ${gameClean}`
+      });
+    }
+  }
+
   const entry = {
     t: Date.now(),
     uid: userId || 0,
     name: String(name || 'Игрок').slice(0, 40),
-    game: String(game || 'Игра').slice(0, 32),
+    game: gameClean,
     bet,
     win,
     netProject
@@ -93,14 +192,22 @@ function recordBet({ userId, name, game, betTokens, winTokens }) {
 }
 
 /**
- * Учёт подтверждённых пополнений и выводов в общей кассе проекта
+ * Учёт подтверждённых пополнений и выводов в общей кассе проекта и профиле игрока
  */
-function recordCashflow(type, rubAmount) {
+function recordCashflow(type, rubAmount, userId, userName) {
   const rub = Math.max(0, Number(rubAmount) || 0);
   if (type === 'deposit') {
     store.totalDepositsRub = (store.totalDepositsRub || 0) + rub;
+    if (userId) {
+      const p = ensurePlayer(userId, userName);
+      p.depositsRub = (p.depositsRub || 0) + rub;
+    }
   } else if (type === 'withdraw') {
     store.totalWithdrawalsRub = (store.totalWithdrawalsRub || 0) + rub;
+    if (userId) {
+      const p = ensurePlayer(userId, userName);
+      p.withdrawalsRub = (p.withdrawalsRub || 0) + rub;
+    }
   }
   saveStore();
 }
@@ -124,7 +231,8 @@ function getAnalytics(hours = 12) {
 
   for (const item of list) {
     betsCount++;
-    if (item.win >= item.bet && item.win > 0) wonCount++;
+    const isWin = item.win > item.bet && item.win > 0;
+    if (isWin) wonCount++;
     else lostCount++;
     wageredTk += item.bet;
     payoutTk += item.win;
@@ -132,15 +240,41 @@ function getAnalytics(hours = 12) {
     if (item.uid) playersSet.add(item.uid);
 
     const g = item.game || 'Другое';
-    if (!byGame[g]) byGame[g] = { count: 0, wagered: 0, payout: 0, netProject: 0 };
-    byGame[g].count++;
-    byGame[g].wagered += item.bet;
-    byGame[g].payout += item.win;
-    byGame[g].netProject += item.netProject;
+    if (!byGame[g]) {
+      byGame[g] = {
+        count: 0,
+        wonCount: 0,
+        lostCount: 0,
+        wagered: 0,
+        payout: 0,
+        netProject: 0,
+        rtpPct: 0,
+        winRatePct: 0,
+        maxWinTk: 0,
+        maxWinUser: ''
+      };
+    }
+    const bg = byGame[g];
+    bg.count++;
+    if (isWin) bg.wonCount++;
+    else bg.lostCount++;
+    bg.wagered += item.bet;
+    bg.payout += item.win;
+    bg.netProject += item.netProject;
+    if (item.win > bg.maxWinTk) {
+      bg.maxWinTk = item.win;
+      bg.maxWinUser = item.name || String(item.uid);
+    }
   }
 
-  // Если за всё время, берём глобальные счётчики
-  if (hours <= 0) {
+  for (const gKey of Object.keys(byGame)) {
+    const bg = byGame[gKey];
+    bg.rtpPct = bg.wagered > 0 ? +((bg.payout / bg.wagered) * 100).toFixed(1) : 0;
+    bg.winRatePct = bg.count > 0 ? +((bg.wonCount / bg.count) * 100).toFixed(1) : 0;
+  }
+
+  // Если за всё время и в истории меньше записей, чем в глобальных счётчиках
+  if (hours <= 0 && store.totalBetsCount > betsCount) {
     betsCount = store.totalBetsCount;
     wonCount = store.wonBetsCount;
     lostCount = store.lostBetsCount;
@@ -153,36 +287,88 @@ function getAnalytics(hours = 12) {
   const payoutRub = +(payoutTk / TOKENS_PER_RUB).toFixed(2);
   const projectNetRub = +(projectNetTk / TOKENS_PER_RUB).toFixed(2);
   const cashflowNetRub = +((store.totalDepositsRub || 0) - (store.totalWithdrawalsRub || 0)).toFixed(2);
+  const rtpOverallPct = wageredTk > 0 ? +((payoutTk / wageredTk) * 100).toFixed(1) : 0;
+
+  // Топ игроков по активности / профиту
+  const playersList = Object.values(store.players || {})
+    .sort((a, b) => Math.abs(b.netPlayerTk) - Math.abs(a.netPlayerTk))
+    .slice(0, 30);
 
   return {
     hours,
     betsCount,
     wonCount,
     lostCount,
-    activePlayers: playersSet.size,
+    activePlayers: playersSet.size || Object.keys(store.players || {}).length,
     wageredTk,
     wageredRub,
     payoutTk,
     payoutRub,
     projectNetTk,
     projectNetRub,
+    rtpOverallPct,
     inPlus: projectNetTk >= 0,
     totalDepositsRub: store.totalDepositsRub || 0,
     totalWithdrawalsRub: store.totalWithdrawalsRub || 0,
     cashflowNetRub,
     byGame,
-    recentBets: store.history.slice(-15).reverse()
+    playersList,
+    suspiciousEvents: (store.suspiciousEvents || []).slice(-20).reverse(),
+    recentBets: store.history.slice(-20).reverse()
   };
 }
 
 /**
- * Форматирование HTML-сводки для отправки в Telegram администратору
+ * Досье конкретного игрока (для прикрепления к заявкам на вывод и проверки на эксплойты)
+ */
+function getPlayerDossier(userId, serverUserObj) {
+  const p = store.players[String(userId)] || null;
+  const depRub = Math.max(
+    (p && p.depositsRub) || 0,
+    (serverUserObj && serverUserObj.totalDepositedRub) || 0,
+    (serverUserObj && serverUserObj.lastDeposit) || 0
+  );
+  const wdRub = (p && p.withdrawalsRub) || 0;
+  const betsCount = (p && p.betsCount) || 0;
+  const wonCount = (p && p.wonCount) || 0;
+  const lostCount = (p && p.lostCount) || 0;
+  const netPlayerRub = p ? (p.netPlayerTk / TOKENS_PER_RUB).toFixed(1) : '0.0';
+
+  let topGamesStr = 'нет записанных ставок';
+  if (p && p.games && Object.keys(p.games).length > 0) {
+    topGamesStr = Object.entries(p.games)
+      .sort((a, b) => b[1].netPlayerTk - a[1].netPlayerTk)
+      .slice(0, 3)
+      .map(([g, d]) => `${g}: ${d.count} ст. (${d.netPlayerTk >= 0 ? '+' : ''}${(d.netPlayerTk / TOKENS_PER_RUB).toFixed(0)}₽)`)
+      .join(', ');
+  }
+
+  const flags = (p && p.suspiciousFlags && p.suspiciousFlags.length)
+    ? `🚨 <b>Флаги античита:</b> ${p.suspiciousFlags.join('; ')}\n`
+    : '';
+
+  const verdict = depRub <= 0
+    ? `🚨 <b>ВНИМАНИЕ: 0 ₽ ПОПОЛНЕНИЙ! (Не платил ни разу)</b>`
+    : `✅ <b>Пополнял: ${depRub} ₽</b> (Выводил ранее: ${wdRub} ₽)`;
+
+  return (
+    `🔎 <b>АУДИТ ИГРОКА:</b>\n` +
+    `├ Статус: ${verdict}\n` +
+    `├ Ставок: <b>${betsCount}</b> (побед: ${wonCount} / сливов: ${lostCount})\n` +
+    `├ Профит в играх: <b>${Number(netPlayerRub) >= 0 ? '+' : ''}${netPlayerRub} ₽</b>\n` +
+    `├ Где поднял: <i>${topGamesStr}</i>\n` +
+    flags
+  );
+}
+
+/**
+ * Форматирование основной HTML-сводки для отправки в Telegram администратору
  */
 function formatTelegramReport(hours = 12) {
   const periodStats = getAnalytics(hours);
   const allStats = getAnalytics(0);
 
-  const periodLabel = hours === 12 ? 'за 12 часов (полдня)' : (hours === 24 ? 'за 24 часа (сутки)' : `за ${hours} ч.`);
+  const periodLabel = hours === 12 ? 'за 12 часов (полдня)' : (hours === 24 ? 'за 24 часа (сутки)' : (hours === 0 ? 'за всё время' : `за ${hours} ч.`));
   const sign = n => (n > 0 ? '+' : '') + n.toLocaleString('ru-RU');
   const signRub = n => (n > 0 ? '+' : '') + n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
 
@@ -201,8 +387,10 @@ function formatTelegramReport(hours = 12) {
     for (const [gName, gData] of gamesEntries) {
       const gNetRub = (gData.netProject / TOKENS_PER_RUB).toFixed(1);
       const gIcon = gData.netProject >= 0 ? '🟢' : '🔴';
-      gameLines += `• <b>${gName}</b>: ${gData.count} ст. | Итог проекта: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
+      gameLines += `• <b>${gName}</b>: ${gData.count} ст. (RTP ${gData.rtpPct}%) | Итог: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
     }
+  } else {
+    gameLines = '\n🎮 <i>За выбранный период ставок ещё не было.</i>\n';
   }
 
   return (
@@ -211,23 +399,170 @@ function formatTelegramReport(hours = 12) {
     `${statusEmoji} <b>Итог по ставкам: ${statusVerdict}</b>\n\n` +
     `📈 <b>Статистика ставок (${periodLabel}):</b>\n` +
     `├ Всего сыграно: <b>${periodStats.betsCount}</b> ставок (игроков: ${periodStats.activePlayers})\n` +
-    `├ Выиграно игроками: <b>${periodStats.wonCount}</b> шт. на <b>${periodStats.payoutRub} ₽</b> (${periodStats.payoutTk} ⬦)\n` +
-    `├ Проиграно игроками: <b>${periodStats.lostCount}</b> шт.\n` +
-    `├ Общий оборот ставок: <b>${periodStats.wageredRub} ₽</b> (${periodStats.wageredTk} ⬦)\n` +
-    `└ Чистый результат по играм: <b>${signRub(periodStats.projectNetRub)}</b> (${sign(periodStats.projectNetTk)} ⬦)\n` +
+    `├ Побед игроков: <b>${periodStats.wonCount}</b> шт. | Сливов: <b>${periodStats.lostCount}</b> шт.\n` +
+    `├ Оборот ставок: <b>${periodStats.wageredRub} ₽</b> (${periodStats.wageredTk} ⬦)\n` +
+    `├ Выплачено выигрышей: <b>${periodStats.payoutRub} ₽</b> (Факт. RTP: <b>${periodStats.rtpOverallPct}%</b>)\n` +
+    `└ Чистый доход казино по играм: <b>${signRub(periodStats.projectNetRub)}</b> (${sign(periodStats.projectNetTk)} ⬦)\n` +
     gameLines +
-    `\n🏦 <b>Общий баланс проекта за всё время:</b>\n` +
-    `├ По играм (всего ${allStats.betsCount} ст.): ${allStatusEmoji} <b>${signRub(allStats.projectNetRub)}</b> (${sign(allStats.projectNetTk)} ⬦)\n` +
+    `\n🏦 <b>Общая касса проекта за всё время:</b>\n` +
+    `├ По играм (всего ${allStats.betsCount} ст.): ${allStatusEmoji} <b>${signRub(allStats.projectNetRub)}</b>\n` +
     `├ Всего пополнений: <b>+${allStats.totalDepositsRub.toFixed(2)} ₽</b>\n` +
     `├ Всего выплачено выводов: <b>-${allStats.totalWithdrawalsRub.toFixed(2)} ₽</b>\n` +
     `└ Чистая касса (Депозиты − Выводы): ${cashStatusEmoji} <b>${signRub(allStats.cashflowNetRub)}</b>`
   );
 }
 
+/**
+ * Детальный отчёт по каждой игре (обороты, RTP, профит казино, макс выигрыши)
+ */
+function formatGamesReport(hours = 0) {
+  const st = getAnalytics(hours);
+  const label = hours > 0 ? `за ${hours} ч.` : 'за всё время';
+  const entries = Object.entries(st.byGame).sort((a, b) => b[1].wagered - a[1].wagered);
+
+  if (entries.length === 0) {
+    return `🎮 <b>ДЕТАЛЬНЫЙ ОТЧЁТ ПО ИГРАМ (${label})</b>\n\nЗаписей о ставках пока нет.`;
+  }
+
+  let out = `🎮 <b>ДЕТАЛЬНЫЙ ОТЧЁТ ПО ИГРАМ (${label})</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  for (const [gName, g] of entries) {
+    const netRub = (g.netProject / TOKENS_PER_RUB).toFixed(1);
+    const wagRub = (g.wagered / TOKENS_PER_RUB).toFixed(1);
+    const payRub = (g.payout / TOKENS_PER_RUB).toFixed(1);
+    const maxRub = (g.maxWinTk / TOKENS_PER_RUB).toFixed(1);
+    const icon = g.netProject >= 0 ? '🟢' : '🔴';
+    out +=
+      `\n<b>${icon} ${gName}</b>\n` +
+      `├ Ставок: <b>${g.count}</b> (Побед: ${g.wonCount} / Сливов: ${g.lostCount} · WinRate: <b>${g.winRatePct}%</b>)\n` +
+      `├ Оборот: <b>${wagRub} ₽</b> | Выплаты: <b>${payRub} ₽</b> (RTP: <b>${g.rtpPct}%</b>)\n` +
+      `├ Макс. занос игрока: <b>${maxRub} ₽</b> (${g.maxWinTk} ⬦ — ${g.maxWinUser || '—'})\n` +
+      `└ Доход проекта: <b>${g.netProject >= 0 ? '+' : ''}${netRub} ₽</b> (${g.netProject >= 0 ? '+' : ''}${g.netProject} ⬦)\n`;
+  }
+  return out;
+}
+
+/**
+ * Детальный отчёт по игрокам (кто сколько пополнил, в каких играх поднял или слил)
+ */
+function formatPlayersReport(usersMap) {
+  // Объединяем данные из bets_monitor и оперативной памяти bot.js
+  const combined = new Map();
+  for (const [uid, p] of Object.entries(store.players || {})) {
+    combined.set(Number(uid), { ...p });
+  }
+  if (usersMap && typeof usersMap.entries === 'function') {
+    for (const [uid, u] of usersMap.entries()) {
+      const existing = combined.get(Number(uid)) || {
+        uid: Number(uid),
+        name: u.username ? '@' + u.username : (u.name || 'ID ' + uid),
+        betsCount: 0,
+        wonCount: 0,
+        lostCount: 0,
+        wageredTk: 0,
+        payoutTk: 0,
+        netPlayerTk: 0,
+        depositsRub: u.totalDepositedRub || u.lastDeposit || 0,
+        withdrawalsRub: 0,
+        currentBalanceTk: u.tokens || 0,
+        games: {},
+        suspiciousFlags: []
+      };
+      existing.currentBalanceTk = Math.round(u.tokens || 0);
+      if ((u.totalDepositedRub || u.lastDeposit || 0) > (existing.depositsRub || 0)) {
+        existing.depositsRub = u.totalDepositedRub || u.lastDeposit || 0;
+      }
+      if (u.username) existing.name = '@' + u.username;
+      combined.set(Number(uid), existing);
+    }
+  }
+
+  const list = [...combined.values()].sort((a, b) => (b.currentBalanceTk + b.payoutTk) - (a.currentBalanceTk + a.payoutTk));
+  if (list.length === 0) {
+    return `👥 <b>ДЕТАЛЬНЫЙ ОТЧЁТ ПО ИГРОКАМ</b>\n\nДанных по игрокам пока нет.`;
+  }
+
+  let out = `👥 <b>ДЕТАЛЬНЫЙ ОТЧЁТ ПО ИГРОКАМ (ТОП-15)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  for (const p of list.slice(0, 15)) {
+    const balRub = ((p.currentBalanceTk || 0) / TOKENS_PER_RUB).toFixed(1);
+    const netRub = ((p.netPlayerTk || 0) / TOKENS_PER_RUB).toFixed(1);
+    const depBadge = (p.depositsRub || 0) > 0 ? `💳 Деп: <b>${p.depositsRub} ₽</b>` : `⚠️ <b>БЕЗ ДЕПОЗИТА (0 ₽)</b>`;
+    const topGames = p.games && Object.keys(p.games).length
+      ? Object.entries(p.games)
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, 3)
+          .map(([g, d]) => `${g} (${d.count}ст, ${d.netPlayerTk >= 0 ? '+' : ''}${Math.round(d.netPlayerTk / 10)}₽)`)
+          .join(', ')
+      : 'без ставок';
+    const warn = (p.suspiciousFlags && p.suspiciousFlags.length) ? `\n├ 🚨 <b>Флаг:</b> ${p.suspiciousFlags.slice(-2).join('; ')}` : '';
+
+    out +=
+      `\n👤 <b>${p.name}</b> (<code>${p.uid}</code>)\n` +
+      `├ Баланс: <b>${p.currentBalanceTk} ⬦</b> (${balRub} ₽) | ${depBadge}\n` +
+      `├ Ставок: <b>${p.betsCount}</b> (Вин: ${p.wonCount} / Слив: ${p.lostCount}) | Профит игрока: <b>${p.netPlayerTk >= 0 ? '+' : ''}${netRub} ₽</b>\n` +
+      `└ Игры: <i>${topGames}</i>${warn}\n`;
+  }
+  return out;
+}
+
+/**
+ * Античит-аудит: подозрительные игроки (высокий баланс при 0 депозитов и заблокированные попытки накрутки)
+ */
+function formatAuditReport(usersMap) {
+  let out = `🛡 <b>АНТИЧИТ И АУДИТ БЕЗОПАСНОСТИ</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  out += `✅ <b>Активные защиты:</b>\n`;
+  out += `• Лимит баланса без депозита: <b>макс. 400 ⬦ (40 ₽)</b>\n`;
+  out += `• Запрет вывода средств при <b>0 ₽ пополнений</b>\n`;
+  out += `• Защита от смены ставки во время раунда (Ракетка, Скуф, Попрыгун, Авито)\n`;
+  out += `• Защита от прикормки на больших кэфах (×20 Апгрейдер / ×95 Dice)\n\n`;
+
+  const suspiciousUsers = [];
+  if (usersMap && typeof usersMap.entries === 'function') {
+    for (const [uid, u] of usersMap.entries()) {
+      const dep = u.totalDepositedRub || u.lastDeposit || 0;
+      if (dep <= 0 && u.tokens > 450) {
+        suspiciousUsers.push({
+          uid,
+          name: u.username ? '@' + u.username : (u.name || 'ID ' + uid),
+          tokens: u.tokens,
+          dep
+        });
+      }
+    }
+  }
+
+  if (suspiciousUsers.length > 0) {
+    out += `🚨 <b>Обнаружены аккаунты с балансом > 450 ⬦ без депозитов:</b>\n`;
+    for (const su of suspiciousUsers) {
+      out += `• <b>${su.name}</b> (<code>${su.uid}</code>): <b>${Math.round(su.tokens)} ⬦</b> при 0 ₽ депозитов\n`;
+    }
+    out += `\n<i>Нажмите кнопку «🧹 Обнулить накрутчиков (0 деп)» ниже, чтобы сбросить им баланс до стартовых 50 ⬦.</i>\n\n`;
+  } else {
+    out += `🟢 <b>Аномальных балансов без депозита сейчас нет.</b>\n\n`;
+  }
+
+  const events = (store.suspiciousEvents || []).slice(-10).reverse();
+  if (events.length > 0) {
+    out += `📋 <b>Последние срабатывания античита:</b>\n`;
+    for (const ev of events) {
+      const timeStr = new Date(ev.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      out += `• [${timeStr}] <b>${ev.name}</b> (<code>${ev.uid}</code>): ${ev.reason} ${ev.details ? '— ' + ev.details : ''}\n`;
+    }
+  } else {
+    out += `📋 <i>Срабатываний античита за последнее время не зафиксировано.</i>`;
+  }
+
+  return out;
+}
+
 module.exports = {
   STATS_FILE,
   recordBet,
   recordCashflow,
+  flagSuspicious,
   getAnalytics,
-  formatTelegramReport
+  getPlayerDossier,
+  formatTelegramReport,
+  formatGamesReport,
+  formatPlayersReport,
+  formatAuditReport
 };
