@@ -108,7 +108,7 @@ CREATE TABLE orders (
 ### Тесты
 
 ```bash
-npm test                # bot-test.js: 35 проверок — Platega/Coinso, подписи вебхуков, идемпотентность, реферальные 15 %, auth_date из будущего, энтропия orderId
+npm test                # bot-test.js: 36 проверок — Platega/Coinso, подписи вебхуков, идемпотентность, реферальные 15 %, auth_date из будущего, энтропия orderId
 npm run test:security   # e2e аудита: исход игры решает сервер, инвентарь серверный, баланс применяется ровно один раз
 npm run check:frontend  # index.html и public/index.html идентичны
 ```
@@ -133,6 +133,19 @@ npm run check:frontend  # index.html и public/index.html идентичны
 | Platega (карта / СБП) | от 4–5 % (торгуется) | merchant id и secret из кабинета |
 | Telegram Stars | ~30 % | 1 команда BotFather, ничего больше не нужно |
 | СБП вручную (этот бот, `/sbp`) | 0 % | ничего, но подтверждает админ |
+
+## Деплой фронта на Cloudflare
+
+На Cloudflare уходит **только статика** — `public/` (`wrangler.jsonc` → `assets.directory`); бот и API живут на Render/Fly и исключены через `.cfignore`.
+
+```bash
+npx wrangler deploy --dry-run   # проверка сборки без токенов: ждём «Read 16 files from .../public»
+npm run deploy                  # боевой деплой (нужен CLOUDFLARE_API_TOKEN или интерактивный логин)
+```
+
+В настройках сборки на Cloudflare используются две команды: превью ветки — `npx wrangler preview`, прод — `npx wrangler deploy`. Команда `preview` в wrangler ≥ 4.150 **требует блок `previews`** в `wrangler.jsonc` — он добавлен и намеренно пуст: `assets`, `compatibility_date` и `observability` остаются на верхнем уровне и наследуются превью. Без блока сборка падает с `Your Wrangler configuration is missing a previews block`.
+
+Wrangler закреплён в `devDependencies` точной версией (`4.150.0`), чтобы `npx wrangler` не тянул свежий релиз и сборка не ломалась от изменений в апстриме. Перед обновлением версии прогоните `npx wrangler deploy --dry-run` (должно собрать 16 файлов из `public/`) и `npx wrangler preview --ignore-base-config` (проверка конфига должна пройти).
 
 ## Полезные ссылки
 

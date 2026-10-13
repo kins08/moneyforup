@@ -8,5 +8,9 @@
   "assets": {
     "directory": "public",
     "not_found_handling": "single-page-application"
-  }
+  },
+  // Нужен для `wrangler preview` (команда сборки на Cloudflare Workers Builds).
+  // Блок обязан присутствовать, может быть пустым: assets, compatibility_date
+  // и observability остаются на верхнем уровне и наследуются превью.
+  "previews": {}
 }

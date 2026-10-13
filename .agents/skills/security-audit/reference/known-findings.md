@@ -293,36 +293,43 @@ git show 7935456:bot.js | grep -c "COINSO_API_KEY.*||"   →  2
 
 ---
 
-## ℹ️ Cloudflare: красный «Workers Builds» на ветке — не дефект кода
+## ✅ Cloudflare: красный «Workers Builds» — отсутствовал блок `previews` — ИСПРАВЛЕНО
 
-**Статус:** не находка, а объяснение — чтобы не чинить несуществующее.
+**Статус:** ✅ закрыто (2026-10-13) · фикс: `"previews": {}` в `wrangler.jsonc` + wrangler закреплён в `devDependencies` (4.150.0)
 
-На ветке `arena/0290c6bb-moneyforup` проверка `Workers Builds: moneyforup1` красная
-на КАЖДОМ коммите, включая тот, который менял только файлы `.agents/` (11 файлов,
-2145 строк документации и скриптов). Документация не может сломать сборку статики.
+**Симптом** (сборка Cloudflare, команда `npx wrangler preview`, wrangler 4.150):
 
-Что в данных:
+```
+✘ [ERROR] Your Wrangler configuration is missing a `previews` block to run this command.
+```
 
-| Коммит | Что менял | Workers Builds |
+Прежний вывод этого раздела («сборка красная по причине, не зависящей от коммитов») подтвердился
+ровно наполовину: содержимое коммитов действительно ни при чём, но починка живёт в репозитории.
+
+`wrangler preview` — open beta «Worker Previews»; wrangler ≥ 4.150 отказывается работать без
+явного блока `previews` в конфиге, причём блок **может быть пустым**: assets, compatibility_date
+и placement наследуются с верхнего уровня. Вторая половина проблемы — `npx wrangler` без
+пиннинга: каждая сборка тянула свежий релиз, поэтому поведение менялось без правок в репозитории.
+
+**Локальное доказательство (A/B, wrangler 4.150.0, сеть до api.cloudflare.com закрыта):**
+
+| Конфиг | `wrangler preview --ignore-base-config` | `wrangler deploy --dry-run` |
 |---|---|---|
-| `4951efe` (main) | обычные правки | **success**, есть Version ID, сборка ~22 с |
-| `5f1607c` (ветка) | только `.agents/**` | failure, мгновенно, Version ID нет |
-| `84b4d1f`, `165b227`, `ad3ce1d` | код и merge | проверки нет вообще |
-| `a07ed28`…`936a26a` | код, конфиги | failure, мгновенно |
+| без `previews` | ✘ дословно та же ошибка, что на сборке | ✓ Read 16 files |
+| с `"previews": {}` | проверка конфига пройдена, дальше только `fetch failed` (нет доступа к API) | ✓ Read 16 files |
 
-Мгновенный отказ без Version ID означает, что сборка не запускалась: Cloudflare
-не собирает не-продакшн ветки. На `main` та же конфигурация собирается нормально.
+Флаг `--ignore-base-config` пропускает обращение к API — с ним ошибка конфига воспроизводится
+офлайн. Это удобный регресс-тест при обновлении wrangler.
 
 **Как проверять Cloudflare по-настоящему** (а не по цвету галочки на ветке):
 ```bash
-npx wrangler deploy --dry-run          # 16 файлов из public/, собирается
+npx wrangler deploy --dry-run     # 16 файлов из public/, собирается
+npm test                          # 36/36
+npm run check:frontend            # index.html и public/index.html идентичны
 ```
 Плюс два факта: на CF уходит ТОЛЬКО `public/` (`wrangler.jsonc` → `assets.directory`),
 и клиент ходит на бэкенд по `window.MONEYFORUP_API` (Render), а не на CF.
 CORS на бэкенде открыт (`Access-Control-Allow-Origin: *`, префлайт → 204).
-
-**Вывод:** сборка на ветке красная по причине, не зависящей от содержимого коммитов.
-Не трать время на «починку» — правь по main.
 
 ---
 
@@ -420,8 +427,8 @@ CORS на бэкенде открыт (`Access-Control-Allow-Origin: *`, пре�
 | R2 | «Отмена» ставки возвращала токены на экране | 🟠 | ✅ **закрыто** | очередь `B.queued`, старт полёта |
 | R3 | Кэшаут ×N против выплаты сервера ×1.7 | 🟠 | 🟡 дисплей честный | механика — решение владельца |
 | R4 | Тикер склеивал цифры подписи (×12.31) | 🟡 | ✅ **закрыто** | `parseNoteMult` |
+| CF | Workers Builds падал: нет блока `previews` | 🔵 сборка | ✅ **закрыто** (2026-10-13) | `"previews": {}` + пиннинг wrangler |
 
-**Порядок:**
 **Порядок:**
 1. **P0-0** — ротация ключей (пользователь, параллельно всему). ← ещё не сделано
 2. ~~**P0-5** — фикс двойной записи~~ ✅ сделано.
@@ -439,6 +446,7 @@ node .agents/skills/security-audit/scripts/e2e-game-authority-test.js  # P0-1: �
 node .agents/skills/security-audit/scripts/e2e-exploit-test.js         # P0-5: баланс применяется один раз
 node .agents/skills/security-audit/scripts/poc-balance-bypass.js       # P0-1: живой сервер, exit 0 = защищено
 node .agents/skills/security-audit/scripts/poc-db-double-write.js      # реальный db.js + applyBalance
+npx wrangler deploy --dry-run                                         # CF: сборка статики (16 файлов из public/)
 bash .agents/skills/security-audit/scripts/audit.sh
 ```
 

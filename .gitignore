@@ -5,6 +5,7 @@ bot/.env
 
 # Зависимости и служебное
 node_modules/
+.wrangler/
 npm-debug.log*
 *.log
 
