@@ -105,7 +105,34 @@ async function main() {
       sold_at INTEGER,
       sold_for INTEGER
     )`,
-    `CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at)`
+    `CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at)`,
+    /* Ракетка: раунды и ставки (R5). Сервер ведёт раунд и считает кэшаут сам;
+       в Turso уезжает та же картина — история раундов и судьба каждой ставки. */
+    `CREATE TABLE IF NOT EXISTS racket_rounds (
+      round_id TEXT PRIMARY KEY,
+      server_seed TEXT NOT NULL,
+      seed_hash TEXT NOT NULL,
+      crash_point REAL NOT NULL,
+      started_at INTEGER NOT NULL,
+      finished_at INTEGER,
+      status TEXT NOT NULL DEFAULT 'live'
+    )`,
+    `CREATE TABLE IF NOT EXISTS racket_bets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      round_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      slot INTEGER NOT NULL DEFAULT 1,
+      bet_tokens INTEGER NOT NULL,
+      auto_x REAL,
+      cashed_x REAL,
+      win_tokens INTEGER,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at INTEGER NOT NULL,
+      cashed_at INTEGER
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_racket_bet_slot_active ON racket_bets(round_id, user_id, slot) WHERE status = 'active'`,
+    `CREATE INDEX IF NOT EXISTS idx_racket_bets_user ON racket_bets(user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_racket_round_live ON racket_rounds(status, started_at)`
   ];
 
   for (const s of schema) {

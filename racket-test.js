@@ -1,15 +1,13 @@
-/* Тест денежного контура «Ракетки»: ставка живёт только тогда, когда её принял
-   сервер. Ловит три дефекта, найденные на аудите свежих правок:
-     1) фантомная ставка: сервер отказал (не хватает токенов), а интерфейс
-        показывал «Принята / В игре» и обещал выигрыш, которого не будет;
-     2) «отмена» ставки возвращала токены только на экране (сервер уже списал);
-     3) кэшаут показывал bet×кэшаут, а сервер начислял свою сумму (и тикер
-        получал множитель 12.31 из подписи «Ставка #1 кэшаут ×2.31»).
+/* Быстрый тест клиента «Ракетки»: интерфейс обязан следовать за сервером.
+   Мок-сервер повторяет контракт /api/racket/* (см. bot.js), причём намеренно
+   РАСХОДИТСЯ с тем, что клиент мог бы посчитать сам:
+     • кэшаут возвращает ×1.11 и выплату +111 (клиент в этот момент рисует ×1.00),
+     • крах раунда раскрывается только после финиша.
+   Так тест ловит возврат старого поведения: «экран обещал bet×кэшаут, а платил
+   сервер другое» (R3) и «тикер склеивал цифры подписи» (R4).
+   Полноценная проверка серверной авторитетности — в e2e-racket-crash-test.js.
 
-   Мок-сервер повторяет правила бэкенда: ставка списывается и раунд
-   закрывается СРАЗУ, выплата = bet × 1.7 (defaultMult Ракетки) при verdict=win.
-
-   Запуск:  node racket-test.js                                                      */
+   Запуск:  node racket-test.js                                            */
 const fs = require('fs');
 const path = require('path');
 const HTML = process.env.MONEYFORUP || process.env.MATHPLAY || path.join(__dirname, 'index.html');
@@ -18,213 +16,182 @@ const { JSDOM, VirtualConsole } = require('jsdom');
 const ok = [], bad = [];
 const check = (c, m) => (c ? ok : bad).push(m);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-const errors = [];
-const vc = new VirtualConsole();
-vc.on('jsdomError', e => errors.push('jsdomError: ' + (e.detail ? e.detail.detail || e.detail : e.message)));
-vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
 const unhandled = [];
 process.on('unhandledRejection', e => unhandled.push((e && e.message) || String(e)));
 
-const ROUND_MS = 30000, WAIT_MS = 15000;
-const RK_MULT = 1.7;                                  // defaultMult Ракетки на сервере
-let FAKE_NOW = 0;                                     // управляемые часы для фаз раунда
+/* ── мок-движок: фазу задаёт сам тест ─────────────────────────────────────── */
+const CYCLE = 30000, BETTING = 15000;
+const srv = {
+  tokens: 300, phase: 'betting', roundId: 'RKTmock1', startedAt: Date.now(),
+  crash: 1.4, bets: {}, calls: [], cashoutX: 1.85, nextId: 'RKTmock2'
+};
+const round = () => ({ id: srv.roundId, startedAt: srv.startedAt, bettingEndsAt: srv.startedAt + BETTING, endsAt: srv.startedAt + CYCLE, seedHash: 'mockhash', nextId: srv.nextId });
+const me = () => Object.entries(srv.bets).map(([slot, b]) => ({ slot: Number(slot), bet: b.bet, status: b.status, autoX: b.autoX, cashedX: b.cashedX ?? null, win: b.win ?? null, roundId: srv.roundId }));
+const history = () => srv.phase === 'done'
+  ? [{ roundId: srv.roundId, crash: srv.crash, seedHash: 'mockhash', endedAt: 1, live: false }, { roundId: srv.nextId, crash: null, seedHash: 'nexthash', endedAt: null, live: true }]
+  : [{ roundId: srv.roundId, crash: null, seedHash: 'mockhash', endedAt: null, live: true }];
 
-/* ── мок-сервер: правила те же, что в bot.js playRound ─────────────────────── */
-const srv = { tokens: 100, verdict: 'lose', attempts: 0, plays: [], balanceCalls: 0 };
 const ok_ = obj => ({ ok: true, status: 200, json: async () => obj });
 const err_ = (status, error) => ({ ok: false, status, json: async () => ({ error }) });
 
-async function apiHandle(url, opts) {
-  const u = String(url);
-  if (u.includes('/api/play')) {
-    const body = JSON.parse(opts.body || '{}');
-    const bet = Math.floor(Number(body.bet) || 0);
-    srv.attempts++;
-    if (bet < 10) return err_(400, 'Ставка должна быть от 10 до 100000 ⬦');
-    if (bet > srv.tokens) return err_(400, 'Недостаточно токенов');
-    const win = srv.verdict === 'win' ? Math.floor(bet * RK_MULT) : 0;
-    srv.tokens = srv.tokens - bet + win;
-    srv.plays.push({ game: body.game, bet, verdict: srv.verdict, win, tokens: srv.tokens });
-    return ok_({ ok: true, roundId: 'RT' + srv.plays.length, game: 'Ракетка', verdict: srv.verdict, win, mult: RK_MULT, tokens: srv.tokens });
+async function api(pathname, body) {
+  srv.calls.push(pathname);
+  if (pathname === '/api/racket/status') {
+    const now = Date.now();
+    // фаза 'done' объявлена тестом: держим её, пока тест сам не вернёт 'betting'
+    return ok_({ ok: true, now, engine: { cycleMs: CYCLE, bettingMs: BETTING, graceMs: 2500, minBet: 10, maxBet: 100000, maxCashX: 30, k: 0.18, speed: 0.58, rtp: 0.96 }, round: round(), me: me(), history: history(), stats: { bets: 0, wagered: 0, won: 0 }, tokens: srv.tokens });
   }
-  if (u.includes('/api/balance')) { srv.balanceCalls++; return ok_({ tokens: srv.tokens, totalDeposited: 1000, refCode: 'RKTEST01' }); }
-  if (u.includes('/api/register')) return ok_({ refCode: 'RKTEST01', tokens: srv.tokens, totalDeposited: 1000 });
-  if (u.includes('/api/requisites')) return ok_({ ok: true, configured: {}, sbp: { phone: '', holder: '' }, cards: {} });
-  if (u.includes('/api/inventory')) return ok_({ ok: true, items: [], count: 0, value: 0, tokens: srv.tokens });
+  if (pathname === '/api/racket/bet') {
+    const slot = Number(body.slot) || 1, bet = Math.floor(Number(body.bet) || 0);
+    if (srv.bets[slot] && srv.bets[slot].status === 'active') return err_(400, `Ставка #${slot} в этом раунде уже сделана`);
+    if (bet > srv.tokens) return err_(400, 'Недостаточно токенов');
+    srv.tokens -= bet;
+    srv.bets[slot] = { bet, status: 'active', autoX: body.autoX ?? null };
+    return ok_({ ok: true, phase: srv.phase, roundId: srv.roundId, round: round(), slot, bet, autoX: body.autoX ?? null, tokens: srv.tokens });
+  }
+  if (pathname === '/api/racket/cancel') {
+    const slot = Number(body.slot) || 1, b = srv.bets[slot];
+    if (!b || b.status !== 'active') return err_(400, 'Ставка уже закрыта');
+    srv.tokens += b.bet; b.status = 'cancelled';
+    return ok_({ ok: true, cancelled: true, slot, refund: b.bet, tokens: srv.tokens });
+  }
+  if (pathname === '/api/racket/cashout') {
+    const slot = Number(body.slot) || 1, b = srv.bets[slot];
+    if (!b) return err_(404, `Ставка #${slot} не найдена`);
+    if (b.status === 'cashed') return ok_({ ok: true, repeat: true, verdict: 'win', x: b.cashedX, win: b.win, crash: null, tokens: srv.tokens });
+    if (b.status !== 'active') return ok_({ ok: true, verdict: 'lose', x: null, win: 0, crash: null, tokens: srv.tokens });
+    b.status = 'cashed'; b.cashedX = srv.cashoutX; b.win = Math.floor(b.bet * srv.cashoutX);
+    srv.tokens += b.win;
+    return ok_({ ok: true, verdict: 'win', x: b.cashedX, win: b.win, crash: srv.phase === 'done' ? srv.crash : null, tokens: srv.tokens });
+  }
+  if (pathname === '/api/balance') return ok_({ tokens: srv.tokens, totalDeposited: 1000, refCode: 'RKTEST01' });
+  if (pathname === '/api/register') return ok_({ refCode: 'RKTEST01', tokens: srv.tokens, totalDeposited: 1000 });
+  if (pathname === '/api/requisites') return ok_({ ok: true, configured: {}, sbp: { phone: '', holder: '' }, cards: {} });
+  if (pathname === '/api/inventory') return ok_({ ok: true, items: [], count: 0, value: 0, tokens: srv.tokens });
   return ok_({ ok: true });
 }
 
-const TG_MOCK = {
-  initData: 'query_id=AAHd&user=%7B%22id%22%3A42%2C%22first_name%22%3A%22%D0%98%D0%B2%D0%B0%D0%BD%22%7D&auth_date=1&hash=abc',
-  initDataUnsafe: { user: { id: 42, first_name: 'Иван', username: 'ivan_petrov' } },
-  platform: 'android', version: '7.0', colorScheme: 'dark',
-  viewportStableHeight: 800, isExpanded: true,
-  contentSafeAreaInset: { top: 0, bottom: 24 },
-  ready() {}, expand() {}, disableVerticalSwipes() {}, setHeaderColor() {}, setBackgroundColor() {},
-  BackButton: { show() {}, hide() {}, onClick() {} },
-  HapticFeedback: { impactOccurred() {}, notificationOccurred() {} },
-  openInvoice(url, cb) { setTimeout(() => cb && cb('paid'), 10); },
-  openTelegramLink() {}, openLink() {}
-};
-
-const dom = new JSDOM(fs.readFileSync(HTML, 'utf8'), {
-  runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc, url: 'https://example.tg/',
-  beforeParse(window) {
-    window.MONEYFORUP_API = 'https://api.test';
-    window.Telegram = { WebApp: TG_MOCK };
-    window.Date.now = () => FAKE_NOW;                 // ускоряем 30-секундный цикл раундов
-    window.fetch = (url, opts) => apiHandle(url, opts || {});
-  }
-});
-const { window } = dom, doc = window.document;
-const ctx = new Proxy({}, { get: (t, p) => {
-  if (p === 'createLinearGradient' || p === 'createRadialGradient') return () => ({ addColorStop() {} });
-  if (p === 'measureText') return () => ({ width: 10 });
-  if (p in t) return t[p];
-  return () => {};
-}, set: (t, p, v) => { t[p] = v; return true; } });
-window.HTMLCanvasElement.prototype.getContext = function () { return ctx; };
-window.addEventListener('error', e => errors.push('window.error: ' + (e.error ? e.error.stack : e.message)));
-
-const $ = s => doc.querySelector(s);
-const click = el => { if (!el) throw new Error('нет элемента для клика: ' + el); el.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); };
-const type = (el, v) => { el.value = v; el.dispatchEvent(new window.Event('input', { bubbles: true })); };
-const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '');
-
-/* ── сценарий ──────────────────────────────────────────────────────────────── */
-(async () => {
-  await sleep(80);
-  const D = window.MONEYFORUP_DEBUG;
-  const S = D.state;
-
-  /* Три раунда с длинным полётом (краш > ×3) — чтобы кэшаут успел случиться.
-     sampleCrash берём из исходника страницы: тест не разойдётся с игрой. */
-  const src = fs.readFileSync(HTML, 'utf8');
-  const sampleCrash = new Function(
-    src.slice(src.indexOf('const RK={tcap:12'), src.indexOf('function gameRacket()')) + '\n; return sampleCrash;'
-  )();
-  const RIDXES = [];
-  for (let i = 1; i < 2000 && RIDXES.length < 3; i++) if (sampleCrash(i) > 3) RIDXES.push(i);
-  check(RIDXES.length === 3, 'найдены 3 раунда с полётом > ×3: ' + RIDXES.join(', '));
-  const tBet = r => r * ROUND_MS + 1000;              // окно приёма ставок раунда r
-  const tFly = r => r * ROUND_MS + WAIT_MS + 1000;    // полёт раунда r (cur ≈ ×1.11)
-  const [R1, R2, R3] = RIDXES;
-
-  FAKE_NOW = tBet(R1);
-  click($('[data-game="racket"]'));
-  await sleep(60);
-  check($('#gameTitle').textContent === 'Ракетка', 'экран Ракетки открыт');
-  check(showBal() === 100, 'стартовый баланс пришёл с сервера: ' + showBal() + ' ⬦');
-  type($('#b1Inp'), '60'); type($('#b2Inp'), '60');
-  const tgl = el => { if (el.checked) { el.checked = false; el.dispatchEvent(new window.Event('change', { bubbles: true })); } };
-  tgl($('#b1AutoChk')); tgl($('#b2AutoChk'));         // авто-кэшаут не должен стрелять раньше нас
-  // клик по кнопке ставит/снимает ставку в очереди; приводим состояние к нужному
-  const setQueue = (btn, on) => { if (/ОТМЕНИТЬ/.test(btn.textContent) !== on) click(btn); };
-  const b1Btn = $('#b1Btn'), b2Btn = $('#b2Btn');
-
-  /* ── 1. ставка уходит на сервер не по клику, а на старте полёта ───────────── */
-  setQueue(b1Btn, true);
-  check(srv.plays.length === 0, 'после клика в окне приёма на сервер ещё ничего не ушло (очередь): plays=' + srv.plays.length);
-  check(/будет сделана/.test($('#rr').textContent), 'игроку сказано, что ставка уйдёт на старте полёта: ' + $('#rr').textContent.slice(0, 60));
-
-  /* ── 2. отмена в окне приёма — честная: токены не списывались ─────────────── */
-  setQueue(b1Btn, false);
-  check(srv.plays.length === 0 && srv.tokens === 100, 'после отмены сервер не тронут: plays=' + srv.plays.length + ', tokens=' + srv.tokens);
-  check(!/Принята сервером|В игре/.test($('#b1Status').textContent), 'снятая ставка не выдаёт себя за принятую: «' + $('#b1Status').textContent + '»');
-
-  /* ── 3. сервер отказал (у клиента устаревший баланс) — фантома быть не должно ─ */
-  srv.verdict = 'lose';
-  srv.tokens = 40; S.balance = 200;                    // клиент «помнит» 200, на сервере 40
-  setQueue(b1Btn, true);
-  const a0 = srv.attempts;
-  FAKE_NOW = tFly(R1);                                 // старт полёта: ставка уходит на сервер
-  await sleep(150);
-  check(srv.attempts === a0 + 1, 'ставка дошла до сервера и была им рассмотрена');
-  check(srv.tokens === 40, 'сервер отказал — баланс не тронут: ' + srv.tokens + ' ⬦');
-  check(!/В игре|ПРИНЯТА/.test($('#b1Status').textContent), 'отклонённая ставка НЕ показана как принятая: «' + $('#b1Status').textContent + '»');
-  check(/не принята/i.test($('#rr').textContent), 'игроку показан отказ сервера, а не успех: ' + $('#rr').textContent.slice(0, 90));
-  check(unhandled.length === 0, 'нет необработанных отказов промисов (было Uncaught in promise): ' + JSON.stringify(unhandled));
-
-  /* ── 4. две ставки: вторая сверяется с балансом ПОСЛЕ первой ──────────────── */
-  srv.tokens = 100; S.balance = 200;                   // клиент снова «богаче» сервера
-  setQueue(b1Btn, true); setQueue(b2Btn, true);        // в полёте это пред-ставки на след. раунд
-  const a1 = srv.attempts;
-  FAKE_NOW = tBet(R2);                                 // переход: пред-ставки срабатывают
-  await sleep(150);
-  check(srv.tokens === 40, 'списана ровно одна ставка из двух: ' + srv.tokens + ' ⬦ (100 − 60)');
-  check(srv.attempts === a1 + 1, 'на сервер ушла только одна ставка — вторая не прошла по балансу после первой: attempts=' + (srv.attempts - a1));
-  check(!/В игре|ПРИНЯТА/.test($('#b2Status').textContent), 'вторая ставка не фантом: «' + $('#b2Status').textContent + '»');
-  check(/не принята/i.test($('#rr').textContent), 'игроку сказано про отказ: ' + $('#rr').textContent.slice(0, 90));
-
-  /* ── 5. кэшаут показывает НАЧИСЛЕННОЕ сервером, а не bet×кэшаут ───────────── */
-  const tk = [];
-  const origPush = window.pushLiveTickerWin;
-  window.pushLiveTickerWin = (name, game, amt, mult) => { tk.push({ name, game, amt, mult }); if (origPush) origPush(name, game, amt, mult); };
-
-  srv.tokens = 300; srv.verdict = 'win';
-  S.balance = 300;                                     // как после авто-refresh баланса
-  FAKE_NOW = tBet(R3);                                 // новый чистый раунд
-  await sleep(80);
-  check(!/ЗАБРАТЬ/.test(b1Btn.textContent), 'новый раунд начался с чистых ставок: ' + b1Btn.textContent.slice(0, 30));
-  type($('#b1Inp'), '60');
-  setQueue(b1Btn, true);
-  const p2 = srv.plays.length;
-  FAKE_NOW = tFly(R3);                                 // старт полёта: ставка уходит серверу и выигрывает 102 ⬦
-  await sleep(150);
-  check(srv.plays.length === p2 + 1, 'ставка #1 ушла на сервер ровно один раз');
-  check(/ЗАБРАТЬ/.test(b1Btn.textContent), 'кнопка предлагает забрать: ' + b1Btn.textContent.slice(0, 40));
-  click(b1Btn);                                        // кэшаут на ×1.11
-  await sleep(60);
-  const rr = $('#rr').textContent;
-  check(/\+102/.test(rr), 'показана выплата сервера (+102 ⬦): ' + rr.slice(0, 90));
-  check(!/\+66/.test(rr), 'нет обещания bet×кэшаут (+66 ⬦), которого сервер не начислял');
-  check(tk.length > 0 && tk[0].mult === RK_MULT, 'тикер получил множитель сервера ×' + RK_MULT + ', а не склейку цифр из подписи: ' + JSON.stringify(tk[0] || null));
-  check(tk.length > 0 && tk[0].amt === 102, 'тикер показывает фактическую сумму 102 ⬦: ' + (tk[0] && tk[0].amt));
-  check(srv.tokens === 342, 'баланс на сервере сошёлся: ' + srv.tokens + ' ⬦ (300 − 60 + 102)');
-  check(showBal() === 342, 'и на экране ровно серверный баланс: ' + showBal() + ' ⬦');
-
-  /* ── 6. никаких ошибок в консоли страницы ─────────────────────────────────── */
-  check(errors.length === 0, 'страница без ошибок: ' + JSON.stringify(errors.slice(0, 3)));
-
-  /* ── 7. демо-режим (без Telegram и без API): ставка и кэшаут не должны падать ── */
-  {
-    const demoErrors = [];
-    const vc2 = new VirtualConsole();
-    vc2.on('jsdomError', e => demoErrors.push('jsdomError: ' + (e.detail ? e.detail.detail || e.detail : e.message)));
-    vc2.on('error', (...a) => demoErrors.push('console.error: ' + a.join(' ')));
-    let DEMO_NOW = tBet(R1);
-    const demo = new JSDOM(fs.readFileSync(HTML, 'utf8'), {
-      runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc2, url: 'http://localhost/',
-      beforeParse(w) {
-        w.Date.now = () => DEMO_NOW;                    // демо-режим: ни Telegram, ни API_BASE
-        w.fetch = async () => { throw new Error('демо-режим: сеть дёргать нельзя'); };
+const PAGE_API = 'https://moneyforup.onrender.com';
+function makePage({ telegram = true } = {}) {
+  const errors = [];
+  const vc = new VirtualConsole();
+  vc.on('jsdomError', e => errors.push('jsdomError: ' + (e.detail ? e.detail.detail || e.detail : e.message)));
+  vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
+  vc.on('warn', (...a) => errors.push('console.warn: ' + a.join(' ')));
+  const dom = new JSDOM(fs.readFileSync(HTML, 'utf8'), {
+    runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc, url: 'https://example.tg/',
+    beforeParse(window) {
+      if (telegram) {
+        window.Telegram = { WebApp: {
+          initData: 'query_id=AAHd&user=%7B%22id%22%3A42%7D&auth_date=1&hash=abc',
+          initDataUnsafe: { user: { id: 42, first_name: 'Иван', username: 'ivan_petrov' } },
+          platform: 'android', version: '7.0', colorScheme: 'dark', viewportStableHeight: 800, isExpanded: true,
+          contentSafeAreaInset: { top: 0, bottom: 24 },
+          ready() {}, expand() {}, disableVerticalSwipes() {}, setHeaderColor() {}, setBackgroundColor() {},
+          BackButton: { show() {}, hide() {}, onClick() {} },
+          HapticFeedback: { impactOccurred() {}, notificationOccurred() {} },
+          openInvoice() {}, openTelegramLink() {}, openLink() {}
+        } };
       }
-    });
-    const dw = demo.window, ddoc = dw.document;
-    const dq = s => ddoc.querySelector(s);
-    const dclick = el => { if (!el) throw new Error('демо: нет элемента ' + s); el.dispatchEvent(new dw.MouseEvent('click', { bubbles: true })); };
-    dw.HTMLCanvasElement.prototype.getContext = function () { return ctx; };
-    await sleep(80);
-    dclick(dq('[data-game="racket"]'));
-    await sleep(60);
-    dclick(dq('#b1Btn'));                               // ставка в очередь (локальный баланс)
-    DEMO_NOW = tFly(R1);                                // старт полёта: демо-ставка списывается локально
-    await sleep(150);
-    check(/ЗАБРАТЬ/.test(dq('#b1Btn').textContent), 'демо-режим: кнопка предлагает забрать: ' + dq('#b1Btn').textContent.slice(0, 32));
-    dclick(dq('#b1Btn'));                               // кэшаут
-    await sleep(60);
-    check(/начислено/i.test(dq('#rr').textContent), 'демо-режим: итог показан без сервера: ' + dq('#rr').textContent.slice(0, 80));
-    check(demoErrors.length === 0, 'демо-режим без ошибок страницы: ' + JSON.stringify(demoErrors.slice(0, 3)));
-    dw.close();
-  }
+      // jsdom считает вкладку скрытой — тогда клиент не опрашивает сервер.
+      // Симулируем открытую вкладку: страница должна жить в реальном ритме.
+      try{ Object.defineProperty(window.Document.prototype, 'hidden', { get: () => false, configurable: true }); }catch(_){}
+      try{ Object.defineProperty(window.Document.prototype, 'visibilityState', { get: () => 'visible', configurable: true }); }catch(_){}
+      window.fetch = (url, opts = {}) => {
+        const u = String(url);
+        const p = u.slice(PAGE_API.length);
+        const o = { ...opts };
+        delete o.signal;
+        return api(p, o.body ? JSON.parse(o.body) : {});
+      };
+    }
+  });
+  const w = dom.window;
+  w.HTMLCanvasElement.prototype.getContext = function () {
+    return new Proxy({}, { get: (t, p) => p in t ? t[p]
+      : (p === 'createLinearGradient' || p === 'createRadialGradient') ? () => ({ addColorStop() {} })
+      : (p === 'measureText') ? () => ({ width: 10 }) : () => {}, set: (t, p, v) => { t[p] = v; return true; } });
+  };
+  return { dom, w, errors };
+}
+
+(async () => {
+  /* ── Telegram-режим: интерфейс следует за сервером ─────────────────────── */
+  const { dom, w, errors } = makePage();
+  const doc = w.document, $ = s => doc.querySelector(s);
+  const click = el => { if (!el) throw new Error('нет элемента'); el.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); };
+  const shownBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '');
+  /* Ждём нужное состояние кнопки: интерфейс обновляется после ответа сервера,
+     и кликать «наугад» между запросами нельзя. */
+  const waitBtn = async (re, ms = 2500) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) { if (re.test($('#b1Btn').textContent)) return true; await sleep(50); }
+    return false;
+  };
+
+  await sleep(120);
+  click($('[data-game="racket"]'));
+  await sleep(120);
+  check(!!$('#b1Btn'), 'экран Ракетки открыт');
+  const inp = $('#b1Inp'); inp.value = '60'; inp.dispatchEvent(new w.Event('input', { bubbles: true }));
+  await sleep(30);
+  check(/ПОСТАВИТЬ 60/.test($('#b1Btn').textContent), 'в приёме ставок кнопка предлагает поставить: ' + $('#b1Btn').textContent);
+  click($('#b1Btn'));
+  check(await waitBtn(/ОТМЕНИТЬ/), 'сервер подтвердил ставку, интерфейс это отразил');
+  check(srv.calls.includes('/api/racket/bet'), 'клик уходит на сервер ставкой, а не в локальную симуляцию');
+  check(srv.tokens === 240, 'ставка списана сервером один раз: ' + srv.tokens + ' ⬦ (300 − 60)');
+  check($('#b1Btn').textContent.includes('ОТМЕНИТЬ'), 'после подтверждения кнопка предлагает отмену: ' + $('#b1Btn').textContent);
+  check(shownBal() === 240, 'на экране серверный баланс: ' + shownBal());
+
+  click($('#b1Btn'));                                   // отмена
+  check(await waitBtn(/ПОСТАВИТЬ/), 'после отмены кнопка снова предлагает поставить');
+  check(srv.calls.includes('/api/racket/cancel'), 'отмена уходит на сервер (раньше токены «возвращались» только на экране)');
+  check(srv.tokens === 300, 'отмена вернула ровно ставку: ' + srv.tokens + ' ⬦');
+  check(/вернулись на баланс/.test($('#rr').textContent), 'игроку сказано о возврате: ' + $('#rr').textContent.slice(0, 60));
+
+  /* полёт: экран обязан показать выплату СЕРВЕРА, а не bet×кэшаут */
+  click($('#b1Btn'));                                   // ставим снова
+  check(await waitBtn(/ОТМЕНИТЬ/), 'повторная ставка в тот же слот принята (после отмены)');
+  srv.startedAt = Date.now() - BETTING - 1500;          // раунд ушёл в полёт
+  srv.phase = 'flight';
+  check(await waitBtn(/ЗАБРАТЬ ×/), 'в полёте кнопка предлагает забрать: ' + $('#b1Btn').textContent.slice(0, 34));
+
+  const tk = [];
+  const origPush = w.pushLiveTickerWin;
+  w.pushLiveTickerWin = (name, game, amt, mult) => { tk.push({ name, game, amt, mult, note: '' }); if (origPush) origPush(name, game, amt, mult); };
+  const localEstimate = Math.floor(60 * 1.0);           // что нарисовал бы старый «bet × кэшаут» в этот момент
+  click($('#b1Btn'));                                   // кэшаут
+  await sleep(250);
+  const rr = $('#rr').textContent;
+  check(srv.calls.includes('/api/racket/cashout'), 'кэшаут уходит на сервер');
+  check(/\+111/.test(rr), 'показана выплата СЕРВЕРА (+111 ⬦): ' + rr.slice(0, 90));
+  check(!/\+66|\+60/.test(rr), 'нет локального обещания (' + localEstimate + ' ⬦), которое сервер не платил');
+  check(/×1\.85/.test(rr), 'на экране серверный множитель ×1.85: ' + rr.slice(0, 90));
+  check(tk.length > 0 && tk[0].mult === 1.85, 'тикер получил ×1.85, а не склейку цифр 11.85: ' + JSON.stringify(tk[0] || null));
+  check(tk.length > 0 && tk[0].amt === 111, 'тикер показывает фактическую сумму 111 ⬦: ' + (tk[0] && tk[0].amt));
+  check(srv.tokens === 351, 'баланс на сервере сошёлся: ' + srv.tokens + ' ⬦ (300 − 60 + 111)');
+  check(shownBal() === 351, 'на экране ровно серверный баланс: ' + shownBal());
+  check(unhandled.length === 0, 'нет необработанных отказов промисов: ' + JSON.stringify(unhandled));
 
   dom.window.close();
+
+  /* ── Демо-режим: без Telegram ставки не имитируются ────────────────────── */
+  const demo = makePage({ telegram: false });
+  await sleep(120);
+  const dclick = el => el.dispatchEvent(new demo.w.MouseEvent('click', { bubbles: true }));
+  dclick(demo.dom.window.document.querySelector('[data-game="racket"]'));
+  await sleep(120);
+  const demoDoc = demo.dom.window.document;
+  check(/Только в Telegram/.test(demoDoc.querySelector('#b1Status').textContent), 'демо-режим: ставка недоступна, а не «играем локально»: ' + demoDoc.querySelector('#b1Status').textContent);
+  check(demoDoc.querySelector('#b1Btn').disabled === true, 'демо-режим: кнопка ставки отключена');
+  check(errors.length === 0 && demo.errors.length === 0, 'страница без ошибок: ' + JSON.stringify([...errors, ...demo.errors].slice(0, 2)));
+  demo.dom.window.close();
+
   const line = '─'.repeat(64);
   console.log('\n' + line);
   ok.forEach(m => console.log('  ✅ ' + m));
   if (bad.length) { console.log(''); bad.forEach(m => console.log('  ❌ ' + m)); }
   console.log(line);
-  console.log((bad.length ? 'ПРОВАЛЕНО: ' + bad.length + ' из ' + (ok.length + bad.length) : 'ИТОГ: ставка, отмена и выплата совпадают с тем, что сделал сервер.'));
+  console.log(bad.length ? `ПРОВАЛЕНО: ${bad.length} из ${ok.length + bad.length}` : 'ИТОГ: интерфейс Ракетки следует за сервером, демо-режим не имитирует ставки.');
   process.exit(bad.length ? 1 : 0);
 })().catch(e => { console.error('ТЕСТ УПАЛ:', e && e.stack || e); process.exit(1); });

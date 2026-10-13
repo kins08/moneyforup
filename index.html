@@ -2740,7 +2740,13 @@ const MINCASH=1.01;                     // забрать можно с само
    6 % — низкий дроп 1.01-1.10 (в том числе редкие ровно ×1.01),
    дальше 1.10-1.30 — 15 %, 1.30-1.55 — 24 %, 1.55-1.75 — 20 %, 1.75-2.00 — 6 %,
    2.00-2.30 — 10 %, 2.30-3.00 — 9 %, редкий длинный полёт 3.50-8.67 — 2 %.
-   Полоса 3.00-3.50 вырезана. Пик отдачи — 94.6 % на ×1.10, в долгую игрок в минусе. */
+   Полоса 3.00-3.50 вырезана. Пик отдачи — 94.6 % на ×1.10, в долгую игрок в минусе.
+
+   ⚠️ С ПЕРЕХОДОМ НА СЕРВЕРНЫЙ РАУНД (R5) ЭТА ФУНКЦИЯ ДЕНЬГИ НЕ РЕШАЕТ: точку
+   остановки выбирает только сервер (CSPRNG в начале раунда), и до финиша она
+   никому не известна. Здесь она оставлена как математическая справка/для
+   отладки — подключать её к ставкам или кэшауту запрещено: именно
+   предсказуемость этой формулы и была уязвимостью. */
 function sampleCrash(seedIdx){
   let r;
   if(seedIdx!=null){
@@ -2766,22 +2772,25 @@ function sampleCrash(seedIdx){
 
 function gameRacket(){
   const a=q('#gameArea');
-  const ROUND_MS=30000;  // Непрерывный раунд ровно каждые 30 секунд
-  const WAIT_MS=15000;   // 15 секунд КД: приём ставок до старта ракетки (можно ставить и на след. раунд во время полёта)
+  // Тайминги раунда приходят С СЕРВЕРА (/api/racket/status → engine) и лишь до
+  // первого ответа совпадают с прежними 30/15 секундами. Раунд, его точка
+  // остановки и множитель кэшаута живут на сервере — клиент их не выдумывает.
+  let ROUND_MS=30000, WAIT_MS=15000;
   const ROCKET_SPEED=0.58;
   const tau=t=>t*(1+0.06*t);
 
-  let curRound=-1,phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
-  let boomT=0,roundCrashed=false,flightStarted=false;
+  let phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
+  let boomT=0,roundCrashed=false;
+  const RK_ONLINE=!!(IS_TG&&API_BASE);   // Ракетка — игра с реальными ставками: без бэкенда не играем
 
   // Двойная ставка (Bet 1 и Bet 2)
   const B1 = {
     bet: S.bet || 50,
-    inRound: false,
-    nextRound: false,
-    queued: false,      // ставка собрана в окне приёма и ждёт старта полёта
-    lockedBet: 0,
-    rnd: null,          // серверный раунд ИМЕННО этой ставки (не общий слот)
+    inRound: false,     // сервер принял ставку в ТЕКУЩИЙ раунд
+    nextRound: false,   // сервер принял пред-ставку на следующий раунд
+    lockedBet: 0,       // сумма, которую списал сервер (менять позже нельзя)
+    srvStatus: 'none',  // active | cashed | bust | expired | none
+    canCancel: false,   // отмена разрешена, пока раунд не полетел
     paid: 0,            // сколько сервер реально зачислил по этой ставке
     cashed: false,
     cashX: 0,
@@ -2794,9 +2803,9 @@ function gameRacket(){
     bet: S.bet2 || 50,
     inRound: false,
     nextRound: false,
-    queued: false,
     lockedBet: 0,
-    rnd: null,
+    srvStatus: 'none',
+    canCancel: false,
     paid: 0,
     cashed: false,
     cashX: 0,
@@ -2843,7 +2852,7 @@ function gameRacket(){
 
   <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (цикл 30с: 15с приём ставок + полёт)</div>
   <div class="hstrip" id="rHist"></div>
-  <div class="result" id="rr" style="margin-top:10px">Раунды каждые 30 секунд: 15 секунд на ставки, затем полёт. Ставку на следующий раунд можно поставить заранее — даже во время полёта и после кэшаута!</div>
+  <div class="result" id="rr" style="margin-top:10px">Раунд ведёт сервер: 15 секунд на ставки, затем полёт. Множитель кэшаута считает сервер, точка остановки зафиксирована до старта (commit-хэш) — клиент не может выбрать себе коэффициент. Пред-ставку на следующий раунд можно ставить в любой момент.</div>
   <div class="racket-round-timer-box" id="rRoundTimerBox">
     <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
     <div class="rrt-val" id="rrtVal">06.0<span class="rrt-unit">с</span></div>
@@ -2871,31 +2880,25 @@ function gameRacket(){
   let currentRoundBank=0;
   let lastBotsRenderTime=0;
 
+  /* ── Состояние раунда: только от сервера ─────────────────────────────────
+     Схема: клиент показывает то, что прислал сервер, и НИЧЕГО не решает про
+     деньги. Множитель во время полёта считается локально по той же формуле,
+     что и на сервере (k=0.18, tau(s)=s(1+0.06s), s=0.58·с) — это только
+     рисовка; выплату считает сервер по своим часам и своим крахом. */
+  const RKE={cycleMs:30000,bettingMs:15000,graceMs:2500,minBet:10,maxBet:100000,maxCashX:30,k:RK.k,speed:ROCKET_SPEED};
+  let srvOffset=0, srvRound=null, srvNextId=null, srvNextAt=0, myBets=[], srvHist=[];
+  let pollBusy=null, lastPoll=0, roundEndHandled=false, autoBoomArmed=false;
+  const nowSrv=()=>Date.now()+srvOffset;
+  const rkMultOf=sec=>Math.max(1, Math.floor(Math.exp((RKE.k||RK.k)*tau(Math.max(0,sec)*(RKE.speed||ROCKET_SPEED)))*100)/100);
+  const rtNow=()=>srvRound?Math.max(0,nowSrv()-srvRound.startedAt):0;
+
   function renderRHist(fresh){
     if(!rHistEl)return;
-    const list=(S.rHist||[]).slice(0,20);
+    const list=srvHist.filter(h=>h&&h.crash!=null).slice(0,20);
     rHistEl.innerHTML=list.length
-      ? list.map((v,i)=>`<span class="hitem${fresh&&i===0?' new':''}" style="color:${band(v)};border-color:${hexA(band(v),.45)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`).join('')
-      : '<span class="muted small">Синхронизация раундов...</span>';
+      ? list.map((h,i)=>`<span class="hitem${fresh&&i===0?' new':''}" style="color:${band(h.crash)};border-color:${hexA(band(h.crash),.45)}">×${fx(h.crash,(h.crash%1||h.crash<=1.005)?2:0)}</span>`).join('')
+      : '<span class="muted small">Синхронизация раундов с сервером...</span>';
   }
-  function pushRHist(x){
-    S.rHist=(S.rHist||[]).filter(v=>Number.isFinite(v));
-    S.rHist.unshift(+x.toFixed(2));
-    if(S.rHist.length>20)S.rHist=S.rHist.slice(0,20);
-    save();renderRHist(true);
-  }
-
-  // Заполняем детерминированную ленту прошлых 20 раундов, если истории нет
-  const nowInit=Date.now();
-  const rInitIdx=Math.floor(nowInit/ROUND_MS);
-  if(!S.rHist||S.rHist.length<20){
-    S.rHist=[];
-    for(let i=1;i<=20;i++){
-      S.rHist.push(sampleCrash(rInitIdx-i));
-    }
-    save();
-  }
-  renderRHist(false);
 
   function syncInputs(){
     if(b1Inp) b1Inp.value = B1.bet;
@@ -3202,59 +3205,163 @@ function gameRacket(){
     }
   }
 
-  function updateBetUI(B, num, bBtn, bSt, bRub){
-    if(!bBtn||!bSt) return;
-    if(bRub) bRub.textContent='≈ '+fmtRub(B.bet);
-    if(phase==='betting'){
-      bBtn.disabled=false;
-      if(B.inRound){
-        // Ставка уже на сервере: не обещаем отмену с возвратом токенов
-        bBtn.textContent=`СТАВКА ${B.lockedBet||B.bet} ⬦ · ПРИНЯТА`;
-        bBtn.style.background='linear-gradient(135deg,#10b981,#059669)';
-        bSt.textContent='Принята сервером';
-        bSt.style.color='#3ddc96';
-      }else{
-        bBtn.textContent=B.queued?`СТАВКА ${B.bet} ⬦ (ОТМЕНИТЬ)`:`ПОСТАВИТЬ ${B.bet} ⬦`;
-        bBtn.style.background=B.queued?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
-        bSt.textContent=B.queued?'Ждёт старта полёта':'Ожидание';
-        bSt.style.color=B.queued?'#3ddc96':'#94a3b8';
-      }
-    }else if(phase==='flight'){
-      if(B.inRound&&!B.cashed){
-        const can=cur>=MINCASH;
-        bBtn.disabled=!can;
-        bBtn.textContent=can?`ЗАБРАТЬ ×${fx(cur)} (+${fmt(B.bet*cur)} ⬦)`:`ЖДЁМ ×${fx(MINCASH)}`;
-        bBtn.style.background='linear-gradient(135deg,#eab308,#ca8a04)';
-        bSt.textContent=`В игре (×${fx(cur)})`;
-        bSt.style.color='#ffcf6b';
-      }else if(B.inRound&&B.cashed){
-        // После кэшаута кнопка сразу работает как пред-ставка на следующий раунд
-        bBtn.disabled=false;
-        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД ${B.bet} ⬦ ✓ (ОТМЕНА)`:`НА СЛЕД. РАУНД ${B.bet} ⬦`;
-        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#059669,#047857)';
-        // Показываем НАЧИСЛЕННОЕ сервером, а не обещание из анимации
-        bSt.textContent=(B.paid>0?`Выигрыш +${fmt(B.paid)} ⬦`:'Без выигрыша')+(B.nextRound?' · ждёт след. раунд':'');
-        bSt.style.color=B.paid>0?'#3ddc96':'#f87171';
-      }else{
-        bBtn.disabled=false;
-        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ОК`:`НА СЛЕД. РАУНД · ${B.bet} ⬦`;
-        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
-        bSt.textContent=B.nextRound?'Ждёт старта':'Пропуск';
-        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
-      }
-    }else{
-      // phase === 'done'
-      bBtn.disabled=false;
-      bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ОК`:`НА СЛЕД. РАУНД · ${B.bet} ⬦`;
-      bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
-      if(B.inRound){
-        bSt.textContent=B.cashed?(B.paid>0?`Выигрыш +${fmt(B.paid)} ⬦`:'Без выигрыша'):'Сгорело';
-        bSt.style.color=(B.cashed&&B.paid>0)?'#3ddc96':'#f87171';
-      }else{
-        bSt.textContent=B.nextRound?'Ждёт старта':'Ожидание';
-        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
-      }
+
+  /* ── Сервер → интерфейс ─────────────────────────────────────────────────── */
+  function applyStatus(st){
+    if(!st||!st.ok) return;
+    if(typeof st.now==='number') srvOffset=st.now-Date.now();
+    if(st.engine){
+      RKE.cycleMs=st.engine.cycleMs||RKE.cycleMs; RKE.bettingMs=st.engine.bettingMs||RKE.bettingMs;
+      RKE.graceMs=st.engine.graceMs||RKE.graceMs; RKE.minBet=st.engine.minBet||RKE.minBet;
+      RKE.maxBet=st.engine.maxBet||RKE.maxBet; RKE.maxCashX=st.engine.maxCashX||RKE.maxCashX;
+      RKE.k=st.engine.k||RKE.k; RKE.speed=st.engine.speed||RKE.speed;
+      ROUND_MS=RKE.cycleMs; WAIT_MS=RKE.bettingMs;
     }
+    if(st.round){
+      const changed=!srvRound||srvRound.id!==st.round.id;
+      srvRound={ id:st.round.id, startedAt:st.round.startedAt, bettingEndsAt:st.round.bettingEndsAt,
+                 endsAt:st.round.endsAt, seedHash:st.round.seedHash };
+      if(changed){ roundEndHandled=false; autoBoomArmed=false; roundCrashed=false; boomT=0; tStop=0; }
+      srvNextId=st.round.nextId||st.round.nextRoundId||null;
+      srvNextAt=st.round.nextStartsAt||0;
+    }
+    srvHist=Array.isArray(st.history)?st.history:[];
+    myBets=Array.isArray(st.me)?st.me:[];
+    if(typeof st.tokens==='number'){ S.balance=st.tokens; try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){} syncUI(); }
+    viewFromServer();
+    renderRHist(!!srvHist.length);
+  }
+
+  /* Мои ставки: серверные факты раскладываем по слотам #1/#2 */
+  function viewFromServer(){
+    const curId=srvRound?srvRound.id:null;
+    const t=nowSrv();
+    // idx — 0-базовый (forEach), слот ставки — 1 или 2: не путать
+    [B1,B2].forEach((B,idx)=>{
+      const num=idx+1;
+      B.inRound=false;B.cashed=false;B.busted=false;B.nextRound=false;B.canCancel=false;
+      B.cashX=0;B.cashAmt=0;B.paid=0;B.lockedBet=0;B.srvStatus='none';
+      // Отменённая ставка — не участие: сервер вернул токены, слот свободен
+      const cur=curId?myBets.find(b=>b.roundId===curId&&Number(b.slot)===num&&b.status!=='cancelled'):null;
+      if(cur){
+        B.inRound=true; B.lockedBet=cur.bet; B.srvStatus=cur.status;
+        if(cur.status==='cashed'){ B.cashed=true; B.cashX=cur.cashedX||0; B.cashAmt=Math.floor(B.lockedBet*B.cashX); B.paid=cur.win||0; }
+        if(cur.status==='bust'||cur.status==='expired') B.busted=true;
+        B.canCancel = cur.status==='active' && srvRound && t < srvRound.bettingEndsAt;
+      }else if(srvNextId){
+        const nx=myBets.find(b=>b.roundId===srvNextId&&Number(b.slot)===num);
+        if(nx&&nx.status==='active'){ B.nextRound=true; B.canCancel=true; }
+      }
+    });
+  }
+
+  async function pollStatus(force){
+    if(!RK_ONLINE) return;
+    if(pollBusy) return pollBusy;
+    const t=Date.now();
+    if(!force&&t-lastPoll<900) return;
+    lastPoll=t;
+    pollBusy=(async()=>{
+      try{ applyStatus(await tgCall('/api/racket/status',{})); }
+      catch(e){ try{console.warn('[Racket] статус не получен:',(e&&e.message)||e)}catch(_){} }
+    })();
+    try{ await pollBusy; } finally{ pollBusy=null; }
+  }
+
+  /* Локальная лента операций (её показывает профиль). Деньги считает сервер,
+     здесь только запись для игрока: «ставка −60», «возврат +60», «выигрыш +102». */
+  function rkHist(label,delta){
+    S.hist.unshift({label,delta,t:Date.now()});
+    if(S.hist.length>40)S.hist=S.hist.slice(0,40);
+    save();
+  }
+
+  /* ── Денежные действия: каждое подтверждает СЕРВЕР, локально ничего не считаем ── */
+  async function betOn(num){
+    const B=num===1?B1:B2;
+    const bet=Math.max(RKE.minBet,Math.floor(B.bet)||RKE.minBet);
+    if(S.balance<bet){ rr.className='result bad'; rr.textContent=`Ставка #${num} не принята: не хватает токенов (нужно ${fmt(bet)} ⬦).`; return; }
+    const body={ slot:num, bet };
+    if(B.autoOn) body.autoX=B.autoX;
+    try{
+      const res=await tgCall('/api/racket/bet',body);
+      S.wagered+=res.bet; S.net-=res.bet; S.plays++;
+      rkHist(`Ставка · Ракетка #${num}`, -res.bet);
+      rr.className='result';
+      rr.textContent = res.phase==='flight'
+        ? `Ставка #${num} (${fmt(res.bet)} ⬦) поставлена на следующий раунд${res.autoX?` (авто ×${fx(res.autoX)})`:''}.`
+        : `Ставка #${num} (${fmt(res.bet)} ⬦) принята${res.autoX?` (авто ×${fx(res.autoX)})`:''}!`;
+      await pollStatus(true);
+    }catch(e){
+      rr.className='result bad';
+      rr.textContent=`Ставка #${num} не принята: ${(e&&e.message)||'сервер отклонил ставку'}.`;
+      await pollStatus(true);
+    }
+  }
+
+  async function cancelBet(num){
+    const B=num===1?B1:B2;
+    try{
+      const res=await tgCall('/api/racket/cancel',{slot:num});
+      S.net+=(res.refund||0);
+      rkHist(`Возврат ставки · Ракетка #${num}`, res.refund||0);
+      rr.className='result';
+      rr.textContent=`Ставка #${num} отменена, ${fmt(res.refund)} ⬦ вернулись на баланс.`;
+      await pollStatus(true);
+    }catch(e){
+      rr.className='result bad';
+      rr.textContent=`Отменить ставку #${num} не удалось: ${(e&&e.message)||''}`;
+      await pollStatus(true);
+    }
+  }
+
+  async function cashoutBet(num){
+    const B=num===1?B1:B2;
+    if(!B.inRound||B.cashed) return;
+    const seen=cur;                     // что игрок видел в момент клика
+    B.cashed=true; B.cashX=seen;
+    try{
+      const res=await tgCall('/api/racket/cashout',{slot:num});
+      if(res.x!=null) B.cashX=res.x;    // сервер мог посчитать иначе (RTT) — показываем ЕГО множитель
+      if(res.verdict==='win'&&res.win>0){
+        B.paid=res.win; B.cashAmt=res.win;
+        S.net+=res.win;
+        win(res.win,'Ракетка',`Ставка #${num} кэшаут ×`+fx(B.cashX));
+        rr.className='result good';
+        rr.innerHTML=`Ставка #${num} забрана на <b>×${fx(B.cashX)}</b>: начислено <b>+${fmt(res.win)} ⬦</b>`+
+                     (res.crash!=null?` · раунд остановлен на ×${fx(res.crash)}`:'')+'.';
+      }else{
+        B.paid=0; B.cashAmt=0;
+        rr.className='result bad';
+        if(res.late) rr.textContent=`Опоздал: раунд уже остановлен${res.crash!=null?` на ×${fx(res.crash)}`:''} — ставка сгорела.`;
+        else if(res.x!=null&&res.crash!=null&&res.x>=res.crash) rr.textContent=`Кэшаут ×${fx(res.x)} пришёлся на остановку ×${fx(res.crash)} — ставка сгорела.`;
+        else rr.textContent=`Ставка #${num} сгорела.`;
+        tgHaptic('lose');
+      }
+      await pollStatus(true);
+    }catch(e){
+      B.cashed=false;
+      rr.className='result bad';
+      rr.textContent=`Кэшаут не прошёл: ${(e&&e.message)||''}`;
+      await pollStatus(true);
+    }
+  }
+
+  function handleBetClick(num){
+    const B=num===1?B1:B2;
+    if(B.inRound&&!B.canCancel&&phase!=='flight') return;   // ставка принята и заморожена
+    if(!RK_ONLINE){
+      rr.className='result bad';
+      rr.textContent='Ракетка играется в Telegram-боте: ставки идут через сервер, в демо-режиме недоступны.';
+      return;
+    }
+    if(phase==='flight'){
+      if(B.inRound&&!B.cashed) return void cashoutBet(num);
+      return void (B.nextRound||!B.inRound ? (B.nextRound?cancelBet(num):betOn(num)) : null);
+    }
+    if(B.inRound) return void cancelBet(num);
+    if(B.nextRound) return void cancelBet(num);
+    return void betOn(num);
   }
 
   function render(roundTime){
@@ -3265,44 +3372,122 @@ function gameRacket(){
       rx.className='xbig';
       rx.style.color='#3ddc96';
       rp.textContent='СТАРТ ЧЕРЕЗ '+leftSec.toFixed(1)+'с';
-
       if(rrtLabel) rrtLabel.textContent='ДО СТАРТА РАУНДА';
-      if(rrtVal){
-        rrtVal.className='rrt-val';
-        rrtVal.innerHTML=`${leftSec<10?'0':''}${leftSec.toFixed(1)}<span class="rrt-unit">с</span>`;
-      }
+      if(rrtVal){ rrtVal.className='rrt-val'; rrtVal.innerHTML=`${leftSec<10?'0':''}${leftSec.toFixed(1)}<span class="rrt-unit">с</span>`; }
       if(rrtSub) rrtSub.textContent='Приём ставок открыт';
     }else if(phase==='flight'){
       rx.textContent='×'+fx(cur);
       rx.className='xbig';
       rx.style.color=band(cur);
       rp.textContent='ПОЛЁТ РАКЕТКИ';
-
       if(rrtLabel) rrtLabel.textContent='РАКЕТКА В ПОЛЁТЕ';
-      if(rrtVal){
-        rrtVal.className='rrt-val flight';
-        rrtVal.textContent='×'+fx(cur);
-      }
-      if(rrtSub) rrtSub.textContent=hasActive?'Нажмите «ЗАБРАТЬ» до взрыва':'Раунд в процессе';
+      if(rrtVal){ rrtVal.className='rrt-val flight'; rrtVal.textContent='×'+fx(cur); }
+      if(rrtSub) rrtSub.textContent=hasActive?'Нажмите «ЗАБРАТЬ» — коэффициент считает сервер':'Раунд в процессе';
     }else{
-      // phase === 'done'
+      const toNext=Math.max(1,Math.ceil((Math.max(0,(RKE.graceMs||0))+ROUND_MS-roundTime)/1000));
       rx.textContent='×'+fx(crash);
       rx.className='xbig bad';
       rx.style.color='';
-      const toNext=Math.max(1,Math.ceil((ROUND_MS-roundTime)/1000));
       rp.textContent=`ОСТАНОВКА ×${fx(crash)} · СЛЕД. РАУНД ${toNext}с`;
-
       if(rrtLabel) rrtLabel.textContent='СЛЕДУЮЩИЙ РАУНД';
-      if(rrtVal){
-        rrtVal.className='rrt-val done';
-        rrtVal.innerHTML=`${toNext<10?'0':''}${toNext}<span class="rrt-unit">с</span>`;
-      }
-      if(rrtSub) rrtSub.textContent=`Остановка ×${fx(crash)} · Подготовка ракеты`;
+      if(rrtVal){ rrtVal.className='rrt-val done'; rrtVal.innerHTML=`${toNext<10?'0':''}${toNext}<span class="rrt-unit">с</span>`; }
+      if(rrtSub) rrtSub.textContent=`Остановка ×${fx(crash)} · сервер раскрыл раунд`;
     }
     updateBetUI(B1, 1, b1Btn, b1St, b1Rub);
     updateBetUI(B2, 2, b2Btn, b2St, b2Rub);
     draw(roundTime);
     renderBotBets(roundTime);
+  }
+
+  /* ── Кнопки ставок: состояния берём из серверных фактов ─────────────────── */
+  function updateBetUI(B, num, bBtn, bSt, bRub){
+    if(!bBtn||!bSt) return;
+    if(bRub) bRub.textContent='≈ '+fmtRub(B.bet);
+    if(!RK_ONLINE){
+      bBtn.disabled=true; bBtn.textContent=`ПОСТАВИТЬ ${B.bet} ⬦`;
+      bSt.textContent='Только в Telegram'; bSt.style.color='#94a3b8';
+      return;
+    }
+    if(phase==='betting'||phase==='done'){
+      if(B.inRound){
+        bBtn.disabled=false;
+        if(B.canCancel){
+          bBtn.textContent=`ОТМЕНИТЬ СТАВКУ ${B.lockedBet} ⬦`;
+          bBtn.style.background='linear-gradient(135deg,#10b981,#059669)';
+          bSt.textContent='Принята сервером · можно отменить';
+          bSt.style.color='#3ddc96';
+        }else{
+          bBtn.disabled=true;                     // ставка принята и уже не отменяется
+          bBtn.textContent=`СТАВКА ${B.lockedBet} ⬦ ПРИНЯТА`;
+          bBtn.style.background='linear-gradient(135deg,#10b981,#059669)';
+          bSt.textContent='Ждёт старта раунда';
+          bSt.style.color='#3ddc96';
+        }
+      }else{
+        bBtn.disabled=false;
+        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ✓ ОТМЕНА`:`ПОСТАВИТЬ ${B.bet} ⬦`;
+        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
+        bSt.textContent=B.nextRound?'Ставка на следующий раунд':(phase==='done'?'Готов к новому раунду':'Ожидание');
+        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
+      }
+    }else{   // flight
+      if(B.inRound&&!B.cashed){
+        const can=cur>=MINCASH;
+        bBtn.disabled=!can;
+        bBtn.textContent=can?`ЗАБРАТЬ ×${fx(cur)} (+${fmt(Math.floor((B.lockedBet||B.bet)*cur))} ⬦)`:`ЖДЁМ ×${fx(MINCASH)}`;
+        bBtn.style.background='linear-gradient(135deg,#eab308,#ca8a04)';
+        bSt.textContent=B.autoOn?`В игре · авто ×${fx(B.autoX)}`:`В игре (×${fx(cur)})`;
+        bSt.style.color='#ffcf6b';
+      }else if(B.cashed){
+        bBtn.disabled=false;
+        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД ${B.bet} ⬦ ✓ (ОТМЕНА)`:`НА СЛЕД. РАУНД ${B.bet} ⬦`;
+        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#059669,#047857)';
+        bSt.textContent=(B.paid>0?`Выигрыш +${fmt(B.paid)} ⬦`:'Без выигрыша')+(B.nextRound?' · ждёт след. раунд':'');
+        bSt.style.color=B.paid>0?'#3ddc96':'#f87171';
+      }else{
+        bBtn.disabled=false;
+        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД (${B.bet} ⬦) ✓ ОТМЕНА`:`НА СЛЕД. РАУНД · ${B.bet} ⬦`;
+        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':(num===1?'':'linear-gradient(135deg,#3b82f6,#2563eb)');
+        bSt.textContent=B.nextRound?'Ставка на следующий раунд':'Пропуск';
+        bSt.style.color=B.nextRound?'#3ddc96':'#94a3b8';
+      }
+    }
+  }
+
+  /* ── Тикер: рисует по серверному времени, денег не считает ──────────────── */
+  function tick(){
+    if(dead)return;
+    const t=nowSrv();
+    if(srvRound){
+      const rt=t-srvRound.startedAt;
+      if(rt<WAIT_MS){ phase='betting'; cur=1.00; }
+      else if(rt<ROUND_MS){ phase='flight'; cur=rkMultOf((t-srvRound.bettingEndsAt)/1000); }
+      else{
+        // Раунд по часам сервера закончился: точку остановки объявляет только
+        // сервер (до этого её не знает никто) — спрашиваем статус сразу.
+        const known=srvHist.find(h=>h.roundId===srvRound.id&&h.crash!=null);
+        phase='done';
+        if(known){ crash=known.crash; }
+        if(!roundEndHandled){ roundEndHandled=true; pollStatus(true); }
+        if(known&&!roundCrashed){
+          roundCrashed=true;
+          boomT=performance.now();
+          tStop=Math.log(Math.max(1,crash))/RK.k;
+          const hadActive=(B1.inRound&&!B1.cashed)||(B2.inRound&&!B2.cashed);
+          if(hadActive){
+            tgHaptic('lose');
+            rr.className='result bad';
+            rr.innerHTML=crash<=1
+              ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Не забранные ставки сгорели.`
+              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Не забранные ставки сгорели.`;
+          }
+          renderRHist(true);
+        }
+      }
+    }
+    render(srvRound?rtNow():0);
+    if(!RK_ONLINE&&rrtSub) rrtSub.textContent='Демо-режим: раунд ведёт сервер, ставки — в Telegram';
+    raf=requestAnimationFrame(tick);
   }
 
   function renderBotBets(roundTime){
@@ -3313,7 +3498,7 @@ function gameRacket(){
 
     const activeBets = [B1, B2].filter(b => b.inRound);
     const totalPlayers = currentRoundBots.length + (activeBets.length > 0 ? 1 : 0);
-    const totalTokens = currentRoundBank + (B1.inRound ? B1.bet : 0) + (B2.inRound ? B2.bet : 0);
+    const totalTokens = currentRoundBank + (B1.inRound ? (B1.lockedBet||B1.bet) : 0) + (B2.inRound ? (B2.lockedBet||B2.bet) : 0);
 
     if(countEl)countEl.textContent=`(${totalPlayers})`;
     if(bankEl)bankEl.textContent=`${fmtRub(totalTokens)} (${fmt(totalTokens)} ⬦)`;
@@ -3356,7 +3541,7 @@ function gameRacket(){
           </div>
           <div>
             <div class="bot-bet-name" style="color:${idx===0?'#ffcf6b':'#60a5fa'}">${pr.name} (Ставка #${idx+1})</div>
-            <div class="bot-bet-amt">${fmt(B.bet)} ⬦ ≈ ${fmtRub(B.bet)}</div>
+            <div class="bot-bet-amt">${fmt(B.lockedBet||B.bet)} ⬦ ≈ ${fmtRub(B.lockedBet||B.bet)}</div>
           </div>
         </div>
         <div>${stHtml}</div>
@@ -3404,243 +3589,21 @@ function gameRacket(){
     listEl.innerHTML=html;
   }
 
-  /* Ставка ставится ТОЛЬКО сервером (/api/play): пока сервер не ответил «ок»,
-     ставки не существует. Раньше интерфейс включал «В игре» сразу по клику, а
-     отказ сервера (например, не хватает токенов) приходил отдельной нотификацией:
-     игрок видел ставку, которой нет, и «выигрыш», который никогда не начислится. */
-  async function fireBet(B, num){
-    if(B.inRound || !(B.queued || B.nextRound)) return;
-    B.queued=false; B.nextRound=false;
-    if(S.balance < B.bet){                       // быстрый путь: заведомо не хватает
-      rr.className='result bad';
-      rr.textContent=`Ставка #${num} (${B.bet} ⬦) не принята: не хватает токенов.`;
-      return;
-    }
-    B.lockedBet=B.bet;
-    B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0;
-    // place() возвращает раунд синхронно: inRound=true можно выставлять сразу,
-    // но подтверждение — только ответ сервера (ниже).
-    const rnd=place(B.lockedBet,'Ракетка');
-    B.inRound=true;
-    B.rnd=rnd||null;
-    if(!rnd) return;                             // демо-режим без сервера
-    try{
-      await rnd.promise;                         // сервер — источник истины
-    }catch(e){
-      // Ставки нет: снимаем «В игре», иначе игрок будет ждать выигрыш,
-      // которого не будет (у Ракетки это ещё и кнопка «ЗАБРАТЬ»).
-      B.inRound=false; B.rnd=null; B.lockedBet=0;
-      rr.className='result bad';
-      rr.textContent=`Ставка #${num} (${B.bet} ⬦) не принята: ${(e&&e.message)||'сервер отклонил ставку'}.`;
-    }
-    render(Date.now()%ROUND_MS);
-  }
-
-  /* Ставки срабатывают в двух точках цикла: 'next' — собранные на будущий раунд
-     (на переходе), 'this' — собранные в окне приёма текущего раунда (на старте
-     полёта). Последовательно (await), чтобы вторая ставка видела баланс после
-     первой, а не устаревший локальный. */
-  async function fireQueued(kind){
-    for(const [B,num] of [[B1,1],[B2,2]]){
-      if(kind==='this' ? B.queued : B.nextRound) await fireBet(B, num);
-    }
-  }
-
-  /* Итог ставки показывает сервер. Раунд закрывается в момент ставки, поэтому
-     «кэшаут ×2.31 → +231 ⬦» из анимации ничего не доказывает: на баланс приходит
-     выплата сервера (или 0). До этой правки экран обещал одно, а начислялось другое,
-     и следующий авто-refresh баланса это вскрывал. */
-  function settleBetUI(B, num){
-    const rnd=B.rnd;
-    if(IS_TG&&API_BASE){                       // в демо-режиме баланс считается локально
-      if(!rnd || rnd.state!=='done'){
-        rr.className='result';
-        rr.textContent=`Ставка #${num}: сервер ещё не подтвердил раунд.`;
-        return;
-      }
-      B.paid=(rnd.verdict==='win')?(rnd.win|0):0;
-    }
-    if(B.paid>0){
-      rr.className='result good';
-      // Множитель сервера показываем рядом: он и есть коэффициент выплаты
-      const m=(rnd&&rnd.mult)?` (сервер ×${fx(rnd.mult)})`:'';
-      rr.innerHTML=`Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmt(B.paid)} ⬦</b>${m} (≈ ${fmtRub(B.paid)}).`;
-    }else{
-      rr.className='result bad';
-      rr.textContent=`Ставка #${num} забрана на ×${fx(B.cashX)}, но сервер этот раунд не зачёл — ставка сгорела.`;
-    }
-  }
-
-  async function cashBet(B, num, target){
-    if(phase!=='flight'||!B.inRound||B.cashed)return;
-    if(cur<MINCASH)return;
-    B.cashX=+((target!=null?target:cur).toFixed(2));      // фиксируем множитель кэшаута
-    if(target!=null)cur=Math.max(cur,target);
-    B.cashed=true;                                        // защита от второго кэшаута
-    if(B.rnd && B.rnd.state!=='done'){
-      try{ await B.rnd.promise; }                          // ждём подтверждения ставки
-      catch(e){ B.cashed=false; return; }                  // ставки нет — забирать нечего
-    }
-    B.cashAmt=Math.floor((B.lockedBet||B.bet)*B.cashX);   // «как выглядит на экране», не начисление
-    // win() с явным раундом ЭТОЙ ставки: общий слот window.__round хранит
-    // только последнюю ставку, и вторая ставка показывала бы чужую выплату.
-    win(B.cashAmt,'Ракетка',`Ставка #${num} кэшаут ×`+fx(B.cashX),B.rnd);
-    if(!IS_TG||!API_BASE) B.paid=B.cashAmt;               // демо-режим: начислено локально
-    // Баланс после кэшаута: сразу из ответа сервера + контрольные обновления,
-    // чтобы выигрыш не "застревал" на старом значении на экране
-    tgLoadBalance();
-    setTimeout(()=>{if(!dead)tgLoadBalance()},1000);
-    setTimeout(()=>{if(!dead)tgLoadBalance()},3000);
-    settleBetUI(B, num);
-    render(Date.now()%ROUND_MS);
-  }
-
-  function loop(){
-    if(dead)return;
-    const now=Date.now();
-    const rIdx=Math.floor(now/ROUND_MS);
-    const rTime=now%ROUND_MS;
-
-    // Переход в новый 30-секундный раунд
-    if(rIdx!==curRound){
-      curRound=rIdx;
-      crash=sampleCrash(curRound);
-      currentRoundBots=generateBotsForRound(curRound);
-      currentRoundBank=currentRoundBots.reduce((sum,b)=>sum+b.bet,0);
-      lastBotsRenderTime=0;
-      roundCrashed=false;
-      boomT=0;
-      tStop=0;
-
-      // Сброс под новый раунд
-      [B1, B2].forEach((B) => {
-        B.cashed=false;
-        B.cashX=0;
-        B.cashAmt=0;
-        B.paid=0;
-        B.inRound=false;
-        B.lockedBet=0;
-        B.rnd=null;
-      });
-      flightStarted=false;
-      // Пред-ставки, собранные на этот раунд, срабатывают ЗДЕСЬ и подтверждаются
-      // сервером (внутри fireBet). Сообщение об успехе не печатаем: его место
-      // занимает состояние кнопки «Принята», а отказы говорит сервер.
-      fireQueued('next');
-    }
-
-    if(rTime<WAIT_MS){
-      phase='betting';
-      cur=1.00;
-      tStop=0;
-    }else{
-      // Старт полёта: срабатывают ставки, собранные в окне приёма этого раунда.
-      // Так «отменить ставку» до старта — честная отмена: на сервере ещё ничего нет.
-      if(!flightStarted){ flightStarted=true; fireQueued('this'); }
-      // Защита от фарминга без депозита в Ракетке
-      const depRub = S.totalDeposited || S.lastDeposit || 0;
-      if(depRub <= 0 && !S.isAdmin && (B1.inRound || B2.inRound)){
-        const totalAtRisk = S.balance + (B1.inRound ? (B1.lockedBet||B1.bet) : 0) + (B2.inRound ? (B2.lockedBet||B2.bet) : 0);
-        if(totalAtRisk >= 310 && crash > 1.05){
-          crash = 1.00;
-        }
-      }
-      const flightSec=(rTime-WAIT_MS)/1000;
-      const s=flightSec*ROCKET_SPEED;
-      const t=tau(s);
-      const potX=+Math.exp(RK.k*t).toFixed(2);
-
-      if(potX<crash){
-        phase='flight';
-        cur=potX;
-        tStop=0;
-        if(B1.inRound && !B1.cashed && B1.autoOn && cur>=B1.autoX && B1.autoX<=crash){
-          cashBet(B1, 1, B1.autoX);
-        }
-        if(B2.inRound && !B2.cashed && B2.autoOn && cur>=B2.autoX && B2.autoX<=crash){
-          cashBet(B2, 2, B2.autoX);
-        }
-      }else{
-        phase='done';
-        cur=crash;
-        tStop=Math.log(Math.max(1,crash))/RK.k;
-        if(!roundCrashed){
-          roundCrashed=true;
-          boomT=performance.now();
-          pushRHist(crash);
-          const hadActive=(B1.inRound&&!B1.cashed)||(B2.inRound&&!B2.cashed);
-          if(hadActive){
-            tgHaptic('lose');
-            rr.className='result bad';
-            rr.innerHTML=crash<=1
-              ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Не забранные ставки сгорели.`
-              :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>. Не забранные ставки сгорели.`;
-          }
-        }
-      }
-    }
-
-    render(rTime);
-    raf=requestAnimationFrame(loop);
-  }
-
-  function handleBetClick(B, num){
-    const now=Date.now();
-    const rTime=now%ROUND_MS;
-    if(rTime<WAIT_MS){
-      if(B.inRound){
-        // Ставка уже ушла на сервер и раунд закрыт ЕГО жребием, поэтому «вернуть
-        // токены по клику» нельзя: это была бы и ложь (баланс вернётся к
-        // серверному через 5 секунд), и откат уже брошенного жребия.
-        rr.className='result';
-        rr.textContent=`Ставка #${num} (${B.lockedBet||B.bet} ⬦) уже принята сервером — отменить её нельзя.`;
-      }else{
-        // Клик только СОБИРАЕТ ставку: на сервер она уйдёт на старте полёта,
-        // поэтому повторный клик — настоящая отмена (токены не списывались).
-        B.queued=!B.queued;
-        rr.className='result';
-        rr.textContent=B.queued
-          ? `Ставка #${num} (${B.bet} ⬦) будет сделана на старте полёта. Нажмите ещё раз, чтобы отменить.`
-          : `Ставка #${num} отменена — токены не списывались.`;
-      }
-      render(rTime);
-    }else if(phase==='flight'){
-      if(B.inRound&&!B.cashed){
-        cashBet(B, num);
-      }else if(B.inRound&&B.cashed){
-        B.nextRound=!B.nextRound;
-        rr.className='result';
-        rr.textContent=B.nextRound?`Ставка #${num} (${B.bet} ⬦) будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
-        render(rTime);
-      }else if(!B.inRound){
-        B.nextRound=!B.nextRound;
-        rr.className='result';
-        rr.textContent=B.nextRound?`Ставка #${num} будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
-        render(rTime);
-      }
-    }else{
-      B.nextRound=!B.nextRound;
-      rr.className='result';
-      rr.textContent=B.nextRound?`Ставка #${num} будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
-      render(rTime);
-    }
-  }
-
-  if(b1Btn) b1Btn.addEventListener('click',()=>handleBetClick(B1, 1));
-  if(b2Btn) b2Btn.addEventListener('click',()=>handleBetClick(B2, 2));
+  if(b1Btn) b1Btn.addEventListener('click',()=>handleBetClick(1));
+  if(b2Btn) b2Btn.addEventListener('click',()=>handleBetClick(2));
 
   qAll('#b1Chips button', a).forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(B1.inRound) return; // запрет смены ставки в активном раунде
+      if(B1.inRound) return; // ставка уже принята сервером — сумма зафиксирована
       const v=+btn.getAttribute('data-b1')||50;
-      B1.bet=v;S.bet=v;save();syncInputs();render(Date.now()%ROUND_MS);
+      B1.bet=v;S.bet=v;save();syncInputs();render(rtNow());
     });
   });
   qAll('#b2Chips button', a).forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(B2.inRound) return; // запрет смены ставки в активном раунде
+      if(B2.inRound) return; // ставка уже принята сервером — сумма зафиксирована
       const v=+btn.getAttribute('data-b2')||50;
-      B2.bet=v;S.bet2=v;save();syncInputs();render(Date.now()%ROUND_MS);
+      B2.bet=v;S.bet2=v;save();syncInputs();render(rtNow());
     });
   });
 
@@ -3688,9 +3651,13 @@ function gameRacket(){
   }
 
   syncInputs();
-  loop();
+  // Поллинг статуса: раунд и исход ставок приходят с сервера. 1 секунда — чтобы
+  // объявленная остановка (она раскрывается после финиша) появлялась вовремя.
+  const srvTimer=setInterval(()=>{if(!dead&&!document.hidden)pollStatus(false);},1000);
+  pollStatus(true);
+  tick();
 
-  return ()=>{dead=true;cancelAnimationFrame(raf);clearInterval(balTimer)};
+  return ()=>{dead=true;cancelAnimationFrame(raf);clearInterval(balTimer);clearInterval(srvTimer)};
 }
 
 /* =======================================================================

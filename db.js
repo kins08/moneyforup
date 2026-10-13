@@ -145,6 +145,43 @@ CREATE TABLE IF NOT EXISTS user_inventory (
   sold_for INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
+
+/* ── Ракетка: РАУНД ЖИВЁТ НА СЕРВЕРЕ ─────────────────────────────────────────
+   Раньше исход раунда закрывался в момент ставки (defaultMult 1.7), поэтому
+   кэшаут был декорацией: экран обещал bet×mult, сервер платил bet×1.7.
+   Теперь точка краха выбирается CSPRNG в начале раунда и НЕ публикуется до его
+   конца: клиент видит только sha256(round_id + ':' + server_seed) (commit), а
+   seed и точку краха получает после финиша — проверка /api/racket/verify.
+   Множитель кэшаута считает сервер по своим часам (started_at), поэтому клиент
+   не может выбрать себе коэффициент. */
+CREATE TABLE IF NOT EXISTS racket_rounds (
+  round_id TEXT PRIMARY KEY,
+  server_seed TEXT NOT NULL,
+  seed_hash TEXT NOT NULL,
+  crash_point REAL NOT NULL,
+  started_at INTEGER NOT NULL,
+  finished_at INTEGER,
+  status TEXT NOT NULL DEFAULT 'live'      -- live | finished
+);
+CREATE TABLE IF NOT EXISTS racket_bets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  round_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  slot INTEGER NOT NULL DEFAULT 1,
+  bet_tokens INTEGER NOT NULL,
+  auto_x REAL,
+  cashed_x REAL,
+  win_tokens INTEGER,
+  status TEXT NOT NULL DEFAULT 'active',   -- active | cashed | bust | cancelled | expired
+  created_at INTEGER NOT NULL,
+  cashed_at INTEGER
+);
+/* Уникальность — только для АКТИВНОЙ ставки: отменив ставку, игрок вправе
+   поставить в этот слот ещё раз в том же раунде. */
+DROP INDEX IF EXISTS idx_racket_bet_slot;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_racket_bet_slot_active ON racket_bets(round_id, user_id, slot) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_racket_bets_user ON racket_bets(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_racket_round_live ON racket_rounds(status, started_at);
 `);
 
 /* Мягкая миграция: CREATE TABLE IF NOT EXISTS не добавит колонки в уже
@@ -225,6 +262,48 @@ const stmts = {
   inventoryTotals: db.prepare(`
     SELECT COUNT(*) AS count, COALESCE(SUM(price), 0) AS value
     FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
+  `),
+  /* Ракетка: раунды и ставки */
+  insertRacketRound: db.prepare(`
+    INSERT INTO racket_rounds (round_id, server_seed, seed_hash, crash_point, started_at, finished_at, status)
+    VALUES (?, ?, ?, ?, ?, NULL, 'live')
+  `),
+  getRacketRound: db.prepare('SELECT * FROM racket_rounds WHERE round_id = ?'),
+  liveRacketRound: db.prepare(`SELECT * FROM racket_rounds WHERE status = 'live' ORDER BY started_at DESC LIMIT 1`),
+  finishRacketRound: db.prepare(`UPDATE racket_rounds SET status = 'finished', finished_at = ? WHERE round_id = ? AND status = 'live'`),
+  recentRacketRounds: db.prepare(`SELECT * FROM racket_rounds ORDER BY started_at DESC LIMIT ?`),
+  insertRacketBet: db.prepare(`
+    INSERT INTO racket_bets (round_id, user_id, slot, bet_tokens, auto_x, created_at, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'active')
+  `),
+  getRacketBet: db.prepare('SELECT * FROM racket_bets WHERE round_id = ? AND user_id = ? AND slot = ? ORDER BY id DESC LIMIT 1'),
+  getRacketBetById: db.prepare('SELECT * FROM racket_bets WHERE id = ?'),
+  roundRacketBets: db.prepare('SELECT * FROM racket_bets WHERE round_id = ? ORDER BY created_at ASC'),
+  activeRacketBets: db.prepare(`SELECT * FROM racket_bets WHERE round_id = ? AND status = 'active' ORDER BY created_at ASC`),
+  userRacketBets: db.prepare('SELECT * FROM racket_bets WHERE user_id = ? ORDER BY created_at DESC LIMIT 30'),
+  cashoutRacketBet: db.prepare(`
+    UPDATE racket_bets SET status = 'cashed', cashed_x = ?, win_tokens = ?, cashed_at = ?
+    WHERE id = ? AND status = 'active'
+  `),
+  bustRacketBet: db.prepare(`UPDATE racket_bets SET status = 'bust', win_tokens = 0, cashed_at = ? WHERE id = ? AND status = 'active'`),
+  cancelRacketBet: db.prepare(`UPDATE racket_bets SET status = 'cancelled' WHERE id = ? AND status = 'active'`),
+  expireRacketBet: db.prepare(`UPDATE racket_bets SET status = 'expired', win_tokens = 0 WHERE id = ? AND status = 'active'`),
+  revertRacketBet: db.prepare(`UPDATE racket_bets SET status = 'active', win_tokens = NULL WHERE id = ? AND status != 'active'`),
+  /* Брошенные ставки — только те, чей раунд УЖЕ НЕ МОЖЕТ идти: раунда нет в базе
+     (процесс умер до его старта) либо он завершён или просрочен. Ставка живого
+     раунда «старой» не считается никогда — иначе возврат стал бы бесплатной
+     отменой проигрышной ставки. */
+  staleRacketBets: db.prepare(`
+    SELECT b.* FROM racket_bets b
+    LEFT JOIN racket_rounds r ON r.round_id = b.round_id
+    WHERE b.status = 'active' AND b.created_at < ?
+      AND (r.round_id IS NULL OR r.status = 'finished' OR r.started_at + ? < ?)
+    ORDER BY b.created_at ASC LIMIT 200
+  `),
+  racketStats: db.prepare(`
+    SELECT COUNT(*) AS bets, COALESCE(SUM(bet_tokens), 0) AS wagered,
+           COALESCE(SUM(CASE WHEN status = 'cashed' THEN COALESCE(win_tokens, 0) ELSE 0 END), 0) AS won
+    FROM racket_bets WHERE user_id = ?
   `)
 };
 
@@ -642,6 +721,79 @@ module.exports = {
     );
     return r;
   },
+  /* ── Ракетка (серверные раунды и ставки) ────────────────────────────────
+     Запись идёт в локальную БД, в Turso — теми же выражениями через очередь.
+     Все изменения статуса защищены условием `status = 'active'`, поэтому
+     денежную операцию нельзя провести дважды (двойной кэшаут, повторный
+     возврат). Возвращаем число изменённых строк — вызывающий обязан его
+     проверить и только потом двигать деньги. */
+  racketRoundCreate: ({ roundId, seed, hash, crash, startedAt }) => {
+    stmts.insertRacketRound.run(roundId, seed, hash, crash, startedAt);
+    turso.queueQuery(
+      `INSERT INTO racket_rounds (round_id, server_seed, seed_hash, crash_point, started_at, finished_at, status)
+       VALUES (?, ?, ?, ?, ?, NULL, 'live') ON CONFLICT(round_id) DO NOTHING`,
+      [roundId, seed, hash, crash, startedAt]
+    );
+    return { ok: true };
+  },
+  racketRoundGet: (roundId) => stmts.getRacketRound.get(roundId) || null,
+  racketRoundLive: () => stmts.liveRacketRound.get() || null,
+  racketRoundFinish: (roundId, finishedAt) => {
+    const r = stmts.finishRacketRound.run(finishedAt, roundId);
+    if (r.changes) {
+      turso.queueQuery(`UPDATE racket_rounds SET status = 'finished', finished_at = ? WHERE round_id = ?`, [finishedAt, roundId]);
+    }
+    return r.changes;
+  },
+  racketRoundsRecent: (limit = 30) => stmts.recentRacketRounds.all(Math.max(1, Math.min(100, limit))),
+
+  racketBetCreate: ({ roundId, userId, slot, bet, autoX, createdAt }) => {
+    try {
+      const r = stmts.insertRacketBet.run(roundId, userId, slot, bet, autoX == null ? null : autoX, createdAt);
+      turso.queueQuery(
+        `INSERT INTO racket_bets (round_id, user_id, slot, bet_tokens, auto_x, status, created_at)
+         VALUES (?, ?, ?, ?, ?, 'active', ?) ON CONFLICT(round_id, user_id, slot) DO NOTHING`,
+        [roundId, userId, slot, bet, autoX == null ? null : autoX, createdAt]
+      );
+      return { ok: true, id: Number(r.lastInsertRowid) };
+    } catch (e) {
+      return { ok: false, error: e.message };   // уже есть ставка в этот слот
+    }
+  },
+  racketBetGet: (roundId, userId, slot) => stmts.getRacketBet.get(roundId, userId, slot) || null,
+  racketBetById: (id) => stmts.getRacketBetById.get(id) || null,
+  racketRoundBets: (roundId) => stmts.roundRacketBets.all(roundId),
+  racketRoundActiveBets: (roundId) => stmts.activeRacketBets.all(roundId),
+  racketUserBets: (userId) => stmts.userRacketBets.all(userId),
+  /** Кэшаут: ровно один раз. changes=0 → ставка уже закрыта (кто-то опередил). */
+  racketBetCashout: (id, x, win, at) => {
+    const r = stmts.cashoutRacketBet.run(x, win, at, id);
+    if (r.changes) {
+      turso.queueQuery(`UPDATE racket_bets SET status = 'cashed', cashed_x = ?, win_tokens = ?, cashed_at = ? WHERE id = ?`, [x, win, at, id]);
+    }
+    return r.changes;
+  },
+  racketBetBust: (id, at) => {
+    const r = stmts.bustRacketBet.run(at, id);
+    if (r.changes) turso.queueQuery(`UPDATE racket_bets SET status = 'bust', win_tokens = 0, cashed_at = ? WHERE id = ?`, [at, id]);
+    return r.changes;
+  },
+  racketBetCancel: (id) => {
+    const r = stmts.cancelRacketBet.run(id);
+    if (r.changes) turso.queueQuery(`UPDATE racket_bets SET status = 'cancelled' WHERE id = ?`, [id]);
+    return r.changes;
+  },
+  racketBetExpire: (id) => {
+    const r = stmts.expireRacketBet.run(id);
+    if (r.changes) turso.queueQuery(`UPDATE racket_bets SET status = 'expired', win_tokens = 0 WHERE id = ?`, [id]);
+    return r.changes;
+  },
+  /** Откат служебного статуса, если денежная операция не прошла (возврат предмета/ставки) */
+  racketBetRevert: (id) => stmts.revertRacketBet.run(id),
+  /** Брошенные ставки: раунд не доигран (рестарт/сбой) — их надо вернуть игроку */
+  racketBetsStale: (cutoff, roundWindowMs, now) => stmts.staleRacketBets.all(cutoff, roundWindowMs, now),
+  racketStats: (userId) => stmts.racketStats.get(userId) || { bets: 0, wagered: 0, won: 0 },
+
   pullFromTurso: () => turso.pullFromTurso(db),
   waitForTurso: (timeoutMs) => turso.waitForFlush(timeoutMs),
   tursoOn: turso.tursoOn

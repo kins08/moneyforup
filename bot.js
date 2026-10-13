@@ -509,6 +509,189 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
   return { ok: true, roundId, game: cfg.label, gameKey: cfg.key, verdict: win > 0 ? 'win' : 'lose', win, mult, tokens: u.tokens };
 }
 
+/* ==================================================================== */
+/* РАКЕТКА: ДВИЖОК СЕРВЕРНЫХ РАУНДОВ (R3)                                */
+/* ==================================================================== */
+/* Раньше исход раунда закрывался в МОМЕНТ ставки (/api/play с defaultMult
+   1.7), поэтому кэшаут был декорацией: экран обещал bet×mult, сервер платил
+   bet×1.7. Теперь раунд живёт на сервере:
+     • точка краха выбирается CSPRNG в начале раунда;
+     • до конца раунда клиент видит только commit sha256(round_id + ':' + seed),
+       seed и крах раскрываются после финиша (/api/racket/verify);
+     • множитель кэшаута считает СЕРВЕР по своим часам, поэтому клиент не может
+       выбрать себе коэффициент — только момент запроса (грейс ~RTT);
+     • проверка «fair» по seed: P(crash ≥ x) ≈ (1 − edge)/x, RTP 96 % при любой
+       стратегии кэшаута.
+   Деньги: ставка списывается сразу (ledger), кэшаут начисляет ровно один раз
+   (статус-машина в racket_bets + idempotency-ключ операции в ledger),
+   не забрал — сгорела при финише раунда. */
+const rkEnvMs = (name, def) => {
+  const v = Math.floor(Number(process.env[name]));
+  return Number.isFinite(v) && v >= 100 ? v : def;
+};
+const RK_ENGINE = {
+  cycleMs:    rkEnvMs('RACKET_CYCLE_MS', 30000),      // раунд: приём ставок + полёт
+  bettingMs:  rkEnvMs('RACKET_BETTING_MS', 15000),    // окно приёма ставок (как в клиенте)
+  graceMs:    rkEnvMs('RACKET_GRACE_MS', 2500),       // после окна раунд ещё живёт:
+                                                      // кэшаут по РЕАЛЬНОМУ времени, но
+                                                      // окно идемпотентно (растянутый RTT не роняет раунд)
+  expireMs:   rkEnvMs('RACKET_EXPIRE_MS', 120000),    // брошенная ставка сгорает/возвращается здесь
+  minBet: 10,
+  maxBet: 100000,
+  k: 0.18,          // та же кривая, что рисует клиент: mult(t) = exp(k·tau(s)), tau(s)=s(1+0.06s)
+  speed: 0.58,
+  maxCashX: 30      // потолок коэффициента (= maxMult Ракетки в GAMES)
+};
+const RK_CRASH_EDGE = 0.04;                            // RTP 96 % для любой стратегии
+const rkTau = s => s * (1 + 0.06 * s);
+/** Множитель по СЕРВЕРНОМУ времени полёта: единственный источник истины для выплат */
+function rkMultAt(flightMs) {
+  const seconds = Math.max(0, flightMs) / 1000;
+  const v = Math.exp(RK_ENGINE.k * rkTau(seconds * RK_ENGINE.speed));
+  return Math.max(1, Math.floor(v * 100) / 100);
+}
+const rkRoundHash = (roundId, seed) => crypto.createHash('sha256').update(roundId + ':' + seed).digest('hex');
+/** Точка краха: P(crash ≥ x) ≈ (1−edge)/x, обрез сверху maxCashX. */
+function rkSampleCrash() {
+  const u = crypto.randomInt(0, 1_000_000) / 1_000_000;
+  const raw = (1 - RK_CRASH_EDGE) / (1 - u);
+  return Math.max(1.01, Math.min(RK_ENGINE.maxCashX, Math.floor(raw * 100) / 100));
+}
+let rkCur = null;        // текущий раунд: { roundId, seed, seedHash, crash, startedAt }
+let rkNext = null;       // закоммиченный следующий раунд: { roundId, seed, seedHash, crash, startedAt }
+let rkSweepAt = 0;
+
+/** Время полёта раунда в мс (0 — пока идёт приём ставок) */
+const rkFlightMs = (round, now) => Math.max(0, now - round.startedAt - RK_ENGINE.bettingMs);
+/** Допуск на время запроса: если запрос пришёл уже в грейсе (после конца
+    окна), отматываем время на часть перебега — растянутый RTT не должен
+    превращать честный кэшаут в «поздний». Больше 1.5 с не отматываем. */
+function rkRequestBackoff(now, round) {
+  const over = now - (round.startedAt + RK_ENGINE.cycleMs);
+  if (over <= 0) return 0;
+  return Math.min(1500, Math.round(over * 0.25));
+}
+/** Начать раунд. `useNext` — подхватить УЖЕ ЗАКОММИЧЕННЫЙ следующий раунд:
+    его хэш был опубликован во время предыдущего, поэтому играть обязан именно
+    он, а не новый — иначе commit-схема ничего не доказывает, а пред-ставки
+    повисают в раунде, который никогда не начнётся. */
+function rkNewRound(startedAt, useNext) {
+  const sched = (useNext && rkNext) ? rkNext : null;
+  const seed = sched ? sched.seed : crypto.randomBytes(32).toString('hex');
+  const roundId = sched ? sched.roundId : ('RKT' + startedAt.toString(36) + crypto.randomBytes(4).toString('hex'));
+  const crash = sched ? sched.crash : rkSampleCrash();
+  if (sched) rkNext = null;
+  const row = { roundId, seed, seedHash: rkRoundHash(roundId, seed), crash, startedAt };
+  try { db.racketRoundCreate({ roundId, seed, hash: row.seedHash, crash, startedAt }); }
+  catch (e) { console.error('[Racket] не сохранил раунд:', e.message); }
+  return row;
+}
+/** Зафиксировать параметры СЛЕДУЮЩЕГО раунда заранее: иначе commit-хэш
+    публиковался бы одновременно с результатом и был бы бесполезен. */
+function rkCommitNext(cur) {
+  if (rkNext && rkNext.startedAt === cur.startedAt + RK_ENGINE.cycleMs) return rkNext;
+  const startedAt = cur.startedAt + RK_ENGINE.cycleMs;
+  const seed = crypto.randomBytes(32).toString('hex');
+  const roundId = 'RKT' + startedAt.toString(36) + crypto.randomBytes(4).toString('hex');
+  rkNext = { roundId, seed, seedHash: rkRoundHash(roundId, seed), crash: rkSampleCrash(), startedAt };
+  return rkNext;
+}
+/** Финиш раунда: активные ставки с авто-кэшаутом получают выплату, остальные сгорают. */
+function rkFinishRound(roundId, now) {
+  try {
+    const cur = rkCur && rkCur.roundId === roundId ? rkCur : null;
+    const crash = cur ? cur.crash : (db.racketRoundGet(roundId) || {}).crash_point;
+    const active = db.racketRoundActiveBets(roundId);
+    let cashed = 0;
+    for (const b of active) {
+      const auto = b.auto_x == null ? null : Number(b.auto_x);
+      const bu = users.get(Number(b.user_id)) || null;
+      // Авто-вывод: коэффициент < краха — выигрыш, иначе ставка сгорает.
+      // Потолок бездепозитного баланса применяем ДО фиксации суммы: в ledger
+      // не должно попасть то, что не начислено.
+      let win = auto && auto < crash ? Math.floor(b.bet_tokens * auto) : 0;
+      if (win > 0 && bu) win = rkCapPayout(bu, win, `авто ×${auto}`);
+      if (!(auto && auto < crash)) { db.racketBetBust(b.id, now); continue; }
+      if (!db.racketBetCashout(b.id, auto, win, now)) continue;   // кто-то опередил — не платим дважды
+      if (win > 0 && bu) {
+        const r = applyBalance(bu, win, 'racket_cashout', `Ракетка · авто-кэшаут ×${auto} (раунд ${roundId})`, 'rkc' + b.id);
+        // Не записалось — возвращаем ставку в active: выплату повторит следующий тик
+        if (!r.ok) { try { db.racketBetRevert(b.id); } catch (_) {} continue; }
+      }
+      cashed++;
+    }
+    db.racketRoundFinish(roundId, now);
+    console.log(`[Racket] раунд ${roundId} остановлен на ×${crash}, авто-выплат: ${cashed}, сгорело: ${active.length - cashed}`);
+  } catch (e) {
+    console.error('[Racket] финиш раунда:', e.message);
+  }
+  if (rkCur && rkCur.roundId === roundId) rkCur = null;
+}
+/** Возврат брошенных ставок: раунд так и не доигран (рестарт процесса/сбой).
+    Порядок как у продажи предметов: сначала атомарно забираем ставку, потом
+    начисляем; если начисление не прошло — возвращаем статус, деньги не теряются. */
+function rkSweepStale(now) {
+  if (now - rkSweepAt < 5000) return;
+  rkSweepAt = now;
+  let stale = [];
+  try { stale = db.racketBetsStale(now - RK_ENGINE.expireMs, RK_ENGINE.cycleMs + RK_ENGINE.graceMs, now); } catch (_) { return; }
+  for (const b of stale) {
+    if (!db.racketBetExpire(b.id)) continue;
+    const bu = users.get(Number(b.user_id)) || null;
+    const back = bu ? applyBalance(bu, b.bet_tokens, 'racket_refund', `Ракетка · возврат брошенной ставки (раунд ${b.round_id})`, 'rkrefund' + b.id) : { ok: false };
+    if (!back.ok) { try { db.racketBetRevert(b.id); } catch (_) {} }
+    else console.warn(`[Racket] ставка #${b.id} игрока ${b.user_id}: раунд не доигран, ${b.bet_tokens} ⬦ возвращены`);
+  }
+}
+/** Тик движка: вызывается на каждом запросе к Ракетке и раз в секунду таймером.
+    Он же закрывает просроченные раунды — то есть осиротевшая ставка не может
+    зависнуть в статусе active навсегда. */
+function rkTick(now = Date.now()) {
+  if (rkCur && now >= rkCur.startedAt + RK_ENGINE.cycleMs + RK_ENGINE.graceMs) rkFinishRound(rkCur.roundId, now);
+  if (!rkCur) {
+    let restored = null;
+    try {
+      const row = db.racketRoundLive();
+      if (row) {
+        if (now < row.started_at + RK_ENGINE.cycleMs + RK_ENGINE.graceMs) {
+          restored = { roundId: row.round_id, seed: row.server_seed, seedHash: row.seed_hash, crash: row.crash_point, startedAt: row.started_at };
+        } else {
+          rkFinishRound(row.round_id, now);       // просрочен после рестарта — закрываем
+        }
+      }
+    } catch (e) { console.error('[Racket] восстановление раунда:', e.message); }
+    // Продолжаем закоммиченным раундом (его хэш уже видели игроки), а на холодном
+    // старте — новым: коммит следующего опубликуем сразу
+    rkCur = restored || rkNewRound(now, !!rkNext);
+  }
+  rkCommitNext(rkCur);
+  rkSweepStale(now);
+  return rkCur;
+}
+/** Раунд, в который попадёт ставка: пока идёт приём — текущий, иначе следующий
+    (пред-ставка из PR #2 во время полёта). */
+function rkTargetRound(now) {
+  const cur = rkTick(now);
+  if (now <= cur.startedAt + RK_ENGINE.bettingMs) return { round: cur, phase: 'betting' };
+  const next = rkCommitNext(cur);
+  return { round: { ...next, pending: true }, phase: 'flight' };
+}
+/** Правило бездепозитного потолка (то же, что в playRound): применяется в момент
+    ВЫПЛАТЫ, потому что раньше сумма выплаты неизвестна. */
+function rkCapPayout(u, payout, ctx) {
+  const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+  if (userDep > 0 || isAdmin(u)) return payout;
+  if (Math.floor(u.tokens || 0) + payout > NON_DEPOSITOR_CAP) {
+    betsMonitor.flagSuspicious({
+      userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+      reason: 'Потолок бездепозитного баланса (Ракетка)',
+      details: `${ctx}: выплата ${payout} ⬦ подняла бы баланс до ${Math.floor(u.tokens || 0) + payout} ⬦`
+    });
+    return 0;
+  }
+  return payout;
+}
+
 function stakeAdd(u, v) {
   v = Math.floor(Number(v) || 0);
   if (v <= 0) return { error: 'Сумма должна быть больше нуля' };
@@ -1730,6 +1913,199 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, count: sold.length, total, sold, tokens: u.tokens });
     }
 
+    /* ── Ракетка: состояние раунда ────────────────────────────────────────────
+       Отдаём только ПУБЛИЧНУЮ часть: commit-хэш текущего и следующего раунда,
+       время окна, историю ЗАВЕРШЁННЫХ раундов. Точка краха живого раунда не
+       уходит клиенту ни в одном поле — иначе кэшаут снова стал бы декорацией. */
+    if (url.pathname === '/api/racket/status') {
+      const now = Date.now();
+      const r = rkTick(now);
+      const mine = db.racketUserBets(u.id).slice(0, 10);
+      const liveIds = new Set([r.roundId, rkNext ? rkNext.roundId : '']);
+      const rounds = db.racketRoundsRecent(40);
+      return send(200, {
+        ok: true,
+        now,
+        engine: {
+          cycleMs: RK_ENGINE.cycleMs, bettingMs: RK_ENGINE.bettingMs, graceMs: RK_ENGINE.graceMs,
+          minBet: RK_ENGINE.minBet, maxBet: RK_ENGINE.maxBet, maxCashX: RK_ENGINE.maxCashX,
+          k: RK_ENGINE.k, speed: RK_ENGINE.speed, rtp: 1 - RK_CRASH_EDGE
+        },
+        round: {
+          id: r.roundId,
+          startedAt: r.startedAt,
+          bettingEndsAt: r.startedAt + RK_ENGINE.bettingMs,
+          endsAt: r.startedAt + RK_ENGINE.cycleMs,
+          seedHash: r.seedHash,
+          nextSeedHash: rkNext ? rkNext.seedHash : null
+        },
+        me: mine.map(b => ({
+          slot: b.slot, bet: b.bet_tokens, status: b.status, autoX: b.auto_x,
+          cashedX: b.cashed_x, win: b.win_tokens, roundId: b.round_id
+        })),
+        // История: крах раскрывается ТОЛЬКО у завершённых раундов
+        history: rounds.map(x => ({
+          roundId: x.round_id,
+          crash: x.status === 'finished' ? x.crash_point : null,
+          seedHash: x.seed_hash,
+          endedAt: x.finished_at,
+          live: liveIds.has(x.round_id)
+        })),
+        stats: db.racketStats(u.id),
+        tokens: u.tokens
+      });
+    }
+
+    /* ── Ракетка: ставка ──────────────────────────────────────────────────────
+       Ставка списывается сразу и привязывается к раунду. Во время полёта ставка
+       уходит в СЛЕДУЮЩИЙ раунд (пред-ставка из PR #2), поэтому «пред-ставка
+       после кэшаута» продолжает работать без клиентских фокусов. */
+    if (url.pathname === '/api/racket/bet' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`rk-bet:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком много ставок. Подождите минуту.' });
+      }
+      const slot = Math.floor(Number(body.slot) || 1);
+      if (slot !== 1 && slot !== 2) return send(400, { error: 'Некорректный номер ставки' });
+      const bet = Math.floor(Number(body.bet) || 0);
+      if (!Number.isFinite(bet) || bet < RK_ENGINE.minBet || bet > RK_ENGINE.maxBet) {
+        return send(400, { error: `Ставка должна быть от ${RK_ENGINE.minBet} до ${RK_ENGINE.maxBet} ⬦` });
+      }
+      if (bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно токенов' });
+      const autoXraw = Number(body.autoX);
+      const autoX = Number.isFinite(autoXraw) && autoXraw >= 1.01 ? Math.min(RK_ENGINE.maxCashX, Math.round(autoXraw * 100) / 100) : null;
+
+      const now = Date.now();
+      const { round, phase } = rkTargetRound(now);
+      const d = db.racketBetCreate({ roundId: round.roundId, userId: u.id, slot, bet, autoX, createdAt: now });
+      if (!d.ok) return send(400, { error: `Ставка #${slot} в этом раунде уже сделана` });
+
+      const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка #${slot} (раунд ${round.roundId})`, `rk:${round.roundId}:${slot}`);
+      if (!r.ok) {
+        // Денег не хватило на уровне БД — снимаем ставку, чтобы слот не «съело»
+        try { db.racketBetCancel(d.id); } catch (_) {}
+        return send(500, { error: 'Не удалось принять ставку, повторите позже' });
+      }
+      return send(200, {
+        ok: true, phase, roundId: round.roundId,
+        round: { id: round.roundId, startedAt: round.startedAt, bettingEndsAt: round.startedAt + RK_ENGINE.bettingMs, endsAt: round.startedAt + RK_ENGINE.cycleMs },
+        slot, bet, autoX, tokens: u.tokens
+      });
+    }
+
+    /* ── Ракетка: отмена ставки ───────────────────────────────────────────────
+       Отменить можно только ставку, по которой раунд ЕЩЁ НЕ ЛЕТЕЛ: ставку в
+       приёме текущего раунда и пред-ставку. В полёте отмена запрещена — иначе
+       это был бы «откат проигрышной ставки» (ровно дыра R2). */
+    if (url.pathname === '/api/racket/cancel' && req.method === 'POST') {
+      if (!checkRateLimit(`rk-cancel:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много отмен. Подождите минуту.' });
+      const slot = Math.floor(Number(body.slot) || 1);
+      const now = Date.now();
+      const cur = rkTick(now);
+      const row = db.racketBetGet(cur.roundId, u.id, slot) || (rkNext ? db.racketBetGet(rkNext.roundId, u.id, slot) : null);
+      if (!row) return send(404, { error: `Ставка #${slot} не найдена` });
+      if (row.status !== 'active') return send(400, { error: 'Ставка уже закрыта' });
+      const isCurrent = row.round_id === cur.roundId;
+      if (isCurrent && now > cur.startedAt + RK_ENGINE.bettingMs) {
+        return send(400, { error: 'Раунд уже в полёте — отменить нельзя, можно забрать кэшаут' });
+      }
+      if (!db.racketBetCancel(row.id)) return send(400, { error: 'Ставка уже закрыта' });
+      const back = applyBalance(u, row.bet_tokens, 'racket_cancel', `Ракетка · отмена ставки #${slot} (раунд ${row.round_id})`, 'rkback' + row.id);
+      if (!back.ok) { try { db.racketBetRevert(row.id); } catch (_) {} return send(500, { error: 'Не удалось вернуть ставку, повторите позже' }); }
+      return send(200, { ok: true, cancelled: true, slot, refund: row.bet_tokens, tokens: u.tokens });
+    }
+
+    /* ── Ракетка: кэшаут ──────────────────────────────────────────────────────
+       Множитель считает СЕРВЕР по своим часам. Клиентское поле x/mult в теле
+       запроса игнорируется — это и делает кэшаут настоящим. Запрос опоздал
+       (раунд уже остановлен) → ставка сгорела; x >= краха → тоже 0. */
+    if (url.pathname === '/api/racket/cashout' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`rk-cash:${u.id}`, 180, 60000)) {
+        return send(429, { error: 'Слишком много запросов кэшаута. Подождите минуту.' });
+      }
+      const slot = Math.floor(Number(body.slot) || 1);
+      const now = Date.now();
+      const cur = rkTick(now);
+      let row = db.racketBetGet(cur.roundId, u.id, slot);
+      if (!row && rkNext) row = db.racketBetGet(rkNext.roundId, u.id, slot);   // пред-ставка: забирать пока нечего
+      if (!row) {
+        // Ставки в текущем раунде нет. Возможно, кэшаут опоздал и раунд уже
+        // остановлен: тогда показываем судьбу ставки, а не «не найдена».
+        const mine = db.racketUserBets(u.id).filter(b => Number(b.slot) === slot);
+        const last = mine.find(b => {
+          const r = db.racketRoundGet(b.round_id);
+          return r && r.status === 'finished' && Date.now() - (r.finished_at || 0) < RK_ENGINE.expireMs;
+        });
+        if (last) {
+          return send(200, {
+            ok: true, verdict: last.status === 'cashed' ? 'win' : 'lose', late: true,
+            x: last.cashed_x, win: last.win_tokens || 0,
+            crash: (db.racketRoundGet(last.round_id) || {}).crash_point, tokens: u.tokens
+          });
+        }
+        return send(404, { error: `Ставка #${slot} не найдена` });
+      }
+      if (row.status === 'cashed') {
+        // Идемпотентность: повторный кэшаут не платит дважды, но отдаёт итог
+        return send(200, { ok: true, repeat: true, verdict: 'win', x: row.cashed_x, win: row.win_tokens, crash: null, tokens: u.tokens });
+      }
+      if (row.status !== 'active') {
+        return send(200, { ok: true, verdict: row.status === 'bust' || row.status === 'expired' ? 'lose' : 'cancelled', x: row.cashed_x, win: row.win_tokens || 0, crash: null, tokens: u.tokens });
+      }
+      if (row.round_id !== cur.roundId) {
+        return send(400, { error: 'Эта ставка ждёт следующего раунда — забрать можно после старта полёта' });
+      }
+      const backoff = rkRequestBackoff(now, cur);
+      const flightMs = rkFlightMs(cur, now - backoff);
+      if (now > cur.startedAt + RK_ENGINE.cycleMs + RK_ENGINE.graceMs) {
+        // Страховка: тик обычно закрывает раунд раньше, но между финишем и
+        // подхватом нового раунда запрос может прийти сюда
+        db.racketBetBust(row.id, now);
+        return send(200, { ok: true, verdict: 'lose', late: true, x: null, win: 0, crash: cur.crash, tokens: u.tokens });
+      }
+      const x = rkMultAt(flightMs);
+      if (x >= cur.crash) {
+        // Ставка попала на уже случившийся крах: платить нечего, фиксируем 0
+        if (db.racketBetBust(row.id, now)) { /* ставка сгорела */ }
+        return send(200, { ok: true, verdict: 'lose', x, win: 0, crash: cur.crash, tokens: u.tokens });
+      }
+      const win = rkCapPayout(u, Math.floor(row.bet_tokens * x), `кэшаут ×${x}`);
+      if (!db.racketBetCashout(row.id, x, win, now)) {
+        const fresh = db.racketBetGet(cur.roundId, u.id, slot);
+        return send(200, { ok: true, repeat: true, verdict: 'win', x: fresh ? fresh.cashed_x : x, win: fresh ? fresh.win_tokens : win, crash: null, tokens: u.tokens });
+      }
+      if (win > 0) {
+        const r = applyBalance(u, win, 'racket_cashout', `Ракетка · кэшаут ×${x} (раунд ${cur.roundId}, ставка ${row.bet_tokens})`, 'rkc' + row.id);
+        if (!r.ok) {
+          try { db.racketBetRevert(row.id); } catch (_) {}
+          return send(500, { error: 'Не удалось начислить выигрыш, повторите кэшаут' });
+        }
+      }
+      // Крах раскрываем, только если у игрока нет других активных ставок в раунде
+      const stillActive = db.racketRoundActiveBets(cur.roundId).some(b => Number(b.user_id) === Number(u.id));
+      return send(200, { ok: true, verdict: win > 0 ? 'win' : 'lose', x, win, crash: stillActive ? null : cur.crash, cap: win === 0 && Math.floor(row.bet_tokens * x) > 0 ? true : undefined, tokens: u.tokens });
+    }
+
+    /* ── Ракетка: проверка честности раунда (commit → reveal) ─────────────────
+       sha256(round_id + ':' + server_seed) обязан совпасть с опубликованным
+       хэшем; крах выводится из seed. До финиша раунда seed не отдаём. */
+    if (url.pathname === '/api/racket/verify' && req.method === 'POST') {
+      const roundId = String(body.roundId || '').trim();
+      if (!roundId || !/^[A-Za-z0-9_-]{6,64}$/.test(roundId)) return send(400, { error: 'Некорректный идентификатор раунда' });
+      const row = db.racketRoundGet(roundId);
+      if (!row) return send(404, { error: 'Раунд не найден' });
+      const finished = row.status === 'finished';
+      return send(200, {
+        ok: true,
+        roundId,
+        finished,
+        seedHash: row.seed_hash,
+        serverSeed: finished ? row.server_seed : null,
+        crash: finished ? row.crash_point : null,
+        startedAt: row.started_at,
+        verify: `sha256("${roundId}:" + serverSeed) == seedHash`
+      });
+    }
+
     /* Синхронизация баланса (строго READ-ONLY: клиент не может устанавливать баланс напрямую) */
     if (url.pathname === '/api/sync-balance') {
       return send(200, { ok: true, tokens: u.tokens });
@@ -2181,6 +2557,11 @@ async function startBotSafely() {
 }
 
 // Плавное завершение при деплое на Render, чтобы не возникал 409 Conflict
+/* Движок Ракетки тикает сам: раунды закрываются по времени, а не по запросу
+   игрока. Иначе брошенная ставка ждала бы своего часа, а «краш» случился бы
+   только когда кто-то откроет экран. */
+setInterval(() => { try { rkTick(Date.now()); } catch (e) { console.error('[Racket] тик:', e.message); } }, 1000);
+
 process.once('SIGTERM', async () => {
   console.log('Получен SIGTERM, останавливаем опрос Telegram...');
   try { bot.stop(); } catch (_) {}
