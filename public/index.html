@@ -1077,7 +1077,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[],baitStreak:0,baitUsedTotal:0,lossTrapActive:false};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -1309,11 +1309,13 @@ function syncUI(){
   if(onBetChange)onBetChange();
 }
 
-/* ==================== МЕХАНИКА ЗАВЛЕЧЕНИЯ И СЛИВА (ПРИКОРМКА С АНТИ-ЭКСПЛОЙТОМ) ==================== */
+/* ==================== СВЕРКА С ВЕРДИКТОМ СЕРВЕРА ====================
+   Имя evalBaitTrap сохранено ради 11 мест вызова, но «прикормки» внутри нет:
+   функция лишь приводит локальную анимацию к тому, что решил сервер.       */
 function evalBaitTrap(gameName, naturalWin, currentBet, targetMult){
   // ИСХОД РАУНДА РЕШАЕТ СЕРВЕР.
-  // Здесь раньше жила клиентская «ловушка проигрыша» (lossTrapActive / baitStreak),
-  // которая по истории депозитов решала, проиграет ли игрок. Она удалена:
+  // Здесь раньше жила клиентская «ловушка проигрыша»: по истории депозитов
+  // она решала, проиграет ли игрок. Удалена полностью:
   //  • манипулировать исходом по депозитам — это обман игрока, а не «балансировка»;
   //  • любой, кто правит клиент, обходил её и забирал деньги (это и был эксплойт).
   const rnd = (typeof __currentRound === 'function') ? __currentRound() : null;
