@@ -1735,6 +1735,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/requisites') {
       return send(200, {
         ok: true,
+        configured: { sbp: !!SBP_PHONE, tinkoff: !!CARD_TINKOFF, sber: !!CARD_SBER, ozon: !!CARD_OZON },
         sbp: { phone: SBP_PHONE, holder: SBP_HOLDER },
         cards: { tinkoff: CARD_TINKOFF, sber: CARD_SBER, ozon: CARD_OZON }
       });
@@ -2210,10 +2211,14 @@ async function initPersistence() {
     }
   }
 }
-initPersistence();
-
-server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
-startBotSafely();
+// ВАЖНО: сначала восстановление из Turso, и только потом приём запросов.
+// Раньше listen стартовал параллельно pull, и вернувшийся игрок успевал
+// создаться локально с 50 ⬦, затирая облачный баланс (см. turso.js).
+(async () => {
+  await initPersistence();
+  server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
+  startBotSafely();
+})();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
   + ' · Промокодов активно: ' + promoCodes.size
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
@@ -2235,6 +2240,10 @@ console.log('Бот запущен. Стейкинг 1 %/сутки, рефер�
         (onEphemeralHost ? '\n     Обнаружена эфемерная среда — это ОПАСНО для денег.' : '')
       );
     }
+  }
+  if (!SBP_PHONE && !CARD_TINKOFF && !CARD_SBER && !CARD_OZON) {
+    console.warn('[Payments] ВНИМАНИЕ: реквизиты пополнения не заданы (SBP_PHONE / CARD_TINKOFF / CARD_SBER / CARD_OZON). ' +
+      'Игроки увидят «реквизиты не настроены» вместо номера карты. Заполните переменные в окружении хостинга.');
   }
   if (!PUBLIC_URL) {
     console.warn('[Webhooks] PUBLIC_URL не задан: вебхуки Platega/Coinso не придут, работаем опросом статуса.');

@@ -38,14 +38,35 @@ function tursoOn() {
   return !!(client && TURSO_URL);
 }
 
-// Очередь асинхронных операций в Turso
+// Очередь асинхронных операций в Turso.
+// Элемент очереди — группа стейтментов, которая обязана долететь ЦЕЛИКОМ
+// (например, UPDATE баланса + INSERT в ledger одним изменением баланса).
+// Все стейтменты в очереди идемпотентны (UPDATE / INSERT OR IGNORE / upsert),
+// поэтому повторная отправка после сетевого сбоя безопасна.
 const queue = [];
 let isFlushing = false;
+let retryTimer = null;
+let retryDelay = 2000;
 
 function queueQuery(sql, args = []) {
-  if (!tursoOn()) return;
-  queue.push({ sql, args });
+  queueBatch([{ sql, args }]);
+}
+
+/* Поставить в очередь группу стейтментов одного логического изменения. */
+function queueBatch(stmts) {
+  if (!tursoOn() || !Array.isArray(stmts) || stmts.length === 0) return;
+  queue.push({ stmts });
   flushQueue();
+}
+
+function scheduleRetry() {
+  if (retryTimer) return;
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    retryDelay = Math.min(retryDelay * 2, 30000);
+    flushQueue();
+  }, retryDelay);
+  if (retryTimer.unref) retryTimer.unref();
 }
 
 async function flushQueue() {
@@ -53,18 +74,28 @@ async function flushQueue() {
   isFlushing = true;
 
   while (queue.length > 0) {
-    const batch = queue.splice(0, 50);
+    // Собираем до 50 стейтментов, не разрывая группы: client.batch — это
+    // транзакция, группа долетит либо целиком, либо никак.
+    const batch = [];
+    const items = [];
+    while (queue.length > 0 && batch.length < 50) {
+      const item = queue.shift();
+      items.push(item);
+      batch.push(...item.stmts);
+    }
     try {
       if (batch.length === 1) {
         await client.execute(batch[0]);
       } else {
         await client.batch(batch, 'write');
       }
+      retryDelay = 2000;
     } catch (e) {
       console.error('[Turso] Ошибка записи в облако:', e.message);
-      // При сетевой ошибке возвращаем элементы в начало очереди и ждём 2 сек
-      queue.unshift(...batch);
-      await new Promise(r => setTimeout(r, 2000));
+      // Возвращаем группы в начало очереди и повторяем по таймеру, а не
+      // только при следующей записи: иначе хвост теряется на SIGTERM.
+      queue.unshift(...items);
+      scheduleRetry();
       break;
     }
   }
@@ -91,7 +122,7 @@ async function pullFromTurso(dbSync) {
           stake_since=excluded.stake_since, accrued_base=excluded.accrued_base, ref_earned=excluded.ref_earned,
           ref_invited=excluded.ref_invited, terms_at=excluded.terms_at, total_deposited_rub=excluded.total_deposited_rub,
           last_deposit_rub=excluded.last_deposit_rub, last_deposit_id=excluded.last_deposit_id,
-          last_cashback_at=excluded.last_cashback_at, cashback_claimed_dep_id=excluded.cashback_claimed_dep_id,
+          ref_id=excluded.ref_id, last_cashback_at=excluded.last_cashback_at, cashback_claimed_dep_id=excluded.cashback_claimed_dep_id,
           easycash_claimed=excluded.easycash_claimed, code=excluded.code
       `);
       for (const r of uRes.rows) {
@@ -131,6 +162,18 @@ async function pullFromTurso(dbSync) {
         insLedger.run(r.id, r.user_id, r.amount, r.type, r.reason, r.reference_id, r.balance_before, r.balance_after, r.created_at);
       }
     }
+
+    // 3b. Promo Codes (определения; без них кастомные промокоды теряются)
+    try {
+      const pcRes = await client.execute('SELECT * FROM promo_codes');
+      if (pcRes.rows.length > 0) {
+        const insPc = dbSync.prepare(`
+          INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)
+          ON CONFLICT(code) DO UPDATE SET tokens=excluded.tokens, max_uses=excluded.max_uses
+        `);
+        for (const r of pcRes.rows) insPc.run(r.code, r.tokens, r.max_uses, r.created_at);
+      }
+    } catch (e) { console.warn('[Turso] promo_codes не восстановлены (таблицы нет?):', e.message); }
 
     // 4. Promo Activations
     const paRes = await client.execute('SELECT * FROM promo_activations');
@@ -187,14 +230,23 @@ async function pullFromTurso(dbSync) {
  */
 async function waitForFlush(timeoutMs = 5000) {
   const start = Date.now();
-  while (queue.length > 0 && Date.now() - start < timeoutMs) {
+  flushQueue();   // не ждём пассивно: очередь могла стоять после сетевого сбоя
+  // Ждём и опустошения очереди, и завершения уже летящего батча: раньше
+  // функция возвращалась при пустой очереди, хотя запрос ещё был в сети,
+  // и process.exit() обрывал его.
+  while ((queue.length > 0 || isFlushing) && Date.now() - start < timeoutMs) {
     await new Promise(r => setTimeout(r, 100));
   }
+  return queue.length === 0 && !isFlushing;
 }
 
 module.exports = {
   tursoOn,
   queueQuery,
+  queueBatch,
   pullFromTurso,
-  waitForFlush
+  waitForFlush,
+  // для тестов: состояние очереди без сети
+  _queueLength: () => queue.length,
+  _isFlushing: () => isFlushing
 };

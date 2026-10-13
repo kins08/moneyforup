@@ -232,6 +232,12 @@ const stmts = {
 stmts.upsertPromo.run('MONEYUP', 500, 100, Date.now());
 stmts.upsertPromo.run('START', 250, 50, Date.now());
 stmts.upsertPromo.run('SKUF', 300, 30, Date.now());
+for (const [c, t, m] of [['MONEYUP', 500, 100], ['START', 250, 50], ['SKUF', 300, 30]]) {
+  turso.queueQuery(
+    'INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(code) DO UPDATE SET tokens=excluded.tokens, max_uses=excluded.max_uses',
+    [c, t, m, Date.now()]
+  );
+}
 
 function getUser(id) {
   const row = stmts.getUser.get(id);
@@ -341,7 +347,7 @@ function saveUser(u) {
       INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
-        name=excluded.name, username=excluded.username, tokens=excluded.tokens, staked=excluded.staked
+        name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
       u.id, u.numId || 0, u.name || '', u.username || '', Math.floor(u.tokens || 50),
       u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
@@ -368,7 +374,8 @@ function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = ''
     }
 
     db.prepare('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
-    stmts.insertLedger.run(
+    const ledAt = Date.now();
+    const ledRes = stmts.insertLedger.run(
       userId,
       deltaTokens,
       type,
@@ -376,16 +383,18 @@ function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = ''
       String(referenceId),
       balanceBefore,
       balanceAfter,
-      Date.now()
+      ledAt
     );
 
     db.exec('COMMIT');
-    const now = Date.now();
-    turso.queueQuery('UPDATE users SET tokens = ? WHERE id = ?', [balanceAfter, userId]);
-    turso.queueQuery(
-      'INSERT INTO transactions_ledger (user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, deltaTokens, type, reason, String(referenceId), balanceBefore, balanceAfter, now]
-    );
+    // В Turso — одной группой и с ЛОКАЛЬНЫМ id записи: повторная отправка и
+    // обратный pull не плодят дубли ledger (раньше Turso присваивал свой id,
+    // и INSERT OR IGNORE при pull не узнавал собственные записи).
+    turso.queueBatch([
+      { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balanceAfter, userId] },
+      { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [Number(ledRes.lastInsertRowid), userId, deltaTokens, type, reason, String(referenceId), balanceBefore, balanceAfter, ledAt] }
+    ]);
     return { ok: true, balanceBefore, balanceAfter };
   } catch (err) {
     db.exec('ROLLBACK');
@@ -428,7 +437,8 @@ function atomicApplyPromo(userId, code) {
     const balAfter = balBefore + promo.tokens;
 
     db.prepare('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
-    stmts.insertLedger.run(
+    const pNow = Date.now();
+    const ledRes = stmts.insertLedger.run(
       userId,
       promo.tokens,
       'promo',
@@ -436,17 +446,16 @@ function atomicApplyPromo(userId, code) {
       normCode,
       balBefore,
       balAfter,
-      Date.now()
+      pNow
     );
 
     db.exec('COMMIT');
-    const pNow = Date.now();
-    turso.queueQuery('INSERT OR IGNORE INTO promo_activations (promo_code, user_id, activated_at) VALUES (?, ?, ?)', [normCode, userId, pNow]);
-    turso.queueQuery('UPDATE users SET tokens = ? WHERE id = ?', [balAfter, userId]);
-    turso.queueQuery(
-      'INSERT INTO transactions_ledger (user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, promo.tokens, 'promo', `Промокод ${normCode}`, normCode, balBefore, balAfter, pNow]
-    );
+    turso.queueBatch([
+      { sql: 'INSERT OR IGNORE INTO promo_activations (promo_code, user_id, activated_at) VALUES (?, ?, ?)', args: [normCode, userId, pNow] },
+      { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balAfter, userId] },
+      { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [Number(ledRes.lastInsertRowid), userId, promo.tokens, 'promo', `Промокод ${normCode}`, normCode, balBefore, balAfter, pNow] }
+    ]);
     return {
       ok: true,
       tokens: promo.tokens,
@@ -561,7 +570,7 @@ module.exports = {
     );
     const newId = Number(res.lastInsertRowid);
     turso.queueQuery(`
-      INSERT INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
+      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
     `, [
       newId, r.userId, String(r.itemCode), String(r.name || ''), String(r.icon || ''),
@@ -594,6 +603,14 @@ module.exports = {
   userRoundsSince: (userId, sinceMs) => {
     const r = stmts.userRoundsSince.get(userId, sinceMs);
     return r || { count: 0, wagered: 0, won: 0 };
+  },
+  upsertPromo: (code, tokens, maxUses) => {
+    const r = stmts.upsertPromo.run(String(code).toUpperCase(), Math.floor(tokens || 0), Math.floor(maxUses || 0), Date.now());
+    turso.queueQuery(
+      'INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(code) DO UPDATE SET tokens=excluded.tokens, max_uses=excluded.max_uses',
+      [String(code).toUpperCase(), Math.floor(tokens || 0), Math.floor(maxUses || 0), Date.now()]
+    );
+    return r;
   },
   pullFromTurso: () => turso.pullFromTurso(db),
   waitForTurso: (timeoutMs) => turso.waitForFlush(timeoutMs),

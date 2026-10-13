@@ -893,8 +893,18 @@ function tgHaptic(kind){
   }catch(e){}
 }
 async function tgCall(path,body){
-  const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(Object.assign({initData:TG.initData},body||{}))});
+  // Тайм-аут обязателен: зависший/спящий бэкенд иначе держит вызывающий код
+  // (и подписи вида "Загрузка реквизитов...") вечно.
+  const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  const timer=ctl?setTimeout(()=>{try{ctl.abort()}catch(e){}},12000):null;
+  let r;
+  try{
+    r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl?ctl.signal:undefined,
+      body:JSON.stringify(Object.assign({initData:TG.initData},body||{}))});
+  }catch(e){
+    if(ctl&&e&&e.name==='AbortError')throw new Error('Сервер не отвечает (тайм-аут 12 сек)');
+    throw e;
+  }finally{if(timer)clearTimeout(timer);}
   const data=await r.json().catch(()=>({}));
   if(!r.ok){
     const err=new Error((data&&data.error)||('Ошибка '+r.status));
@@ -1578,6 +1588,7 @@ function screen(id){
   if(id==='challenge'){
     cleanup=gameChallenge('#challengeArea');
   }
+  if(id==='profile'&&typeof tgLoadRequisites==='function')tgLoadRequisites();
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
@@ -1593,35 +1604,52 @@ const SBP_DATA = {
 let curBank = 'tinkoff';
 window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
 
-async function tgLoadRequisites(){
-  if(!IS_TG||!API_BASE)return;
-  try{
-    const res = await tgCall('/api/requisites',{});
-    if(res && res.ok){
-      if(res.cards){
-        if(res.cards.tinkoff){
-          SBP_DATA.tinkoff.clean=res.cards.tinkoff.replace(/\s+/g,'');
-          SBP_DATA.tinkoff.val=res.cards.tinkoff;
+/* Реквизиты: раньше они грузились ТОЛЬКО из tgLoadBalance() после игрового
+   раунда — игрок, сразу открывший Пополнение, навсегда видел
+   "Загрузка реквизитов...". Теперь: загрузка на старте и при открытии
+   профиля, состояние ошибки/пустых реквизитов вместо вечного плейсхолдера,
+   повтор по клику и при выборе банка. */
+let reqState='idle';           // idle | loading | ok | error | unavailable
+let reqLoadedAt=0;
+let reqInflight=null;
+function renderBankTarget(){
+  const d=SBP_DATA[curBank];if(!d)return;
+  const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
+  if(lbl)lbl.textContent=d.label;
+  if(!val)return;
+  if(d.clean){val.textContent=d.val;return;}
+  if(reqState==='loading'||reqState==='idle')val.textContent='Загрузка реквизитов...';
+  else if(reqState==='error')val.textContent='Не удалось загрузить. Нажмите, чтобы повторить';
+  else if(reqState==='unavailable')val.textContent='Откройте игру из Telegram, чтобы увидеть реквизиты';
+  else val.textContent='Реквизиты для этого банка не настроены. Выберите другой способ или напишите администратору';
+}
+async function tgLoadRequisites(force){
+  if(!IS_TG||!API_BASE){reqState='unavailable';renderBankTarget();return;}
+  if(reqInflight)return reqInflight;
+  if(!force&&reqState==='ok'&&Date.now()-reqLoadedAt<60000){renderBankTarget();return;}
+  reqState='loading';renderBankTarget();
+  reqInflight=(async()=>{
+    let lastErr=null;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        const res=await tgCall('/api/requisites',{});
+        if(!res||!res.ok)throw new Error((res&&res.error)||'requisites not ok');
+        if(res.cards){
+          if(res.cards.tinkoff){SBP_DATA.tinkoff.clean=String(res.cards.tinkoff).replace(/\s+/g,'');SBP_DATA.tinkoff.val=String(res.cards.tinkoff);}
+          if(res.cards.sber){SBP_DATA.sber.clean=String(res.cards.sber).replace(/\s+/g,'');SBP_DATA.sber.val=String(res.cards.sber);}
+          if(res.cards.ozon){SBP_DATA.ozon.clean=String(res.cards.ozon).replace(/\s+/g,'');SBP_DATA.ozon.val=String(res.cards.ozon);}
         }
-        if(res.cards.sber){
-          SBP_DATA.sber.clean=res.cards.sber.replace(/\s+/g,'');
-          SBP_DATA.sber.val=res.cards.sber;
+        if(res.sbp&&res.sbp.phone){
+          SBP_DATA.sbp.clean=String(res.sbp.phone).replace(/[\s\-\(\)]/g,'');
+          SBP_DATA.sbp.val=String(res.sbp.phone)+(res.sbp.holder?(' ('+res.sbp.holder+')'):'');
         }
-        if(res.cards.ozon){
-          SBP_DATA.ozon.clean=res.cards.ozon.replace(/\s+/g,'');
-          SBP_DATA.ozon.val=res.cards.ozon;
-        }
-      }
-      if(res.sbp && res.sbp.phone){
-        SBP_DATA.sbp.clean=res.sbp.phone.replace(/[\s\-\(\)]/g,'');
-        SBP_DATA.sbp.val=res.sbp.phone + (res.sbp.holder ? ` (${res.sbp.holder})` : '');
-      }
-      const d=SBP_DATA[curBank];
-      const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
-      if(lbl&&d)lbl.textContent=d.label;
-      if(val&&d)val.textContent=d.val;
+        reqState='ok';reqLoadedAt=Date.now();renderBankTarget();return;
+      }catch(e){lastErr=e;if(attempt<2)await sleep(1500*(attempt+1));}
     }
-  }catch(_){}
+    reqState='error';renderBankTarget();
+    try{console.warn('requisites load failed:',lastErr&&lastErr.message)}catch(_){}
+  })();
+  try{await reqInflight;}finally{reqInflight=null;}
 }
 
 const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','','','','Промокод','Криптовалюта (Coinso)']};
@@ -1666,11 +1694,15 @@ if(sbpBanksEl){
     const b=e.target.closest('[data-bank]');if(!b)return;
     curBank=b.dataset.bank;
     qa('#sbpBanks .chip').forEach(c=>c.classList.toggle('on',c===b));
+    renderBankTarget();
     const d=SBP_DATA[curBank];
-    const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
-    if(lbl)lbl.textContent=d.label;
-    if(val)val.textContent=d.val;
+    if(d&&!d.clean&&reqState!=='loading')tgLoadRequisites(reqState==='error');
   });
+}
+const sbpValEl=q('#sbpTargetVal');
+if(sbpValEl){
+  sbpValEl.style.cursor='pointer';
+  sbpValEl.addEventListener('click',()=>{if(reqState==='error'||reqState==='idle')tgLoadRequisites(true);});
 }
 const sbpCopyEl=q('#sbpCopyBtn');
 if(sbpCopyEl){
@@ -6592,7 +6624,7 @@ window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для стары
 
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
 const startHash = (window.location.hash || '').replace('#', '');
-tgInit();tgRegister();syncUI();
+tgInit();tgRegister();tgLoadBalance();syncUI();   // баланс+реквизиты+инвентарь сразу, а не после первого раунда
 initLiveTicker();
 updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);
