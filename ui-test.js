@@ -2,7 +2,7 @@
    Запуск:  npm i jsdom  &&  NODE_PATH=./node_modules node ui-test.js            */
 const fs = require('fs');
 const path = require('path');
-const HTML = process.env.MONEYFORUP || process.env.MATHPLAY || path.join(__dirname, '..', 'moneyforup.html');
+const HTML = process.env.MONEYFORUP || process.env.MATHPLAY || (fs.existsSync(path.join(__dirname, 'index.html')) ? path.join(__dirname, 'index.html') : path.join(__dirname, '..', 'moneyforup.html'));
 
 const { JSDOM, VirtualConsole } = require('jsdom');
 const errors = [];

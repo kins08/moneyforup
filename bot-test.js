@@ -3,6 +3,7 @@
 
    Запуск:  cd tests && node bot-test.js                     */
 const http = require('http');
+const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -79,7 +80,10 @@ const balance = async who => (await call('/api/balance', { initData: who.data })
 let bot;
 (async () => {
   await new Promise(r => mock.listen(MOCK_PORT, '127.0.0.1', r));
-  bot = spawn(process.execPath, [path.join(__dirname, '..', 'bot', 'bot.js')], {
+  const botFile = fs.existsSync(path.join(__dirname, 'bot.js'))
+    ? path.join(__dirname, 'bot.js')
+    : path.join(__dirname, '..', 'bot', 'bot.js');
+  bot = spawn(process.execPath, [botFile], {
     env: { ...process.env,
       BOT_TOKEN, API_PORT: String(API_PORT), BOT_DRY_RUN: '1', APP_URL: 'https://app.test/moneyforup-tg.html',
       PUBLIC_URL: `http://127.0.0.1:${API_PORT}`,

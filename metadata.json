@@ -1,0 +1,8 @@
+{
+  "name": "MoneyForUp",
+  "description": "MoneyForUp — игровая платформа и Mini App с симуляторами (Ракетка, Dice, Кейсы, Аукцион, Спин), стейкингом и реферальной системой.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
