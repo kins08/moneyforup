@@ -54,6 +54,18 @@ function isAdmin(u) {
 }
 
 const escHtml = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+/* Сравнение секретов за константное время (P1/P3): обычный !== завершается
+   на первом несовпавшем символе и позволяет подбирать секрет по времени ответа. */
+function safeEqualStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false;
+  const A = Buffer.from(a), B = Buffer.from(b);
+  if (A.length !== B.length) return false;
+  return crypto.timingSafeEqual(A, B);
+}
+function clientIp(req) {
+  const fwd = String((req.headers && req.headers['x-forwarded-for']) || '').split(',')[0].trim();
+  return fwd || (req.socket && req.socket.remoteAddress) || 'unknown';
+}
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
@@ -648,7 +660,7 @@ const plategaHeaders = () => ({
 
 async function plategaCreate(u, rub, tokens, name) {
   if (!plategaOn()) throw new Error('Platega не настроена: добавьте PLATEGA_MERCHANT_ID и PLATEGA_SECRET');
-  const orderId = 'PL' + Date.now().toString(36) + '-' + crypto.randomBytes(6).toString('hex');
+  const orderId = 'PL' + crypto.randomBytes(16).toString('hex');
   const res = await fetch(`${PLATEGA_API}/transaction/process`, {
     method: 'POST',
     headers: plategaHeaders(),
@@ -681,11 +693,17 @@ async function plategaCredit(txId, orderIdFromHook) {
   const order = orderId ? orders.get(String(orderId)) : null;
   if (!order) return { paid: true, credited: false, error: 'заказ не найден', tokens: 0 };
   if (order.status === 'paid') return { paid: true, already: true, tokens: order.tokens };
+  // Claim ДО первого await: проверка и пометка идут синхронно, поэтому
+  // параллельный вебхук + опрос статуса не зачислят депозит дважды (P2-4).
+  if (order._crediting) return { paid: true, credited: false, inProgress: true, tokens: order.tokens };
+  order._crediting = true;
   const r = await creditDeposit(order.userId, order.tokens, 'Platega');
   if (!r.credited) {
-    // Зачисление не прошло — НЕ помечаем заказ оплаченным, чтобы вебхук повторился
+    // Зачисление не прошло — снимаем claim и НЕ помечаем заказ оплаченным, чтобы вебхук повторился
+    order._crediting = false;
     return { paid: true, credited: false, retry: true, error: r.refErr, tokens: order.tokens };
   }
+  order._crediting = false;
   order.status = 'paid';
   if (local) local.status = 'paid';
   await notifyPaid(order.userId, order.tokens, r.refPaid, 'Platega');
@@ -700,7 +718,7 @@ const coinsoOn = () => !!(COINSO_PROJECT_ID && COINSO_SECRET_KEY);
 
 async function createCoinsoInvoice(userId, tokens, rub) {
   if (!coinsoOn()) throw new Error('Coinso не настроен (проверьте COINSO_PROJECT_ID и COINSO_SECRET_KEY)');
-  const orderId = 'MF_COIN_' + Date.now().toString(36) + '_' + crypto.randomBytes(6).toString('hex');
+  const orderId = 'MF_COIN_' + crypto.randomBytes(16).toString('hex');
   const res = await fetch(`${COINSO_API}/payment/create`, {
     method: 'POST',
     headers: {
@@ -731,21 +749,34 @@ async function createCoinsoInvoice(userId, tokens, rub) {
   };
 }
 
+/* Зачисление Coinso ровно один раз: claim (credited=true) выставляется
+   синхронно ДО await, поэтому вебхук и опрос статуса параллельно не проведут
+   депозит дважды. При сбое claim откатывается — провайдер повторит вебхук. */
+async function coinsoCredit(saved, key) {
+  if (!saved) return { paid: true, credited: false };
+  if (saved.credited) return { paid: true, already: true, tokens: saved.tokens };
+  saved.credited = true;                       // claim — до первого await
+  const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+  if (!r.credited) { saved.credited = false; return { paid: true, credited: false, retry: true, error: r.refErr, tokens: saved.tokens }; }
+  await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
+  const k = key || [...coinsoOrders.entries()].find(([, v]) => v === saved)?.[0];
+  if (k) coinsoOrders.delete(k);
+  return { paid: true, credited: true, tokens: saved.tokens, refPaid: r.refPaid };
+}
+function findCoinsoOrder(orderId, invoiceId) {
+  if (orderId && coinsoOrders.has(orderId)) return [orderId, coinsoOrders.get(orderId)];
+  for (const [k, v] of coinsoOrders.entries()) if (v.invoice_id === invoiceId) return [k, v];
+  return [null, null];
+}
+
 async function checkCoinsoInvoice(invoiceId, orderId) {
   if (!invoiceId) return { paid: false };
   try {
     const res = await fetch(`${COINSO_API}/payment/status?uuid=${encodeURIComponent(invoiceId)}`);
     const data = await res.json();
     if (data && (data.status === 'paid' || (data.data && data.data.status === 'paid'))) {
-      const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === invoiceId);
-      if (saved && !saved.credited) {
-        const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
-        if (!r.credited) return { paid: true, credited: false, error: r.refErr };
-        saved.credited = true;
-        await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
-        coinsoOrders.delete(orderId);
-        return { paid: true, credited: true, tokens: saved.tokens, refPaid: r.refPaid };
-      }
+      const [key, saved] = findCoinsoOrder(orderId, invoiceId);
+      if (saved) return await coinsoCredit(saved, key);
       return { paid: true };
     }
     return { paid: false, status: data.status || (data.data && data.data.status) };
@@ -857,7 +888,7 @@ bot.command('promo', async ctx => {
     return ctx.reply('⚠️ ' + res.error);
   }
   await ctx.reply(
-    `🎉 <b>Промокод «${res.code}» успешно активирован!</b>\n\n` +
+    `🎉 <b>Промокод «${escHtml(res.code)}» успешно активирован!</b>\n\n` +
     `├ Зачислено: <b>+${res.tokens} ⬦</b> (~${(res.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n` +
     `├ Ваш текущий баланс: <b>${res.newBalance} ⬦</b>\n` +
     `└ Осталось активаций этого промокода: <b>${res.remainingUses} из ${res.maxUses}</b>`,
@@ -884,7 +915,7 @@ bot.command('addpromo', async ctx => {
     const promo = addPromoCode(code, tokens, maxUses);
     await ctx.reply(
       `✅ <b>Промокод создан!</b>\n\n` +
-      `├ Код: <code>${promo.code}</code>\n` +
+      `├ Код: <code>${escHtml(promo.code)}</code>\n` +
       `├ Награда: <b>${promo.tokens} ⬦</b> (~${(promo.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n` +
       `├ Лимит активаций: <b>${promo.maxUses}</b> человек\n` +
       `└ Активировано сейчас: <b>${promo.usedBy.size}</b>`,
@@ -901,7 +932,7 @@ bot.command(['promos', 'promocodes'], async ctx => {
   let text = '🎟 <b>Список активных промокодов:</b>\n\n';
   for (const [code, p] of promoCodes.entries()) {
     const left = p.maxUses - p.usedBy.size;
-    text += `• <code>${code}</code>: <b>+${p.tokens} ⬦</b> | Использовано: <b>${p.usedBy.size}/${p.maxUses}</b> (осталось: ${left})\n`;
+    text += `• <code>${escHtml(code)}</code>: <b>+${p.tokens} ⬦</b> | Использовано: <b>${p.usedBy.size}/${p.maxUses}</b> (осталось: ${left})\n`;
   }
   text += '\n<i>Удалить: /delpromo КОД</i>';
   await ctx.reply(text, { parse_mode: 'HTML' });
@@ -941,7 +972,7 @@ bot.command('coinso', async ctx => {
 bot.command('sbp', async ctx => {
   if (!ADMIN_ID) return ctx.reply('Оплата по СБП не настроена (нет ADMIN_ID).');
   const rub = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
-  const id = 'SBP_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+  const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
   const tokens = rub * TOKENS_PER_RUB;
   const newOrder = { id, userId: ctx.from.id, tokens, rub, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
   setOrder(id, newOrder);
@@ -1033,12 +1064,14 @@ async function processOrderAction(orderId, action) {
     // Заявка на пополнение
     const u = user(order.userId);
     if (action === 'ok' || action === 'approve') {
-      // Сначала зачисляем, и только при успехе помечаем заявку оплаченной
+      // Claim ДО await: повторный клик/параллельный вызов видит status='paid'
+      // и не зачислит второй раз. При сбое зачисления возвращаем 'pending'.
+      order.status = 'paid';
       const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
       if (!r.credited) {
+        order.status = 'pending';
         return { ok: false, error: 'Не удалось зачислить баланс — заявка оставлена в ожидании: ' + (r.refErr || '') };
       }
-      order.status = 'paid';
       order.completedAt = Date.now();
       try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
       u.notifications = u.notifications || [];
@@ -1270,7 +1303,7 @@ bot.command('boost', async ctx => {
 
   const text =
     `⚡ <b>MUP BOOST CENTER — 3 режима ускорения токенов!</b>\n\n` +
-    `Привет, <b>${ctx.from.first_name || 'Игрок'}</b>! Активируй бонусы и забирай дополнительный профит:\n\n` +
+    `Привет, <b>${escHtml(ctx.from.first_name || 'Игрок')}</b>! Активируй бонусы и забирай дополнительный профит:\n\n` +
     `🎯 <b>Вариант 7: «Челлендж за 24 часа» (Daily Challenge)</b>\n` +
     `• 3 ежедневных задания с возрастающей наградой до <b>+150 ⬦</b>\n` +
     `• Удерживай серию дней (Стрик 1..7 🔥)\n` +
@@ -1424,8 +1457,9 @@ const server = http.createServer(async (req, res) => {
 
     /* вебхук Platega: приходит с заголовками X-MerchantId и X-Secret */
     if (url.pathname === '/platega-webhook' && req.method === 'POST') {
+      if (!checkRateLimit(`wh:platega:${clientIp(req)}`, 120, 60000)) return send(429, { error: 'too many requests' });
       const mid = String(req.headers['x-merchantid'] || ''), sec = String(req.headers['x-secret'] || '');
-      if (!plategaOn() || mid !== PLATEGA_MERCHANT_ID || sec !== PLATEGA_SECRET) return send(403, { error: 'bad credentials' });
+      if (!plategaOn() || !safeEqualStr(mid, PLATEGA_MERCHANT_ID) || !safeEqualStr(sec, PLATEGA_SECRET)) return send(403, { error: 'bad credentials' });
       const status = String(body.status || '').toUpperCase();
       if (status === 'CONFIRMED') {
         const res = await plategaCredit(body.id, body.payload);
@@ -1443,35 +1477,32 @@ const server = http.createServer(async (req, res) => {
 
     /* вебхук Coinso (CryptoProc): X-Signature = HMAC-SHA256(raw, COINSO_SECRET_KEY) */
     if (url.pathname === '/coinso-webhook' && req.method === 'POST') {
-      if (COINSO_SECRET_KEY) {
-        const sig = req.headers['x-signature'];
-        if (!sig) {
-          console.warn('[Coinso Webhook] Отсутствует обязательный заголовок X-Signature');
-          return send(403, { error: 'missing signature header' });
-        }
-        const calcSig = crypto.createHmac('sha256', COINSO_SECRET_KEY).update(raw).digest('hex');
-        if (sig.length !== calcSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(calcSig))) {
-          console.warn('[Coinso Webhook] Неверная подпись X-Signature');
-          return send(403, { error: 'bad signature' });
-        }
+      if (!checkRateLimit(`wh:coinso:${clientIp(req)}`, 120, 60000)) return send(429, { error: 'too many requests' });
+      // Подпись обязательна: без секрета вебхук не работает вообще, а не «без проверки»
+      if (!COINSO_SECRET_KEY) return send(503, { error: 'Coinso не настроен' });
+      const sig = req.headers['x-signature'];
+      if (!sig) {
+        console.warn('[Coinso Webhook] Отсутствует обязательный заголовок X-Signature');
+        return send(403, { error: 'missing signature header' });
+      }
+      const calcSig = crypto.createHmac('sha256', COINSO_SECRET_KEY).update(raw).digest('hex');
+      if (!safeEqualStr(String(sig), calcSig)) {
+        console.warn('[Coinso Webhook] Неверная подпись X-Signature');
+        return send(403, { error: 'bad signature' });
       }
       const upd = body;
       const orderId = String(upd.custom || '');
       const status = String(upd.event || upd.status || '');
       if (status === 'payment.success' || status === 'paid') {
-        const saved = (orderId && coinsoOrders.get(orderId)) || [...coinsoOrders.values()].find(v => v.invoice_id === upd.invoice_id);
-        if (saved && !saved.credited) {
-          const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
-          if (!r.credited) {
-            // Флаг НЕ выставляем: пусть Coinso повторит вебхук и зачисление пройдёт
+        const [key, saved] = findCoinsoOrder(orderId, upd.invoice_id);
+        if (saved) {
+          const r = await coinsoCredit(saved, key);
+          if (r.retry) {
             console.error('[Coinso Webhook] Зачисление не удалось, ожидаем повтор вебхука');
             return send(500, { error: 'credit failed, retry' });
           }
-          saved.credited = true;
-          await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
-          coinsoOrders.delete(orderId);
-          console.log(`[Coinso Webhook] Успешное зачисление: +${saved.tokens} токенов пользователю ${saved.userId}`);
-          return send(200, { ok: true, credited: true });
+          if (r.credited) console.log(`[Coinso Webhook] Успешное зачисление: +${saved.tokens} токенов пользователю ${saved.userId}`);
+          return send(200, { ok: true, ...r });
         }
       }
       return send(200, { ok: true });
@@ -1479,10 +1510,11 @@ const server = http.createServer(async (req, res) => {
 
     /* Вебхук автоматизации смс-уведомлений с телефона (iOS Быстрые команды / Android MacroDroid) */
     if (url.pathname === '/api/payment-webhook' && req.method === 'POST') {
+      if (!checkRateLimit(`wh:payment:${clientIp(req)}`, 10, 60000)) return send(429, { error: 'too many requests' });
       const authHeader = req.headers['authorization'] || '';
       const secret = body.secret || authHeader.replace(/^Bearer\s+/i, '');
       const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET;
-      if (!EXPECTED_SECRET || secret !== EXPECTED_SECRET) {
+      if (!EXPECTED_SECRET || !safeEqualStr(String(secret || ''), EXPECTED_SECRET)) {
         return send(403, { error: 'unauthorized: invalid webhook secret' });
       }
 
@@ -1519,12 +1551,13 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (foundOrder) {
-        // Сначала зачисляем; при сбое возвращаем 500, чтобы автоматика повторила запрос
+        // Claim ДО await: параллельное СМС-уведомление на ту же сумму не зачислит второй раз
+        foundOrder.status = 'paid';
         const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
         if (!r.credited) {
+          foundOrder.status = 'pending';
           return send(500, { error: 'credit failed, retry', amount: amountRub });
         }
-        foundOrder.status = 'paid';
         try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
         await bot.api.sendMessage(foundOrder.userId,
           `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${foundOrder.tokens} ⬦</b> (${foundOrder.rub} ₽)!\nПриятной игры в MoneyForUp!`,
@@ -1644,6 +1677,7 @@ const server = http.createServer(async (req, res) => {
        Начисление ровно один раз: предмет помечается проданным в той же
        транзакции, что защищает от двух одновременных продаж. */
     if (url.pathname === '/api/inventory/sell' && req.method === 'POST') {
+      if (!checkRateLimit(`inv-sell:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком много продаж. Подождите минуту.' });
       const id = Math.floor(Number(body.itemId ?? body.id) || 0);
       if (!id) return send(400, { error: 'Не указан предмет' });
       const it = db.getInventoryItem(id);
@@ -1668,6 +1702,7 @@ const server = http.createServer(async (req, res) => {
     /* ── Инвентарь: продать всё ─────────────────────────────────────────────
        Одно начисление на всю пачку (одна запись в ledger). */
     if (url.pathname === '/api/inventory/sell-all' && req.method === 'POST') {
+      if (!checkRateLimit(`inv-sell:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком много продаж. Подождите минуту.' });
       const list = db.listInventory(u.id);
       if (!list.length) return send(400, { error: 'Инвентарь пуст' });
       let total = 0;
@@ -1766,17 +1801,22 @@ const server = http.createServer(async (req, res) => {
         return send(429, { error: `Повторная проверка доступна через ${secLeft} сек.`, cooldown: secLeft });
       }
       u.channelCheckAt = now;
+      // Claim ДО await проверки подписки: параллельный запрос не начислит бонус второй раз.
+      // При неподписке/ошибке claim откатывается ниже, повторная попытка останется доступной.
+      u.easycashClaimed = true;
 
       try {
         const member = await bot.api.getChatMember('@moneyforup', u.id);
         const isSub = ['creator', 'administrator', 'member', 'restricted'].includes(member.status);
         if (!isSub) {
+          u.easycashClaimed = false;
           return send(400, {
             error: 'Вы не подписаны на канал @moneyforup. Подпишитесь и нажмите кнопку снова.',
             cooldown: 30
           });
         }
       } catch (e) {
+        u.easycashClaimed = false;
         console.error('Ошибка проверки подписки на @moneyforup:', e.message);
         return send(400, {
           error: 'Бот не может проверить подписку: добавьте бота администратором в канал @moneyforup.',
@@ -1785,14 +1825,14 @@ const server = http.createServer(async (req, res) => {
       }
 
       const r = applyBalance(u, 50, 'bonus_channel', 'Подписка на канал @moneyforup');
-      if (!r.ok) return send(500, { error: 'Не удалось начислить бонус, попробуйте позже' });
-      u.easycashClaimed = true;
+      if (!r.ok) { u.easycashClaimed = false; return send(500, { error: 'Не удалось начислить бонус, попробуйте позже' }); }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (channel):', e.message); }
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
 
     /* Еженедельный кэшбэк 5 % от последнего пополнения */
     if (url.pathname === '/api/claim-cashback' && req.method === 'POST') {
+      if (!checkRateLimit(`claim-cashback:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много запросов кэшбэка. Подождите минуту.' });
       if (!u.lastDeposit || u.lastDeposit <= 0) {
         return send(400, { error: 'У вас ещё не было пополнений для начисления кэшбэка' });
       }
@@ -1872,7 +1912,7 @@ const server = http.createServer(async (req, res) => {
       // Списание ровно один раз; при сбое записи заявку НЕ создаём
       const wr = applyBalance(u, -neededTokens, 'withdraw', `Заявка на вывод ${rub} ₽ на ${details}`);
       if (!wr.ok) return send(500, { error: 'Не удалось списать баланс, попробуйте позже' });
-      const orderId = 'WD' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(4).toString('hex').toUpperCase();
+      const orderId = 'WD' + crypto.randomBytes(16).toString('hex').toUpperCase();
       const wdOrder = {
         id: orderId,
         type: 'withdraw',
@@ -1916,14 +1956,17 @@ const server = http.createServer(async (req, res) => {
 
     /* стейкинг */
     if (url.pathname === '/api/stake' && req.method === 'POST') {
+      if (!checkRateLimit(`stake:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком много операций стейкинга. Подождите минуту.' });
       const r = stakeAdd(u, body.tokens);
       return send(r.error ? 400 : 200, { ...r, staked: u.staked, accrued: stakeAccrued(u), tokens: u.tokens });
     }
     if (url.pathname === '/api/claim' && req.method === 'POST') {
+      if (!checkRateLimit(`stake:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком много операций стейкинга. Подождите минуту.' });
       const r = stakeClaim(u);
       return send(r.error ? 400 : 200, { ...r, staked: u.staked, accrued: stakeAccrued(u) });
     }
     if (url.pathname === '/api/unstake' && req.method === 'POST') {
+      if (!checkRateLimit(`stake:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком много операций стейкинга. Подождите минуту.' });
       const r = stakeRemove(u, body.all !== false);
       return send(r.error ? 400 : 200, { ...r, accrued: stakeAccrued(u) });
     }
@@ -1946,6 +1989,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
     if (url.pathname === '/api/claim-hotdrop' && req.method === 'POST') {
+      if (!checkRateLimit(`claim-hotdrop:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много запросов Hot Drop. Подождите минуту.' });
       const now = Date.now();
       const ONE_HOUR = 3600000;
       u.lastHotDrop = u.lastHotDrop || 0;
@@ -1964,6 +2008,7 @@ const server = http.createServer(async (req, res) => {
 
     /* оплата: требуется принятое соглашение */
     if (url.pathname === '/api/invoice' && req.method === 'POST') {
+      if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       const tokens = Math.max(10, Math.floor(Number(body.tokens) || 0));
       const link = await starsInvoiceLink(u.id, tokens);
@@ -1988,6 +2033,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
     if (url.pathname === '/api/platega-invoice' && req.method === 'POST') {
+      if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!plategaOn()) return send(503, { error: 'Platega не настроена' });
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
@@ -2000,6 +2046,7 @@ const server = http.createServer(async (req, res) => {
       }
     }
     if (url.pathname === '/api/check-platega' && req.method === 'POST') {
+      if (!checkRateLimit(`check-pay:${u.id}`, 90, 60000)) return send(429, { error: 'Слишком много проверок оплаты. Подождите минуту.' });
       const tx = String(body.invoice_id || '');
       let r = { paid: false };
       try {
@@ -2010,6 +2057,7 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ...r, balance: u.tokens, staked: u.staked, tokens: r.tokens || u.tokens });
     }
     if (url.pathname === '/api/coinso-invoice' && req.method === 'POST') {
+      if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
@@ -2022,6 +2070,7 @@ const server = http.createServer(async (req, res) => {
       }
     }
     if (url.pathname === '/api/check-coinso' && req.method === 'POST') {
+      if (!checkRateLimit(`check-pay:${u.id}`, 90, 60000)) return send(429, { error: 'Слишком много проверок оплаты. Подождите минуту.' });
       const r = await checkCoinsoInvoice(body.invoice_id, body.order_id);
       return send(200, { ...r, balance: u.tokens, staked: u.staked });
     }
@@ -2031,7 +2080,7 @@ const server = http.createServer(async (req, res) => {
         return send(429, { error: 'Слишком много заявок на пополнение. Подождите минуту.' });
       }
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const id = 'SBP_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+      const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
       const tokens = rub * TOKENS_PER_RUB;
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();

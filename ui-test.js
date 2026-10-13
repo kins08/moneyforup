@@ -1,8 +1,8 @@
 /* Автотест MoneyForUp: гоняет игру в jsdom, кликает по всем экранам и проверяет логику, цвета и вёрстку.
-   Запуск:  npm i jsdom  &&  NODE_PATH=./node_modules node ui-test.js            */
+   Запуск:  node ui-test.js  (jsdom в devDependencies: npm i)            */
 const fs = require('fs');
 const path = require('path');
-const HTML = process.env.MONEYFORUP || process.env.MATHPLAY || path.join(__dirname, '..', 'moneyforup.html');
+const HTML = process.env.MONEYFORUP || process.env.MATHPLAY || path.join(__dirname, 'index.html');
 
 const { JSDOM, VirtualConsole } = require('jsdom');
 const errors = [];

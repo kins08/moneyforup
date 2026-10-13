@@ -2,17 +2,24 @@
   "name": "moneyforup-bot",
   "version": "0.1.0",
   "private": true,
-  "description": "Telegram-бот + API для MoneyForUp Mini App: Platega, Heleket, Stars, CryptoBot, стейкинг и рефералы",
+  "description": "Telegram-бот + API для MoneyForUp Mini App: Platega, Coinso, Stars, стейкинг и рефералы",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
     "deploy": "wrangler deploy",
-    "preview": "wrangler dev"
+    "preview": "wrangler dev",
+    "sync:frontend": "node tools/sync-frontend.js",
+    "check:frontend": "node tools/sync-frontend.js --check",
+    "test": "node bot-test.js",
+    "test:security": "node .agents/skills/security-audit/scripts/e2e-game-authority-test.js && node .agents/skills/security-audit/scripts/e2e-inventory-test.js && node .agents/skills/security-audit/scripts/e2e-exploit-test.js && node .agents/skills/security-audit/scripts/poc-db-double-write.js"
   },
   "engines": {
     "node": ">=22.13.0"
   },
   "dependencies": {
     "grammy": "^1.30.0"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.2"
   }
 }

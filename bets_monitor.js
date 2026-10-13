@@ -8,6 +8,10 @@ const path = require('path');
 
 const STATS_FILE = path.join(__dirname, 'bets_stats.json');
 const TOKENS_PER_RUB = 10;
+/* Отчёты уходят админу с parse_mode:'HTML': имена игроков, названия игр и
+   детали античита задаёт клиент, поэтому без экранирования это HTML-инъекция
+   в админский чат (поддельная заявка, кликабельная ссылка от имени бота). */
+const escHtml = v => String(v ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 let store = {
   updatedAt: Date.now(),
@@ -344,7 +348,7 @@ function getPlayerDossier(userId, serverUserObj) {
   }
 
   const flags = (p && p.suspiciousFlags && p.suspiciousFlags.length)
-    ? `🚨 <b>Флаги античита:</b> ${p.suspiciousFlags.join('; ')}\n`
+    ? `🚨 <b>Флаги античита:</b> ${escHtml(p.suspiciousFlags.join('; '))}\n`
     : '';
 
   const verdict = depRub <= 0
@@ -356,7 +360,7 @@ function getPlayerDossier(userId, serverUserObj) {
     `├ Статус: ${verdict}\n` +
     `├ Ставок: <b>${betsCount}</b> (побед: ${wonCount} / сливов: ${lostCount})\n` +
     `├ Профит в играх: <b>${Number(netPlayerRub) >= 0 ? '+' : ''}${netPlayerRub} ₽</b>\n` +
-    `├ Где поднял: <i>${topGamesStr}</i>\n` +
+    `├ Где поднял: <i>${escHtml(topGamesStr)}</i>\n` +
     flags
   );
 }
@@ -387,7 +391,7 @@ function formatTelegramReport(hours = 12) {
     for (const [gName, gData] of gamesEntries) {
       const gNetRub = (gData.netProject / TOKENS_PER_RUB).toFixed(1);
       const gIcon = gData.netProject >= 0 ? '🟢' : '🔴';
-      gameLines += `• <b>${gName}</b>: ${gData.count} ст. (RTP ${gData.rtpPct}%) | Итог: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
+      gameLines += `• <b>${escHtml(gName)}</b>: ${gData.count} ст. (RTP ${gData.rtpPct}%) | Итог: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
     }
   } else {
     gameLines = '\n🎮 <i>За выбранный период ставок ещё не было.</i>\n';
@@ -432,10 +436,10 @@ function formatGamesReport(hours = 0) {
     const maxRub = (g.maxWinTk / TOKENS_PER_RUB).toFixed(1);
     const icon = g.netProject >= 0 ? '🟢' : '🔴';
     out +=
-      `\n<b>${icon} ${gName}</b>\n` +
+      `\n<b>${icon} ${escHtml(gName)}</b>\n` +
       `├ Ставок: <b>${g.count}</b> (Побед: ${g.wonCount} / Сливов: ${g.lostCount} · WinRate: <b>${g.winRatePct}%</b>)\n` +
       `├ Оборот: <b>${wagRub} ₽</b> | Выплаты: <b>${payRub} ₽</b> (RTP: <b>${g.rtpPct}%</b>)\n` +
-      `├ Макс. занос игрока: <b>${maxRub} ₽</b> (${g.maxWinTk} ⬦ — ${g.maxWinUser || '—'})\n` +
+      `├ Макс. занос игрока: <b>${maxRub} ₽</b> (${g.maxWinTk} ⬦ — ${escHtml(g.maxWinUser || '—')})\n` +
       `└ Доход проекта: <b>${g.netProject >= 0 ? '+' : ''}${netRub} ₽</b> (${g.netProject >= 0 ? '+' : ''}${g.netProject} ⬦)\n`;
   }
   return out;
@@ -493,13 +497,13 @@ function formatPlayersReport(usersMap) {
           .map(([g, d]) => `${g} (${d.count}ст, ${d.netPlayerTk >= 0 ? '+' : ''}${Math.round(d.netPlayerTk / 10)}₽)`)
           .join(', ')
       : 'без ставок';
-    const warn = (p.suspiciousFlags && p.suspiciousFlags.length) ? `\n├ 🚨 <b>Флаг:</b> ${p.suspiciousFlags.slice(-2).join('; ')}` : '';
+    const warn = (p.suspiciousFlags && p.suspiciousFlags.length) ? `\n├ 🚨 <b>Флаг:</b> ${escHtml(p.suspiciousFlags.slice(-2).join('; '))}` : '';
 
     out +=
-      `\n👤 <b>${p.name}</b> (<code>${p.uid}</code>)\n` +
+      `\n👤 <b>${escHtml(p.name)}</b> (<code>${p.uid}</code>)\n` +
       `├ Баланс: <b>${p.currentBalanceTk} ⬦</b> (${balRub} ₽) | ${depBadge}\n` +
       `├ Ставок: <b>${p.betsCount}</b> (Вин: ${p.wonCount} / Слив: ${p.lostCount}) | Профит игрока: <b>${p.netPlayerTk >= 0 ? '+' : ''}${netRub} ₽</b>\n` +
-      `└ Игры: <i>${topGames}</i>${warn}\n`;
+      `└ Игры: <i>${escHtml(topGames)}</i>${warn}\n`;
   }
   return out;
 }
@@ -533,7 +537,7 @@ function formatAuditReport(usersMap) {
   if (suspiciousUsers.length > 0) {
     out += `🚨 <b>Обнаружены аккаунты с балансом > 450 ⬦ без депозитов:</b>\n`;
     for (const su of suspiciousUsers) {
-      out += `• <b>${su.name}</b> (<code>${su.uid}</code>): <b>${Math.round(su.tokens)} ⬦</b> при 0 ₽ депозитов\n`;
+      out += `• <b>${escHtml(su.name)}</b> (<code>${su.uid}</code>): <b>${Math.round(su.tokens)} ⬦</b> при 0 ₽ депозитов\n`;
     }
     out += `\n<i>Нажмите кнопку «🧹 Обнулить накрутчиков (0 деп)» ниже, чтобы сбросить им баланс до стартовых 50 ⬦.</i>\n\n`;
   } else {
@@ -545,7 +549,7 @@ function formatAuditReport(usersMap) {
     out += `📋 <b>Последние срабатывания античита:</b>\n`;
     for (const ev of events) {
       const timeStr = new Date(ev.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-      out += `• [${timeStr}] <b>${ev.name}</b> (<code>${ev.uid}</code>): ${ev.reason} ${ev.details ? '— ' + ev.details : ''}\n`;
+      out += `• [${timeStr}] <b>${escHtml(ev.name)}</b> (<code>${ev.uid}</code>): ${escHtml(ev.reason)} ${ev.details ? '— ' + escHtml(ev.details) : ''}\n`;
     }
   } else {
     out += `📋 <i>Срабатываний античита за последнее время не зафиксировано.</i>`;
@@ -555,6 +559,7 @@ function formatAuditReport(usersMap) {
 }
 
 module.exports = {
+  escHtml,
   STATS_FILE,
   recordBet,
   recordCashflow,
