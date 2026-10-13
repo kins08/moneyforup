@@ -10,12 +10,9 @@
     "preview": "wrangler dev"
   },
   "engines": {
-    "node": ">=22.13.0 <23.0.0 || >=23.4.0"
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "grammy": "^1.30.0"
-  },
-  "devDependencies": {
-    "wrangler": "^4.0.0"
   }
 }
