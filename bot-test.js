@@ -1,24 +1,27 @@
-/* Интеграционный тест бэкенда (bot/bot.js): Platega, Heleket, соглашение, реферальные 15 %.
-   Поднимает мок-сервер платёжек и сам бот в режиме BOT_DRY_RUN=1 (без опроса Telegram).
+/* Интеграционный тест бэкенда (bot.js): Platega, Coinso, соглашение, реферальные 15 %.
+   Поднимает мок-серверы платёжек и сам бот в режиме BOT_DRY_RUN=1 (без опроса Telegram),
+   в изолированной временной БД (DB_PATH в /tmp — боевая data/ не трогается).
 
-   Запуск:  cd tests && node bot-test.js                     */
+   Запуск:  node bot-test.js        (или npm test)                                   */
 const http = require('http');
 const crypto = require('crypto');
-const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const BOT_TOKEN = '123456789:AAaaBBccDDeeFFggHHiiJJkkLLmmNNoo';
 const API_PORT = 3910;
 const MOCK_PORT = 3999;
 const PLATEGA = { id: 'merchant-777', secret: 'secret-888' };
-const HELEKET = { merchant: 'uuid-1', key: 'heleket-key-1' };
+const COINSO = { project: '4242', secret: 'coinso-secret-1' };
 
 const ok = [], bad = [];
 const check = (c, m) => (c ? ok : bad).push(m);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- мок платёжных провайдеров ---------- */
-const seen = { plategaCreate: null, plategaAuth: null, heleketCreate: null, heleketSignOk: null, plategaOrders: {} };
+const seen = { plategaCreate: null, plategaAuth: null, plategaOrders: {}, coinsoCreate: null, coinsoAuth: null };
 const mock = http.createServer(async (req, res) => {
   let raw = '';
   for await (const c of req) raw += c;
@@ -30,25 +33,20 @@ const mock = http.createServer(async (req, res) => {
     seen.plategaAuth = { id: req.headers['x-merchantid'], secret: req.headers['x-secret'] };
     seen.plategaCreate = body;
     seen.plategaOrders[body.payload] = body;
-    return json(200, { transactionId: 'tx-' + (Object.keys(seen.plategaOrders).length), status: 'PENDING',
+    return json(200, { transactionId: 'tx-' + Object.keys(seen.plategaOrders).length, status: 'PENDING',
                        url: 'https://pay.test/platega/' + encodeURIComponent(body.payload), expiresIn: '00:15:00' });
   }
   if (req.url.startsWith('/transaction/') && req.method === 'GET') return json(200, { status: 'CONFIRMED', amount: 300, currency: 'RUB' });
 
-  /* Heleket */
-  if (req.url === '/v1/payment' && req.method === 'POST') {
-    const sign = crypto.createHash('md5').update(Buffer.from(raw, 'utf8').toString('base64') + HELEKET.key).digest('hex');
-    seen.heleketSignOk = sign === req.headers.sign && req.headers.merchant === HELEKET.merchant;
-    seen.heleketCreate = body;
-    if (!seen.heleketSignOk) return json(401, { state: 1, message: 'bad sign' });
-    return json(200, { state: 0, result: { uuid: 'hl-uuid-1', url: 'https://pay.test/heleket/hl-uuid-1', order_id: body.order_id,
-                                            payment_status: 'check', amount: body.amount, currency: body.currency } });
+  /* Coinso: POST /payment/create, GET /payment/status?uuid=... */
+  if (req.url === '/payment/create' && req.method === 'POST') {
+    seen.coinsoAuth = req.headers.authorization;
+    seen.coinsoCreate = body;
+    return json(200, { payment_url: 'https://pay.test/coinso/' + encodeURIComponent(body.custom),
+                       invoice_id: 'coin-inv-1' });
   }
-  if (req.url === '/v1/payment/info' && req.method === 'POST') {
-    const sign = crypto.createHash('md5').update(Buffer.from(raw, 'utf8').toString('base64') + HELEKET.key).digest('hex');
-    if (sign !== req.headers.sign) return json(401, { state: 1, message: 'bad sign' });
-    return json(200, { state: 0, result: { uuid: body.uuid, order_id: seen.heleketCreate.order_id, payment_status: 'paid' } });
-  }
+  if (req.url.startsWith('/payment/status') && req.method === 'GET') return json(200, { status: 'paid' });
+
   json(404, { error: 'mock: ' + req.url });
 });
 
@@ -79,20 +77,45 @@ const balance = async who => (await call('/api/balance', { initData: who.data })
 let bot;
 (async () => {
   await new Promise(r => mock.listen(MOCK_PORT, '127.0.0.1', r));
-  bot = spawn(process.execPath, [path.join(__dirname, '..', 'bot', 'bot.js')], {
+  const tmpDb = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-test-')), 'test.db');
+  bot = spawn(process.execPath, [path.join(__dirname, 'bot.js')], {
     env: { ...process.env,
       BOT_TOKEN, API_PORT: String(API_PORT), BOT_DRY_RUN: '1', APP_URL: 'https://app.test/moneyforup-tg.html',
-      PUBLIC_URL: `http://127.0.0.1:${API_PORT}`,
+      PUBLIC_URL: `http://127.0.0.1:${API_PORT}`, DB_PATH: tmpDb, BOT_USERNAME: 'your_bot',
       PLATEGA_MERCHANT_ID: PLATEGA.id, PLATEGA_SECRET: PLATEGA.secret, PLATEGA_API: `http://127.0.0.1:${MOCK_PORT}`,
-      HELEKET_MERCHANT_ID: HELEKET.merchant, HELEKET_API_KEY: HELEKET.key, HELEKET_API: `http://127.0.0.1:${MOCK_PORT}` },
+      COINSO_PROJECT_ID: COINSO.project, COINSO_SECRET_KEY: COINSO.secret, COINSO_API: `http://127.0.0.1:${MOCK_PORT}` },
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  bot.stderr.on('data', d => bad.push('ОШИБКА БОТА: ' + String(d).trim().slice(0, 200)));
-  for (let i = 0; i < 40; i++) { await sleep(150); try { if ((await fetch(`http://127.0.0.1:${API_PORT}/api/balance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status) break; } catch {} }
+  let botLog = '';
+  bot.stdout.on('data', d => botLog += d);
+  bot.stderr.on('data', d => botLog += d);
+  for (let i = 0; i < 60; i++) { await sleep(150); try { if ((await fetch(`http://127.0.0.1:${API_PORT}/api/balance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status) break; } catch {} }
+  if (!botLog && bot.exitCode !== null) throw new Error('бот не поднялся');
 
   /* 1. защита initData */
   check((await call('/api/balance', { initData: 'query_id=x&user=%7B%22id%22%3A1%7D&auth_date=1&hash=deadbeef' })).status === 401,
         'подделанный initData отбит (401)');
+
+  /* 1b. auth_date из будущего (P1-3) */
+  const future = new URLSearchParams({ auth_date: String(Math.floor(Date.now() / 1000) + 3600), query_id: 'qf', user: JSON.stringify({ id: 111, first_name: 'Аня' }) });
+  {
+    const dcs = [...future.entries()].map(([k, v]) => `${k}=${v}`).sort().join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    future.set('hash', crypto.createHmac('sha256', secret).update(dcs).digest('hex'));
+  }
+  check((await call('/api/balance', { initData: future.toString() })).status === 401,
+        'initData с auth_date из будущего отбит (401, P1-3)');
+
+  /* 1c. initData двухчасовой давности принимается: Telegram не обновляет
+     auth_date внутри открытой сессии WebApp (иначе игры умирают через 5 минут) */
+  const old2h = new URLSearchParams({ auth_date: String(Math.floor(Date.now() / 1000) - 2 * 3600), query_id: 'qo', user: JSON.stringify({ id: 111, first_name: 'Аня' }) });
+  {
+    const dcs = [...old2h.entries()].map(([k, v]) => `${k}=${v}`).sort().join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    old2h.set('hash', crypto.createHmac('sha256', secret).update(dcs).digest('hex'));
+  }
+  check((await call('/api/balance', { initData: old2h.toString() })).status === 200,
+        'initData 2-часовой давности принят (сессия WebApp живёт дольше 5 минут)');
 
   /* 2. реферальные коды: уникальность и ссылка */
   const codeA = (await call('/api/balance', { initData: A.data })).body.refCode;
@@ -109,13 +132,12 @@ let bot;
   check(reReg.body.referredBy === A.id, 'повторная регистрация не меняет пригласившего (обратная совместимость с числовым id)');
   const aBefore = await balance(A);
   const refsA = (await call('/api/refs', { initData: A.data })).body;
-  if (refsA.invited !== 1) console.log('DEBUG refs:', JSON.stringify(refsA), 'REG:', JSON.stringify(reg.body));
   check(refsA.invited === 1, 'в статистике Ани 1 приглашённый');
   check(refsA.code === codeA, 'код в статистике совпадает с выданным: ' + refsA.code);
 
   /* 3. соглашение обязательно */
   check((await call('/api/platega-invoice', { initData: B.data, rub: 300 })).status === 403, 'без соглашения счёт Platega не создаётся (403)');
-  check((await call('/api/heleket-invoice', { initData: B.data, rub: 300 })).status === 403, 'без соглашения счёт Heleket не создаётся (403)');
+  check((await call('/api/coinso-invoice', { initData: B.data, rub: 300 })).status === 403, 'без соглашения счёт Coinso не создаётся (403)');
   await call('/api/terms', { initData: B.data });
 
   /* 4. Platega: счёт */
@@ -125,6 +147,7 @@ let bot;
   check(seen.plategaCreate && seen.plategaCreate.paymentDetails && seen.plategaCreate.paymentDetails.amount === 300 && seen.plategaCreate.paymentDetails.currency === 'RUB',
         'Platega: сумма 300 RUB в paymentDetails');
   check(seen.plategaCreate && String(seen.plategaCreate.metadata.userId) === String(B.id), 'Platega: передан metadata.userId (антифрод)');
+  check(/^PL[0-9a-f]{32}$/.test(pl.body.order_id || seen.plategaCreate.payload || ''), 'Platega: orderId непредсказуем, 16 байт энтропии (P1-4): ' + pl.body.order_id);
 
   /* 5. Platega: вебхук */
   const bBefore = await balance(B);
@@ -148,39 +171,56 @@ let bot;
   const chk = await call('/api/check-platega', { initData: B.data, invoice_id: pl.body.invoice_id });
   check(chk.body.paid === true, 'Platega: опрос /api/check-platega подтверждает оплату');
 
-  /* 6. Heleket: счёт */
-  const hl = await call('/api/heleket-invoice', { initData: B.data, rub: 300, tokens: 3000 });
-  check(hl.status === 200 && /pay\.test\/heleket/.test(hl.body.pay_url || ''), 'Heleket: счёт создан, ссылка ' + (hl.body.pay_url || '(нет)'));
-  check(seen.heleketSignOk === true, 'Heleket: подпись запроса md5(base64(body) + API_KEY) верна');
-  check(seen.heleketCreate && seen.heleketCreate.currency === 'RUB' && seen.heleketCreate.amount === '300.00', 'Heleket: сумма 300.00 RUB');
-  check(seen.heleketCreate && seen.heleketCreate.url_callback === `http://127.0.0.1:${API_PORT}/heleket-webhook`, 'Heleket: url_callback указывает на бэкенд');
+  /* 5b. Platega: параллельный шторм вебхуков + опроса не зачисляет дважды (P2-4) */
+  const pl2 = await call('/api/platega-invoice', { initData: B.data, rub: 300, tokens: 3000 });
+  const bBeforeStorm = await balance(B);
+  const storm = await Promise.all([
+    hook({ id: 'tx-2', amount: 300, currency: 'RUB', status: 'CONFIRMED', payload: pl2.body.order_id }, good),
+    hook({ id: 'tx-2', amount: 300, currency: 'RUB', status: 'CONFIRMED', payload: pl2.body.order_id }, good),
+    hook({ id: 'tx-2', amount: 300, currency: 'RUB', status: 'CONFIRMED', payload: pl2.body.order_id }, good),
+    call('/api/check-platega', { initData: B.data, invoice_id: pl2.body.invoice_id }),
+    call('/api/check-platega', { initData: B.data, invoice_id: pl2.body.invoice_id })
+  ]);
+  check(storm.filter(r => r.body && r.body.credited).length === 1, 'Platega: из 5 параллельных попыток зачислила ровно одна (P2-4)');
+  check((await balance(B)) === bBeforeStorm + 3000, 'Platega: после шторма баланс ' + bBeforeStorm + ' → ' + (await balance(B)) + ' (ровно +3000 ⬦)');
 
-  /* 7. Heleket: вебхук с подписью */
-  const signOf = obj => crypto.createHash('md5').update(Buffer.from(JSON.stringify(obj), 'utf8').toString('base64') + HELEKET.key).digest('hex');
-  const hookHl = async payload => {
-    const withSign = { ...payload };
-    withSign.sign = signOf(payload);
-    const res = await fetch(`http://127.0.0.1:${API_PORT}/heleket-webhook`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withSign)
-    });
+  /* 6. Coinso: счёт */
+  const cs = await call('/api/coinso-invoice', { initData: B.data, rub: 300, tokens: 3000 });
+  check(cs.status === 200 && /pay\.test\/coinso/.test(cs.body.pay_url || ''), 'Coinso: счёт создан, ссылка ' + (cs.body.pay_url || '(нет)'));
+  check(seen.coinsoAuth === 'Bearer ' + COINSO.secret, 'Coinso: авторизация Bearer COINSO_SECRET_KEY');
+  check(seen.coinsoCreate && Number(seen.coinsoCreate.project_id) === Number(COINSO.project) && seen.coinsoCreate.amount === 300, 'Coinso: project_id и сумма 300 RUB');
+  check(/^MF_COIN_[0-9a-f]{32}$/.test(cs.body.order_id || ''), 'Coinso: orderId непредсказуем, 16 байт энтропии (P1-4): ' + cs.body.order_id);
+
+  /* 7. Coinso: вебхук с подписью X-Signature = HMAC-SHA256(raw, COINSO_SECRET_KEY) */
+  const hookCs = async (payload, sign) => {
+    const rawBody = JSON.stringify(payload);
+    const headers = { 'Content-Type': 'application/json' };
+    if (sign !== null) headers['X-Signature'] = sign !== undefined ? sign : crypto.createHmac('sha256', COINSO.secret).update(rawBody).digest('hex');
+    const res = await fetch(`http://127.0.0.1:${API_PORT}/coinso-webhook`, { method: 'POST', headers, body: rawBody });
     return { status: res.status, body: await res.json() };
   };
-  const bBeforeHl = await balance(B);
-  const badSign = await hookHl({ uuid: 'hl-uuid-1', order_id: seen.heleketCreate.order_id, status: 'paid', amount: '300', sign: 'deadbeef' });
-  check(badSign.status === 403, 'Heleket: поддельная подпись отбита (403)');
-  const hlOk = await hookHl({ type: 'payment', uuid: 'hl-uuid-1', order_id: seen.heleketCreate.order_id, status: 'paid', amount: '300', payment_amount: '300', merchant_amount: '298', is_final: true });
-  check(hlOk.status === 200 && hlOk.body.credited === true, 'Heleket: вебхук paid зачислен');
-  check((await balance(B)) === bBeforeHl + 3000, 'Heleket: баланс Бориса ' + bBeforeHl + ' → ' + (await balance(B)) + ' (+3000 ⬦)');
-  const hlChk = await call('/api/check-heleket', { initData: B.data, invoice_id: 'hl-uuid-1' });
-  check(hlChk.body.paid === true, 'Heleket: опрос /api/check-heleket подтверждает оплату');
+  const bBeforeCs = await balance(B);
+  check((await hookCs({ custom: cs.body.order_id, event: 'payment.success', invoice_id: cs.body.invoice_id }, null)).status === 403,
+        'Coinso: вебхук без подписи отбит (403)');
+  check((await hookCs({ custom: cs.body.order_id, event: 'payment.success', invoice_id: cs.body.invoice_id }, 'deadbeef'.repeat(8))).status === 403,
+        'Coinso: поддельная подпись отбита (403)');
+  const csOk = await hookCs({ custom: cs.body.order_id, event: 'payment.success', invoice_id: cs.body.invoice_id });
+  check(csOk.status === 200 && csOk.body.credited === true, 'Coinso: вебхук payment.success зачислен');
+  check((await balance(B)) === bBeforeCs + 3000, 'Coinso: баланс Бориса ' + bBeforeCs + ' → ' + (await balance(B)) + ' (+3000 ⬦)');
+  const csAgain = await hookCs({ custom: cs.body.order_id, event: 'payment.success', invoice_id: cs.body.invoice_id });
+  check(csAgain.body.credited !== true && (await balance(B)) === bBeforeCs + 3000, 'Coinso: повторный вебхук не зачисляет дважды (идемпотентность)');
+  const csChk = await call('/api/check-coinso', { initData: B.data, invoice_id: cs.body.invoice_id, order_id: cs.body.order_id });
+  check(csChk.body.paid === true, 'Coinso: опрос /api/check-coinso подтверждает оплату');
 
-  /* 8. итог: Аня получила 15 % ещё и со второго пополнения */
+  /* 8. итог: Аня получила 15 % со всех трёх пополнений Бориса */
   const aEnd = await balance(A);
-  check(aEnd === aBefore + 900, 'реферальные 15 % с двух пополнений: Аня ' + aBefore + ' → ' + aEnd + ' (+900 ⬦)');
+  check(aEnd === aBefore + 1350, 'реферальные 15 % с трёх пополнений: Аня ' + aBefore + ' → ' + aEnd + ' (+1350 ⬦)');
 
   console.log('\n=== ПРОШЛО (' + ok.length + ') ===');
   ok.forEach(m => console.log('  ✓ ' + m));
   if (bad.length) { console.log('\n=== ПРОВАЛЫ (' + bad.length + ') ==='); bad.forEach(m => console.log('  ✗ ' + m)); }
+  if (bad.length) console.log('\n--- лог бота (хвост) ---\n' + botLog.slice(-1500));
   bot.kill('SIGKILL'); mock.close();
+  try { fs.rmSync(path.dirname(tmpDb), { recursive: true, force: true }); } catch {}
   process.exit(bad.length ? 1 : 0);
 })().catch(e => { console.log('ТЕСТ УПАЛ:', e.stack); if (bot) bot.kill('SIGKILL'); mock.close(); process.exit(2); });

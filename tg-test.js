@@ -1,9 +1,9 @@
 /* Тест Telegram-режима: подсовываем мок window.Telegram и проверяем
    инициализацию, BackButton, вибрации, профиль, реферальную ссылку и оплату через openInvoice.
-   Запуск:  NODE_PATH=/tmp/node_modules node tg-test.js                                  */
+   Запуск:  node tg-test.js  (jsdom в devDependencies: npm i)                                  */
 const fs = require('fs');
 const path = require('path');
-const HTML = process.env.MONEYFORUP_TG || process.env.MATHPLAY_TG || path.join(__dirname, '..', 'moneyforup-tg.html');
+const HTML = process.env.MONEYFORUP_TG || process.env.MATHPLAY_TG || path.join(__dirname, 'index.html');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const errors = [], calls = { ready: 0, expand: 0, backShow: 0, backHide: 0, haptic: [], invoices: [], opened: [], fetches: [], backCb: null, serverBalance: 1000 };

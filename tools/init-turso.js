@@ -4,16 +4,15 @@ if (typeof process.loadEnvFile === 'function') {
   try { process.loadEnvFile(); } catch (_) {}
 }
 
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN
-});
-
 async function main() {
   if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
     console.error('Ошибка: не заданы TURSO_DATABASE_URL или TURSO_AUTH_TOKEN');
     process.exit(1);
   }
+  const client = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN
+  });
 
   const schema = [
     `CREATE TABLE IF NOT EXISTS users (
@@ -118,4 +117,4 @@ async function main() {
   console.log(res.rows.map(r => r.name).join(', '));
 }
 
-main().catch(console.error);
+main().catch(e => { console.error(e); process.exit(1); });
