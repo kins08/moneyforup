@@ -907,7 +907,7 @@ async function tgCall(path,body){
   }finally{if(timer)clearTimeout(timer);}
   const data=await r.json().catch(()=>({}));
   if(!r.ok){
-    const err=new Error((data&&data.error)||('Ошибка '+r.status));
+    const err=new Error(r.status===401?'Сессия Telegram устарела. Закройте и заново откройте игру из бота':((data&&data.error)||('Ошибка '+r.status)));
     err.status=r.status;
     err.data=data;
     throw err;
@@ -948,15 +948,18 @@ function tgApplyServer(d){
   save();syncUI();paySync();
   if(typeof checkAdminVisibility === 'function') checkAdminVisibility();
 }
+let __balInflight=null;
 async function tgLoadBalance(){
   if(!IS_TG||!API_BASE)return;
-  try{
+  if(__balInflight)return __balInflight;   // не плодим параллельные запросы баланса
+  __balInflight=(async()=>{try{
     tgApplyServer(await tgCall('/api/balance',{}));
     if(typeof tgLoadRequisites==='function')tgLoadRequisites();
     // Инвентарь живёт на сервере — тянем его вместе с балансом, иначе после
     // перезагрузки игрок не увидит своих предметов.
     if(typeof loadInventory==='function')loadInventory();
-  }catch(e){}
+  }catch(e){}})();
+  try{await __balInflight;}finally{__balInflight=null;}
 }
 async function tgRegister(){
   if(!IS_TG||!API_BASE)return;
@@ -2744,7 +2747,7 @@ function sampleCrash(seedIdx){
 function gameRacket(){
   const a=q('#gameArea');
   const ROUND_MS=30000;  // Непрерывный раунд ровно каждые 30 секунд
-  const WAIT_MS=6000;    // 6 секунд на приём ставок до старта ракетки
+  const WAIT_MS=15000;   // 15 секунд КД: приём ставок до старта ракетки (можно ставить и на след. раунд во время полёта)
   const ROCKET_SPEED=0.58;
   const tau=t=>t*(1+0.06*t);
 
@@ -2810,9 +2813,9 @@ function gameRacket(){
     </div>
   </div>
 
-  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (общий цикл 30с)</div>
+  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (цикл 30с: 15с приём ставок + полёт)</div>
   <div class="hstrip" id="rHist"></div>
-  <div class="result" id="rr" style="margin-top:10px">Раунды запускаются каждые 30 секунд. Делайте 1 или 2 ставки параллельно с отдельными кэшаутами и авто-стопами!</div>
+  <div class="result" id="rr" style="margin-top:10px">Раунды каждые 30 секунд: 15 секунд на ставки, затем полёт. Ставку на следующий раунд можно поставить заранее — даже во время полёта и после кэшаута!</div>
   <div class="racket-round-timer-box" id="rRoundTimerBox">
     <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
     <div class="rrt-val" id="rrtVal">06.0<span class="rrt-unit">с</span></div>
@@ -2835,6 +2838,7 @@ function gameRacket(){
   const b2Inp=q('#b2Inp', a), b2Rub=q('#b2Rub', a), b2Btn=q('#b2Btn', a), b2St=q('#b2Status', a);
   const b2AutoChk=q('#b2AutoChk', a), b2AutoXInp=q('#b2AutoX', a);
 
+  const balTimer=setInterval(()=>{if(!dead&&IS_TG&&API_BASE&&!document.hidden)tgLoadBalance();},5000);
   let currentRoundBots=[];
   let currentRoundBank=0;
   let lastBotsRenderTime=0;
@@ -3195,10 +3199,11 @@ function gameRacket(){
         bSt.textContent=`В игре (×${fx(cur)})`;
         bSt.style.color='#ffcf6b';
       }else if(B.inRound&&B.cashed){
-        bBtn.disabled=true;
-        bBtn.textContent=`ЗАБРАНО ×${fx(B.cashX)} (+${fmt(B.cashAmt)} ⬦)`;
-        bBtn.style.background='linear-gradient(135deg,#059669,#047857)';
-        bSt.textContent=`Выигрыш ×${fx(B.cashX)}`;
+        // После кэшаута кнопка сразу работает как пред-ставка на следующий раунд
+        bBtn.disabled=false;
+        bBtn.textContent=B.nextRound?`СЛЕД. РАУНД ${B.bet} ⬦ ✓ (ОТМЕНА)`:`ЗАБРАНО ×${fx(B.cashX)} · НА СЛЕД. РАУНД ${B.bet} ⬦`;
+        bBtn.style.background=B.nextRound?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#059669,#047857)';
+        bSt.textContent=`Выигрыш ×${fx(B.cashX)}`+(B.nextRound?' · ждёт след. раунд':'');
         bSt.style.color='#3ddc96';
       }else{
         bBtn.disabled=false;
@@ -3374,6 +3379,11 @@ function gameRacket(){
     B.cashAmt=Math.floor(actualBet*B.cashX);
     B.cashed=true;
     win(B.cashAmt,'Ракетка',`Ставка #${num} кэшаут ×`+fx(B.cashX));
+    // Баланс после кэшаута: сразу из ответа сервера + контрольные обновления,
+    // чтобы выигрыш не "застревал" на старом значении на экране
+    tgLoadBalance();
+    setTimeout(()=>{if(!dead)tgLoadBalance()},1000);
+    setTimeout(()=>{if(!dead)tgLoadBalance()},3000);
     rr.className='result good';
     rr.innerHTML=`Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b> → <b>+${fmt(B.cashAmt)} ⬦</b> (≈ ${fmtRub(B.cashAmt)}).`;
     render(Date.now()%ROUND_MS);
@@ -3411,6 +3421,8 @@ function gameRacket(){
             B.inRound=true;
           }else{
             B.inRound=false;
+            rr.className='result bad';
+            rr.textContent=`Ставка на новый раунд не принята: не хватает токенов (нужно ${B.bet} ⬦).`;
           }
         }
       });
@@ -3505,6 +3517,11 @@ function gameRacket(){
     }else if(phase==='flight'){
       if(B.inRound&&!B.cashed){
         cashBet(B, num);
+      }else if(B.inRound&&B.cashed){
+        B.nextRound=!B.nextRound;
+        rr.className='result';
+        rr.textContent=B.nextRound?`Ставка #${num} (${B.bet} ⬦) будет сделана в следующем раунде.`:`Ставка #${num} на следующий раунд отменена.`;
+        render(rTime);
       }else if(!B.inRound){
         B.nextRound=!B.nextRound;
         rr.className='result';
@@ -3583,7 +3600,7 @@ function gameRacket(){
   syncInputs();
   loop();
 
-  return ()=>{dead=true;cancelAnimationFrame(raf)};
+  return ()=>{dead=true;cancelAnimationFrame(raf);clearInterval(balTimer)};
 }
 
 /* =======================================================================
@@ -6625,6 +6642,7 @@ window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для стары
 setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
 const startHash = (window.location.hash || '').replace('#', '');
 tgInit();tgRegister();tgLoadBalance();syncUI();   // баланс+реквизиты+инвентарь сразу, а не после первого раунда
+setInterval(()=>{if(IS_TG&&API_BASE&&!document.hidden)tgLoadBalance();},20000);  // баланс не устаревает, пока приложение открыто
 initLiveTicker();
 updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);

@@ -470,6 +470,35 @@ function atomicApplyPromo(userId, code) {
   }
 }
 
+/* Атомарное начисление бонуса за подписку: единожды на пользователя.
+   Проверка флага, установка флага, изменение баланса и запись в ledger —
+   одна транзакция. Память процесса (u.easycashClaimed) источником истины
+   не является: она устаревает при рестартах, втором устройстве и pull из Turso. */
+function atomicClaimChannel(userId, bonus) {
+  const amt = Math.floor(Number(bonus) || 0);
+  db.exec('BEGIN TRANSACTION');
+  try {
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+    if (row.easycash_claimed) { db.exec('ROLLBACK'); return { ok: false, already: true }; }
+    const balBefore = row.tokens;
+    const balAfter = balBefore + amt;
+    const now = Date.now();
+    db.prepare('UPDATE users SET easycash_claimed = 1, tokens = ? WHERE id = ?').run(balAfter, userId);
+    const led = stmts.insertLedger.run(userId, amt, 'bonus_channel', 'Подписка на канал @moneyforup', '', balBefore, balAfter, now);
+    db.exec('COMMIT');
+    turso.queueBatch([
+      { sql: 'UPDATE users SET tokens = ?, easycash_claimed = 1 WHERE id = ?', args: [balAfter, userId] },
+      { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [Number(led.lastInsertRowid), userId, amt, 'bonus_channel', 'Подписка на канал @moneyforup', '', balBefore, balAfter, now] }
+    ]);
+    return { ok: true, bonus: amt, newBalance: balAfter };
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
 module.exports = {
   db,
   DB_PATH,
@@ -477,6 +506,7 @@ module.exports = {
   saveUser,
   atomicBalanceChange,
   atomicApplyPromo,
+  atomicClaimChannel,
   countInvited: (refId) => {
     const r = stmts.countInvited.get(refId);
     return r ? r.count : 0;

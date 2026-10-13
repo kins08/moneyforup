@@ -607,7 +607,11 @@ function checkInitData(initData) {
   if (!crypto.timingSafeEqual(Buffer.from(calc), Buffer.from(hash))) return null;
   const authDate = Number(params.get('auth_date') || 0) * 1000;
   const age = Date.now() - authDate;
-  if (!Number.isFinite(authDate) || age < -60_000 || age > 5 * 60 * 1000) return null;
+  // Окно 24 часа: Telegram НЕ обновляет initData внутри открытой сессии WebApp,
+  // auth_date фиксируется в момент запуска. Окно в 5 минут (было так) после
+  // 5 минут игры отклоняло ВСЕ запросы как «initData недействителен».
+  // Будущее по-прежнему запрещено; подпись HMAC проверяется как раньше.
+  if (!Number.isFinite(authDate) || age < -60_000 || age > 24 * 3600 * 1000) return null;
   try { return JSON.parse(params.get('user') || '{}'); } catch { return null; }
 }
 
@@ -1794,8 +1798,11 @@ const server = http.createServer(async (req, res) => {
       return send(200, { termsAt: u.termsAt });
     }
 
-    /* Бонус за подписку на канал @moneyforup (+50 токенов, единоразово) с реальной проверкой и КД 30с */
+    /* Бонус за подписку на канал @moneyforup (+50 токенов): ЕДИНОЖДЫ на пользователя.
+       Гарантия — атомарная транзакция в БД (db.atomicClaimChannel), а не флаг
+       в памяти: повторный запрос с любого устройства/после рестарта вернёт already. */
     if (url.pathname === '/api/claim-channel' && req.method === 'POST') {
+      if (!checkRateLimit(`claim-channel:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много проверок подписки. Подождите минуту.' });
       if (u.easycashClaimed) return send(400, { error: 'Бонус за подписку уже получен' });
 
       const COOLDOWN_MS = 30 * 1000;
@@ -1805,22 +1812,17 @@ const server = http.createServer(async (req, res) => {
         return send(429, { error: `Повторная проверка доступна через ${secLeft} сек.`, cooldown: secLeft });
       }
       u.channelCheckAt = now;
-      // Claim ДО await проверки подписки: параллельный запрос не начислит бонус второй раз.
-      // При неподписке/ошибке claim откатывается ниже, повторная попытка останется доступной.
-      u.easycashClaimed = true;
 
       try {
         const member = await bot.api.getChatMember('@moneyforup', u.id);
         const isSub = ['creator', 'administrator', 'member', 'restricted'].includes(member.status);
         if (!isSub) {
-          u.easycashClaimed = false;
           return send(400, {
             error: 'Вы не подписаны на канал @moneyforup. Подпишитесь и нажмите кнопку снова.',
             cooldown: 30
           });
         }
       } catch (e) {
-        u.easycashClaimed = false;
         console.error('Ошибка проверки подписки на @moneyforup:', e.message);
         return send(400, {
           error: 'Бот не может проверить подписку: добавьте бота администратором в канал @moneyforup.',
@@ -1828,9 +1830,14 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const r = applyBalance(u, 50, 'bonus_channel', 'Подписка на канал @moneyforup');
-      if (!r.ok) { u.easycashClaimed = false; return send(500, { error: 'Не удалось начислить бонус, попробуйте позже' }); }
-      try { db.saveUser(u); } catch (e) { console.error('saveUser (channel):', e.message); }
+      const r = db.atomicClaimChannel(u.id, 50);
+      if (!r.ok) {
+        if (r.already) { u.easycashClaimed = true; return send(400, { error: 'Бонус за подписку уже получен' }); }
+        return send(500, { error: 'Не удалось начислить бонус, попробуйте позже' });
+      }
+      // Синхронизируем память из транзакции (БД — источник истины)
+      u.easycashClaimed = true;
+      u.tokens = r.newBalance;   // ledger-ok: значение посчитано внутри atomicClaimChannel, а не клиентом
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
 

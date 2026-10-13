@@ -106,6 +106,17 @@ let bot;
   check((await call('/api/balance', { initData: future.toString() })).status === 401,
         'initData с auth_date из будущего отбит (401, P1-3)');
 
+  /* 1c. initData двухчасовой давности принимается: Telegram не обновляет
+     auth_date внутри открытой сессии WebApp (иначе игры умирают через 5 минут) */
+  const old2h = new URLSearchParams({ auth_date: String(Math.floor(Date.now() / 1000) - 2 * 3600), query_id: 'qo', user: JSON.stringify({ id: 111, first_name: 'Аня' }) });
+  {
+    const dcs = [...old2h.entries()].map(([k, v]) => `${k}=${v}`).sort().join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    old2h.set('hash', crypto.createHmac('sha256', secret).update(dcs).digest('hex'));
+  }
+  check((await call('/api/balance', { initData: old2h.toString() })).status === 200,
+        'initData 2-часовой давности принят (сессия WebApp живёт дольше 5 минут)');
+
   /* 2. реферальные коды: уникальность и ссылка */
   const codeA = (await call('/api/balance', { initData: A.data })).body.refCode;
   const codeB = (await call('/api/balance', { initData: B.data })).body.refCode;
