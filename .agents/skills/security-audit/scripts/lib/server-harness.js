@@ -95,7 +95,11 @@ async function startServer(opts = {}) {
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }
   const nm = path.join(ROOT, 'node_modules');
-  if (fs.existsSync(nm)) fs.symlinkSync(nm, path.join(tmp, 'node_modules'), 'dir');
+  if (fs.existsSync(nm)) {
+    try {
+      fs.symlinkSync(nm, path.join(tmp, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
+    } catch (_) {}
+  }
 
   // ── Тестовые игроки (пишем напрямую в копию базы) ────────────────────────
   const db = require(path.join(tmp, 'db.js'));
@@ -117,6 +121,7 @@ async function startServer(opts = {}) {
     cwd: tmp,
     env: {
       ...process.env,
+      NODE_PATH: path.join(ROOT, 'node_modules'),
       BOT_TOKEN: botToken,
       BOT_DRY_RUN: '1',                 // не ходим в Telegram API
       API_PORT: String(port),

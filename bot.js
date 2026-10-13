@@ -53,6 +53,8 @@ function isAdmin(u) {
   return Number(u.id) === ADMIN_ID;
 }
 
+const escHtml = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
 const PLATEGA_MERCHANT_ID = process.env.PLATEGA_MERCHANT_ID || '';
@@ -97,6 +99,35 @@ if (!BOT_TOKEN) {
 }
 
 const bot = new Bot(BOT_TOKEN);
+if (process.env.BOT_DRY_RUN === '1') {
+  bot.api.config.use(async () => ({ ok: true, result: true }));
+}
+
+/* ------------------------------------------------------------------ */
+/* In-memory Rate Limiter для защиты эндпоинтов                      */
+/* ------------------------------------------------------------------ */
+const rateLimits = new Map();
+function checkRateLimit(key, maxRequests = 30, windowMs = 60000) {
+  const now = Date.now();
+  let timestamps = rateLimits.get(key);
+  if (!timestamps) {
+    timestamps = [];
+    rateLimits.set(key, timestamps);
+  }
+  while (timestamps.length > 0 && timestamps[0] <= now - windowMs) {
+    timestamps.shift();
+  }
+  if (timestamps.length >= maxRequests) return false;
+  timestamps.push(now);
+  return true;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of rateLimits.entries()) {
+    while (v.length > 0 && v[0] <= now - 60000) v.shift();
+    if (v.length === 0) rateLimits.delete(k);
+  }
+}, 300000).unref();
 
 /* ------------------------------------------------------------------ */
 /* Хранилище (демо). Заменить на Postgres/SQLite — см. README.md        */
@@ -560,7 +591,8 @@ function checkInitData(initData) {
   if (calc.length !== hash.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(calc), Buffer.from(hash))) return null;
   const authDate = Number(params.get('auth_date') || 0) * 1000;
-  if (!authDate || Date.now() - authDate > 24 * 3600 * 1000) return null;
+  const age = Date.now() - authDate;
+  if (!Number.isFinite(authDate) || age < -60_000 || age > 5 * 60 * 1000) return null;
   try { return JSON.parse(params.get('user') || '{}'); } catch { return null; }
 }
 
@@ -616,7 +648,7 @@ const plategaHeaders = () => ({
 
 async function plategaCreate(u, rub, tokens, name) {
   if (!plategaOn()) throw new Error('Platega не настроена: добавьте PLATEGA_MERCHANT_ID и PLATEGA_SECRET');
-  const orderId = 'PL' + Date.now() + '-' + u.id;
+  const orderId = 'PL' + Date.now().toString(36) + '-' + crypto.randomBytes(6).toString('hex');
   const res = await fetch(`${PLATEGA_API}/transaction/process`, {
     method: 'POST',
     headers: plategaHeaders(),
@@ -668,7 +700,7 @@ const coinsoOn = () => !!(COINSO_PROJECT_ID && COINSO_SECRET_KEY);
 
 async function createCoinsoInvoice(userId, tokens, rub) {
   if (!coinsoOn()) throw new Error('Coinso не настроен (проверьте COINSO_PROJECT_ID и COINSO_SECRET_KEY)');
-  const orderId = 'MF_COIN_' + Date.now() + '_' + userId;
+  const orderId = 'MF_COIN_' + Date.now().toString(36) + '_' + crypto.randomBytes(6).toString('hex');
   const res = await fetch(`${COINSO_API}/payment/create`, {
     method: 'POST',
     headers: {
@@ -909,33 +941,34 @@ bot.command('coinso', async ctx => {
 bot.command('sbp', async ctx => {
   if (!ADMIN_ID) return ctx.reply('Оплата по СБП не настроена (нет ADMIN_ID).');
   const rub = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
-  const id = String(orderSeq++);
+  const id = 'SBP_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
   const tokens = rub * TOKENS_PER_RUB;
   const newOrder = { id, userId: ctx.from.id, tokens, rub, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
   setOrder(id, newOrder);
 
   let reqText = '';
-  if (SBP_PHONE) reqText += `• Телефон СБП: <code>${SBP_PHONE}</code>${SBP_HOLDER ? ` (${SBP_HOLDER})` : ''}\n• Банки СБП: Т-Банк, Сбербанк, Озон Банк\n`;
+  if (SBP_PHONE) reqText += `• Телефон СБП: <code>${escHtml(SBP_PHONE)}</code>${SBP_HOLDER ? ` (${escHtml(SBP_HOLDER)})` : ''}\n• Банки СБП: Т-Банк, Сбербанк, Озон Банк\n`;
   if (CARD_TINKOFF || CARD_SBER || CARD_OZON) {
     reqText += `• Или прямой перевод на карту:\n`;
-    if (CARD_TINKOFF) reqText += `  — Т-Банк: <code>${CARD_TINKOFF}</code>\n`;
-    if (CARD_SBER) reqText += `  — Сбербанк: <code>${CARD_SBER}</code>\n`;
-    if (CARD_OZON) reqText += `  — Озон Банк: <code>${CARD_OZON}</code>\n`;
+    if (CARD_TINKOFF) reqText += `  — Т-Банк: <code>${escHtml(CARD_TINKOFF)}</code>\n`;
+    if (CARD_SBER) reqText += `  — Сбербанк: <code>${escHtml(CARD_SBER)}</code>\n`;
+    if (CARD_OZON) reqText += `  — Озон Банк: <code>${escHtml(CARD_OZON)}</code>\n`;
   }
   if (!reqText) {
     reqText = `• Реквизиты для оплаты уточняйте у администратора.\n`;
   }
 
   await ctx.reply(
-    `💳 <b>Заявка №${id} на ${rub} ₽ (${tokens} ⬦)</b>\n\n` +
+    `💳 <b>Заявка №${escHtml(id)} на ${rub} ₽ (${tokens} ⬦)</b>\n\n` +
     `<b>Реквизиты для оплаты:</b>\n` +
     reqText + `\n` +
     `После перевода администратор проверит платёж и токены сразу зачислятся на баланс.`,
     { parse_mode: 'HTML' }
   );
+  const senderLabel = ctx.from.username ? '@' + ctx.from.username : (ctx.from.first_name || 'ID ' + ctx.from.id);
   await bot.api.sendMessage(ADMIN_ID,
-    `💳 <b>Заявка №${id} по СБП:</b> ${rub} ₽ → <b>+${tokens} ⬦</b>\n` +
-    `От: <b>${ctx.from.username ? '@' + ctx.from.username : ctx.from.first_name}</b> (id: <code>${ctx.from.id}</code>)`,
+    `💳 <b>Заявка №${escHtml(id)} по СБП:</b> ${rub} ₽ → <b>+${tokens} ⬦</b>\n` +
+    `От: <b>${escHtml(senderLabel)}</b> (id: <code>${ctx.from.id}</code>)`,
     {
       parse_mode: 'HTML',
       reply_markup: new InlineKeyboard()
@@ -964,10 +997,10 @@ async function processOrderAction(orderId, action) {
         t: Date.now()
       });
       await bot.api.sendMessage(order.userId,
-        `✅ <b>Ваша заявка на вывод №${orderId} выполнена!</b> ☑️\n\n` +
+        `✅ <b>Ваша заявка на вывод №${escHtml(orderId)} выполнена!</b> ☑️\n\n` +
         `├ Сумма выплаты: <b>${order.rub} ₽</b> (${order.tokens} ⬦)\n` +
-        `├ Способ: <b>${order.method}</b>\n` +
-        `└ Реквизиты: <code>${order.details}</code>\n\n` +
+        `├ Способ: <b>${escHtml(order.method)}</b>\n` +
+        `└ Реквизиты: <code>${escHtml(order.details)}</code>\n\n` +
         `Средства успешно отправлены! Спасибо за игру в MoneyForUp! 🚀`,
         { parse_mode: 'HTML' }
       ).catch(() => {});
@@ -990,7 +1023,7 @@ async function processOrderAction(orderId, action) {
         t: Date.now()
       });
       await bot.api.sendMessage(order.userId,
-        `⚠️ <b>Заявка на вывод №${orderId} на ${order.rub} ₽ отклонена.</b>\n` +
+        `⚠️ <b>Заявка на вывод №${escHtml(orderId)} на ${order.rub} ₽ отклонена.</b>\n` +
         `Проверьте условия вывода и реквизиты или напишите @lev_god.`,
         { parse_mode: 'HTML' }
       ).catch(() => {});
@@ -1191,12 +1224,13 @@ bot.callbackQuery('adm_orders', async ctx => {
     const u = users.get(o.userId) || { name: 'ID ' + o.userId };
     if (o.type === 'withdraw') {
       const dossier = betsMonitor.getPlayerDossier(o.userId, u);
+      const pName = u.username ? '@' + u.username : (u.name || 'ID ' + o.userId);
       await ctx.reply(
-        `💸 <b>Ожидает вывода #${id}</b>\n` +
-        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
+        `💸 <b>Ожидает вывода #${escHtml(id)}</b>\n` +
+        `├ Игрок: <b>${escHtml(pName)}</b> (<code>${o.userId}</code>)\n` +
         `├ Сумма: <b>${o.rub} ₽</b> (${o.tokens} ⬦)\n` +
-        `├ Способ: <b>${o.method}</b>\n` +
-        `└ Реквизиты: <code>${o.details}</code>\n\n` +
+        `├ Способ: <b>${escHtml(o.method)}</b>\n` +
+        `└ Реквизиты: <code>${escHtml(o.details)}</code>\n\n` +
         dossier,
         {
           parse_mode: 'HTML',
@@ -1206,11 +1240,12 @@ bot.callbackQuery('adm_orders', async ctx => {
         }
       );
     } else {
+      const pName = u.username ? '@' + u.username : (u.name || 'ID ' + o.userId);
       await ctx.reply(
-        `💳 <b>Ожидает пополнения #${id}</b>\n` +
-        `├ Игрок: <b>${u.username ? '@' + u.username : u.name}</b> (<code>${o.userId}</code>)\n` +
+        `💳 <b>Ожидает пополнения #${escHtml(id)}</b>\n` +
+        `├ Игрок: <b>${escHtml(pName)}</b> (<code>${o.userId}</code>)\n` +
         `├ Сумма: <b>${o.rub} ₽</b> (+${o.tokens} ⬦)\n` +
-        `└ Способ: <b>${o.bank || o.source || 'СБП'}</b>`,
+        `└ Способ: <b>${escHtml(o.bank || o.source || 'СБП')}</b>`,
         {
           parse_mode: 'HTML',
           reply_markup: new InlineKeyboard()
@@ -1499,10 +1534,10 @@ const server = http.createServer(async (req, res) => {
         if (ADMIN_ID) {
           await bot.api.sendMessage(ADMIN_ID,
             `🤖 <b>Авто-зачисление по СМС:</b>\n` +
-            `├ Заявка: <b>№${foundId}</b>\n` +
+            `├ Заявка: <b>№${escHtml(foundId)}</b>\n` +
             `├ Сумма: <b>${amountRub} ₽</b> (+${foundOrder.tokens} ⬦)\n` +
             `├ Пользователь ID: <code>${foundOrder.userId}</code>\n` +
-            `└ Текст смс: <i>${text}</i>`,
+            `└ Текст смс: <i>${escHtml(text)}</i>`,
             { parse_mode: 'HTML' }
           ).catch(() => {});
         }
@@ -1514,7 +1549,7 @@ const server = http.createServer(async (req, res) => {
       if (ADMIN_ID) {
         await bot.api.sendMessage(ADMIN_ID,
           `ℹ️ <b>Получено СМС о пополнении на ${amountRub} ₽, но активная заявка на такую сумму не найдена в очереди:</b>\n` +
-          `<i>${text}</i>`,
+          `<i>${escHtml(text)}</i>`,
           { parse_mode: 'HTML' }
         ).catch(() => {});
       }
@@ -1561,6 +1596,9 @@ const server = http.createServer(async (req, res) => {
        Никакие winTokens/tokens из тела запроса не читаются (это и был эксплойт:
        клиент сам сообщал, сколько выиграл). */
     if ((url.pathname === '/api/play' || url.pathname === '/api/record-bet') && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`play:${u.id}`, 120, 60000)) {
+        return send(429, { error: 'Слишком много игровых запросов. Пожалуйста, играйте чуть медленнее.' });
+      }
       const bet = body.bet != null ? body.bet : body.betTokens;
       const res = playRound(
         u,
@@ -1779,6 +1817,9 @@ const server = http.createServer(async (req, res) => {
 
     /* Заявка на вывод средств (минимум 200 ₽ = 2000 токенов + обязательный депозит) */
     if (url.pathname === '/api/withdraw' && req.method === 'POST') {
+      if (!checkRateLimit(`wd:${u.id}`, 5, 60000)) {
+        return send(429, { error: 'Слишком много запросов на вывод. Попробуйте через минуту.' });
+      }
       const rub = Math.floor(Number(body.rub || 0));
       const method = String(body.method || 'СБП / Карта').trim();
       const details = String(body.details || '').trim();
@@ -1806,9 +1847,9 @@ const server = http.createServer(async (req, res) => {
           bot.api.sendMessage(
             ADMIN_ID,
             `🚨 <b>АНТИЧИТ ЗАБЛОКИРОВАЛ ВЫВОД БЕЗ ДЕПОЗИТА!</b>\n` +
-            `├ Игрок: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
+            `├ Игрок: <b>${escHtml(uLabel)}</b> (id: <code>${u.id}</code>)\n` +
             `├ Попытался вывести: <b>${rub} ₽</b> (${rub * TOKENS_PER_RUB} ⬦)\n` +
-            `├ Реквизиты: <code>${details}</code>\n` +
+            `├ Реквизиты: <code>${escHtml(details)}</code>\n` +
             `└ Накрученный баланс сброшен до ${u.tokens} ⬦.\n\n` +
             dossier,
             { parse_mode: 'HTML' }
@@ -1831,7 +1872,7 @@ const server = http.createServer(async (req, res) => {
       // Списание ровно один раз; при сбое записи заявку НЕ создаём
       const wr = applyBalance(u, -neededTokens, 'withdraw', `Заявка на вывод ${rub} ₽ на ${details}`);
       if (!wr.ok) return send(500, { error: 'Не удалось списать баланс, попробуйте позже' });
-      const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+      const orderId = 'WD' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(4).toString('hex').toUpperCase();
       const wdOrder = {
         id: orderId,
         type: 'withdraw',
@@ -1849,11 +1890,11 @@ const server = http.createServer(async (req, res) => {
         const dossier = betsMonitor.getPlayerDossier(u.id, u);
         bot.api.sendMessage(
           ADMIN_ID,
-          `💸 <b>Заявка на вывод средств #${orderId}</b>\n` +
-          `├ Пользователь: <b>${uLabel}</b> (id: <code>${u.id}</code>)\n` +
+          `💸 <b>Заявка на вывод средств #${escHtml(orderId)}</b>\n` +
+          `├ Пользователь: <b>${escHtml(uLabel)}</b> (id: <code>${u.id}</code>)\n` +
           `├ Сумма: <b>${rub} ₽</b> (${neededTokens} ⬦)\n` +
-          `├ Способ: <b>${method}</b>\n` +
-          `└ Реквизиты: <code>${details}</code>\n\n` +
+          `├ Способ: <b>${escHtml(method)}</b>\n` +
+          `└ Реквизиты: <code>${escHtml(details)}</code>\n\n` +
           dossier,
           {
             parse_mode: 'HTML',
@@ -1929,6 +1970,9 @@ const server = http.createServer(async (req, res) => {
       return send(200, { invoice_link: link, tokens });
     }
     if (url.pathname === '/api/promo' && req.method === 'POST') {
+      if (!checkRateLimit(`promo:${u.id}`, 10, 60000)) {
+        return send(429, { error: 'Слишком много попыток ввода промокода. Подождите минуту.' });
+      }
       const code = String(body.code || '').trim();
       const res = applyPromo(u.id, code);
       if (!res.ok) {
@@ -1983,8 +2027,11 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/order-sbp' && req.method === 'POST') {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
+      if (!checkRateLimit(`order-sbp:${u.id}`, 10, 60000)) {
+        return send(429, { error: 'Слишком много заявок на пополнение. Подождите минуту.' });
+      }
       const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
-      const id = String(orderSeq++);
+      const id = 'SBP_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
       const tokens = rub * TOKENS_PER_RUB;
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();
@@ -1994,12 +2041,12 @@ const server = http.createServer(async (req, res) => {
       if (ADMIN_ID) {
         const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
         const msg =
-          `💳 <b>Новая заявка на пополнение №${id}</b>\n` +
-          `├ Пользователь: <b>${uLabel}</b> (ID: <code>${u.id}</code>)\n` +
+          `💳 <b>Новая заявка на пополнение №${escHtml(id)}</b>\n` +
+          `├ Пользователь: <b>${escHtml(uLabel)}</b> (ID: <code>${u.id}</code>)\n` +
           `├ Сумма: <b>${rub} ₽</b> (к зачислению: <b>+${tokens} ⬦</b>)\n` +
-          `├ Способ / Банк: <b>${bank}</b>\n` +
-          (card ? `├ Реквизит: <code>${card}</code>\n` : '') +
-          (sender ? `├ Отправитель / примечание: <code>${sender}</code>\n` : '') +
+          `├ Способ / Банк: <b>${escHtml(bank)}</b>\n` +
+          (card ? `├ Реквизит: <code>${escHtml(card)}</code>\n` : '') +
+          (sender ? `├ Отправитель / примечание: <code>${escHtml(sender)}</code>\n` : '') +
           `└ Статус: <i>Ожидает подтверждения</i>`;
         await bot.api.sendMessage(ADMIN_ID, msg, {
           parse_mode: 'HTML',
