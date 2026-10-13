@@ -360,6 +360,39 @@ const GAMES = {
   __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.10, defaultMult: 2.0 }
 };
 
+/* ── Ракетка (Crash Game 24/7): детерминированная модель крушения по раундам ── */
+const RK = { tcap: 12, k: 0.18 };
+function sampleCrash(seedIdx) {
+  let r;
+  if (seedIdx != null) {
+    let a = (seedIdx ^ 0x6D2B79F5) >>> 0;
+    a = Math.imul(a ^ (a >>> 15), a | 1);
+    a ^= a + Math.imul(a ^ (a >>> 7), a | 61);
+    r = ((a ^ (a >>> 14)) >>> 0) / 4294967296;
+  } else {
+    r = Math.random();
+  }
+  if (r < 0.08) return 1.00;
+  if (r < 0.14) return +(1.01 + ((r - 0.08) / 0.06) * 0.09).toFixed(2);
+  if (r < 0.29) return +(1.10 + ((r - 0.14) / 0.15) * 0.20).toFixed(2);
+  if (r < 0.53) return +(1.30 + ((r - 0.29) / 0.24) * 0.25).toFixed(2);
+  if (r < 0.73) return +(1.55 + ((r - 0.53) / 0.20) * 0.20).toFixed(2);
+  if (r < 0.79) return +(1.75 + ((r - 0.73) / 0.06) * 0.25).toFixed(2);
+  if (r < 0.89) return +(2.00 + ((r - 0.79) / 0.10) * 0.30).toFixed(2);
+  if (r < 0.98) return +(2.30 + ((r - 0.89) / 0.09) * 0.69).toFixed(2);
+  const t0 = Math.log(3.5) / RK.k;
+  const rLong = (r - 0.98) / 0.02;
+  return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
+}
+
+const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, bet] of activeRacketBets.entries()) {
+    if (now - bet.createdAt > 300000) activeRacketBets.delete(id);
+  }
+}, 60000).unref();
+
 function gameConfig(rawName) {
   const key = String(rawName || '').trim().toLowerCase()
     .replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -1630,6 +1663,79 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
 
+    /* ── Ракетка: приём ставки до старта полёта ────────────────────────────── */
+    if (url.pathname === '/api/racket/bet' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`racket-bet:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Пожалуйста, подождите.' });
+      }
+      const bet = Math.floor(Number(body.bet != null ? body.bet : body.betTokens) || 0);
+      if (bet < 10 || bet > 100000) return send(400, { error: 'Ставка должна быть от 10 до 100000 ⬦' });
+      if (bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно токенов' });
+
+      const rIdx = Number(body.rIdx) || Math.floor(Date.now() / 30000);
+      const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex')));
+
+      const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${bet} ⬦)`, roundId);
+      if (!r.ok) return send(400, { error: 'Не удалось списать ставку' });
+
+      activeRacketBets.set(roundId, {
+        userId: u.id,
+        bet,
+        rIdx,
+        createdAt: Date.now(),
+        cashed: false
+      });
+
+      try {
+        db.saveRound({ roundId, userId: u.id, game: 'Ракетка', bet, mult: 1, win: 0, status: 'active' });
+      } catch (_) {}
+
+      return send(200, { ok: true, roundId, bet, tokens: u.tokens });
+    }
+
+    /* ── Ракетка: кэшаут (забрать выигрыш на текущем множителе) ─────────────── */
+    if (url.pathname === '/api/racket/cashout' && req.method === 'POST') {
+      const roundId = String(body.roundId || '');
+      const saved = activeRacketBets.get(roundId);
+      if (!saved || saved.userId !== u.id) {
+        return send(400, { error: 'Активная ставка в Ракетке не найдена' });
+      }
+      if (saved.cashed) {
+        return send(400, { error: 'Выигрыш уже забран' });
+      }
+
+      const serverCrash = sampleCrash(saved.rIdx);
+      const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
+
+      // Ракета разбилась до того, как игрок нажал кэшаут
+      if (clientMult > serverCrash + 0.05) {
+        return send(400, { error: `Ракета уже взорвалась на ×${serverCrash}. Ставка сгорела.` });
+      }
+
+      const realMult = Math.min(serverCrash, Math.max(1.01, clientMult));
+      const win = Math.floor(saved.bet * realMult);
+      saved.cashed = true;
+
+      const r = applyBalance(u, win, 'racket_cashout', `Ракетка · выигрыш ×${realMult} (+${win} ⬦)`, roundId);
+      if (!r.ok) return send(500, { error: 'Не удалось начислить выигрыш' });
+
+      try {
+        db.saveRound({ roundId, userId: u.id, game: 'Ракетка', bet: saved.bet, mult: realMult, win, status: 'settled' });
+      } catch (_) {}
+
+      betsMonitor.recordBet({
+        userId: u.id,
+        name: u.username ? '@' + u.username : (u.name || String(u.id)),
+        game: 'Ракетка',
+        betTokens: saved.bet,
+        winTokens: win,
+        balanceAfter: u.tokens,
+        totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
+      });
+
+      return send(200, { ok: true, verdict: 'win', win, mult: realMult, tokens: u.tokens });
+    }
+
     /* Запись результата ставки в отдельный файл мониторинга + серверный античит баланса */
     /* Игра: исход раунда решает СЕРВЕР.
        Клиент присылает только выбор игрока — игру, ставку и желаемый множитель.
@@ -2145,7 +2251,30 @@ const server = http.createServer(async (req, res) => {
 });
 
 async function initBotProfile() {
-  // Отключено автоматическое обновление описания, чтобы не затирать описание, настроенное вручную через @BotFather.
+  if (process.env.BOT_DRY_RUN === '1' || !BOT_TOKEN) return;
+  try {
+    await bot.api.setMyDescription({
+      description:
+`🔥 MoneyForUp — игровая платформа, кейсы и стейкинг в Telegram!
+
+Делай мани, ап-ап! 🚀
+
+• 📦 Кейсы и дропы — скины и предметы
+• 🚀 Ракетка 24/7 — успей забрать до взрыва
+• 🍺 Скуф vs Альтушка, Dice, Колесо Фортуны
+• 📈 Стейкинг 1 % в сутки с начислением каждую секунду
+• 👥 Реферальная программа 15 % с пополнений
+• 🎟 Промокоды и ежедневные бонусы
+
+Жми «Старт» и забирай свои первые токены! 👇`
+    });
+    await bot.api.setMyShortDescription({
+      short_description: 'MoneyForUp — Делай мани, ап-ап! 🚀 Кейсы, Ракетка и стейкинг.'
+    });
+    console.log('[Telegram] Описание профиля бота обновлено');
+  } catch (e) {
+    console.warn('[Telegram] Не удалось обновить описание бота:', e.message);
+  }
 }
 initBotProfile();
 
