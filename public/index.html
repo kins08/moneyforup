@@ -895,7 +895,14 @@ function tgHaptic(kind){
 async function tgCall(path,body){
   const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(Object.assign({initData:TG.initData},body||{}))});
-  return r.json();
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){
+    const err=new Error((data&&data.error)||('Ошибка '+r.status));
+    err.status=r.status;
+    err.data=data;
+    throw err;
+  }
+  return data;
 }
 function tgApplyServer(d){
   if(!d)return;
@@ -911,6 +918,7 @@ function tgApplyServer(d){
     // Серверный баланс — единственный источник истины (предотвращает подмену через localStorage)
     S.balance = Math.max(0, Math.floor(d.tokens));
     S.tgBalance = S.balance;
+    try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
   }
   if(typeof d.staked==='number')S.stake={amount:d.staked,since:Date.now(),accruedBase:d.accrued||0};
   if(d.refCode){S.refCode=String(d.refCode);S.refServer=true;}
@@ -1083,47 +1091,58 @@ function ensureRefCode(){
   S.refCode=code;save();return code;
 }
 const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
-try{const d=JSON.parse(localStorage.getItem('moneyforup')||'null'); if(d&&typeof d.balance==='number')Object.assign(S,d); if(!S.numId)S.numId=10000;}catch(e){}
+try{
+  const d=JSON.parse(localStorage.getItem('moneyforup')||'null');
+  if(d){
+    // Не используем localStorage как источник истины по балансу
+    delete d.balance;
+    Object.assign(S,d);
+  }
+  if(!S.numId)S.numId=10000;
+  // Баланс на экране показывать ТОЛЬКО из последнего ответа сервера
+  const lastSrv=sessionStorage.getItem('lastServerBalance');
+  if(lastSrv!==null&&!isNaN(Number(lastSrv))){
+    S.balance=Number(lastSrv);
+  }else{
+    S.balance=50;
+  }
+}catch(e){}
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){} }
 let __pendingBetRecord = null;
-function flushPendingBet(){
-  if(!__pendingBetRecord) return;
-  const rec = __pendingBetRecord;
-  __pendingBetRecord = null;
-  if(IS_TG && API_BASE){
-    tgCall('/api/record-bet', {
-      game: rec.game,
-      betTokens: rec.bet,
-      winTokens: rec.win,
-      tokens: S.balance
-    }).then(r => {
-      if(r && typeof r.tokens === 'number'){
-        S.balance = r.tokens;
-        save(); syncUI();
-      }
-    }).catch(()=>{});
-  }
-}
+
 function place(bet,game){
-  // Если предыдущая ставка не закрылась вызовом win(), значит она проиграна (win = 0)
-  if(__pendingBetRecord){
-    flushPendingBet();
-  }
-  S.balance-=bet;S.wagered+=bet;S.net-=bet;S.plays++;
+  S.wagered+=bet;S.net-=bet;S.plays++;
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
-  save();syncUI();
-  __pendingBetRecord = { game: game || 'Игра', bet: bet, win: 0, t: Date.now() };
-  clearTimeout(window.__betFlushTimer);
-  window.__betFlushTimer = setTimeout(() => { flushPendingBet(); }, 2500);
-}
-function win(amount,game,note){
-  const depRub = S.totalDeposited || S.lastDeposit || 0;
-  if(depRub <= 0 && !S.isAdmin && (S.balance + amount) > 380){
-    amount = Math.max(0, 360 - S.balance);
+
+  if(!IS_TG||!API_BASE){
+    // Демо-режим (без сервера)
+    S.balance-=bet;
+    save();syncUI();
+    return;
   }
-  S.balance+=amount;S.net+=amount;
+
+  // Серверный режим: баланс на экране берётся ТОЛЬКО из ответа сервера.
+  // Локальный расчёт "было - ставка" для отображения убран.
+  // Параметры выигрыша и клиентский баланс полностью исключены из тела запроса.
+  tgCall('/api/record-bet',{
+    game:game||'Игра',
+    betTokens:bet
+  }).then(r=>{
+    if(r&&typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+      syncUI();
+    }
+  }).catch(err=>{
+    // Обработка отказа: сервер вернул 400 — показать ошибку, баланс взять из следующего /api/balance, НЕ откатывать в свою локальную цифру
+    showAppNotification((err&&err.message)||'Ошибка обработки ставки');
+    tgLoadBalance();
+  });
+}
+
+function win(amount,game,note){
   if(amount>0)S.hist.unshift({label:game+(note?' · '+note:''),delta:amount,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
   if(amount>0)tgHaptic('win');
@@ -1132,25 +1151,17 @@ function win(amount,game,note){
     const mult=note&&note.includes('×')?+(note.replace(/[^\d\.]/g,''))||1.5:1.5;
     window.pushLiveTickerWin(pr.name||'Вы',game||'MUP',amount,mult);
   }
-  save();syncUI();
-  if(__pendingBetRecord){
-    __pendingBetRecord.win += Math.max(0, amount);
-    if(game) __pendingBetRecord.game = game;
-    clearTimeout(window.__betFlushTimer);
-    flushPendingBet();
-  } else if(IS_TG && API_BASE){
-    tgCall('/api/record-bet', {
-      game: game || 'Игра',
-      betTokens: 0,
-      winTokens: Math.max(0, amount),
-      tokens: S.balance
-    }).then(r => {
-      if(r && typeof r.tokens === 'number'){
-        S.balance = r.tokens;
-        save(); syncUI();
-      }
-    }).catch(()=>{});
+
+  if(!IS_TG||!API_BASE){
+    // Демо-режим (без сервера)
+    S.balance+=amount;S.net+=amount;
+    save();syncUI();
+    return;
   }
+
+  // В серверном режиме: локальный расчёт "было + выигрыш" для отображения убран.
+  // Баланс берётся ТОЛЬКО из ответа сервера (/api/record-bet и /api/balance).
+  tgLoadBalance();
 }
 function deposit(tk,label,refBonus){
   const oldVip=(typeof getVipInfo==='function')?getVipInfo(S.totalDeposited||0).cur:{id:0};
