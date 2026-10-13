@@ -553,6 +553,21 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
+<!-- Акция: Бесплатный кейс за первый депозит от 150 ₽ -->
+<div class="item" id="promoFirstDepCard" style="display:none;margin-bottom:12px;background:linear-gradient(135deg,rgba(255,207,107,.15),rgba(255,140,0,.08));border:1px solid rgba(255,207,107,.45);border-radius:16px;padding:12px 14px;cursor:pointer">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="font-size:32px;line-height:1">🎁</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:900;background:#ffcf6b;color:#111;padding:2px 6px;border-radius:6px;text-transform:uppercase">Акция</span>
+        <b style="color:#ffcf6b;font-size:13.5px" id="promoFirstDepTitle">Бесплатный кейс за первый депозит</b>
+      </div>
+      <div class="muted small" style="margin-top:3px;font-size:11.5px" id="promoFirstDepDesc">Пополните счет от 150 ₽ и получите гарантированный подарочный кейс!</div>
+    </div>
+    <button class="pillbtn" id="promoFirstDepBtn" style="background:#ffcf6b;color:#0d1017;font-weight:800;border:none;padding:7px 12px;font-size:12px;border-radius:10px;white-space:nowrap">Забрать</button>
+  </div>
+</div>
+
 <!-- Ранги кэшбэка по пополнениям -->
 <div class="vip-card" id="vipCard" title="Нажмите, чтобы посмотреть все ранги">
   <div class="vip-top">
@@ -684,15 +699,15 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <div class="muted small" style="margin-top:8px;line-height:1.4">Промокоды имеют ограниченное количество активаций. Введите промокод и нажмите <b>«Активировать промокод»</b>.</div>
   </div>
   <div id="paySumBlock">
-    <div class="muted small" style="margin:12px 0 8px">Сумма пополнения</div>
+    <div class="muted small" style="margin:12px 0 8px">Сумма пополнения (мин. 150 ₽)</div>
     <div class="chips" id="payAmounts">
-      <button class="chip" data-pa="100">100 ₽</button>
-      <button class="chip on" data-pa="300">300 ₽</button>
+      <button class="chip on" data-pa="150">150 ₽</button>
+      <button class="chip" data-pa="300">300 ₽</button>
       <button class="chip" data-pa="500">500 ₽</button>
       <button class="chip" data-pa="1000">1000 ₽</button>
     </div>
     <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
-      <input class="betinput" id="payRub" type="number" min="1" step="10" inputmode="numeric" value="300" aria-label="Сумма в рублях">
+      <input class="betinput" id="payRub" type="number" min="150" step="10" inputmode="numeric" value="150" aria-label="Сумма в рублях">
       <span class="muted small">₽</span></div>
   </div>
   <div class="muted small" id="payPreview" style="margin-top:8px"></div>
@@ -721,23 +736,23 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<div class="section"><b>Вывод средств</b><span class="muted small">мин. 200 ₽ (2 000 ⬦)</span></div>
+<div class="section"><b>Вывод средств</b><span class="muted small">мин. 300 ₽ (3 000 ⬦)</span></div>
 <div class="item">
   <div class="muted small" style="margin-bottom:8px">Способ получения</div>
   <div class="chips" id="withdrawMethods">
     <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
     <button class="chip" data-wm="crypto">🪙 Криптовалюта (USDT / TON)</button>
   </div>
-  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 200 ₽)</div>
+  <div class="muted small" style="margin:12px 0 8px">Сумма вывода (мин. 300 ₽)</div>
   <div class="chips" id="withdrawAmounts">
-    <button class="chip on" data-wa="200">200 ₽</button>
-    <button class="chip" data-wa="300">300 ₽</button>
+    <button class="chip on" data-wa="300">300 ₽</button>
     <button class="chip" data-wa="500">500 ₽</button>
     <button class="chip" data-wa="1000">1 000 ₽</button>
+    <button class="chip" data-wa="2000">2 000 ₽</button>
     <button class="chip" data-wa="all">Все</button>
   </div>
   <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
-    <input class="betinput" id="withdrawRub" type="number" min="200" step="10" inputmode="numeric" value="200" aria-label="Сумма вывода в рублях">
+    <input class="betinput" id="withdrawRub" type="number" min="300" step="10" inputmode="numeric" value="300" aria-label="Сумма вывода в рублях">
     <span class="muted small">₽</span></div>
   <div class="muted small" style="margin:12px 0 6px">Реквизиты (телефон СБП + банк / номер карты / адрес кошелька USDT или TON)</div>
   <input class="betinput" id="withdrawDetails" type="text" placeholder="+7 999 123-45-67 (Сбер/Т-Банк)" style="width:100%;box-sizing:border-box;text-align:left;padding:10px 12px;font-size:14px" aria-label="Реквизиты вывода">
@@ -745,8 +760,22 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <button class="control" id="withdrawGo" style="margin-top:12px">Запросить вывод</button>
   <div class="result" id="withdrawMsg" style="display:none;margin-top:8px"></div>
 </div>
-<div class="section"><b>Бонусы и Кэшбэк</b></div>
+<div class="section"><b>Бонусы, Рейкбек и Кэшбэк</b></div>
 <div class="item">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>Рейкбек 0.5% с каждой ставки</b>
+      <span class="pill" style="color:#3ddc96;font-weight:800;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35)">0.5%</span>
+    </div>
+    <div class="muted small" style="margin:3px 0 8px">Пассивный возврат 0.5% от суммы любых ваших ставок на платформе. Забрать на баланс можно при накоплении от 30 ⬦.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.25);padding:9px 12px;border-radius:10px;margin:6px 0 8px;border:1px solid rgba(255,255,255,.05)">
+      <span class="muted small">Накоплено рейкбека:</span>
+      <b style="color:#3ddc96;font-size:16px" id="rakebackAmount">0.00 ⬦</b>
+    </div>
+    <button class="control" id="btnClaimRakeback" style="margin-top:2px" disabled>Забрать рейкбек (от 30 ⬦)</button>
+    <div class="result" id="msgRakeback" style="display:none;margin-top:8px"></div>
+  </div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
   <div>
     <b>Подписка на канал MONEYFORUP</b>
     <div class="muted small" style="margin:3px 0 8px">Получите +50 токенов за подписку на канал @moneyforup</div>
@@ -940,10 +969,13 @@ function tgApplyServer(d){
   if(typeof d.lastCashbackAt==='number')S.lastCashbackAt=d.lastCashbackAt;
   if(typeof d.cashbackClaimed==='boolean')S.cashbackClaimed=d.cashbackClaimed;
   if(typeof d.easycashClaimed==='boolean')S.easycashClaimed=d.easycashClaimed;
+  if(typeof d.rakeback==='number')S.rakeback=d.rakeback;
+  if(typeof d.freeCases==='number')S.freeCases=d.freeCases;
   if(typeof d.isAdmin==='boolean')S.isAdmin=d.isAdmin;
   if(Array.isArray(d.notifications) && d.notifications.length){
     d.notifications.forEach(nf => {
-      if(nf && nf.text) showAppNotification(nf.text);
+      const text = typeof nf === 'string' ? nf : (nf && nf.text ? nf.text : '');
+      if(text) showAppNotification(text);
     });
   }
   save();syncUI();paySync();
@@ -1094,7 +1126,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -1676,7 +1708,7 @@ async function tgLoadRequisites(force){
   try{await reqInflight;}finally{reqInflight=null;}
 }
 
-const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','','','','Промокод','Криптовалюта (Coinso)']};
+const PAY={m:0,amt:150,names:['СБП / Карты (Лично)','','','','Промокод','Криптовалюта (Coinso)']};
 function paySync(){
   qa('#payMethods .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pm===PAY.m));
   qa('#payAmounts .chip').forEach(c=>c.classList.toggle('on',+c.dataset.pa===PAY.amt));
@@ -1762,6 +1794,10 @@ async function startPayment(){
   if(!S.termsAt)return;
   const rub=Math.max(1,Math.floor(PAY.amt)||0),tk=rub*RATE;
   const m=q('#payMsg');m.style.display='block';m.className='result';
+  if(PAY.m !== 4 && rub < 150){
+    m.className='result bad';m.textContent='Минимальная сумма пополнения — 150 ₽.';
+    return;
+  }
   if(payProvider){
     m.textContent='Готовим оплату…';
     try{
@@ -1778,8 +1814,8 @@ async function startPayment(){
 }
 q('#payGo').addEventListener('click',startPayment);
 
-/* ---------- вывод средств (профиль, минимум 200 ₽) ---------- */
-const WITHDRAW={m:'sbp',amt:200,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
+/* ---------- вывод средств (профиль, минимум 300 ₽) ---------- */
+const WITHDRAW={m:'sbp',amt:300,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
 function withdrawSync(){
   const wMeth=q('#withdrawMethods');
   if(!wMeth)return;
@@ -1788,7 +1824,7 @@ function withdrawSync(){
   const rub=Math.max(0,Math.floor(WITHDRAW.amt)||0);
   const neededTk=rub*RATE;
   const canAfford = S.balance >= neededTk;
-  const validMin = rub >= 200;
+  const validMin = rub >= 300;
   const prev=q('#withdrawPreview');
   if(prev){
     prev.innerHTML='Спишется: <b>'+fmt(neededTk)+' ⬦</b> · к получению: <b>'+rub+' ₽</b> · способ: '+WITHDRAW.names[WITHDRAW.m];
@@ -1796,7 +1832,7 @@ function withdrawSync(){
   const btn=q('#withdrawGo');
   if(btn){
     if(!validMin){
-      btn.textContent='Минимум 200 ₽ (2 000 ⬦)';
+      btn.textContent='Минимум 300 ₽ (3 000 ⬦)';
       btn.disabled=true;
     }else if(!canAfford){
       btn.textContent='Недостаточно токенов ('+fmt(neededTk)+' ⬦)';
@@ -1851,8 +1887,8 @@ async function startWithdrawal(){
   const m=q('#withdrawMsg');
   if(!m)return;
   m.style.display='block';m.className='result';
-  if(rub<200){
-    m.className='result bad';m.textContent='Минимальная сумма вывода — 200 ₽ (2 000 ⬦).';
+  if(rub<300){
+    m.className='result bad';m.textContent='Минимальная сумма вывода — 300 ₽ (3 000 ⬦).';
     return;
   }
   const neededTk=rub*RATE;
@@ -2140,7 +2176,94 @@ function syncBonusUI(){
       btnCb.textContent=`Забрать кэшбэк (+${fmt(cbAmt)} ⬦)`;
     }
   }
+
+  const rbEl = q('#rakebackAmount');
+  if(rbEl) rbEl.textContent = (+Number(S.rakeback || 0).toFixed(2)) + ' ⬦';
+  const btnRb = q('#btnClaimRakeback');
+  if(btnRb){
+    const curRb = Number(S.rakeback || 0);
+    const canClaim = curRb >= 30;
+    btnRb.disabled = !canClaim;
+    btnRb.textContent = canClaim ? `Забрать рейкбек (+${Math.floor(curRb)} ⬦)` : `Забрать рейкбек (от 30 ⬦)`;
+  }
+
+  const pCard = q('#promoFirstDepCard');
+  if(pCard){
+    const pTitle = q('#promoFirstDepTitle');
+    const pDesc = q('#promoFirstDepDesc');
+    const pBtn = q('#promoFirstDepBtn');
+    if((S.freeCases || 0) > 0){
+      pCard.style.display = 'block';
+      if(pTitle) pTitle.textContent = `У вас доступен бесплатный кейс (${S.freeCases} шт.)!`;
+      if(pDesc) pDesc.textContent = 'Подарок за первый депозит. Откройте в кейсах прямо сейчас!';
+      if(pBtn) pBtn.textContent = 'Открыть 🎁';
+    }else if((S.totalDeposited || 0) <= 0){
+      pCard.style.display = 'block';
+      if(pTitle) pTitle.textContent = 'Бесплатный кейс за первый депозит';
+      if(pDesc) pDesc.textContent = 'Пополните баланс от 150 ₽ и заберите кейс «Стартовый дроп» в подарок!';
+      if(pBtn) pBtn.textContent = 'Пополнить 💳';
+    }else{
+      pCard.style.display = 'none';
+    }
+  }
 }
+
+const btnClRb = q('#btnClaimRakeback');
+if(btnClRb) btnClRb.addEventListener('click', async () => {
+  const btn = q('#btnClaimRakeback'), msg = q('#msgRakeback');
+  if(Number(S.rakeback || 0) < 30) return;
+  btn.disabled = true;
+  btn.textContent = 'Забираем…';
+  if(msg){ msg.style.display = 'none'; msg.className = 'result'; }
+  if(IS_TG && API_BASE){
+    try {
+      const res = await tgCall('/api/claim-rakeback', {});
+      if(res && res.ok){
+        S.rakeback = res.rakeback;
+        S.balance = res.tokens;
+        save(); syncUI();
+        if(msg){
+          msg.style.display = 'block'; msg.className = 'result good';
+          msg.innerHTML = `✅ Успешно начислено <b>+${fmt(res.claimed)} ⬦</b> на основной баланс!`;
+        }
+        tgHaptic('win');
+      } else {
+        throw new Error(res && res.error ? res.error : 'Не удалось забрать рейкбек');
+      }
+    } catch(e) {
+      if(msg){
+        msg.style.display = 'block'; msg.className = 'result bad';
+        msg.textContent = e.message || String(e);
+      }
+      tgHaptic('lose');
+      syncBonusUI();
+    }
+  } else {
+    const amt = Math.floor(S.rakeback || 0);
+    S.rakeback = +(S.rakeback - amt).toFixed(2);
+    S.balance += amt;
+    save(); syncUI();
+    if(msg){
+      msg.style.display = 'block'; msg.className = 'result good';
+      msg.innerHTML = `✅ Зачислено +${fmt(amt)} ⬦ на баланс!`;
+    }
+  }
+});
+
+const promoFirstCard = q('#promoFirstDepCard');
+if(promoFirstCard) promoFirstCard.addEventListener('click', () => {
+  if((S.freeCases || 0) > 0){
+    screen('play');
+    if(typeof openGame === 'function') openGame('cases');
+  } else {
+    screen('profile');
+    const pRub = q('#payRub');
+    if(pRub) pRub.value = 150;
+    PAY.amt = 150;
+    paySync();
+    pRub && pRub.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
 
 const btnOpCh=q('#btnOpenChannel');
 if(btnOpCh)btnOpCh.addEventListener('click',()=>{
@@ -5019,6 +5142,9 @@ function gameCases(){
     </div>
 
     <div class="actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${(S.freeCases || 0) > 0 ? `
+        <button class="control" id="caseOpenFree" style="margin:0;width:100%;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;font-weight:900;border:none;font-size:14px;padding:12px;box-shadow:0 4px 16px rgba(255,207,107,.35)" ${busy?'disabled':''}>🎁 ОТКРЫТЬ БЕСПЛАТНЫЙ КЕЙС (${S.freeCases} шт.)</button>
+      ` : ''}
       <button class="control" id="caseOpen" style="margin:0;flex:2">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+fmt(curCase.cost)+' ⬦'}</button>
       <button class="control ghost" id="caseTestSpin" style="margin:0;flex:1;min-width:135px;background:rgba(255,207,107,.12);border-color:#ffcf6b;color:#ffcf6b;font-weight:700" ${busy?'disabled':''}>${isBoosted ? '⚡ ПРОГРЕТ (+35%)' : '🧪 ТЕСТ-ПРОКРУТ'}</button>
     </div>
@@ -5327,6 +5453,88 @@ function gameCases(){
             const resEl = q('#caseRes');
             if(resEl){ resEl.className = 'result bad'; resEl.textContent = 'Раунд не состоялся — ставка не принята.'; }
           });
+        }
+      });
+    }
+
+    const freeOpenBtn = q('#caseOpenFree');
+    if(freeOpenBtn){
+      freeOpenBtn.addEventListener('click', async () => {
+        if(busy) return;
+        if((S.freeCases || 0) <= 0) return;
+        busy = true;
+        clearCaseTimers();
+        freeOpenBtn.disabled = true;
+        freeOpenBtn.textContent = 'ОТКРЫВАЕМ…';
+        try {
+          let resData;
+          if(IS_TG && API_BASE){
+            resData = await tgCall('/api/open-free-case', {});
+            if(!resData || !resData.ok) throw new Error((resData && resData.error) || 'Ошибка открытия кейса');
+          } else {
+            const demoDrop = CASES_DATA.case_500.items[Math.floor(Math.random() * CASES_DATA.case_500.items.length)];
+            resData = {
+              ok: true,
+              freeCases: Math.max(0, (S.freeCases || 1) - 1),
+              drop: { id: Date.now(), name: demoDrop.name, icon: demoDrop.icon, price: demoDrop.price, tier: demoDrop.tier, caseName: 'Бесплатный кейс' }
+            };
+          }
+
+          S.freeCases = resData.freeCases;
+          const drop = resData.drop;
+          const targetIndex = 45;
+          const stripItems = [];
+          for(let i = 0; i < 60; i++){
+            if(i === targetIndex){
+              stripItems.push(drop);
+            } else {
+              const randIt = CASES_DATA.case_500.items[Math.floor(Math.random() * CASES_DATA.case_500.items.length)];
+              stripItems.push(randIt);
+            }
+          }
+
+          const strip = q('#caseStrip');
+          const res = q('#caseRes');
+          strip.style.transition = 'none';
+          strip.style.transform = 'translateX(0px)';
+          strip.innerHTML = stripItems.map(it => {
+            const col = TIER_COLS[it.tier] || '#8f97ff';
+            return `<div class="case-card" style="--tier-col:${col}">
+              <div class="ci-icon">${it.icon}</div>
+              <div class="ci-name">${it.name}</div>
+              <div class="ci-val">${fmt(it.price)} ⬦</div>
+            </div>`;
+          }).join('');
+
+          setTimeout(() => {
+            const cardW = 104;
+            const containerW = q('#caseRoulette').offsetWidth || 340;
+            const targetPos = (targetIndex * cardW) + (cardW / 2) - (containerW / 2);
+            strip.style.transition = 'transform 3.5s cubic-bezier(0.12, 0.8, 0.18, 1)';
+            strip.style.transform = `translateX(-${targetPos}px)`;
+
+            setTimeout(() => {
+              clearCaseTimers();
+              busy = false;
+              const targetCard = strip.children[targetIndex];
+              if(targetCard) targetCard.classList.add('win-picked');
+              tgHaptic('win');
+              if(res){
+                res.className = 'result good';
+                res.innerHTML = `🎁 <b>Бесплатный кейс открыт!</b><br>Вам выпал предмет: <b style="color:${TIER_COLS[drop.tier] || '#3ddc96'}">${drop.name} (${fmt(drop.price)} ⬦)</b>!<br><span class="muted small">Предмет уже в вашем инвентаре — вы можете продать его или оставить в коллекции.</span>`;
+              }
+              if(typeof loadInventory === 'function') loadInventory();
+              save(); syncUI();
+              setTimeout(() => { render(); }, 3500);
+            }, 3600);
+          }, 50);
+
+        } catch(e) {
+          busy = false;
+          freeOpenBtn.disabled = false;
+          freeOpenBtn.textContent = 'ОТКРЫТЬ БЕСПЛАТНО';
+          const res = q('#caseRes');
+          if(res){ res.className = 'result bad'; res.textContent = e.message || String(e); }
         }
       });
     }

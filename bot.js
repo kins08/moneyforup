@@ -263,6 +263,8 @@ function user(id, name, username) {
     const fromDb = db.getUser(id);
     if (fromDb) {
       u = fromDb;
+      u.rakeback = Number(u.rakeback || 0);
+      u.freeCases = Number(u.freeCases || 0);
       u.notifications = [];
       users.set(id, u);
       if (u.code) byCode.set(u.code, id);
@@ -275,7 +277,7 @@ function user(id, name, username) {
         ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
         totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0,
         cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-        easycashClaimed: false, notifications: []
+        easycashClaimed: false, rakeback: 0, freeCases: 0, notifications: []
       };
       users.set(id, u);
       byCode.set(code, id);
@@ -471,6 +473,10 @@ function playCaseRound(u, c, rawBet, rawRoundId) {
     balanceAfter: u.tokens, totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
   });
 
+  // Рейкбек: 0.5% от суммы ставки в кейсе
+  u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+  try { db.saveUser(u); } catch (_) {}
+
   return {
     ok: true, roundId, game: 'Кейс: ' + c.name, gameKey: 'case',
     verdict, win: 0, mult: 1, tokens: u.tokens, case: c.id,
@@ -539,6 +545,10 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
     balanceAfter: u.tokens, totalDepositedRub: userDep
   });
 
+  // Рейкбек: 0.5% от суммы ставки в любой игре
+  u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+  try { db.saveUser(u); } catch (_) {}
+
   return { ok: true, roundId, game: cfg.label, gameKey: cfg.key, verdict: win > 0 ? 'win' : 'lose', win, mult, tokens: u.tokens };
 }
 
@@ -593,6 +603,14 @@ async function creditDeposit(userId, tokens, source) {
     return { tokens, refPaid: 0, refErr: credit.error, credited: false };
   }
   const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
+  const isFirstDeposit = (u.totalDepositedRub || 0) === 0;
+  if (isFirstDeposit && rubAmt >= 150) {
+    u.freeCases = (u.freeCases || 0) + 1;
+    (u.notifications = u.notifications || []).push('🎁 Вам начислен бесплатный кейс за первый депозит!');
+    try {
+      bot.api.sendMessage(u.id, '🎁 Вам начислен <b>Бесплатный кейс за первый депозит</b>! Откройте его во вкладке «Кейсы».', { parse_mode: 'HTML' }).catch(() => {});
+    } catch (_) {}
+  }
   u.lastDeposit = rubAmt;
   u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
   u.lastDepositId = (u.lastDepositId || 0) + 1;
@@ -1646,6 +1664,8 @@ const server = http.createServer(async (req, res) => {
       lastCashbackAt: u.lastCashbackAt || 0,
       cashbackClaimed: (u.cashbackClaimedDepositId === u.lastDepositId && u.lastDepositId > 0),
       easycashClaimed: !!u.easycashClaimed,
+      rakeback: +(Number(u.rakeback || 0).toFixed(2)),
+      freeCases: Math.floor(Number(u.freeCases || 0)),
       isAdmin: isAdmin(tgUser),
       notifications: (u.notifications || []).slice(-5)
     };
@@ -1663,6 +1683,94 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
 
+    /* ── Сбор рейкбека (от 30 токенов) ────────────────────────────────────────── */
+    if (url.pathname === '/api/claim-rakeback' && req.method === 'POST') {
+      if (!checkRateLimit(`rb:${u.id}`, 10, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      }
+      const curRb = Number(u.rakeback || 0);
+      if (curRb < 30) {
+        return send(400, { error: `Минимальная сумма сбора рейкбека — 30 ⬦ (у вас ${curRb.toFixed(2)} ⬦)` });
+      }
+      const claimAmt = Math.floor(curRb);
+      const remaining = Math.round((curRb - claimAmt) * 100) / 100;
+      const r = applyBalance(u, claimAmt, 'rakeback_claim', `Сбор рейкбека (+${claimAmt} ⬦)`);
+      if (!r.ok) return send(500, { error: 'Не удалось начислить рейкбек' });
+      u.rakeback = remaining;
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (rakeback):', e.message); }
+      return send(200, { ok: true, claimed: claimAmt, rakeback: u.rakeback, tokens: u.tokens });
+    }
+
+    /* ── Бесплатный кейс за первый депозит ───────────────────────────────────── */
+    if (url.pathname === '/api/open-free-case' && req.method === 'POST') {
+      if (!checkRateLimit(`freecase:${u.id}`, 10, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Подождите немного.' });
+      }
+      const freeCases = Math.floor(Number(u.freeCases || 0));
+      if (freeCases <= 0) {
+        return send(400, { error: 'У вас нет доступных бесплатных кейсов' });
+      }
+      u.freeCases = freeCases - 1;
+
+      const drop = items.rollItem('case_500', crypto.randomInt(0, 1_000_000) / 1_000_000);
+      if (!drop) {
+        u.freeCases = freeCases;
+        return send(500, { error: 'Не удалось открыть кейс, попробуйте позже' });
+      }
+
+      const roundId = 'FREE_' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
+      let itemId = null;
+      try {
+        const saved = db.addInventoryItem({
+          userId: u.id,
+          itemCode: drop.code,
+          name: drop.name,
+          icon: drop.icon,
+          price: drop.price,
+          tier: drop.tier,
+          caseId: 'case_500',
+          caseName: 'Бесплатный кейс за депозит',
+          roundId
+        });
+        itemId = saved.id;
+      } catch (e) {
+        console.error(`[Inventory] бесплатный предмет не сохранён игроку ${u.id}: ${e.message}`);
+      }
+
+      try {
+        db.saveRound({
+          roundId,
+          userId: u.id,
+          game: 'Бесплатный кейс',
+          bet: 0,
+          mult: 1,
+          win: 0,
+          status: 'settled',
+          itemCode: drop.code,
+          itemPrice: drop.price
+        });
+      } catch (e) {
+        console.error('[Round] бесплатный кейс не сохранён:', e.message);
+      }
+
+      try { db.saveUser(u); } catch (_) {}
+
+      return send(200, {
+        ok: true,
+        roundId,
+        freeCases: u.freeCases,
+        drop: {
+          id: itemId,
+          code: drop.code,
+          name: drop.name,
+          icon: drop.icon,
+          price: drop.price,
+          tier: drop.tier,
+          caseName: 'Бесплатный кейс за депозит'
+        }
+      });
+    }
+
     /* ── Ракетка: приём ставки до старта полёта ────────────────────────────── */
     if (url.pathname === '/api/racket/bet' && req.method === 'POST') {
       if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`racket-bet:${u.id}`, 60, 60000)) {
@@ -1677,6 +1785,10 @@ const server = http.createServer(async (req, res) => {
 
       const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${bet} ⬦)`, roundId);
       if (!r.ok) return send(400, { error: 'Не удалось списать ставку' });
+
+      // Рейкбек: 0.5% от суммы ставки в Ракетке
+      u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+      try { db.saveUser(u); } catch (_) {}
 
       activeRacketBets.set(roundId, {
         userId: u.id,
@@ -1972,7 +2084,7 @@ const server = http.createServer(async (req, res) => {
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
-    /* Заявка на вывод средств (минимум 200 ₽ = 2000 токенов + обязательный депозит) */
+    /* Заявка на вывод средств (минимум 300 ₽ = 3000 токенов + обязательный депозит) */
     if (url.pathname === '/api/withdraw' && req.method === 'POST') {
       if (!checkRateLimit(`wd:${u.id}`, 5, 60000)) {
         return send(429, { error: 'Слишком много запросов на вывод. Попробуйте через минуту.' });
@@ -1983,8 +2095,8 @@ const server = http.createServer(async (req, res) => {
       const uLabel = tgUser.username ? '@' + tgUser.username : (u.name || 'ID ' + u.id);
       const userDep = u.totalDepositedRub || u.lastDeposit || 0;
 
-      if (isNaN(rub) || rub < 200) {
-        return send(400, { error: 'Минимальная сумма вывода — 200 ₽ (2 000 ⬦)' });
+      if (isNaN(rub) || rub < 300) {
+        return send(400, { error: 'Минимальная сумма вывода — 300 ₽ (3 000 ⬦)' });
       }
 
       // АНТИЧИТ: запрещаем вывод средств игрокам с 0 ₽ пополнений!
@@ -2153,7 +2265,8 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!plategaOn()) return send(503, { error: 'Platega не настроена' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
+      const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
+      if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
       const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
       try {
         return send(200, await plategaCreate(u, rub, tokens, tgUser.first_name));
@@ -2177,7 +2290,8 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
+      const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
+      if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
       const tokens = Math.max(10, Math.floor(Number(body.tokens) || rub * TOKENS_PER_RUB));
       try {
         const inv = await createCoinsoInvoice(u.id, tokens, rub);
@@ -2196,7 +2310,8 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`order-sbp:${u.id}`, 10, 60000)) {
         return send(429, { error: 'Слишком много заявок на пополнение. Подождите минуту.' });
       }
-      const rub = Math.max(1, Math.floor(Number(body.rub) || 0));
+      const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
+      if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
       const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
       const tokens = rub * TOKENS_PER_RUB;
       const bank = String(body.bank || 'СБП / Карта').trim();

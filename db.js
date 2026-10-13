@@ -63,7 +63,9 @@ CREATE TABLE IF NOT EXISTS users (
   cashback_claimed_dep_id INTEGER DEFAULT 0,
   easycash_claimed INTEGER DEFAULT 0,
   code TEXT UNIQUE,
-  created_at INTEGER
+  created_at INTEGER,
+  rakeback REAL DEFAULT 0,
+  free_cases INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -162,6 +164,7 @@ function __ensureColumns(table, cols) {
     console.error(`[DB] Миграция ${table}: ${e.message}`);
   }
 }
+__ensureColumns('users', [['rakeback', 'REAL DEFAULT 0'], ['free_cases', 'INTEGER DEFAULT 0']]);
 __ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
 
 // Подготовленные SQL-запросы для быстрого выполнения
@@ -169,15 +172,15 @@ const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
       num_id = ?, name = ?, username = ?, staked = ?, stake_since = ?, accrued_base = ?,
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
-      easycash_claimed = ?, code = ?
+      easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -261,7 +264,9 @@ function getUser(id) {
     lastCashbackAt: row.last_cashback_at,
     cashbackClaimedDepositId: row.cashback_claimed_dep_id,
     easycashClaimed: Boolean(row.easycash_claimed),
-    code: row.code
+    code: row.code,
+    rakeback: Number(row.rakeback || 0),
+    freeCases: Number(row.free_cases || 0)
   };
 }
 
@@ -305,6 +310,8 @@ function saveUser(u) {
       u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0,
       u.code || null,
+      Number(u.rakeback || 0),
+      Number(u.freeCases || 0),
       u.id
     );
     turso.queueQuery(`
@@ -312,13 +319,13 @@ function saveUser(u) {
         num_id=?, name=?, username=?, staked=?, stake_since=?, accrued_base=?,
         ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
-        easycash_claimed=?, code=?
+        easycash_claimed=?, code=?, rakeback=?, free_cases=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
       u.ref || 0, u.refEarned || 0, u.refInvited || 0, u.termsAt || 0, u.totalDepositedRub || 0,
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
-      u.easycashClaimed ? 1 : 0, u.code || null, u.id
+      u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0), u.id
     ]);
   } else {
     stmts.insertUser.run(
@@ -341,18 +348,21 @@ function saveUser(u) {
       u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0,
       u.code || null,
-      Date.now()
+      Date.now(),
+      Number(u.rakeback || 0),
+      Number(u.freeCases || 0)
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
       u.id, u.numId || 0, u.name || '', u.username || '', Math.floor(u.tokens || 50),
       u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
-      u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now()
+      u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
+      Number(u.rakeback || 0), Number(u.freeCases || 0)
     ]);
   }
 }
