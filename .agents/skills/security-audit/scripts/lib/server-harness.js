@@ -90,7 +90,7 @@ async function startServer(opts = {}) {
 
   // ── Изолированная копия проекта ──────────────────────────────────────────
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
-  for (const f of ['bot.js', 'db.js', 'bets_monitor.js', 'items.js']) {
+  for (const f of ['bot.js', 'db.js', 'bets_monitor.js', 'items.js', 'turso.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }

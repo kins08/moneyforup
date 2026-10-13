@@ -151,30 +151,33 @@ const promoCodes = new Map(); // CODE -> { code, tokens, maxUses, usedBy: Set<us
 const plategaTx = new Map(); // transactionId Platega → { userId, tokens, rub }
 let orderSeq = Date.now() % 100000;
 
-// Предварительная загрузка всех заказов из постоянной БД
-try {
-  for (const o of db.getAllOrders()) {
-    orders.set(String(o.id), {
-      id: String(o.id),
-      type: o.type,
-      userId: o.user_id,
-      tokens: o.tokens,
-      rub: o.rub,
-      bank: o.bank,
-      card: o.card,
-      sender: o.sender,
-      method: o.method,
-      details: o.details,
-      status: o.status,
-      source: o.source,
-      tx: o.tx,
-      createdAt: o.created_at,
-      updatedAt: o.updated_at
-    });
+// Загрузка всех заказов из постоянной БД
+function reloadOrdersFromDb() {
+  try {
+    for (const o of db.getAllOrders()) {
+      orders.set(String(o.id), {
+        id: String(o.id),
+        type: o.type,
+        userId: o.user_id,
+        tokens: o.tokens,
+        rub: o.rub,
+        bank: o.bank,
+        card: o.card,
+        sender: o.sender,
+        method: o.method,
+        details: o.details,
+        status: o.status,
+        source: o.source,
+        tx: o.tx,
+        createdAt: o.created_at,
+        updatedAt: o.updated_at
+      });
+    }
+  } catch (e) {
+    console.warn('Ошибка загрузки заказов из БД:', e.message);
   }
-} catch (e) {
-  console.warn('Ошибка начальной загрузки заказов из БД:', e.message);
 }
+reloadOrdersFromDb();
 
 function getOrder(id) {
   let ord = orders.get(String(id));
@@ -2170,14 +2173,16 @@ async function startBotSafely() {
 }
 
 // Плавное завершение при деплое на Render, чтобы не возникал 409 Conflict
-process.once('SIGTERM', () => {
+process.once('SIGTERM', async () => {
   console.log('Получен SIGTERM, останавливаем опрос Telegram...');
   try { bot.stop(); } catch (_) {}
+  if (db.waitForTurso) await db.waitForTurso(3000);
   process.exit(0);
 });
-process.once('SIGINT', () => {
+process.once('SIGINT', async () => {
   console.log('Получен SIGINT, останавливаем опрос Telegram...');
   try { bot.stop(); } catch (_) {}
+  if (db.waitForTurso) await db.waitForTurso(3000);
   process.exit(0);
 });
 
@@ -2193,6 +2198,20 @@ setInterval(() => {
   }
 }, HALF_DAY_MS);
 
+async function initPersistence() {
+  if (db.tursoOn && db.tursoOn()) {
+    try {
+      const res = await db.pullFromTurso();
+      if (res && res.ok) {
+        reloadOrdersFromDb();
+      }
+    } catch (e) {
+      console.error('[Turso] Ошибка восстановления данных при старте:', e.message);
+    }
+  }
+}
+initPersistence();
+
 server.listen(API_PORT, '0.0.0.0', () => console.log(`API слушает порт ${API_PORT}`));
 startBotSafely();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
@@ -2203,15 +2222,19 @@ console.log('Бот запущен. Стейкинг 1 %/сутки, рефер�
 /* ── Проверка условий эксплуатации, от которых зависят деньги ─────────────── */
 (function checkRuntime() {
   console.log('[DB] База: ' + db.DB_PATH);
-  const onEphemeralHost = !!(process.env.RENDER || process.env.FLY_APP_NAME || process.env.DYNO);
-  if (!process.env.DB_PATH) {
-    console.warn(
-      '[DB] ВНИМАНИЕ: DB_PATH не задан, база лежит внутри каталога проекта.\n' +
-      '     На хостингах с эфемерной ФС (Render/Fly/Heroku) этот каталог СТИРАЕТСЯ\n' +
-      '     при каждом деплое и рестарте — вместе с балансами, журналом и заявками.\n' +
-      '     Смонтируйте постоянный диск и укажите DB_PATH=/путь/к/диску/moneyforup.db' +
-      (onEphemeralHost ? '\n     Обнаружена эфемерная среда — это ОПАСНО для денег.' : '')
-    );
+  if (db.tursoOn && db.tursoOn()) {
+    console.log('[DB] ✅ Подключено вечное облачное хранилище Turso (база сохраняется между деплоями)');
+  } else {
+    const onEphemeralHost = !!(process.env.RENDER || process.env.FLY_APP_NAME || process.env.DYNO);
+    if (!process.env.DB_PATH) {
+      console.warn(
+        '[DB] ВНИМАНИЕ: DB_PATH не задан, база лежит внутри каталога проекта.\n' +
+        '     На хостингах с эфемерной ФС (Render/Fly/Heroku) этот каталог СТИРАЕТСЯ\n' +
+        '     при каждом деплое и рестарте — вместе с балансами, журналом и заявками.\n' +
+        '     Смонтируйте постоянный диск или задайте TURSO_DATABASE_URL/TURSO_AUTH_TOKEN.' +
+        (onEphemeralHost ? '\n     Обнаружена эфемерная среда — это ОПАСНО для денег.' : '')
+      );
+    }
   }
   if (!PUBLIC_URL) {
     console.warn('[Webhooks] PUBLIC_URL не задан: вебхуки Platega/Coinso не придут, работаем опросом статуса.');
