@@ -9,7 +9,9 @@
     "deploy": "wrangler deploy",
     "preview": "wrangler dev"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "dependencies": {
     "grammy": "^1.30.0"
   }

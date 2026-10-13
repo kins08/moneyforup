@@ -943,6 +943,9 @@ async function tgLoadBalance(){
   try{
     tgApplyServer(await tgCall('/api/balance',{}));
     if(typeof tgLoadRequisites==='function')tgLoadRequisites();
+    // Инвентарь живёт на сервере — тянем его вместе с балансом, иначе после
+    // перезагрузки игрок не увидит своих предметов.
+    if(typeof loadInventory==='function')loadInventory();
   }catch(e){}
 }
 async function tgRegister(){
@@ -1077,7 +1080,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[],baitStreak:0,baitUsedTotal:0,lossTrapActive:false};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -1110,39 +1113,79 @@ try{
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){} }
 let __pendingBetRecord = null;
 
-function place(bet,game){
+/* ── Серверный раунд ─────────────────────────────────────────────────────────
+   Исход раунда решает СЕРВЕР. Клиент присылает только выбор игрока:
+   игру, ставку и желаемый множитель. Ни выигрыш, ни баланс от клиента не уходят.
+   Ответ сервера: { roundId, verdict:'win'|'lose', win, mult, tokens }.        */
+window.__round = null;
+
+/* Актуальный неразобранный раунд (не старше 2 минут) */
+function __currentRound(){
+  const r = window.__round;
+  if(!r || r.consumed) return null;
+  if(Date.now() - r.t > 120000) return null;
+  return r;
+}
+
+function place(bet,game,mult){
   S.wagered+=bet;S.net-=bet;S.plays++;
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
 
   if(!IS_TG||!API_BASE){
-    // Демо-режим (без сервера)
+    // Демо-режим (без сервера) — баланс считаем локально
     S.balance-=bet;
     save();syncUI();
-    return;
+    return null;
   }
 
-  // Серверный режим: баланс на экране берётся ТОЛЬКО из ответа сервера.
-  // Локальный расчёт "было - ставка" для отображения убран.
-  // Параметры выигрыша и клиентский баланс полностью исключены из тела запроса.
-  tgCall('/api/record-bet',{
-    game:game||'Игра',
-    betTokens:bet
-  }).then(r=>{
-    if(r&&typeof r.tokens==='number'){
-      S.balance=r.tokens;
-      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
-      syncUI();
-    }
-  }).catch(err=>{
-    // Обработка отказа: сервер вернул 400 — показать ошибку, баланс взять из следующего /api/balance, НЕ откатывать в свою локальную цифру
-    showAppNotification((err&&err.message)||'Ошибка обработки ставки');
-    tgLoadBalance();
-  });
+  const rnd={ t:Date.now(), state:'pending', verdict:null, win:0, mult:null,
+              shown:null, consumed:false, roundId:null, drop:null };
+  window.__round=rnd;
+
+  // Атомарная операция на сервере: списание ставки + жребий + выплата.
+  // Если запрос не прошёл — раунда нет и деньги не тронуты.
+  // rnd.promise нужен кейсам: анимация обязана показать предмет, который
+  // выдал сервер, а не выбранный в браузере.
+  rnd.promise = tgCall('/api/play',{ game:game||'Игра', bet:bet, mult:(mult!=null?mult:undefined) })
+    .then(r=>{
+      rnd.state='done';
+      rnd.verdict=r.verdict;
+      rnd.win=(r.win|0);
+      rnd.mult=r.mult;
+      rnd.roundId=r.roundId;
+      rnd.drop=r.drop||null;
+      if(typeof r.tokens==='number'){
+        S.balance=r.tokens;
+        try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+        syncUI();
+      }
+      // Если анимация успела показать другой исход — не врём игроку
+      if(rnd.shown && rnd.shown!==rnd.verdict){
+        showAppNotification(rnd.verdict==='win'
+          ? ('Сервер начислил выигрыш: +'+fmt(rnd.win)+' ⬦')
+          : 'Раунд закрыт сервером без выигрыша');
+      }
+    })
+    .catch(err=>{
+      rnd.state='error';
+      rnd.consumed=true;
+      showAppNotification((err&&err.message)||'Ставка не принята');
+      tgLoadBalance();
+      throw err;              // кейс-обработчик должен узнать, что раунда не было
+    });
+
+  return rnd;
 }
 
 function win(amount,game,note){
+  // Деньги решает сервер: показываем его сумму, а не локальный расчёт
+  const __r=__currentRound();
+  if(__r && __r.state==='done' && __r.verdict){
+    __r.consumed=true;
+    amount=__r.verdict==='win' ? (__r.win||0) : 0;
+  }
   if(amount>0)S.hist.unshift({label:game+(note?' · '+note:''),delta:amount,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
   if(amount>0)tgHaptic('win');
@@ -1273,96 +1316,106 @@ function syncUI(){
   if(onBetChange)onBetChange();
 }
 
-/* ==================== МЕХАНИКА ЗАВЛЕЧЕНИЯ И СЛИВА (ПРИКОРМКА С АНТИ-ЭКСПЛОЙТОМ) ==================== */
+/* ==================== СВЕРКА С ВЕРДИКТОМ СЕРВЕРА ====================
+   Имя evalBaitTrap сохранено ради 11 мест вызова, но «прикормки» внутри нет:
+   функция лишь приводит локальную анимацию к тому, что решил сервер.       */
 function evalBaitTrap(gameName, naturalWin, currentBet, targetMult){
-  if(gameName === 'racket') return naturalWin; // Ракетка обрабатывается отдельно
-
-  const mult = Number(targetMult) || 2.0;
-  const bet = Math.max(10, Number(currentBet) || 10);
-  const depRub = S.totalDeposited || S.lastDeposit || 0;
-  const potentialAfterWin = S.balance + Math.floor(bet * mult);
-
-  // 1. ЖЁСТКИЙ ПОТОЛОК БЕЗ ДЕПОЗИТОВ:
-  // Если у игрока 0 ₽ пополнений, он математически НЕ МОЖЕТ подняться выше 340 ⬦ (~34 ₽)!
-  if(depRub <= 0 && !S.isAdmin){
-    if(S.balance >= 300 || potentialAfterWin > 350 || mult > 2.5){
-      S.lossTrapActive = false;
-      S.baitStreak = 0;
-      return false;
-    }
+  // ИСХОД РАУНДА РЕШАЕТ СЕРВЕР.
+  // Здесь раньше жила клиентская «ловушка проигрыша»: по истории депозитов
+  // она решала, проиграет ли игрок. Удалена полностью:
+  //  • манипулировать исходом по депозитам — это обман игрока, а не «балансировка»;
+  //  • любой, кто правит клиент, обходил её и забирал деньги (это и был эксплойт).
+  const rnd = (typeof __currentRound === 'function') ? __currentRound() : null;
+  if(rnd && rnd.state === 'done' && rnd.verdict){
+    rnd.shown = rnd.verdict;
+    return rnd.verdict === 'win';
   }
-
-  S.baitStreak = S.baitStreak || 0;
-  S.baitUsedTotal = S.baitUsedTotal || 0;
-  S.lastBetAmt = S.lastBetAmt || bet;
-  S.lastWinBetAmt = S.lastWinBetAmt || 50;
-
-  // Резкое увеличение ставки (на 35% и более при ставке > 50 токенов)
-  const betHike = (bet >= S.lastBetAmt * 1.35) && (bet > 50);
-  S.lastBetAmt = bet;
-
-  // 2. Если активна ловушка слива: не даём сбросить ловушку мелкой ставкой (10 ⬦) после крупной!
-  if(S.lossTrapActive || (S.baitStreak >= 2 && betHike) || S.baitStreak >= 2){
-    if(bet >= S.lastWinBetAmt * 0.6 || bet >= 50){
-      S.lossTrapActive = false; // разряжаем ловушку только если слил нормальную ставку
-    }
-    S.baitStreak = 0;
-    return false; // Гарантированный слив
-  }
-
-  // 3. Прикормка работает СТРОГО только на мелких кэфах (<= 1.85x), мелких ставках (<= 60 ⬦) и не более 1 раза за всю историю аккаунта!
-  if(S.baitUsedTotal < 1 && S.baitStreak < 1 && mult <= 1.85 && bet <= 60 && Math.random() < 0.55){
-    S.baitStreak++;
-    S.baitUsedTotal++;
-    S.lastWinBetAmt = bet;
-    S.lossTrapActive = true;
-    return true;
-  }
-
-  // 4. Защита от заносов на высоких множителях (×5..×95)
-  if(naturalWin && mult >= 4.0 && Math.random() < 0.60){
-    return false;
-  }
-
-  if(naturalWin){
-    S.baitStreak++;
-    S.lastWinBetAmt = Math.max(S.lastWinBetAmt, bet);
-    if(S.baitStreak >= 2 || (bet * mult) >= 250){
-      S.lossTrapActive = true;
-    }
-    return true;
-  } else {
-    S.baitStreak = 0;
-    return false;
-  }
+  // Вердикт ещё не пришёл (или демо-режим) — показываем честный естественный исход.
+  // Деньги всё равно уже посчитаны сервером: при расхождении игрок получит уведомление.
+  if(rnd) rnd.shown = naturalWin ? 'win' : 'lose';
+  return naturalWin;
 }
 
-/* ==================== ИНВЕНТАРЬ И ПРОДАЖА ПРЕДМЕТОВ ==================== */
+/* ==================== ИНВЕНТАРЬ (СЕРВЕРНЫЙ) ====================
+   Предметы принадлежат СЕРВЕРУ: он их выдаёт, он же знает цену.
+   Раньше весь инвентарь жил в localStorage, и продажа просто прибавляла
+   токены у игрока в браузере. Сервер об этом не знал: на следующем раунде
+   баланс перезаписывался из его ответа, и токены исчезали, а предмет уже
+   был уничтожен. Игрок терял вещь и не получал ничего.
+   Теперь S.inventory — только КЭШ ответа /api/inventory.                    */
+
+/** Загружает инвентарь с сервера. В демо-режиме ничего не делаем. */
+function loadInventory(){
+  if(!IS_TG||!API_BASE) return Promise.resolve(S.inventory||[]);
+  return tgCall('/api/inventory').then(r=>{
+    S.inventory=(r.items||[]).map(it=>({ id:it.id, name:it.name, icon:it.icon,
+      price:it.price, tier:it.tier, caseName:it.caseName, wonAt:it.wonAt }));
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    save(); syncUI();
+    return S.inventory;
+  }).catch(err=>{
+    showAppNotification('Инвентарь не загрузился: '+((err&&err.message)||'ошибка сети'));
+    return S.inventory||[];
+  });
+}
+
 function sellInventoryItem(itemId){
-  S.inventory = S.inventory || [];
-  const idx = S.inventory.findIndex(it => it.id === itemId);
-  if(idx === -1) return;
-  const item = S.inventory[idx];
-  const itemPrice = item.price;
-  const itemName = item.name;
-  S.balance += itemPrice;
-  S.inventory.splice(idx, 1);
-  save();
-  syncUI();
-  tgHaptic('win');
+  const item = (S.inventory||[]).find(it => it.id === itemId);
+
+  // Демо-режим (нет сервера) — деньги ненастоящие, считаем локально
+  if(!IS_TG||!API_BASE){
+    if(!item) return;
+    S.balance += item.price;
+    S.inventory = S.inventory.filter(it => it.id !== itemId);
+    save(); syncUI(); tgHaptic('win');
+    return;
+  }
+  if(!item) return;
+
+  tgCall('/api/inventory/sell',{ itemId:itemId }).then(r=>{
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    S.inventory=(S.inventory||[]).filter(it=>it.id!==itemId);
+    save(); syncUI(); tgHaptic('win');
+    showAppNotification(`Продано: ${item.icon} ${item.name} · +${fmt((r.sold&&r.sold.price)||item.price)} ⬦`);
+  }).catch(err=>{
+    showAppNotification((err&&err.message)||'Не удалось продать предмет');
+    loadInventory();     // сервер — источник правды, приводим экран к нему
+  });
 }
 
 function sellAllInventory(){
-  if(!S.inventory || !S.inventory.length) return;
-  const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
-  const count = S.inventory.length;
-  if(confirm(`Продать все ${count} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
-    S.balance += totalVal;
-    S.inventory = [];
-    save();
-    syncUI();
-    tgHaptic('win');
+  const list = S.inventory || [];
+  if(!list.length) return;
+  const totalVal = list.reduce((sum, it) => sum + (it.price || 0), 0);
+
+  if(!IS_TG||!API_BASE){        // демо-режим
+    if(confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
+      S.balance += totalVal;
+      S.inventory = [];
+      save(); syncUI(); tgHaptic('win');
+    }
+    return;
   }
+
+  if(!confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)) return;
+  tgCall('/api/inventory/sell-all',{}).then(r=>{
+    if(typeof r.tokens==='number'){
+      S.balance=r.tokens;
+      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    }
+    S.inventory=[];
+    save(); syncUI(); tgHaptic('win');
+    showAppNotification(`Продано ${r.count} предмет(ов) · +${fmt(r.total)} ⬦`);
+  }).catch(err=>{
+    showAppNotification((err&&err.message)||'Не удалось продать инвентарь');
+    loadInventory();
+  });
 }
 
 function openItemDetailModal(it){
@@ -4892,30 +4945,16 @@ function gameCases(){
 
         const wasBoosted = !!testBoosts[curCaseId];
         testBoosts[curCaseId] = false;
-        place(curCase.cost, 'Кейс: ' + curCase.name);
+        const __rnd = place(curCase.cost, 'Кейс: ' + curCase.name);
         busy = true;
         clearCaseTimers();
 
-        // Выбираем выигрышный предмет по весам
-        let totalW = 0;
-        curCase.items.forEach(it => totalW += it.w);
-        let rnd = Math.random() * totalW;
-        let winItem = curCase.items[0];
-        let cum = 0;
-        for(let it of curCase.items){
-          cum += it.w;
-          if(rnd <= cum){
-            winItem = it;
-            break;
-          }
-        }
-        const natProfit = winItem.price >= curCase.cost;
-        const allowCaseProfit = evalBaitTrap('cases', natProfit, curCase.cost, +(winItem.price / curCase.cost).toFixed(2));
-        if(!allowCaseProfit && natProfit){
-          const cheapItems = curCase.items.filter(it => it.price < curCase.cost);
-          if(cheapItems.length) winItem = cheapItems[Math.floor(Math.random() * cheapItems.length)];
-        }
-
+        /* Дроп выдаёт СЕРВЕР, и лента обязана остановиться на ЕГО предмете.
+           Раньше клиент сам бросал веса и сам же решал, «сливать» ли раунд
+           (evalBaitTrap) — правкой клиента выбивался любой джекпот, а сервер
+           об этом не знал. Теперь сервер присылает drop, мы только показываем. */
+        const startSpin = (winItem, serverDrop) => {
+        if(!winItem) return;
         const isProfit = winItem.price >= curCase.cost;
         const diff = winItem.price - curCase.cost;
 
@@ -4987,9 +5026,11 @@ function gameCases(){
 
           tgHaptic(isProfit ? 'win' : 'light');
 
-          // Сохраняем выпавший предмет в инвентарь!
+          // Предмет УЖЕ в серверном инвентаре — он выдаётся в момент раунда.
+          // Локально его не создаём: id приходит от сервера, иначе продажа
+          // уйдёт с несуществующим id и предмет нельзя будет продать.
           const dropItem = {
-            id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            id: (serverDrop && serverDrop.id) || null,
             name: winItem.name,
             icon: winItem.icon,
             price: winItem.price,
@@ -4997,11 +5038,16 @@ function gameCases(){
             caseName: curCase.name,
             wonAt: Date.now()
           };
-          S.inventory = S.inventory || [];
-          S.inventory.unshift(dropItem);
-          if(S.inventory.length > 50) S.inventory = S.inventory.slice(0, 50);
-          save();
-          syncUI();
+          if(serverDrop){
+            loadInventory();            // предмет уже лежит на сервере
+          } else {
+            // Демо-режим (сервера нет) — инвентарь локальный, деньги ненастоящие
+            dropItem.id = 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            S.inventory = S.inventory || [];
+            S.inventory.unshift(dropItem);
+            if(S.inventory.length > 50) S.inventory = S.inventory.slice(0, 50);
+            save(); syncUI();
+          }
 
           res.className = `result ${isProfit ? 'good' : 'bad'}`;
           res.innerHTML = `
@@ -5034,6 +5080,43 @@ function gameCases(){
             openBtn.textContent = 'ОТКРЫТЬ ЕЩЕ · ' + fmt(curCase.cost) + ' ⬦';
           }
         }, 5400);
+        };   // ← конец startSpin(winItem, serverDrop)
+
+        /* Предмет для ленты берём из СВОЕЙ таблицы по коду от сервера:
+           цены, иконки и редкость — проверенные, id предмета — серверный. */
+        const catalogItem = (drop) => {
+          if(!drop) return null;
+          const idx = String(drop.code || '').split('#')[1];
+          if(idx != null && curCase.items[+idx] && curCase.items[+idx].name === drop.name) return curCase.items[+idx];
+          return curCase.items.find(it => it.name === drop.name) || null;
+        };
+
+        /* Демо-режим: сервера нет — крутим локально, деньги ненастоящие. */
+        const localRoll = () => {
+          let totalW = 0; curCase.items.forEach(it => totalW += it.w);
+          const r = Math.random() * totalW;
+          let cum = 0;
+          for(const it of curCase.items){ cum += it.w; if(r <= cum) return it; }
+          return curCase.items[0];
+        };
+
+        if(!__rnd || !__rnd.promise){
+          startSpin(localRoll(), null);
+        } else {
+          openBtn.disabled = true;
+          openBtn.textContent = 'РУЛЕТКА КРУТИТСЯ…';
+          __rnd.promise.then(r => {
+            startSpin(catalogItem(r && r.drop) || localRoll(), (r && r.drop) || null);
+          }).catch(() => {
+            busy = false;
+            if(openBtn){
+              openBtn.disabled = false;
+              openBtn.textContent = 'ОТКРЫТЬ КЕЙС · ' + fmt(curCase.cost) + ' ⬦';
+            }
+            const resEl = q('#caseRes');
+            if(resEl){ resEl.className = 'result bad'; resEl.textContent = 'Раунд не состоялся — ставка не принята.'; }
+          });
+        }
       });
     }
   }
@@ -5924,7 +6007,7 @@ function gameDice(){
     const lockedOver = Math.floor(1000000 * (1 - lockedChance / 100));
 
     isRolling = true;
-    place(roundBet, 'Dice');
+    place(roundBet, 'Dice', lockedPayout);   // множитель — выбор игрока, сервер его проверяет
     tgHaptic('impact');
 
     const btnUnder = q('#btnDiceUnder', a);

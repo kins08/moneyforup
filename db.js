@@ -1,17 +1,39 @@
 /**
  * MoneyForUp — модуль постоянной базы данных и финансового журнала (Ledger)
- * Использует встроенный node:sqlite (Node.js 22+). Без внешних компилируемых зависимостей.
+ * Использует встроенный node:sqlite. Без внешних компилируемых зависимостей.
+ *
+ * ТРЕБОВАНИЯ К RUNTIME: node:sqlite доступен БЕЗ ФЛАГОВ только с Node 22.13 / 23.4.
+ * (модуль появился в 22.5, но до 22.13 и в 23.0–23.3 он спрятан за --experimental-sqlite;
+ *  в 22.13.0 и 23.4.0 флаг сняли). На Node 20 и на 22.5–22.12 без флага этот require
+ * падает с ERR_UNKNOWN_BUILTIN_MODULE — процесс не стартует вообще.
+ *
+ * ПУТЬ К БАЗЕ: по умолчанию ./data/moneyforup.db рядом с проектом. На хостингах
+ * с эфемерной файловой системой (Render, Fly, Heroku) этот каталог СТИРАЕТСЯ
+ * при каждом деплое и рестарте — вместе с балансами, журналом и заявками.
+ * Обязательно смонтируйте постоянный диск и укажите путь в DB_PATH.
  */
 const fs = require('fs');
 const path = require('path');
-const { DatabaseSync } = require('node:sqlite');
 
-const DATA_DIR = path.join(__dirname, 'data');
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = require('node:sqlite'));
+} catch (e) {
+  throw new Error(
+    'Не удалось загрузить node:sqlite. Нужен Node.js 22.13+ (в 22.5–22.12 модуль за флагом ' +
+    '--experimental-sqlite, в 23.0–23.3 тоже за флагом, на 20 и ниже его нет). ' +
+    'Текущая версия: ' + process.version + '. Установите Node 22.13+ или 23.4+.'
+  );
+}
+
+const DB_PATH = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.join(__dirname, 'data', 'moneyforup.db');
+const DATA_DIR = path.dirname(DB_PATH);
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const DB_PATH = path.join(DATA_DIR, 'moneyforup.db');
 const db = new DatabaseSync(DB_PATH);
 
 // Включаем WAL-режим для высокой производительности и надежности
@@ -96,9 +118,50 @@ CREATE TABLE IF NOT EXISTS game_rounds (
   win_tokens INTEGER,
   status TEXT,
   created_at INTEGER,
-  settled_at INTEGER
+  settled_at INTEGER,
+  -- выпавший предмет (кейсы): код и его цена на момент раунда
+  item_code TEXT,
+  item_price INTEGER
 );
+
+/* Инвентарь игрока — СЕРВЕРНЫЙ. Раньше предметы жили только в браузере
+   (localStorage), и сервер не знал ни что у игрока есть, ни сколько это стоит.
+   Значит продажу нельзя было ни проверить, ни начислить честно.
+   sold_at = NULL — предмет ещё у игрока; иначе продан и повторно не продаётся. */
+CREATE TABLE IF NOT EXISTS user_inventory (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  item_code TEXT NOT NULL,
+  name TEXT,
+  icon TEXT,
+  price INTEGER NOT NULL,
+  tier TEXT,
+  case_id TEXT,
+  case_name TEXT,
+  round_id TEXT,
+  acquired_at INTEGER,
+  sold_at INTEGER,
+  sold_for INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
 `);
+
+/* Мягкая миграция: CREATE TABLE IF NOT EXISTS не добавит колонки в уже
+   существующую таблицу, а база в проде живёт давно. Добавляем недостающие. */
+function __ensureColumns(table, cols) {
+  try {
+    const have = new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name));
+    for (const [name, type] of cols) {
+      if (!have.has(name)) {
+        db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+        console.log(`[DB] Миграция: ${table}.${name} добавлена`);
+      }
+    }
+  } catch (e) {
+    console.error(`[DB] Миграция ${table}: ${e.message}`);
+  }
+}
+__ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
 
 // Подготовленные SQL-запросы для быстрого выполнения
 const stmts = {
@@ -110,7 +173,7 @@ const stmts = {
   `),
   updateUser: db.prepare(`
     UPDATE users SET
-      num_id = ?, name = ?, username = ?, tokens = ?, staked = ?, stake_since = ?, accrued_base = ?,
+      num_id = ?, name = ?, username = ?, staked = ?, stake_since = ?, accrued_base = ?,
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
       easycash_claimed = ?, code = ?
@@ -135,6 +198,32 @@ const stmts = {
   upsertPromo: db.prepare(`
     INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)
     ON CONFLICT(code) DO UPDATE SET tokens = excluded.tokens, max_uses = excluded.max_uses
+  `),
+  insertRound: db.prepare(`
+    INSERT INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  getRound: db.prepare('SELECT * FROM game_rounds WHERE round_id = ?'),
+  userRoundsSince: db.prepare(`
+    SELECT COUNT(*) AS count, COALESCE(SUM(bet_tokens), 0) AS wagered, COALESCE(SUM(win_tokens), 0) AS won
+    FROM game_rounds WHERE user_id = ? AND created_at >= ?
+  `),
+  insertInventoryItem: db.prepare(`
+    INSERT INTO user_inventory
+      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+  `),
+  listInventory: db.prepare(`
+    SELECT * FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
+    ORDER BY acquired_at DESC, id DESC LIMIT 200
+  `),
+  getInventoryItem: db.prepare('SELECT * FROM user_inventory WHERE id = ?'),
+  markInventorySold: db.prepare(
+    'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL'
+  ),
+  inventoryTotals: db.prepare(`
+    SELECT COUNT(*) AS count, COALESCE(SUM(price), 0) AS value
+    FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
   `)
 };
 
@@ -169,14 +258,32 @@ function getUser(id) {
   };
 }
 
+/* Баланс — единый источник истины в БД.
+   Предупреждаем о рассинхроне один раз на игрока, чтобы не заспамить лог. */
+const driftWarned = new Set();
+function warnBalanceDrift(userId, memTokens, dbTokens) {
+  if (driftWarned.has(userId)) return;
+  driftWarned.add(userId);
+  console.warn(
+    `[Ledger] Рассинхрон баланса игрока ${userId}: в памяти ${memTokens} ⬦, в БД ${dbTokens} ⬦. ` +
+    `Взят баланс из БД. Меняйте баланс только через atomicBalanceChange().`
+  );
+}
+
 function saveUser(u) {
   const existing = stmts.getUser.get(u.id);
   if (existing) {
+    // ЗАЩИТА ОТ ДВОЙНОГО ПРИМЕНЕНИЯ БАЛАНСА.
+    // saveUser НЕ пишет tokens (этой колонки нет в UPDATE). Если память и БД разошлись —
+    // это пропущенный вызов atomicBalanceChange(): берём баланс из БД и предупреждаем.
+    if (Number(u.tokens) !== Number(existing.tokens)) {
+      warnBalanceDrift(u.id, u.tokens, existing.tokens);
+      u.tokens = existing.tokens;
+    }
     stmts.updateUser.run(
       u.numId || 0,
       u.name || '',
       u.username || '',
-      Math.floor(u.tokens || 0),
       u.staked || 0,
       u.stakeSince || 0,
       u.accruedBase || 0,
@@ -318,6 +425,7 @@ function atomicApplyPromo(userId, code) {
 
 module.exports = {
   db,
+  DB_PATH,
   getUser,
   saveUser,
   atomicBalanceChange,
@@ -348,5 +456,62 @@ module.exports = {
   },
   getOrder: (id) => stmts.getOrder.get(id),
   updateOrderStatus: (id, status) => stmts.updateOrderStatus.run(status, Date.now(), id),
-  getAllOrders: () => stmts.getAllOrders.all()
+  getAllOrders: () => stmts.getAllOrders.all(),
+
+  /* ── Раунды игры ──────────────────────────────────────────────────────────
+     Раунд пишется один раз, уже в финальном статусе: деньги меняет только
+     atomicBalanceChange (в bot.js — внутри applyBalance), здесь только журнал.
+     PRIMARY KEY round_id защищает от повторного применения одного раунда. */
+  saveRound: (r) => {
+    stmts.insertRound.run(
+      String(r.roundId),
+      r.userId,
+      String(r.game),
+      Math.floor(r.bet || 0),
+      Number(r.mult || 1),
+      Math.floor(r.win || 0),
+      r.status || 'settled',
+      r.createdAt || Date.now(),
+      r.settledAt || Date.now(),
+      r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null
+    );
+    return { ok: true, roundId: String(r.roundId) };
+  },
+  getRound: (roundId) => stmts.getRound.get(String(roundId)),
+
+  /* ── Инвентарь ──────────────────────────────────────────────────────────
+     Цена и название берутся из СЕРВЕРНОГО каталога items.js, а не из запроса
+     клиента: иначе игрок пришлёт price: 999999 и продаст вентилятор за миллион. */
+  addInventoryItem: (r) => {
+    const res = stmts.insertInventoryItem.run(
+      r.userId,
+      String(r.itemCode),
+      String(r.name || ''),
+      String(r.icon || ''),
+      Math.floor(r.price || 0),
+      String(r.tier || ''),
+      String(r.caseId || ''),
+      String(r.caseName || ''),
+      String(r.roundId || ''),
+      r.acquiredAt || Date.now()
+    );
+    return { ok: true, id: Number(res.lastInsertRowid) };
+  },
+  listInventory: (userId) => stmts.listInventory.all(userId),
+  getInventoryItem: (id) => stmts.getInventoryItem.get(id),
+  /** Помечает предмет проданным. false — уже был продан или не его (защита от гонки). */
+  markInventorySold: (id, userId, tokens, at) => {
+    const res = stmts.markInventorySold.run(at || Date.now(), Math.floor(tokens || 0), id, userId);
+    return res.changes === 1;
+  },
+  inventoryTotals: (userId) => {
+    const r = stmts.inventoryTotals.get(userId);
+    return r || { count: 0, value: 0 };
+  },
+  /** Ставки и выигрыши игрока за период — для лимитов и детекта аномалий */
+  userRoundsSince: (userId, sinceMs) => {
+    const r = stmts.userRoundsSince.get(userId, sinceMs);
+    return r || { count: 0, wagered: 0, won: 0 };
+  }
 };
