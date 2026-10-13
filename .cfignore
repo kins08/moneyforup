@@ -3,7 +3,7 @@ node_modules
 .wrangler
 *.log
 
-# Бэкенд на Cloudflare не деплоится (он живёт на Render/Fly) — см. package.json
+# Бэкенд на Cloudflare не деплоится (он живёт на Render/Fly)
 bot.js
 bot-test.js
 tg-test.js
