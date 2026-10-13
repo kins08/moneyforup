@@ -62,6 +62,10 @@ const START_TOKENS    = 50;
 const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
+/* Бизнес-правило: игрок без единого депозита не может поднять баланс выше этого
+   потолка. Проверяется ТОЛЬКО на сервере (в playRound) — клиентская версия
+   этой проверки была лишь эвристикой и обходилась. */
+const NON_DEPOSITOR_CAP = 400;  // 40 ₽
 
 if (!BOT_TOKEN) {
   console.error('================================================================');
@@ -257,6 +261,116 @@ function applyBalance(u, delta, type, reason, refId = '') {
 function setBalanceTo(u, value, type, reason) {
   value = Math.max(0, Math.floor(Number(value) || 0));
   return applyBalance(u, value - Math.floor(u.tokens || 0), type, reason);
+}
+
+/* ------------------------------------------------------------------ */
+/* Серверная игра: исход раунда решает ТОЛЬКО сервер                    */
+/* ------------------------------------------------------------------ */
+/* Клиент присылает выбор игрока (игра, ставка, желаемый множитель), а  */
+/* не результат. Сервер сам бросает жребий и сам считает выигрыш.        */
+/*                                                                       */
+/* Раньше исход считал клиент и присылал winTokens — это и был эксплойт. */
+/*                                                                       */
+/* Модель выплат: winChance = (1 − edge) / mult, выигрыш = bet × mult.   */
+/* Матожидание игрока = −edge × bet (стандартная комиссия казино).       */
+/* Множитель — это ВЫБОР игрока, а не результат, поэтому его можно       */
+/* принимать от клиента, но обязательно проверять по границам игры.      */
+const GAMES = {
+  // ключ (нормализованный)   границы ставки        границы множителя   edge
+  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.03, defaultMult: 1.95 },
+  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: 0.03, defaultMult: 2.0 },
+  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.03, defaultMult: 2.0 },
+  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.03, defaultMult: 2.0 },
+  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.04, defaultMult: 2.0 },
+  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.04, defaultMult: 2.0 },
+  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.05, defaultMult: 2.0 },
+  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.05, defaultMult: 2.0 },
+  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 1.8 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.04, defaultMult: 1.7 },
+  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 2.0 },
+  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.05, defaultMult: 2.0 },
+  // Неизвестная игра: консервативный профиль вместо отказа — чтобы клиент не ломался
+  __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.10, defaultMult: 2.0 }
+};
+
+function gameConfig(rawName) {
+  const key = String(rawName || '').trim().toLowerCase()
+    .replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if (GAMES[key]) return { key, ...GAMES[key] };
+  // сопоставление по русским названиям, которые присылает клиент
+  const aliases = {
+    'попрыгун': 'jumper', 'спин': 'spin', 'дроп': 'drop', 'wheel': 'wheel',
+    'колесо_фортуны': 'wheel', 'скуг_vs_альтушка': 'skuf', 'скуф_vs_альтушка': 'skuf',
+    'перекуп_на_авито': 'avito', 'апгрейд_кейса': 'cases', 'апгрейдер': 'upgrader',
+    'тайный_аукцион': 'auction', 'ракетка': 'racket', 'hot_drop': 'hotdrop',
+    'дис': 'dice', 'кости': 'dice'
+  };
+  const mapped = aliases[key];
+  if (mapped && GAMES[mapped]) return { key: mapped, ...GAMES[mapped] };
+  return { key: '__default', ...GAMES.__default };
+}
+
+/**
+ * Проводит раунд: списывает ставку, бросает жребий, начисляет выигрыш.
+ * Возвращает результат для отображения. Клиент НЕ может повлиять на жребий.
+ */
+function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
+  const cfg = gameConfig(rawGame);
+  const bet = Math.floor(Number(rawBet) || 0);
+  if (!Number.isFinite(bet) || bet < cfg.minBet || bet > cfg.maxBet) {
+    return { ok: false, error: `Ставка должна быть от ${cfg.minBet} до ${cfg.maxBet} ⬦` };
+  }
+  if (bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
+
+  // Множитель — выбор игрока, но строго в границах игры
+  let mult = Number(rawMult);
+  if (!Number.isFinite(mult) || mult <= 0) mult = cfg.defaultMult;
+  mult = Math.min(cfg.maxMult, Math.max(cfg.minMult, mult));
+  mult = Math.round(mult * 100) / 100;
+
+  // Идемпотентность: повторный roundId не создаёт второй раунд
+  const roundId = String(rawRoundId || '').trim() ||
+    ('R' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex'));
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(roundId)) return { ok: false, error: 'Некорректный идентификатор раунда' };
+  try {
+    if (db.getRound(roundId)) return { ok: false, error: 'Раунд уже проведён' };
+  } catch (_) { /* таблицы нет — не блокируем игру */ }
+
+  // ── Жребий: серверный CSPRNG + комиссия, которую невозможно обойти с клиента
+  const winChance = Math.min(0.98, Math.max(0.001, (1 - cfg.edge) / mult));
+  const roll = crypto.randomInt(0, 1_000_000) / 1_000_000;
+  let win = roll < winChance ? Math.floor(bet * mult) : 0;
+
+  // Бизнес-правило: игрок без единого депозита не поднимается выше потолка
+  const userDep = u.totalDepositedRub || u.lastDeposit || 0;
+  if (userDep <= 0 && !isAdmin(u)) {
+    const after = Math.floor(u.tokens || 0) - bet + win;
+    if (after > NON_DEPOSITOR_CAP) {
+      win = 0;   // ставка всё равно списывается — играть без депозита можно, выводить нельзя
+      betsMonitor.flagSuspicious({
+        userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+        reason: 'Потолок бездепозитного баланса (сервер)',
+        details: `раунд ${cfg.label}: ставка ${bet} ⬦, попытка поднять до ${after} ⬦`
+      });
+    }
+  }
+
+  // ── Деньги: одна запись в ledger на весь раунд (net = выигрыш − ставка)
+  const r = applyBalance(u, win - bet, 'game_round',
+    `${cfg.label} · раунд ${roundId} (ставка ${bet}, ×${mult}, выигрыш ${win})`, roundId);
+  if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+
+  try {
+    db.saveRound({ roundId, userId: u.id, game: cfg.label, bet, mult, win, status: 'settled' });
+  } catch (e) { console.error('[Round] не сохранён:', e.message); }
+
+  betsMonitor.recordBet({
+    userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+    game: cfg.label, betTokens: bet, winTokens: win,
+    balanceAfter: u.tokens, totalDepositedRub: userDep
+  });
+
+  return { ok: true, roundId, game: cfg.label, gameKey: cfg.key, verdict: win > 0 ? 'win' : 'lose', win, mult, tokens: u.tokens };
 }
 
 function stakeAdd(u, v) {
@@ -1352,58 +1466,29 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/balance') return send(200, { ...who });
 
     /* Запись результата ставки в отдельный файл мониторинга + серверный античит баланса */
-    if (url.pathname === '/api/record-bet' && req.method === 'POST') {
-      const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
-      const userDep = u.totalDepositedRub || u.lastDeposit || 0;
-      let betTk = Math.max(0, Math.floor(Number(body.betTokens) || 0));
-      let winTk = Math.max(0, Math.floor(Number(body.winTokens) || 0));
-      const gameName = String(body.game || 'Игра');
-
-      // Защита от подмены ставки выше текущего баланса
-      const maxAllowedBet = Math.max(500, Math.floor(u.tokens || 0) + 200);
-      if (betTk > maxAllowedBet && !isAdmin(tgUser)) {
-        betsMonitor.flagSuspicious({
-          userId: u.id,
-          name: userLabel,
-          reason: 'Подмена суммы ставки (выше баланса)',
-          details: `ставка ${betTk} ⬦ при балансе ${Math.floor(u.tokens)} ⬦ в ${gameName}`
-        });
-        betTk = Math.min(betTk, Math.floor(u.tokens || 0));
-        winTk = 0;
-      }
-
-      // Жёсткий потолок для игроков с 0 ₽ пополнений (невозможно поднять с 75 ⬦ до вывода!)
-      const NON_DEPOSITOR_CAP = 400; // максимум 400 ⬦ (40 ₽) без депозита
-      let nextTk = Math.max(0, Math.floor((u.tokens || 0) - betTk + winTk));
-
-      if (userDep <= 0 && !isAdmin(tgUser) && nextTk > NON_DEPOSITOR_CAP) {
-        betsMonitor.flagSuspicious({
-          userId: u.id,
-          name: userLabel,
-          reason: 'Сработал потолок бездепозитного баланса',
-          details: `попытка поднять ${nextTk} ⬦ при 0 ₽ депозитов в ${gameName}`
-        });
-        nextTk = 350;
-        winTk = Math.max(0, 350 - Math.max(0, Math.floor(u.tokens || 0) - betTk));
-      }
-
-      // Баланс меняется РОВНО ОДИН РАЗ и только через ledger.
-      // Раньше здесь были saveUser() + atomicBalanceChange(), из-за чего delta применялась дважды.
-      const delta = nextTk - Math.floor(u.tokens || 0);
-      const r = applyBalance(u, delta, 'game_bet', `Игра: ${gameName} (ставка: ${betTk}, выигрыш: ${winTk})`);
-      if (!r.ok) return send(500, { error: 'Не удалось обновить баланс, повторите запрос' });
-
-      betsMonitor.recordBet({
-        userId: u.id,
-        name: userLabel,
-        game: gameName,
-        betTokens: betTk,
-        winTokens: winTk,
-        balanceAfter: u.tokens,
-        totalDepositedRub: userDep
+    /* Игра: исход раунда решает СЕРВЕР.
+       Клиент присылает только выбор игрока — игру, ставку и желаемый множитель.
+       Никакие winTokens/tokens из тела запроса не читаются (это и был эксплойт:
+       клиент сам сообщал, сколько выиграл). */
+    if ((url.pathname === '/api/play' || url.pathname === '/api/record-bet') && req.method === 'POST') {
+      const bet = body.bet != null ? body.bet : body.betTokens;
+      const res = playRound(
+        u,
+        body.game,
+        bet,
+        body.mult != null ? body.mult : body.targetMult,
+        body.roundId || body.round_id
+      );
+      if (!res.ok) return send(400, { error: res.error });
+      return send(200, {
+        ok: true,
+        roundId: res.roundId,
+        game: res.game,
+        verdict: res.verdict,   // 'win' | 'lose' — клиент обязан отрисовать ИМЕННО это
+        win: res.win,
+        mult: res.mult,
+        tokens: res.tokens
       });
-
-      return send(200, { ok: true, tokens: u.tokens });
     }
 
     /* Синхронизация баланса (строго READ-ONLY: клиент не может устанавливать баланс напрямую) */
@@ -1859,3 +1944,24 @@ console.log('Бот запущен. Стейкинг 1 %/сутки, рефер�
   + ' · Промокодов активно: ' + promoCodes.size
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));
+
+/* ── Проверка условий эксплуатации, от которых зависят деньги ─────────────── */
+(function checkRuntime() {
+  console.log('[DB] База: ' + db.DB_PATH);
+  const onEphemeralHost = !!(process.env.RENDER || process.env.FLY_APP_NAME || process.env.DYNO);
+  if (!process.env.DB_PATH) {
+    console.warn(
+      '[DB] ВНИМАНИЕ: DB_PATH не задан, база лежит внутри каталога проекта.\n' +
+      '     На хостингах с эфемерной ФС (Render/Fly/Heroku) этот каталог СТИРАЕТСЯ\n' +
+      '     при каждом деплое и рестарте — вместе с балансами, журналом и заявками.\n' +
+      '     Смонтируйте постоянный диск и укажите DB_PATH=/путь/к/диску/moneyforup.db' +
+      (onEphemeralHost ? '\n     Обнаружена эфемерная среда — это ОПАСНО для денег.' : '')
+    );
+  }
+  if (!PUBLIC_URL) {
+    console.warn('[Webhooks] PUBLIC_URL не задан: вебхуки Platega/Coinso не придут, работаем опросом статуса.');
+  }
+  if (!process.env.PAYMENT_WEBHOOK_SECRET) {
+    console.warn('[Webhooks] PAYMENT_WEBHOOK_SECRET не задан: авто-зачисление по СМС отключено (это безопасный режим).');
+  }
+})();

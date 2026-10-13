@@ -1110,39 +1110,75 @@ try{
 function save(){try{localStorage.setItem('moneyforup',JSON.stringify(S))}catch(e){} }
 let __pendingBetRecord = null;
 
-function place(bet,game){
+/* ── Серверный раунд ─────────────────────────────────────────────────────────
+   Исход раунда решает СЕРВЕР. Клиент присылает только выбор игрока:
+   игру, ставку и желаемый множитель. Ни выигрыш, ни баланс от клиента не уходят.
+   Ответ сервера: { roundId, verdict:'win'|'lose', win, mult, tokens }.        */
+window.__round = null;
+
+/* Актуальный неразобранный раунд (не старше 2 минут) */
+function __currentRound(){
+  const r = window.__round;
+  if(!r || r.consumed) return null;
+  if(Date.now() - r.t > 120000) return null;
+  return r;
+}
+
+function place(bet,game,mult){
   S.wagered+=bet;S.net-=bet;S.plays++;
   tgHaptic('light');
   S.hist.unshift({label:'Ставка · '+game,delta:-bet,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
 
   if(!IS_TG||!API_BASE){
-    // Демо-режим (без сервера)
+    // Демо-режим (без сервера) — баланс считаем локально
     S.balance-=bet;
     save();syncUI();
-    return;
+    return null;
   }
 
-  // Серверный режим: баланс на экране берётся ТОЛЬКО из ответа сервера.
-  // Локальный расчёт "было - ставка" для отображения убран.
-  // Параметры выигрыша и клиентский баланс полностью исключены из тела запроса.
-  tgCall('/api/record-bet',{
-    game:game||'Игра',
-    betTokens:bet
-  }).then(r=>{
-    if(r&&typeof r.tokens==='number'){
-      S.balance=r.tokens;
-      try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
-      syncUI();
-    }
-  }).catch(err=>{
-    // Обработка отказа: сервер вернул 400 — показать ошибку, баланс взять из следующего /api/balance, НЕ откатывать в свою локальную цифру
-    showAppNotification((err&&err.message)||'Ошибка обработки ставки');
-    tgLoadBalance();
-  });
+  const rnd={ t:Date.now(), state:'pending', verdict:null, win:0, mult:null,
+              shown:null, consumed:false, roundId:null };
+  window.__round=rnd;
+
+  // Атомарная операция на сервере: списание ставки + жребий + выплата.
+  // Если запрос не прошёл — раунда нет и деньги не тронуты.
+  tgCall('/api/play',{ game:game||'Игра', bet:bet, mult:(mult!=null?mult:undefined) })
+    .then(r=>{
+      rnd.state='done';
+      rnd.verdict=r.verdict;
+      rnd.win=(r.win|0);
+      rnd.mult=r.mult;
+      rnd.roundId=r.roundId;
+      if(typeof r.tokens==='number'){
+        S.balance=r.tokens;
+        try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+        syncUI();
+      }
+      // Если анимация успела показать другой исход — не врём игроку
+      if(rnd.shown && rnd.shown!==rnd.verdict){
+        showAppNotification(rnd.verdict==='win'
+          ? ('Сервер начислил выигрыш: +'+fmt(rnd.win)+' ⬦')
+          : 'Раунд закрыт сервером без выигрыша');
+      }
+    })
+    .catch(err=>{
+      rnd.state='error';
+      rnd.consumed=true;
+      showAppNotification((err&&err.message)||'Ставка не принята');
+      tgLoadBalance();
+    });
+
+  return rnd;
 }
 
 function win(amount,game,note){
+  // Деньги решает сервер: показываем его сумму, а не локальный расчёт
+  const __r=__currentRound();
+  if(__r && __r.state==='done' && __r.verdict){
+    __r.consumed=true;
+    amount=__r.verdict==='win' ? (__r.win||0) : 0;
+  }
   if(amount>0)S.hist.unshift({label:game+(note?' · '+note:''),delta:amount,t:Date.now()});
   if(S.hist.length>40)S.hist=S.hist.slice(0,40);
   if(amount>0)tgHaptic('win');
@@ -1275,66 +1311,20 @@ function syncUI(){
 
 /* ==================== МЕХАНИКА ЗАВЛЕЧЕНИЯ И СЛИВА (ПРИКОРМКА С АНТИ-ЭКСПЛОЙТОМ) ==================== */
 function evalBaitTrap(gameName, naturalWin, currentBet, targetMult){
-  if(gameName === 'racket') return naturalWin; // Ракетка обрабатывается отдельно
-
-  const mult = Number(targetMult) || 2.0;
-  const bet = Math.max(10, Number(currentBet) || 10);
-  const depRub = S.totalDeposited || S.lastDeposit || 0;
-  const potentialAfterWin = S.balance + Math.floor(bet * mult);
-
-  // 1. ЖЁСТКИЙ ПОТОЛОК БЕЗ ДЕПОЗИТОВ:
-  // Если у игрока 0 ₽ пополнений, он математически НЕ МОЖЕТ подняться выше 340 ⬦ (~34 ₽)!
-  if(depRub <= 0 && !S.isAdmin){
-    if(S.balance >= 300 || potentialAfterWin > 350 || mult > 2.5){
-      S.lossTrapActive = false;
-      S.baitStreak = 0;
-      return false;
-    }
+  // ИСХОД РАУНДА РЕШАЕТ СЕРВЕР.
+  // Здесь раньше жила клиентская «ловушка проигрыша» (lossTrapActive / baitStreak),
+  // которая по истории депозитов решала, проиграет ли игрок. Она удалена:
+  //  • манипулировать исходом по депозитам — это обман игрока, а не «балансировка»;
+  //  • любой, кто правит клиент, обходил её и забирал деньги (это и был эксплойт).
+  const rnd = (typeof __currentRound === 'function') ? __currentRound() : null;
+  if(rnd && rnd.state === 'done' && rnd.verdict){
+    rnd.shown = rnd.verdict;
+    return rnd.verdict === 'win';
   }
-
-  S.baitStreak = S.baitStreak || 0;
-  S.baitUsedTotal = S.baitUsedTotal || 0;
-  S.lastBetAmt = S.lastBetAmt || bet;
-  S.lastWinBetAmt = S.lastWinBetAmt || 50;
-
-  // Резкое увеличение ставки (на 35% и более при ставке > 50 токенов)
-  const betHike = (bet >= S.lastBetAmt * 1.35) && (bet > 50);
-  S.lastBetAmt = bet;
-
-  // 2. Если активна ловушка слива: не даём сбросить ловушку мелкой ставкой (10 ⬦) после крупной!
-  if(S.lossTrapActive || (S.baitStreak >= 2 && betHike) || S.baitStreak >= 2){
-    if(bet >= S.lastWinBetAmt * 0.6 || bet >= 50){
-      S.lossTrapActive = false; // разряжаем ловушку только если слил нормальную ставку
-    }
-    S.baitStreak = 0;
-    return false; // Гарантированный слив
-  }
-
-  // 3. Прикормка работает СТРОГО только на мелких кэфах (<= 1.85x), мелких ставках (<= 60 ⬦) и не более 1 раза за всю историю аккаунта!
-  if(S.baitUsedTotal < 1 && S.baitStreak < 1 && mult <= 1.85 && bet <= 60 && Math.random() < 0.55){
-    S.baitStreak++;
-    S.baitUsedTotal++;
-    S.lastWinBetAmt = bet;
-    S.lossTrapActive = true;
-    return true;
-  }
-
-  // 4. Защита от заносов на высоких множителях (×5..×95)
-  if(naturalWin && mult >= 4.0 && Math.random() < 0.60){
-    return false;
-  }
-
-  if(naturalWin){
-    S.baitStreak++;
-    S.lastWinBetAmt = Math.max(S.lastWinBetAmt, bet);
-    if(S.baitStreak >= 2 || (bet * mult) >= 250){
-      S.lossTrapActive = true;
-    }
-    return true;
-  } else {
-    S.baitStreak = 0;
-    return false;
-  }
+  // Вердикт ещё не пришёл (или демо-режим) — показываем честный естественный исход.
+  // Деньги всё равно уже посчитаны сервером: при расхождении игрок получит уведомление.
+  if(rnd) rnd.shown = naturalWin ? 'win' : 'lose';
+  return naturalWin;
 }
 
 /* ==================== ИНВЕНТАРЬ И ПРОДАЖА ПРЕДМЕТОВ ==================== */
@@ -5924,7 +5914,7 @@ function gameDice(){
     const lockedOver = Math.floor(1000000 * (1 - lockedChance / 100));
 
     isRolling = true;
-    place(roundBet, 'Dice');
+    place(roundBet, 'Dice', lockedPayout);   // множитель — выбор игрока, сервер его проверяет
     tgHaptic('impact');
 
     const btnUnder = q('#btnDiceUnder', a);

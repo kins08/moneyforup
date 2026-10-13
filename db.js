@@ -1,17 +1,39 @@
 /**
  * MoneyForUp — модуль постоянной базы данных и финансового журнала (Ledger)
- * Использует встроенный node:sqlite (Node.js 22+). Без внешних компилируемых зависимостей.
+ * Использует встроенный node:sqlite. Без внешних компилируемых зависимостей.
+ *
+ * ТРЕБОВАНИЯ К RUNTIME: node:sqlite доступен БЕЗ ФЛАГОВ только с Node 22.13 / 23.4.
+ * (модуль появился в 22.5, но до 22.13 и в 23.0–23.3 он спрятан за --experimental-sqlite;
+ *  в 22.13.0 и 23.4.0 флаг сняли). На Node 20 и на 22.5–22.12 без флага этот require
+ * падает с ERR_UNKNOWN_BUILTIN_MODULE — процесс не стартует вообще.
+ *
+ * ПУТЬ К БАЗЕ: по умолчанию ./data/moneyforup.db рядом с проектом. На хостингах
+ * с эфемерной файловой системой (Render, Fly, Heroku) этот каталог СТИРАЕТСЯ
+ * при каждом деплое и рестарте — вместе с балансами, журналом и заявками.
+ * Обязательно смонтируйте постоянный диск и укажите путь в DB_PATH.
  */
 const fs = require('fs');
 const path = require('path');
-const { DatabaseSync } = require('node:sqlite');
 
-const DATA_DIR = path.join(__dirname, 'data');
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = require('node:sqlite'));
+} catch (e) {
+  throw new Error(
+    'Не удалось загрузить node:sqlite. Нужен Node.js 22.13+ (в 22.5–22.12 модуль за флагом ' +
+    '--experimental-sqlite, в 23.0–23.3 тоже за флагом, на 20 и ниже его нет). ' +
+    'Текущая версия: ' + process.version + '. Установите Node 22.13+ или 23.4+.'
+  );
+}
+
+const DB_PATH = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.join(__dirname, 'data', 'moneyforup.db');
+const DATA_DIR = path.dirname(DB_PATH);
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const DB_PATH = path.join(DATA_DIR, 'moneyforup.db');
 const db = new DatabaseSync(DB_PATH);
 
 // Включаем WAL-режим для высокой производительности и надежности
@@ -135,6 +157,15 @@ const stmts = {
   upsertPromo: db.prepare(`
     INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)
     ON CONFLICT(code) DO UPDATE SET tokens = excluded.tokens, max_uses = excluded.max_uses
+  `),
+  insertRound: db.prepare(`
+    INSERT INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  getRound: db.prepare('SELECT * FROM game_rounds WHERE round_id = ?'),
+  userRoundsSince: db.prepare(`
+    SELECT COUNT(*) AS count, COALESCE(SUM(bet_tokens), 0) AS wagered, COALESCE(SUM(win_tokens), 0) AS won
+    FROM game_rounds WHERE user_id = ? AND created_at >= ?
   `)
 };
 
@@ -336,6 +367,7 @@ function atomicApplyPromo(userId, code) {
 
 module.exports = {
   db,
+  DB_PATH,
   getUser,
   saveUser,
   atomicBalanceChange,
@@ -366,5 +398,30 @@ module.exports = {
   },
   getOrder: (id) => stmts.getOrder.get(id),
   updateOrderStatus: (id, status) => stmts.updateOrderStatus.run(status, Date.now(), id),
-  getAllOrders: () => stmts.getAllOrders.all()
+  getAllOrders: () => stmts.getAllOrders.all(),
+
+  /* ── Раунды игры ──────────────────────────────────────────────────────────
+     Раунд пишется один раз, уже в финальном статусе: деньги меняет только
+     atomicBalanceChange (в bot.js — внутри applyBalance), здесь только журнал.
+     PRIMARY KEY round_id защищает от повторного применения одного раунда. */
+  saveRound: (r) => {
+    stmts.insertRound.run(
+      String(r.roundId),
+      r.userId,
+      String(r.game),
+      Math.floor(r.bet || 0),
+      Number(r.mult || 1),
+      Math.floor(r.win || 0),
+      r.status || 'settled',
+      r.createdAt || Date.now(),
+      r.settledAt || Date.now()
+    );
+    return { ok: true, roundId: String(r.roundId) };
+  },
+  getRound: (roundId) => stmts.getRound.get(String(roundId)),
+  /** Ставки и выигрыши игрока за период — для лимитов и детекта аномалий */
+  userRoundsSince: (userId, sinceMs) => {
+    const r = stmts.userRoundsSince.get(userId, sinceMs);
+    return r || { count: 0, wagered: 0, won: 0 };
+  }
 };

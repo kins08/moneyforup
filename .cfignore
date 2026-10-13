@@ -2,6 +2,8 @@ node_modules
 .git
 .wrangler
 *.log
+
+# Бэкенд на Cloudflare не деплоится (он живёт на Render/Fly) — см. package.json
 bot.js
 bot-test.js
 tg-test.js
@@ -11,3 +13,16 @@ make_tg.py
 .env*
 package*.json
 wrangler.jsonc
+
+# ВАЖНО: чтобы база и данные не уехали в статику Cloudflare.
+# wrangler pages deploy . работает из ФАЙЛОВОЙ СИСТЕМЫ, а не из git,
+# поэтому .gitignore тут не спасает — исключать нужно явно.
+data/
+*.db
+*.db-wal
+*.db-shm
+tools/
+.agents/
+.gemini/
+.claude/
+.agent/
