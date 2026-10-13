@@ -671,7 +671,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <div style="margin-top:10px;background:rgba(0,0,0,.28);padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.07)">
       <div class="muted small" id="sbpTargetLabel">Номер карты Т-Банк:</div>
       <div class="row" style="margin-top:4px;align-items:center;justify-content:space-between">
-        <code style="font-size:15px;letter-spacing:1px;font-weight:700;color:var(--text)" id="sbpTargetVal">5536 9177 1899 1380</code>
+        <code style="font-size:15px;letter-spacing:1px;font-weight:700;color:var(--text)" id="sbpTargetVal">Загрузка реквизитов...</code>
         <button type="button" class="chip" id="sbpCopyBtn" style="margin:0;padding:4px 10px;font-size:12px">Копировать</button>
       </div>
     </div>
@@ -932,7 +932,10 @@ function tgApplyServer(d){
 }
 async function tgLoadBalance(){
   if(!IS_TG||!API_BASE)return;
-  try{tgApplyServer(await tgCall('/api/balance',{}))}catch(e){}
+  try{
+    tgApplyServer(await tgCall('/api/balance',{}));
+    if(typeof tgLoadRequisites==='function')tgLoadRequisites();
+  }catch(e){}
 }
 async function tgRegister(){
   if(!IS_TG||!API_BASE)return;
@@ -1518,13 +1521,44 @@ const chBackBtn=q('#chBack');if(chBackBtn)chBackBtn.addEventListener('click',()=
 qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
 /* ---------- пополнение (профиль) ---------- */
 const SBP_DATA = {
-  tinkoff: { name: 'Т-Банк (Тинькофф)', label: 'Номер карты Т-Банк:', val: '5536 9177 1899 1380', clean: '5536917718991380' },
-  sber: { name: 'Сбербанк', label: 'Номер карты Сбербанк:', val: '2202 2083 6349 7083', clean: '2202208363497083' },
-  ozon: { name: 'Озон Банк', label: 'Номер карты Озон Банк:', val: '2204 3209 1303 5251', clean: '2204320913035251' },
-  sbp: { name: 'СБП (телефон)', label: 'Телефон СБП (любой банк):', val: '+7 905 476-05-59', clean: '+79054760559' }
+  tinkoff: { name: 'Т-Банк (Тинькофф)', label: 'Номер карты Т-Банк:', val: 'Загрузка реквизитов...', clean: '' },
+  sber: { name: 'Сбербанк', label: 'Номер карты Сбербанк:', val: 'Загрузка реквизитов...', clean: '' },
+  ozon: { name: 'Озон Банк', label: 'Номер карты Озон Банк:', val: 'Загрузка реквизитов...', clean: '' },
+  sbp: { name: 'СБП (телефон)', label: 'Телефон СБП (любой банк):', val: 'Загрузка реквизитов...', clean: '' }
 };
 let curBank = 'tinkoff';
 window.__curBankInfo = () => ({ name: SBP_DATA[curBank].name, val: SBP_DATA[curBank].clean });
+
+async function tgLoadRequisites(){
+  if(!IS_TG||!API_BASE)return;
+  try{
+    const res = await tgCall('/api/requisites',{});
+    if(res && res.ok){
+      if(res.cards){
+        if(res.cards.tinkoff){
+          SBP_DATA.tinkoff.clean=res.cards.tinkoff.replace(/\s+/g,'');
+          SBP_DATA.tinkoff.val=res.cards.tinkoff;
+        }
+        if(res.cards.sber){
+          SBP_DATA.sber.clean=res.cards.sber.replace(/\s+/g,'');
+          SBP_DATA.sber.val=res.cards.sber;
+        }
+        if(res.cards.ozon){
+          SBP_DATA.ozon.clean=res.cards.ozon.replace(/\s+/g,'');
+          SBP_DATA.ozon.val=res.cards.ozon;
+        }
+      }
+      if(res.sbp && res.sbp.phone){
+        SBP_DATA.sbp.clean=res.sbp.phone.replace(/[\s\-\(\)]/g,'');
+        SBP_DATA.sbp.val=res.sbp.phone + (res.sbp.holder ? ` (${res.sbp.holder})` : '');
+      }
+      const d=SBP_DATA[curBank];
+      const lbl=q('#sbpTargetLabel'),val=q('#sbpTargetVal');
+      if(lbl&&d)lbl.textContent=d.label;
+      if(val&&d)val.textContent=d.val;
+    }
+  }catch(_){}
+}
 
 const PAY={m:0,amt:300,names:['СБП / Карты (Лично)','','','','Промокод','Криптовалюта (Coinso)']};
 function paySync(){

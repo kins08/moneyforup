@@ -1,0 +1,352 @@
+/**
+ * MoneyForUp — модуль постоянной базы данных и финансового журнала (Ledger)
+ * Использует встроенный node:sqlite (Node.js 22+). Без внешних компилируемых зависимостей.
+ */
+const fs = require('fs');
+const path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const DB_PATH = path.join(DATA_DIR, 'moneyforup.db');
+const db = new DatabaseSync(DB_PATH);
+
+// Включаем WAL-режим для высокой производительности и надежности
+db.exec('PRAGMA journal_mode = WAL;');
+db.exec('PRAGMA foreign_keys = ON;');
+
+// Инициализация структуры таблиц
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY,
+  num_id INTEGER,
+  name TEXT,
+  username TEXT,
+  tokens INTEGER DEFAULT 50,
+  staked REAL DEFAULT 0,
+  stake_since INTEGER DEFAULT 0,
+  accrued_base REAL DEFAULT 0,
+  ref_id INTEGER DEFAULT 0,
+  ref_earned INTEGER DEFAULT 0,
+  ref_invited INTEGER DEFAULT 0,
+  terms_at INTEGER DEFAULT 0,
+  total_deposited_rub INTEGER DEFAULT 0,
+  last_deposit_rub INTEGER DEFAULT 0,
+  last_deposit_id INTEGER DEFAULT 0,
+  last_cashback_at INTEGER DEFAULT 0,
+  cashback_claimed_dep_id INTEGER DEFAULT 0,
+  easycash_claimed INTEGER DEFAULT 0,
+  code TEXT UNIQUE,
+  created_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id TEXT PRIMARY KEY,
+  type TEXT,
+  user_id INTEGER,
+  tokens INTEGER,
+  rub INTEGER,
+  bank TEXT,
+  card TEXT,
+  sender TEXT,
+  method TEXT,
+  details TEXT,
+  status TEXT,
+  source TEXT,
+  tx TEXT,
+  created_at INTEGER,
+  updated_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS transactions_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  amount INTEGER,
+  type TEXT,
+  reason TEXT,
+  reference_id TEXT,
+  balance_before INTEGER,
+  balance_after INTEGER,
+  created_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS promo_codes (
+  code TEXT PRIMARY KEY,
+  tokens INTEGER,
+  max_uses INTEGER,
+  created_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS promo_activations (
+  promo_code TEXT,
+  user_id INTEGER,
+  activated_at INTEGER,
+  PRIMARY KEY (promo_code, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS game_rounds (
+  round_id TEXT PRIMARY KEY,
+  user_id INTEGER,
+  game TEXT,
+  bet_tokens INTEGER,
+  mult REAL,
+  win_tokens INTEGER,
+  status TEXT,
+  created_at INTEGER,
+  settled_at INTEGER
+);
+`);
+
+// Подготовленные SQL-запросы для быстрого выполнения
+const stmts = {
+  getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
+  getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
+  insertUser: db.prepare(`
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  updateUser: db.prepare(`
+    UPDATE users SET
+      num_id = ?, name = ?, username = ?, tokens = ?, staked = ?, stake_since = ?, accrued_base = ?,
+      ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
+      last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
+      easycash_claimed = ?, code = ?
+    WHERE id = ?
+  `),
+  countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
+  insertLedger: db.prepare(`
+    INSERT INTO transactions_ledger (user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  getOrder: db.prepare('SELECT * FROM orders WHERE id = ?'),
+  insertOrder: db.prepare(`
+    INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  updateOrderStatus: db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?'),
+  getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100'),
+  getPromo: db.prepare('SELECT * FROM promo_codes WHERE code = ?'),
+  getPromoActivationsCount: db.prepare('SELECT COUNT(*) AS count FROM promo_activations WHERE promo_code = ?'),
+  checkUserPromo: db.prepare('SELECT 1 FROM promo_activations WHERE promo_code = ? AND user_id = ?'),
+  insertPromoActivation: db.prepare('INSERT INTO promo_activations (promo_code, user_id, activated_at) VALUES (?, ?, ?)'),
+  upsertPromo: db.prepare(`
+    INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)
+    ON CONFLICT(code) DO UPDATE SET tokens = excluded.tokens, max_uses = excluded.max_uses
+  `)
+};
+
+// Предустановленные промокоды
+stmts.upsertPromo.run('MONEYUP', 500, 100, Date.now());
+stmts.upsertPromo.run('START', 250, 50, Date.now());
+stmts.upsertPromo.run('SKUF', 300, 30, Date.now());
+
+function getUser(id) {
+  const row = stmts.getUser.get(id);
+  if (!row) return null;
+  return {
+    id: row.id,
+    numId: row.num_id,
+    name: row.name,
+    username: row.username,
+    tokens: row.tokens,
+    staked: row.staked,
+    stakeSince: row.stake_since,
+    accruedBase: row.accrued_base,
+    ref: row.ref_id,
+    refEarned: row.ref_earned,
+    refInvited: row.ref_invited,
+    termsAt: row.terms_at,
+    totalDepositedRub: row.total_deposited_rub,
+    lastDeposit: row.last_deposit_rub,
+    lastDepositId: row.last_deposit_id,
+    lastCashbackAt: row.last_cashback_at,
+    cashbackClaimedDepositId: row.cashback_claimed_dep_id,
+    easycashClaimed: Boolean(row.easycash_claimed),
+    code: row.code
+  };
+}
+
+function saveUser(u) {
+  const existing = stmts.getUser.get(u.id);
+  if (existing) {
+    stmts.updateUser.run(
+      u.numId || 0,
+      u.name || '',
+      u.username || '',
+      Math.floor(u.tokens || 0),
+      u.staked || 0,
+      u.stakeSince || 0,
+      u.accruedBase || 0,
+      u.ref || 0,
+      u.refEarned || 0,
+      u.refInvited || 0,
+      u.termsAt || 0,
+      u.totalDepositedRub || 0,
+      u.lastDeposit || 0,
+      u.lastDepositId || 0,
+      u.lastCashbackAt || 0,
+      u.cashbackClaimedDepositId || 0,
+      u.easycashClaimed ? 1 : 0,
+      u.code || null,
+      u.id
+    );
+  } else {
+    stmts.insertUser.run(
+      u.id,
+      u.numId || 0,
+      u.name || '',
+      u.username || '',
+      Math.floor(u.tokens || 50),
+      u.staked || 0,
+      u.stakeSince || 0,
+      u.accruedBase || 0,
+      u.ref || 0,
+      u.refEarned || 0,
+      u.refInvited || 0,
+      u.termsAt || 0,
+      u.totalDepositedRub || 0,
+      u.lastDeposit || 0,
+      u.lastDepositId || 0,
+      u.lastCashbackAt || 0,
+      u.cashbackClaimedDepositId || 0,
+      u.easycashClaimed ? 1 : 0,
+      u.code || null,
+      Date.now()
+    );
+  }
+}
+
+/**
+ * Атомарное изменение баланса с обязательной записью в Transactions Ledger
+ */
+function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = '') {
+  db.exec('BEGIN TRANSACTION');
+  try {
+    const row = stmts.getUser.get(userId);
+    if (!row) throw new Error('Пользователь не найден');
+
+    const balanceBefore = row.tokens;
+    const balanceAfter = balanceBefore + deltaTokens;
+
+    if (balanceAfter < 0) {
+      throw new Error(`Недостаточно средств: баланс ${balanceBefore} ⬦, списание ${Math.abs(deltaTokens)} ⬦`);
+    }
+
+    db.prepare('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
+    stmts.insertLedger.run(
+      userId,
+      deltaTokens,
+      type,
+      reason,
+      String(referenceId),
+      balanceBefore,
+      balanceAfter,
+      Date.now()
+    );
+
+    db.exec('COMMIT');
+    return { ok: true, balanceBefore, balanceAfter };
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+/**
+ * Атомарная активация промокода
+ */
+function atomicApplyPromo(userId, code) {
+  const normCode = String(code || '').trim().toUpperCase();
+  db.exec('BEGIN TRANSACTION');
+  try {
+    const promo = stmts.getPromo.get(normCode);
+    if (!promo) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: `Промокод «${normCode}» не существует` };
+    }
+
+    const alreadyUsed = stmts.checkUserPromo.get(normCode, userId);
+    if (alreadyUsed) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: `Вы уже активировали промокод «${normCode}»` };
+    }
+
+    const countRow = stmts.getPromoActivationsCount.get(normCode);
+    const uses = countRow ? countRow.count : 0;
+    if (uses >= promo.max_uses) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: `Лимит активаций промокода «${normCode}» исчерпан (${promo.max_uses}/${promo.max_uses})` };
+    }
+
+    // Фиксируем активацию
+    stmts.insertPromoActivation.run(normCode, userId, Date.now());
+
+    // Начисляем баланс в ledger
+    const row = stmts.getUser.get(userId);
+    const balBefore = row ? row.tokens : 0;
+    const balAfter = balBefore + promo.tokens;
+
+    db.prepare('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
+    stmts.insertLedger.run(
+      userId,
+      promo.tokens,
+      'promo',
+      `Промокод ${normCode}`,
+      normCode,
+      balBefore,
+      balAfter,
+      Date.now()
+    );
+
+    db.exec('COMMIT');
+    return {
+      ok: true,
+      tokens: promo.tokens,
+      newBalance: balAfter,
+      code: normCode,
+      remainingUses: promo.max_uses - (uses + 1),
+      maxUses: promo.max_uses
+    };
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+module.exports = {
+  db,
+  getUser,
+  saveUser,
+  atomicBalanceChange,
+  atomicApplyPromo,
+  countInvited: (refId) => {
+    const r = stmts.countInvited.get(refId);
+    return r ? r.count : 0;
+  },
+  getUserByCode: (code) => stmts.getUserByCode.get(code),
+  saveOrder: (ord) => {
+    stmts.insertOrder.run(
+      ord.id,
+      ord.type || 'deposit',
+      ord.userId,
+      ord.tokens,
+      ord.rub,
+      ord.bank || null,
+      ord.card || null,
+      ord.sender || null,
+      ord.method || null,
+      ord.details || null,
+      ord.status || 'pending',
+      ord.source || null,
+      ord.tx || null,
+      ord.createdAt || Date.now(),
+      Date.now()
+    );
+  },
+  getOrder: (id) => stmts.getOrder.get(id),
+  updateOrderStatus: (id, status) => stmts.updateOrderStatus.run(status, Date.now(), id),
+  getAllOrders: () => stmts.getAllOrders.all()
+};

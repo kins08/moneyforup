@@ -23,21 +23,13 @@ const { Bot, InlineKeyboard } = require('grammy');
 const BOT_TOKEN     = process.env.BOT_TOKEN;
 const APP_URL       = process.env.APP_URL || 'https://example.com/moneyforup-tg.html';
 const API_PORT      = +(process.env.PORT || process.env.API_PORT || 3000);
-let ADMIN_ID        = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
-const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || 'lev_god').replace(/^@/, '').toLowerCase();
+const ADMIN_ID        = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : 0;
 const betsMonitor   = require('./bets_monitor');
+const db            = require('./db');
 
 function isAdmin(u) {
-  if (!u) return false;
-  if (ADMIN_ID && Number(u.id) === ADMIN_ID) return true;
-  if (u.username && String(u.username).replace(/^@/, '').toLowerCase() === ADMIN_USERNAME) {
-    if (!ADMIN_ID && u.id) {
-      ADMIN_ID = Number(u.id);
-      console.log('[Admin] Автоматически привязан ADMIN_ID по @' + ADMIN_USERNAME + ':', ADMIN_ID);
-    }
-    return true;
-  }
-  return false;
+  if (!u || !ADMIN_ID) return false;
+  return Number(u.id) === ADMIN_ID;
 }
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
@@ -47,11 +39,18 @@ const PLATEGA_SECRET      = process.env.PLATEGA_SECRET || '';
 const PLATEGA_API         = process.env.PLATEGA_API || 'https://app.platega.io';
 
 /* Coinso (CryptoProc: Криптовалюта USDT, TON, BTC и др.). Кабинет: coinso.io → Настройки проекта → Интеграция */
-const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '279786097';
-const COINSO_API_KEY     = process.env.COINSO_API_KEY || '66b9617c7e746616694bf40248a83e47';
-const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '20a010394423b5a409b667feae26c31c';
+const COINSO_PROJECT_ID = process.env.COINSO_PROJECT_ID || '';
+const COINSO_API_KEY     = process.env.COINSO_API_KEY || '';
+const COINSO_SECRET_KEY  = process.env.COINSO_SECRET_KEY || '';
 const COINSO_API         = (process.env.COINSO_API || 'https://coinso.io/api').replace(/\/+$/, '');
 const coinsoOrders       = new Map(); // orderId -> { userId, tokens, rub, invoice_id, credited }
+
+/* Платёжные реквизиты СБП и банковских карт (настраиваются в .env, не хранятся в открытом коде) */
+const SBP_PHONE    = process.env.SBP_PHONE || '';
+const SBP_HOLDER   = process.env.SBP_HOLDER || '';
+const CARD_TINKOFF = process.env.CARD_TINKOFF || '';
+const CARD_SBER    = process.env.CARD_SBER || '';
+const CARD_OZON    = process.env.CARD_OZON || '';
 
 /* Публичный адрес этого бэкенда (без слэша на конце) — для url_callback и вебхуков */
 const PUBLIC_URL      = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
@@ -79,10 +78,69 @@ const bot = new Bot(BOT_TOKEN);
 /* ------------------------------------------------------------------ */
 const users = new Map();    // id → { name, code, tokens, staked, stakeSince, accruedBase, ref, refEarned, refInvited, termsAt, starsUsd }
 const byCode = new Map();   // реферальный код → id пользователя
-const orders = new Map();   // orderId → { userId, tokens, rub, status, source }
+const orders = new Map();   // orderId → order object
 const promoCodes = new Map(); // CODE -> { code, tokens, maxUses, usedBy: Set<userId>, createdAt }
 const plategaTx = new Map(); // transactionId Platega → { userId, tokens, rub }
-let orderSeq = 1;
+let orderSeq = Date.now() % 100000;
+
+// Предварительная загрузка всех заказов из постоянной БД
+try {
+  for (const o of db.getAllOrders()) {
+    orders.set(String(o.id), {
+      id: String(o.id),
+      type: o.type,
+      userId: o.user_id,
+      tokens: o.tokens,
+      rub: o.rub,
+      bank: o.bank,
+      card: o.card,
+      sender: o.sender,
+      method: o.method,
+      details: o.details,
+      status: o.status,
+      source: o.source,
+      tx: o.tx,
+      createdAt: o.created_at,
+      updatedAt: o.updated_at
+    });
+  }
+} catch (e) {
+  console.warn('Ошибка начальной загрузки заказов из БД:', e.message);
+}
+
+function getOrder(id) {
+  let ord = orders.get(String(id));
+  if (!ord) {
+    const fromDb = db.getOrder(String(id));
+    if (fromDb) {
+      ord = {
+        id: fromDb.id,
+        type: fromDb.type,
+        userId: fromDb.user_id,
+        tokens: fromDb.tokens,
+        rub: fromDb.rub,
+        bank: fromDb.bank,
+        card: fromDb.card,
+        sender: fromDb.sender,
+        method: fromDb.method,
+        details: fromDb.details,
+        status: fromDb.status,
+        source: fromDb.source,
+        tx: fromDb.tx,
+        createdAt: fromDb.created_at,
+        updatedAt: fromDb.updated_at
+      };
+      orders.set(String(id), ord);
+    }
+  }
+  return ord;
+}
+
+function setOrder(id, ord) {
+  ord.id = String(id);
+  orders.set(String(id), ord);
+  try { db.saveOrder(ord); } catch (e) { console.error('Ошибка сохранения заказа в БД:', e.message); }
+}
 
 /* ---------- реферальные коды -------------------------------------- */
 /* Код вида MF7K3QD2: 8 символов, без I/O/L/0/1 — его диктуют вслух и копируют вручную.
@@ -94,7 +152,7 @@ function makeCode() {
     let code = 'MF';
     const bytes = crypto.randomBytes(CODE_LEN - 2);
     for (let i = 0; i < bytes.length; i++) code += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-    if (!byCode.has(code)) return code;
+    if (!byCode.has(code) && !db.getUserByCode(code)) return code;
   }
   return 'MF' + Date.now().toString(36).toUpperCase().slice(-6);   // практический недостижимый фолбэк
 }
@@ -102,8 +160,14 @@ function makeCode() {
 function resolveRef(param) {
   const raw = String(param || '').trim();
   if (!raw) return 0;
-  const byC = byCode.get(raw.toUpperCase());
+  const codeUp = raw.toUpperCase();
+  const byC = byCode.get(codeUp);
   if (byC) return byC;
+  const fromDb = db.getUserByCode(codeUp);
+  if (fromDb && fromDb.id) {
+    byCode.set(codeUp, fromDb.id);
+    return fromDb.id;
+  }
   const asId = Number(raw);
   return Number.isInteger(asId) && asId > 0 ? asId : 0;
 }
@@ -111,29 +175,52 @@ function setRef(u, param) {
   const refId = resolveRef(param);
   if (!refId || refId === u.id || u.ref) return 0;      // самоприглашение и повторную привязку отсекаем
   u.ref = refId;
-  const referrer = users.get(refId);
-  if (referrer) referrer.refInvited = countInvited(referrer.id);
+  try { db.saveUser(u); } catch (_) {}
+  const referrer = user(refId);
+  if (referrer) {
+    referrer.refInvited = countInvited(referrer.id);
+    try { db.saveUser(referrer); } catch (_) {}
+  }
   return refId;
 }
 
 let nextPlayerId = 10000;
 
 function user(id, name, username) {
-  if (!users.has(id)) {
-    const code = makeCode();
-    const numId = nextPlayerId++;
-    users.set(id, { id, numId, code, name: name || '', tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
-                    ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
-                    totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0, cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-                    easycashClaimed: false, notifications: [] });
-    byCode.set(code, id);
+  let u = users.get(id);
+  if (!u) {
+    const fromDb = db.getUser(id);
+    if (fromDb) {
+      u = fromDb;
+      u.notifications = [];
+      users.set(id, u);
+      if (u.code) byCode.set(u.code, id);
+    } else {
+      const code = makeCode();
+      const numId = nextPlayerId++;
+      u = {
+        id, numId, code, name: name || '', username: username || '',
+        tokens: START_TOKENS, staked: 0, stakeSince: 0, accruedBase: 0,
+        ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
+        totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0,
+        cashbackClaimedDepositId: 0, lastCashbackAt: 0,
+        easycashClaimed: false, notifications: []
+      };
+      users.set(id, u);
+      byCode.set(code, id);
+      try { db.saveUser(u); } catch (e) { console.error('Ошибка сохранения нового пользователя:', e.message); }
+    }
   }
-  const u = users.get(id);
   if (!u.numId) {
     u.numId = nextPlayerId++;
+    try { db.saveUser(u); } catch (_) {}
   }
-  if (name) u.name = name;
-  if (username) u.username = username;      // @username из Telegram — для привязки профиля
+  let dirty = false;
+  if (name && u.name !== name) { u.name = name; dirty = true; }
+  if (username && u.username !== username) { u.username = username; dirty = true; }
+  if (dirty) {
+    try { db.saveUser(u); } catch (_) {}
+  }
   return u;
 }
 
@@ -141,7 +228,7 @@ function user(id, name, username) {
 /* Стейкинг: 1 % в сутки, простые проценты, по секундам                */
 /* ------------------------------------------------------------------ */
 /* сколько пользователей реально пришли по ссылке этого игрока */
-const countInvited = id => [...users.values()].filter(x => Number(x.ref) === Number(id)).length;
+const countInvited = id => db.countInvited(Number(id));
 
 const stakeAccrued = u => (u.accruedBase || 0) +
   (u.staked > 0 && u.stakeSince ? u.staked * STAKE_RATE * Math.max(0, Date.now() - u.stakeSince) / DAY_MS : 0);
@@ -154,12 +241,23 @@ function stakeAdd(u, v) {
   u.tokens -= v;
   u.staked += v;
   u.stakeSince = Date.now();
+  try {
+    db.atomicBalanceChange(u.id, -v, 'stake_add', 'Добавлено в стейкинг');
+  } catch (_) {}
+  try { db.saveUser(u); } catch (_) {}
   return { staked: u.staked, tokens: u.tokens, accrued: u.accruedBase };
 }
 function stakeClaim(u) {
   const acc = stakeAccrued(u);
   if (acc < 0.01) return { error: 'Пока нечего забирать' };
+  const tkAcc = Math.floor(acc);
   u.tokens += acc; u.accruedBase = 0; u.stakeSince = Date.now();
+  if (tkAcc > 0) {
+    try {
+      db.atomicBalanceChange(u.id, tkAcc, 'stake_claim', 'Начисление процентов стейкинга');
+    } catch (_) {}
+  }
+  try { db.saveUser(u); } catch (_) {}
   return { claimed: acc, tokens: u.tokens };
 }
 function stakeRemove(u, all) {
@@ -170,6 +268,10 @@ function stakeRemove(u, all) {
   u.staked -= take;
   u.accruedBase = 0;
   u.stakeSince = u.staked ? Date.now() : 0;
+  try {
+    db.atomicBalanceChange(u.id, Math.floor(take + acc), 'stake_remove', 'Снятие из стейкинга');
+  } catch (_) {}
+  try { db.saveUser(u); } catch (_) {}
   return { removed: take + acc, tokens: u.tokens, staked: u.staked };
 }
 
@@ -178,25 +280,39 @@ function stakeRemove(u, all) {
 /* ------------------------------------------------------------------ */
 async function creditDeposit(userId, tokens, source) {
   const u = user(userId);
-  u.tokens += tokens;
+  try {
+    db.atomicBalanceChange(userId, tokens, 'deposit', `Пополнение через ${source}`, '');
+    u.tokens += tokens;
+  } catch (_) {
+    u.tokens += tokens;
+  }
   const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
   u.lastDeposit = rubAmt;
   u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
-  try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
   u.lastDepositId = (u.lastDepositId || 0) + 1;
+  try { db.saveUser(u); } catch (_) {}
+  try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
   if (refId) {
     const referrer = user(refId);                              // реферер мог ещё не открыть бота — создаём запись
     if (Number(u.ref) !== u.id) {                              // самоприглашение отсекаем
       refPaid = Math.floor(tokens * REF_PERCENT / 100);
-      referrer.tokens += refPaid;
-      referrer.refEarned = (referrer.refEarned || 0) + refPaid;
-      referrer.refInvited = countInvited(referrer.id);
-      try {
-        await bot.api.sendMessage(referrer.id,
-          `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
-      } catch (e) { refErr = e.message; }
+      if (refPaid > 0) {
+        try {
+          db.atomicBalanceChange(refId, refPaid, 'referral', `15% от депозита игрока ID ${u.id}`, String(u.id));
+          referrer.tokens += refPaid;
+        } catch (_) {
+          referrer.tokens += refPaid;
+        }
+        referrer.refEarned = (referrer.refEarned || 0) + refPaid;
+        referrer.refInvited = countInvited(referrer.id);
+        try { db.saveUser(referrer); } catch (_) {}
+        try {
+          await bot.api.sendMessage(referrer.id,
+            `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
+        } catch (e) { refErr = e.message; }
+      }
     }
   }
   return { tokens, refPaid, refErr };
@@ -236,51 +352,18 @@ async function starsInvoiceLink(userId, tokens) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Промокоды (с лимитом общего числа активаций)                       */
+/* Промокоды (с лимитом общего числа активаций в SQLite)              */
 /* ------------------------------------------------------------------ */
-function addPromoCode(rawCode, tokens, maxUses) {
-  const code = String(rawCode || '').trim().toUpperCase();
-  if (!code || code.length < 2) throw new Error('Код должен содержать от 2 символов');
-  tokens = Math.max(1, Math.floor(Number(tokens) || 0));
-  maxUses = Math.max(1, Math.floor(Number(maxUses) || 1));
-  const existing = promoCodes.get(code);
-  if (existing) {
-    existing.tokens = tokens;
-    existing.maxUses = maxUses;
-    return existing;
-  }
-  const entry = { code, tokens, maxUses, usedBy: new Set(), createdAt: Date.now() };
-  promoCodes.set(code, entry);
-  return entry;
-}
-
-// Предустановленные промокоды
-addPromoCode('MONEYUP', 500, 100);  // 500 ⬦ (~50 ₽), 100 человек
-addPromoCode('START', 250, 50);     // 250 ⬦ (~25 ₽), 50 человек
-addPromoCode('SKUF', 300, 30);      // 300 ⬦ (~30 ₽), 30 человек
-
 function applyPromo(userId, rawCode) {
   const code = String(rawCode || '').trim().toUpperCase();
   if (!code) return { ok: false, error: 'Введите промокод' };
-  const promo = promoCodes.get(code);
-  if (!promo) return { ok: false, error: `Промокод «${code}» не найден или не существует` };
-  if (promo.usedBy.has(userId)) return { ok: false, error: `Вы уже активировали промокод «${code}»` };
-  if (promo.usedBy.size >= promo.maxUses) {
-    return { ok: false, error: `Лимит активаций промокода «${code}» исчерпан (${promo.maxUses}/${promo.maxUses})` };
+  const res = db.atomicApplyPromo(userId, code);
+  if (res.ok) {
+    const u = user(userId);
+    u.tokens = res.newBalance;
+    try { db.saveUser(u); } catch (_) {}
   }
-
-  promo.usedBy.add(userId);
-  const u = user(userId);
-  u.tokens = (u.tokens || 0) + promo.tokens;
-
-  return {
-    ok: true,
-    tokens: promo.tokens,
-    newBalance: u.tokens,
-    code: promo.code,
-    remainingUses: promo.maxUses - promo.usedBy.size,
-    maxUses: promo.maxUses
-  };
+  return res;
 }
 
 
@@ -597,16 +680,25 @@ bot.command('sbp', async ctx => {
   const rub = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
   const id = String(orderSeq++);
   const tokens = rub * TOKENS_PER_RUB;
-  orders.set(id, { userId: ctx.from.id, tokens, rub, status: 'pending', source: 'СБП / Карта' });
+  const newOrder = { id, userId: ctx.from.id, tokens, rub, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
+  setOrder(id, newOrder);
+
+  let reqText = '';
+  if (SBP_PHONE) reqText += `• Телефон СБП: <code>${SBP_PHONE}</code>${SBP_HOLDER ? ` (${SBP_HOLDER})` : ''}\n• Банки СБП: Т-Банк, Сбербанк, Озон Банк\n`;
+  if (CARD_TINKOFF || CARD_SBER || CARD_OZON) {
+    reqText += `• Или прямой перевод на карту:\n`;
+    if (CARD_TINKOFF) reqText += `  — Т-Банк: <code>${CARD_TINKOFF}</code>\n`;
+    if (CARD_SBER) reqText += `  — Сбербанк: <code>${CARD_SBER}</code>\n`;
+    if (CARD_OZON) reqText += `  — Озон Банк: <code>${CARD_OZON}</code>\n`;
+  }
+  if (!reqText) {
+    reqText = `• Реквизиты для оплаты уточняйте у администратора.\n`;
+  }
+
   await ctx.reply(
     `💳 <b>Заявка №${id} на ${rub} ₽ (${tokens} ⬦)</b>\n\n` +
     `<b>Реквизиты для оплаты:</b>\n` +
-    `• Телефон СБП: <code>+79054760559</code> (Лев К.)\n` +
-    `• Банки СБП: Тинькофф (Т-Банк), Сбербанк, Озон Банк\n` +
-    `• Или прямой перевод на карту:\n` +
-    `  — Тинькофф: <code>5536917718991380</code>\n` +
-    `  — Сбербанк: <code>2202208363497083</code>\n` +
-    `  — Озон Банк: <code>2204320913035251</code>\n\n` +
+    reqText + `\n` +
     `После перевода администратор проверит платёж и токены сразу зачислятся на баланс.`,
     { parse_mode: 'HTML' }
   );
@@ -623,7 +715,7 @@ bot.command('sbp', async ctx => {
 });
 
 async function processOrderAction(orderId, action) {
-  const order = orders.get(String(orderId));
+  const order = getOrder(String(orderId));
   if (!order) return { ok: false, error: 'Заявка не найдена' };
   if (order.status !== 'pending') return { ok: false, error: 'Заявка уже обработана (' + order.status + ')' };
 
@@ -632,6 +724,7 @@ async function processOrderAction(orderId, action) {
     if (action === 'wd_ok' || action === 'approve') {
       order.status = 'paid';
       order.completedAt = Date.now();
+      try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
       try { betsMonitor.recordCashflow('withdraw', order.rub, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
       u.notifications = u.notifications || [];
       u.notifications.push({
@@ -651,12 +744,15 @@ async function processOrderAction(orderId, action) {
     } else {
       order.status = 'rejected';
       order.completedAt = Date.now();
+      try { db.updateOrderStatus(orderId, 'rejected'); } catch (_) {}
       // Возвращаем токены только если у игрока были реальные депозиты, иначе сбрасываем накрутку
       if ((u.totalDepositedRub || u.lastDeposit || 0) > 0) {
         u.tokens += order.tokens;
+        try { db.atomicBalanceChange(u.id, order.tokens, 'refund_withdraw', `Возврат отклоненного вывода #${orderId}`); } catch (_) {}
       } else {
         u.tokens = Math.min(u.tokens, START_TOKENS);
       }
+      try { db.saveUser(u); } catch (_) {}
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -676,6 +772,7 @@ async function processOrderAction(orderId, action) {
     if (action === 'ok' || action === 'approve') {
       order.status = 'paid';
       order.completedAt = Date.now();
+      try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
       const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
       u.notifications = u.notifications || [];
       u.notifications.push({
@@ -691,6 +788,7 @@ async function processOrderAction(orderId, action) {
     } else {
       order.status = 'rejected';
       order.completedAt = Date.now();
+      try { db.updateOrderStatus(orderId, 'rejected'); } catch (_) {}
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -1063,8 +1161,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/coinso-webhook' && req.method === 'POST') {
       if (COINSO_SECRET_KEY) {
         const sig = req.headers['x-signature'];
+        if (!sig) {
+          console.warn('[Coinso Webhook] Отсутствует обязательный заголовок X-Signature');
+          return send(403, { error: 'missing signature header' });
+        }
         const calcSig = crypto.createHmac('sha256', COINSO_SECRET_KEY).update(raw).digest('hex');
-        if (sig && sig !== calcSig) {
+        if (sig.length !== calcSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(calcSig))) {
           console.warn('[Coinso Webhook] Неверная подпись X-Signature');
           return send(403, { error: 'bad signature' });
         }
@@ -1090,8 +1192,8 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/payment-webhook' && req.method === 'POST') {
       const authHeader = req.headers['authorization'] || '';
       const secret = body.secret || authHeader.replace(/^Bearer\s+/i, '');
-      const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || 'MUP_SECRET_KEY_2026';
-      if (secret !== EXPECTED_SECRET) {
+      const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET;
+      if (!EXPECTED_SECRET || secret !== EXPECTED_SECRET) {
         return send(403, { error: 'unauthorized: invalid webhook secret' });
       }
 
@@ -1129,6 +1231,7 @@ const server = http.createServer(async (req, res) => {
 
       if (foundOrder) {
         foundOrder.status = 'paid';
+        try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
         const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
         await bot.api.sendMessage(foundOrder.userId,
           `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${foundOrder.tokens} ⬦</b> (${foundOrder.rub} ₽)!\nПриятной игры в MoneyForUp!`,
@@ -1217,20 +1320,7 @@ const server = http.createServer(async (req, res) => {
 
       // Жёсткий потолок для игроков с 0 ₽ пополнений (невозможно поднять с 75 ⬦ до вывода!)
       const NON_DEPOSITOR_CAP = 400; // максимум 400 ⬦ (40 ₽) без депозита
-      let nextTk = typeof body.tokens === 'number' ? Math.max(0, Math.floor(body.tokens)) : Math.max(0, Math.floor((u.tokens || 0) - betTk + winTk));
-
-      // Не позволяем клиенту прислать баланс выше математического (u.tokens - bet + win)
-      const calcMaxTk = Math.max(0, Math.floor(u.tokens || 0) - betTk + winTk + 100);
-      if (nextTk > calcMaxTk && !isAdmin(tgUser)) {
-        betsMonitor.flagSuspicious({
-          userId: u.id,
-          name: userLabel,
-          reason: 'Попытка ручной накрутки баланса',
-          details: `клиент прислал ${nextTk} ⬦ вместо ${calcMaxTk} ⬦ (${gameName})`
-        });
-        nextTk = Math.max(0, Math.floor(u.tokens || 0) - betTk);
-        winTk = 0;
-      }
+      let nextTk = Math.max(0, Math.floor((u.tokens || 0) - betTk + winTk));
 
       if (userDep <= 0 && !isAdmin(tgUser) && nextTk > NON_DEPOSITOR_CAP) {
         betsMonitor.flagSuspicious({
@@ -1243,7 +1333,14 @@ const server = http.createServer(async (req, res) => {
         winTk = Math.max(0, 350 - Math.max(0, Math.floor(u.tokens || 0) - betTk));
       }
 
+      const delta = nextTk - u.tokens;
       u.tokens = nextTk;
+      try { db.saveUser(u); } catch (_) {}
+      if (delta !== 0) {
+        try {
+          db.atomicBalanceChange(u.id, delta, 'game_bet', `Игра: ${gameName} (ставка: ${betTk}, выигрыш: ${winTk})`);
+        } catch (_) {}
+      }
 
       betsMonitor.recordBet({
         userId: u.id,
@@ -1258,52 +1355,24 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, tokens: u.tokens });
     }
 
-    if (url.pathname === '/api/sync-balance' && req.method === 'POST') {
-      if (typeof body.tokens === 'number') {
-        const userLabel = tgUser.username ? '@' + tgUser.username : (tgUser.first_name || u.name || String(u.id));
-        const userDep = u.totalDepositedRub || u.lastDeposit || 0;
-        let nextTk = Math.max(0, Math.floor(body.tokens));
-        const prevTk = Math.floor(u.tokens || 0);
-
-        // Античит: запрещаем бездепозитным игрокам синхронизировать баланс > 400 ⬦
-        if (userDep <= 0 && !isAdmin(tgUser) && nextTk > 400) {
-          betsMonitor.flagSuspicious({
-            userId: u.id,
-            name: userLabel,
-            reason: 'Блокировка sync-balance без депозита',
-            details: `клиент пытался синхронизировать ${nextTk} ⬦ при 0 ₽ пополнений`
-          });
-          nextTk = Math.min(prevTk, 350);
-        }
-
-        // Запрещаем скачок баланса вверх через sync-balance более чем на 300 ⬦ без record-bet
-        if (!isAdmin(tgUser) && nextTk - prevTk > 300 && !body.game) {
-          betsMonitor.flagSuspicious({
-            userId: u.id,
-            name: userLabel,
-            reason: 'Подозрительный скачок sync-balance',
-            details: `с ${prevTk} ⬦ до ${nextTk} ⬦ без игры`
-          });
-          nextTk = prevTk;
-        }
-
-        const diff = nextTk - prevTk;
-        if (diff !== 0 && body.game) {
-          if (diff < 0) {
-            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: Math.abs(diff), winTokens: 0, balanceAfter: nextTk, totalDepositedRub: userDep });
-          } else if (diff > 0) {
-            betsMonitor.recordBet({ userId: u.id, name: userLabel, game: body.game, betTokens: body.bet || 0, winTokens: diff, balanceAfter: nextTk, totalDepositedRub: userDep });
-          }
-        }
-        u.tokens = nextTk;
-      }
+    /* Синхронизация баланса (строго READ-ONLY: клиент не может устанавливать баланс напрямую) */
+    if (url.pathname === '/api/sync-balance') {
       return send(200, { ok: true, tokens: u.tokens });
+    }
+
+    /* Получение актуальных платёжных реквизитов (только для авторизованных пользователей) */
+    if (url.pathname === '/api/requisites') {
+      return send(200, {
+        ok: true,
+        sbp: { phone: SBP_PHONE, holder: SBP_HOLDER },
+        cards: { tinkoff: CARD_TINKOFF, sber: CARD_SBER, ozon: CARD_OZON }
+      });
     }
 
     /* Проверка статуса заявки на пополнение / вывод */
     if (url.pathname === '/api/check-order' && req.method === 'POST') {
       const ordId = String(body.order_id || '');
-      const ord = orders.get(ordId);
+      const ord = getOrder(ordId);
       if (!ord || ord.userId !== u.id) return send(404, { error: 'Заявка не найдена' });
       return send(200, { status: ord.status, tokens: ord.tokens, rub: ord.rub, balance: u.tokens });
     }
@@ -1311,23 +1380,25 @@ const server = http.createServer(async (req, res) => {
     /* АДМИН-ПАНЕЛЬ: строго только для владельца (isAdmin) */
     if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
       if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
-      const allOrders = [...orders.entries()].map(([id, o]) => {
-        const usr = users.get(o.userId) || {};
+      const dbOrders = db.getAllOrders();
+      const allOrders = (dbOrders.length ? dbOrders : [...orders.values()]).map(o => {
+        const uId = o.user_id || o.userId;
+        const usr = user(uId);
         const usrDep = usr.totalDepositedRub || usr.lastDeposit || 0;
         return {
-          id,
+          id: String(o.id),
           type: o.type || 'deposit',
-          userId: o.userId,
-          userName: usr.username ? '@' + usr.username : (usr.name || 'ID ' + o.userId),
+          userId: uId,
+          userName: usr.username ? '@' + usr.username : (usr.name || 'ID ' + uId),
           userDepositedRub: usrDep,
           rub: o.rub,
           tokens: o.tokens,
           method: o.method || o.bank || o.source || 'СБП / Карта',
           details: o.details || o.card || '',
           status: o.status,
-          createdAt: o.createdAt || Date.now()
+          createdAt: o.created_at || o.createdAt || Date.now()
         };
-      }).reverse();
+      }).slice(0, 50);
 
       return send(200, {
         ok: true,
@@ -1382,6 +1453,8 @@ const server = http.createServer(async (req, res) => {
 
       u.tokens += 50;
       u.easycashClaimed = true;
+      try { db.saveUser(u); } catch (_) {}
+      try { db.atomicBalanceChange(u.id, 50, 'bonus_channel', 'Подписка на канал @moneyforup'); } catch (_) {}
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
 
@@ -1404,6 +1477,8 @@ const server = http.createServer(async (req, res) => {
       u.tokens += cashback;
       u.cashbackClaimedDepositId = u.lastDepositId;
       u.lastCashbackAt = now;
+      try { db.saveUser(u); } catch (_) {}
+      try { db.atomicBalanceChange(u.id, cashback, 'bonus_cashback', 'Еженедельный кэшбэк 5%'); } catch (_) {}
       return send(200, { success: true, cashback, tokens: u.tokens });
     }
 
@@ -1430,6 +1505,7 @@ const server = http.createServer(async (req, res) => {
         if (u.tokens > 400) {
           u.tokens = START_TOKENS;
         }
+        try { db.saveUser(u); } catch (_) {}
         if (ADMIN_ID) {
           const dossier = betsMonitor.getPlayerDossier(u.id, u);
           bot.api.sendMessage(
@@ -1458,8 +1534,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       u.tokens -= neededTokens;
+      try { db.saveUser(u); } catch (_) {}
+      try { db.atomicBalanceChange(u.id, -neededTokens, 'withdraw', `Заявка на вывод ${rub} ₽ на ${details}`); } catch (_) {}
       const orderId = 'WD' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
-      orders.set(orderId, {
+      const wdOrder = {
+        id: orderId,
         type: 'withdraw',
         userId: u.id,
         rub,
@@ -1468,7 +1547,8 @@ const server = http.createServer(async (req, res) => {
         details,
         createdAt: Date.now(),
         status: 'pending'
-      });
+      };
+      setOrder(orderId, wdOrder);
 
       if (ADMIN_ID) {
         const dossier = betsMonitor.getPlayerDossier(u.id, u);
@@ -1541,6 +1621,8 @@ const server = http.createServer(async (req, res) => {
       const win = rewards[Math.floor(Math.random() * rewards.length)];
       u.tokens += win;
       u.lastHotDrop = now;
+      try { db.saveUser(u); } catch (_) {}
+      try { db.atomicBalanceChange(u.id, win, 'bonus_hotdrop', 'Hot Drop'); } catch (_) {}
       return send(200, { ok: true, reward: win, balance: u.tokens });
     }
 
@@ -1612,7 +1694,8 @@ const server = http.createServer(async (req, res) => {
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();
       const sender = String(body.sender || '').trim();
-      orders.set(id, { type: 'deposit', userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() });
+      const newOrder = { id, type: 'deposit', userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
+      setOrder(id, newOrder);
       if (ADMIN_ID) {
         const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
         const msg =

@@ -15,3 +15,9 @@ __pycache__/
 # Системное
 .DS_Store
 Thumbs.db
+
+# База данных SQLite
+data/
+*.db
+*.db-wal
+*.db-shm
