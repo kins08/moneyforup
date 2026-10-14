@@ -2334,29 +2334,42 @@ const server = http.createServer(async (req, res) => {
       return send(200, { success: true, bonus: 50, tokens: u.tokens });
     }
 
-    /* Еженедельный кэшбэк 5 % от последнего пополнения */
+    /* Кэшбэк от последнего пополнения с учётом VIP-ранга (24ч кулдаун) */
     if (url.pathname === '/api/claim-cashback' && req.method === 'POST') {
       if (!checkRateLimit(`claim-cashback:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много запросов кэшбэка. Подождите минуту.' });
-      if (!u.lastDeposit || u.lastDeposit <= 0) {
-        return send(400, { error: 'У вас ещё не было пополнений для начисления кэшбэка' });
+      const lastDepRub = Math.max(0, Number(u.lastDeposit) || 0);
+      if (lastDepRub <= 0) {
+        return send(400, { error: 'У вас ещё нет подтверждённых пополнений' });
       }
-      if (u.cashbackClaimedDepositId === u.lastDepositId) {
+      const currentDepId = Number(u.lastDepositId) || 1;
+      if (u.cashbackClaimedDepositId && u.cashbackClaimedDepositId === currentDepId) {
         return send(400, { error: 'Кэшбэк с последнего пополнения уже получен' });
       }
-      const WEEK_MS = 7 * 24 * 3600 * 1000;
+      const DAY_MS = 24 * 3600 * 1000;
       const now = Date.now();
-      if (u.lastCashbackAt && (now - u.lastCashbackAt < WEEK_MS)) {
-        const daysLeft = Math.ceil((WEEK_MS - (now - u.lastCashbackAt)) / (24 * 3600 * 1000));
-        return send(400, { error: `Кэшбэк доступен раз в неделю. Осталось дней: ${daysLeft}` });
+      if (u.lastCashbackAt && (now - u.lastCashbackAt < DAY_MS)) {
+        const hoursLeft = Math.ceil((DAY_MS - (now - u.lastCashbackAt)) / (3600 * 1000));
+        return send(400, { error: `Кэшбэк доступен раз в 24 часа. Осталось ждать: ~${hoursLeft} ч.` });
       }
 
-      const cashback = Math.max(1, Math.floor(u.lastDeposit * 0.05));
-      const r = applyBalance(u, cashback, 'bonus_cashback', 'Еженедельный кэшбэк 5%');
+      // Расчет процента строго на сервере исходя из общей суммы депозитов (VIP-ранг)
+      const totalDepRub = Math.max(lastDepRub, Number(u.totalDepositedRub) || 0);
+      let cbPct = 2.0;
+      if (totalDepRub >= 15000) cbPct = 10.0;
+      else if (totalDepRub >= 5000) cbPct = 7.5;
+      else if (totalDepRub >= 2000) cbPct = 5.0;
+      else if (totalDepRub >= 500) cbPct = 3.5;
+
+      const lastDepTk = lastDepRub * 10;
+      const cashback = Math.max(1, Math.round(lastDepTk * (cbPct / 100)));
+      const opId = 'cb_' + u.id + '_' + currentDepId;
+      const r = applyBalance(u, cashback, 'bonus_cashback', `Кэшбэк ${cbPct}% за пополнение ${lastDepRub} ₽`, opId);
       if (!r.ok) return send(500, { error: 'Не удалось начислить кэшбэк, попробуйте позже' });
-      u.cashbackClaimedDepositId = u.lastDepositId;
+
+      u.cashbackClaimedDepositId = currentDepId;
       u.lastCashbackAt = now;
       try { db.saveUser(u); } catch (e) { console.error('saveUser (cashback):', e.message); }
-      return send(200, { success: true, cashback, tokens: u.tokens });
+      return send(200, { success: true, cashback, tokens: u.tokens, cbPct });
     }
 
     /* Заявка на вывод средств (минимум 300 ₽ = 3000 токенов + обязательный депозит) */
