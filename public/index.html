@@ -1539,7 +1539,7 @@ let __lastRevengeModalTime = 0;
 let __lastNearMissToastTime = 0;
 
 function applyQuickDeposit(amtRub, bonusTag, methodId){
-  screen('tokens');
+  screen('profile');
   const payInp = q('#payRub');
   if(payInp){
     payInp.value = amtRub;
@@ -1561,7 +1561,8 @@ function applyQuickDeposit(amtRub, bonusTag, methodId){
   }
   if(typeof paySync === 'function') paySync();
   const payMsg = q('#payMsg');
-  if(payMsg && bonusTag){
+  const isExp = (typeof isTurboOfferExpired === 'function') ? isTurboOfferExpired() : false;
+  if(payMsg && bonusTag && (!isExp || bonusTag !== '25')){
     payMsg.style.display = 'block';
     payMsg.className = 'result good';
     if(bonusTag === '25'){
@@ -1570,8 +1571,10 @@ function applyQuickDeposit(amtRub, bonusTag, methodId){
       payMsg.innerHTML = `🎁 <b>Активирован бесплатный золотой кейс!</b> При пополнении от 300 ₽ легендарный секретный бокс добавится в ваш профиль!`;
     }
   }
-  const target = q('#payGo') || q('#paySumBlock');
-  if(target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => {
+    const target = q('#paySumBlock') || q('#payMethods') || q('#sbpRequisites') || q('#payGo');
+    if(target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
 }
 
 function triggerNearMissEffect(gameName, details, betAmt){
@@ -1786,6 +1789,7 @@ function openBoostHubModal(){
       </div>
 
       <!-- Горячий оффер +25% -->
+      ${!isTurboOfferExpired() ? `
       <div style="background:linear-gradient(135deg,rgba(239,68,68,0.22),rgba(245,158,11,0.15));border:1.5px solid rgba(239,68,68,0.5);border-radius:14px;padding:12px;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="font-weight:900;color:#fff;font-size:13.5px">🔥 БОНУС +25% НА ДЕПОЗИТ</div>
@@ -1794,6 +1798,13 @@ function openBoostHubModal(){
         <div class="muted small" style="margin:4px 0 10px;font-size:11.5px;color:#fca5a5">
           Пополни счёт от 150 ₽ в течение 10 минут и забери +25% токенов или Золотой кейс в подарок!
         </div>
+      ` : `
+      <div style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(147,51,234,0.12));border:1.5px solid rgba(139,146,255,0.4);border-radius:14px;padding:12px;margin-bottom:12px">
+        <div style="font-weight:900;color:#fff;font-size:13.5px">⚡️ БЫСТРОЕ ПОПОЛНЕНИЕ (СБП / КАРТЫ)</div>
+        <div class="muted small" style="margin:4px 0 10px;font-size:11.5px;color:#c7d2fe">
+          Выберите комфортную сумму для мгновенного пополнения и умножайте баланс в играх!
+        </div>
+      `}
 
         <!-- Предустановленные суммы -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
@@ -1871,30 +1882,79 @@ function openBoostHubModal(){
   if(vipBtn) vipBtn.onclick = () => { modal.remove(); showVipRanksModal(); };
 }
 
-/* Таймер динамического турбо-оффера (10 минут) */
+/* Единоразовая акция +25% на 10 минут:
+   Не высвечивается после исхода 10 минут или выхода пользователя из платформы */
+function isTurboOfferExpired(){
+  try {
+    if(localStorage.getItem('mup_turbo_offer_expired') === 'true') return true;
+    const started = Number(localStorage.getItem('mup_turbo_offer_started') || 0);
+    const sessionActive = sessionStorage.getItem('mup_turbo_session_active');
+    // Если акция запускалась в прошлый визит, а сессия не активна — значит был выход из платформы
+    if(started > 0 && !sessionActive) {
+      localStorage.setItem('mup_turbo_offer_expired', 'true');
+      return true;
+    }
+    const end = Number(localStorage.getItem('mup_turbo_offer_end') || 0);
+    if(end > 0 && Date.now() >= end) {
+      localStorage.setItem('mup_turbo_offer_expired', 'true');
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+let __turboOfferInterval = null;
 function initTurboOfferTimer(){
+  if(__turboOfferInterval){ clearInterval(__turboOfferInterval); __turboOfferInterval = null; }
+
+  const card = q('#gamesTurboOfferCard');
+  if(isTurboOfferExpired()){
+    if(card) card.style.display = 'none';
+    qa('.turbo-offer-banner').forEach(el => { el.style.display = 'none'; });
+    return;
+  }
+
+  // Фиксируем активную сессию пользователя
+  try { sessionStorage.setItem('mup_turbo_session_active', '1'); } catch(_) {}
+
   let end = 0;
-  try { end = Number(sessionStorage.getItem('turboOfferEnd') || 0); } catch(_) {}
+  try { end = Number(localStorage.getItem('mup_turbo_offer_end') || 0); } catch(_) {}
   const now = Date.now();
   if(!end || end <= now){
+    // Первый и единственный старт акции: ровно 10 минут
     end = now + 10 * 60 * 1000;
-    try { sessionStorage.setItem('turboOfferEnd', String(end)); } catch(_) {}
+    try {
+      localStorage.setItem('mup_turbo_offer_started', String(now));
+      localStorage.setItem('mup_turbo_offer_end', String(end));
+    } catch(_) {}
   }
+
+  // При выходе пользователя из платформы (закрытие окна/приложения) акция завершается навсегда
+  function onUserExit(){
+    try { localStorage.setItem('mup_turbo_offer_expired', 'true'); } catch(_) {}
+  }
+  window.addEventListener('beforeunload', onUserExit);
+  window.addEventListener('pagehide', onUserExit);
+
   function update(){
     const cur = Date.now();
     let left = Math.max(0, end - cur);
     if(left <= 0){
-      end = Date.now() + 10 * 60 * 1000;
-      try { sessionStorage.setItem('turboOfferEnd', String(end)); } catch(_) {}
-      left = 10 * 60 * 1000;
+      // 10 минут истекли — единоразовая акция навсегда завершена
+      try { localStorage.setItem('mup_turbo_offer_expired', 'true'); } catch(_) {}
+      if(card) card.style.display = 'none';
+      qa('.turbo-offer-banner').forEach(el => { el.style.display = 'none'; });
+      if(__turboOfferInterval){ clearInterval(__turboOfferInterval); __turboOfferInterval = null; }
+      return;
     }
     const mins = Math.floor(left / 60000);
     const secs = Math.floor((left % 60000) / 1000);
     const txt = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
     qa('.turbo-timer-span').forEach(el => { el.textContent = txt; });
   }
+
   update();
-  setInterval(update, 1000);
+  __turboOfferInterval = setInterval(update, 1000);
 }
 
 /* ==================== ИНВЕНТАРЬ (СЕРВЕРНЫЙ) ====================
@@ -8032,8 +8092,9 @@ initTurboOfferTimer();
 
 const turboCard = q('#gamesTurboOfferCard');
 if(turboCard){
-  turboCard.addEventListener('click', () => {
-    applyQuickDeposit(500, '25');
+  turboCard.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyQuickDeposit(500, '25', 0);
   });
 }
 
@@ -8049,11 +8110,11 @@ if(effectiveRoute === 'boost' || startParam === 'boost' || searchParams.get('boo
   screen('games');
   setTimeout(() => openBoostHubModal(), 350);
 } else if(effectiveRoute === 'deposit' || effectiveRoute === 'tokens'){
-  screen('tokens');
+  screen('profile');
   const bonus = hashParams.get('bonus') || searchParams.get('bonus') || (startParam.startsWith('bonus') ? startParam.replace(/^bonus_?/, '') : '');
   const parsedAmt = +(hashParams.get('amt') || searchParams.get('amt') || 0);
   const targetAmt = parsedAmt > 0 ? parsedAmt : (bonus === '25' ? 500 : (bonus === 'goldcase' ? 300 : 150));
-  applyQuickDeposit(targetAmt, bonus);
+  applyQuickDeposit(targetAmt, bonus, 0);
 } else if(BUILD[hashRoute]){
   play(hashRoute);
 } else {

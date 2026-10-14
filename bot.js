@@ -1250,6 +1250,17 @@ bot.command('audit', async ctx => {
   await ctx.reply(betsMonitor.formatAuditReport(users), { parse_mode: 'HTML', reply_markup: getAdminStatsKeyboard() });
 });
 
+bot.command(['setdesc', 'updatedesc'], async ctx => {
+  if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора.');
+  await ctx.reply('⏳ Обновляю описание бота в Telegram API...');
+  const ok = await initBotProfile();
+  if (ok) {
+    await ctx.reply('✅ Описание бота в Telegram успешно обновлено чистым текстом!\nВсе фигурные скобки {"description":...} и \\n удалены.');
+  } else {
+    await ctx.reply('❌ Ошибка при обновлении описания бота.');
+  }
+});
+
 bot.callbackQuery(/^adm_stats:(\d+)$/, async ctx => {
   if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
   const hours = Number(ctx.match[1] || 12);
@@ -2520,10 +2531,9 @@ const server = http.createServer(async (req, res) => {
 });
 
 async function initBotProfile() {
-  if (process.env.BOT_DRY_RUN === '1' || !BOT_TOKEN) return;
+  if (process.env.BOT_DRY_RUN === '1' || !BOT_TOKEN) return false;
   try {
-    await bot.api.setMyDescription({
-      description:
+    const desc =
 `🔥 MoneyForUp — игровая платформа, кейсы и стейкинг в Telegram!
 
 Делай мани, ап-ап! 🚀
@@ -2535,14 +2545,23 @@ async function initBotProfile() {
 • 👥 Реферальная программа 15 % с пополнений
 • 🎟 Промокоды и ежедневные бонусы
 
-Жми «Старт» и забирай свои первые токены! 👇`
-    });
-    await bot.api.setMyShortDescription({
-      short_description: 'MoneyForUp — Делай мани, ап-ап! 🚀 Кейсы, Ракетка и стейкинг.'
-    });
-    console.log('[Telegram] Описание профиля бота обновлено');
+Жми «Старт» и забирай свои первые токены! 👇`;
+
+    const shortDesc = 'MoneyForUp — Делай мани, ап-ап! 🚀 Кейсы, Ракетка и стейкинг.';
+
+    // Важно: в grammY bot.api.setMyDescription(description: string, other?: object).
+    // Передача объекта { description: "..." } приводила к тому, что Telegram сохранял
+    // описание буквально как JSON строку {"description":"..."} со скобками и \n.
+    // Передаем чистую строку напрямую (для языка по умолчанию и для русского):
+    await bot.api.setMyDescription(desc);
+    await bot.api.setMyDescription(desc, { language_code: 'ru' });
+    await bot.api.setMyShortDescription(shortDesc);
+    await bot.api.setMyShortDescription(shortDesc, { language_code: 'ru' });
+    console.log('[Telegram] Описание профиля бота успешно обновлено чистым текстом (без JSON-скобок)');
+    return true;
   } catch (e) {
     console.warn('[Telegram] Не удалось обновить описание бота:', e.message);
+    return false;
   }
 }
 initBotProfile();
