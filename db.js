@@ -652,6 +652,34 @@ module.exports = {
     );
     return r;
   },
+  /** Полная аналитика по раундам конкретного пользователя */
+  getUserRoundStats: (userId) => {
+    try {
+      const summary = db.prepare(`
+        SELECT COUNT(*) AS totalRounds,
+               COALESCE(SUM(CASE WHEN win_tokens > bet_tokens THEN 1 ELSE 0 END), 0) AS wonRounds,
+               COALESCE(SUM(CASE WHEN win_tokens <= bet_tokens THEN 1 ELSE 0 END), 0) AS lostRounds,
+               COALESCE(SUM(bet_tokens), 0) AS totalWageredTk,
+               COALESCE(SUM(win_tokens), 0) AS totalPayoutTk,
+               COALESCE(MAX(win_tokens), 0) AS maxWinTk
+        FROM game_rounds WHERE user_id = ?
+      `).get(userId);
+
+      const byGame = db.prepare(`
+        SELECT game,
+               COUNT(*) AS rounds,
+               COALESCE(SUM(CASE WHEN win_tokens > bet_tokens THEN 1 ELSE 0 END), 0) AS won,
+               COALESCE(SUM(bet_tokens), 0) AS wageredTk,
+               COALESCE(SUM(win_tokens), 0) AS payoutTk,
+               COALESCE(MAX(win_tokens), 0) AS maxWin
+        FROM game_rounds WHERE user_id = ? GROUP BY game ORDER BY rounds DESC
+      `).all(userId);
+
+      return { summary: summary || {}, byGame: byGame || [] };
+    } catch (e) {
+      return { summary: {}, byGame: [] };
+    }
+  },
   pullFromTurso: () => turso.pullFromTurso(db),
   waitForTurso: (timeoutMs) => turso.waitForFlush(timeoutMs),
   tursoOn: turso.tursoOn

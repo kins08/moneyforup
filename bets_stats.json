@@ -1,0 +1,52 @@
+{
+  "updatedAt": 1791951772989,
+  "totalBetsCount": 1,
+  "wonBetsCount": 1,
+  "lostBetsCount": 0,
+  "totalWageredTokens": 50,
+  "totalPayoutTokens": 120,
+  "totalProjectNetTokens": -70,
+  "totalDepositsRub": 0,
+  "totalWithdrawalsRub": 0,
+  "players": {
+    "9999": {
+      "uid": 9999,
+      "name": "TestPlayer",
+      "betsCount": 1,
+      "wonCount": 1,
+      "lostCount": 0,
+      "wageredTk": 50,
+      "payoutTk": 120,
+      "netPlayerTk": 70,
+      "depositsRub": 300,
+      "withdrawalsRub": 0,
+      "currentBalanceTk": 120,
+      "maxSingleWinTk": 120,
+      "maxSingleWinGame": "Ракетка",
+      "games": {
+        "Ракетка": {
+          "count": 1,
+          "won": 1,
+          "lost": 0,
+          "wageredTk": 50,
+          "payoutTk": 120,
+          "netPlayerTk": 70
+        }
+      },
+      "suspiciousFlags": [],
+      "lastActiveAt": 1791951772989
+    }
+  },
+  "suspiciousEvents": [],
+  "history": [
+    {
+      "t": 1791951772989,
+      "uid": 9999,
+      "name": "TestPlayer",
+      "game": "Ракетка",
+      "bet": 50,
+      "win": 120,
+      "netProject": -70
+    }
+  ]
+}

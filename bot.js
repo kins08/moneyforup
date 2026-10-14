@@ -1740,6 +1740,8 @@ const server = http.createServer(async (req, res) => {
 
     if (!tgUser || !tgUser.id) return send(401, { error: 'initData недействителен' });
     const u = user(tgUser.id, tgUser.first_name, tgUser.username);
+    const dbStats = db.getUserRoundStats ? db.getUserRoundStats(u.id) : { summary: {}, byGame: [] };
+    const userStats = betsMonitor.getPlayerStats(u.id, dbStats);
     const who = {
       id: u.id,
       numId: u.numId,
@@ -1759,6 +1761,7 @@ const server = http.createServer(async (req, res) => {
       lastHotDrop: u.lastHotDrop || 0,
       lastWheelSpin: u.lastWheelSpin || 0,
       isAdmin: isAdmin(tgUser),
+      stats: userStats,
       notifications: (u.notifications || []).slice(-5)
     };
     if (u.notifications && u.notifications.length > 0) {
@@ -1774,6 +1777,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
+    if (url.pathname === '/api/user-stats') return send(200, { ok: true, stats: userStats });
 
     /* ── Сбор рейкбека (от 30 токенов) ────────────────────────────────────────── */
     if (url.pathname === '/api/claim-rakeback' && req.method === 'POST') {

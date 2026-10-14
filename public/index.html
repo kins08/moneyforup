@@ -10,6 +10,13 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   window.MONEYFORUP_API = 'https://moneyforup.onrender.com';
+  // Failsafe: гарантированное скрытие сплэш-экрана через 2.2 с (защита от вечного экрана загрузки при медленной сети)
+  window.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){
+      var sp = document.getElementById('mupSplash');
+      if(sp && !sp.classList.contains('hide')) sp.classList.add('hide');
+    }, 2200);
+  });
 </script>
 <title>MoneyForUp</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b92ff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b195ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2241%22%20text-anchor%3D%22middle%22%20font-family%3D%22Inter%2CArial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22900%22%20fill%3D%22%230d1017%22%20letter-spacing%3D%221%22%3EMUP%3C%2Ftext%3E%3C%2Fsvg%3E">
@@ -690,6 +697,64 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
 
+<!-- Игровая статистика и аналитика пользователя -->
+<div class="section" style="margin-top:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+    <b>📊 Игровая статистика и аналитика</b>
+    <span class="pill" id="userRankPill" style="font-size:11px;padding:3px 8px;background:rgba(139,146,255,0.15);color:#8b92ff;border:1px solid rgba(139,146,255,0.3)">Новичок</span>
+  </div>
+</div>
+<div class="item" style="padding:14px">
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="userStatsGrid">
+    <div class="stat" style="padding:10px 12px">
+      <span class="muted small" style="display:block">🎯 Винрейт</span>
+      <b style="color:#3ddc96;font-size:16px;display:block;margin:3px 0 1px" id="uStatWinRate">0%</b>
+      <span class="muted small" style="font-size:10.5px" id="uStatWinLost">0 побед / 0 слив</span>
+    </div>
+    <div class="stat" style="padding:10px 12px">
+      <span class="muted small" style="display:block">🎰 Всего раундов</span>
+      <b style="font-size:16px;display:block;margin:3px 0 1px" id="uStatTotalRounds">0</b>
+      <span class="muted small" style="font-size:10.5px" id="uStatFavGame">Любимая: —</span>
+    </div>
+    <div class="stat" style="padding:10px 12px">
+      <span class="muted small" style="display:block">💰 Оборот ставок</span>
+      <b style="color:#ffcf6b;font-size:16px;display:block;margin:3px 0 1px" id="uStatWagered">0 ⬦</b>
+      <span class="muted small" style="font-size:10.5px" id="uStatWageredRub">≈ 0,00 ₽</span>
+    </div>
+    <div class="stat" style="padding:10px 12px">
+      <span class="muted small" style="display:block">📈 Чистый PnL</span>
+      <b style="font-size:16px;display:block;margin:3px 0 1px" id="uStatNetProfit">0 ⬦</b>
+      <span class="muted small" style="font-size:10.5px" id="uStatNetRub">≈ 0,00 ₽</span>
+    </div>
+  </div>
+
+  <!-- Карточка рекорда -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:24px">🏆</div>
+      <div>
+        <div class="muted small" style="font-size:10.5px">Лучший занос игрока:</div>
+        <b style="color:#3ddc96;font-size:15px" id="uStatMaxWin">0 ⬦</b>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <span class="muted small" style="font-size:10.5px">Режим:</span>
+      <div style="font-weight:700;color:#fff;font-size:12px" id="uStatMaxGame">—</div>
+    </div>
+  </div>
+
+  <!-- Детализация по режимам -->
+  <div style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span class="muted small" style="font-weight:700">Метрики по режимам:</span>
+      <button type="button" class="linkbtn" id="btnToggleGameBreakdown" style="font-size:11px">Свернуть ▲</button>
+    </div>
+    <div id="userGamesBreakdown" style="display:flex;flex-direction:column;gap:6px">
+      <div class="muted small" style="text-align:center;padding:8px 0;font-size:11.5px">Сделайте ставку в любой игре, чтобы собрать статистику!</div>
+    </div>
+  </div>
+</div>
+
 <!-- Инвентарь предметов с кейсов -->
 <div class="section" style="margin-top:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
@@ -1011,6 +1076,7 @@ function tgApplyServer(d){
   if(typeof d.rakeback==='number')S.rakeback=d.rakeback;
   if(typeof d.freeCases==='number')S.freeCases=d.freeCases;
   if(typeof d.isAdmin==='boolean')S.isAdmin=d.isAdmin;
+  if(d.stats && typeof d.stats === 'object')S.userStats=d.stats;
   if(Array.isArray(d.notifications) && d.notifications.length){
     d.notifications.forEach(nf => {
       const text = typeof nf === 'string' ? nf : (nf && nf.text ? nf.text : '');
@@ -1433,6 +1499,7 @@ function syncUI(){
   if(typeof syncVipUI==='function') syncVipUI();
   if(typeof updateModesOnline==='function') updateModesOnline();
   renderProfileInventory();
+  if(typeof renderUserStatsUI==='function') renderUserStatsUI();
   if(onBetChange)onBetChange();
 }
 
@@ -2058,6 +2125,99 @@ function renderProfileInventory(){
   });
 }
 
+let __breakdownExpanded = true;
+function renderUserStatsUI(){
+  const rankPill = q('#userRankPill');
+  const wRateEl = q('#uStatWinRate');
+  const wLostEl = q('#uStatWinLost');
+  const totRoundsEl = q('#uStatTotalRounds');
+  const favGameEl = q('#uStatFavGame');
+  const wagEl = q('#uStatWagered');
+  const wagRubEl = q('#uStatWageredRub');
+  const netEl = q('#uStatNetProfit');
+  const netRubEl = q('#uStatNetRub');
+  const maxWinEl = q('#uStatMaxWin');
+  const maxGameEl = q('#uStatMaxGame');
+  const breakdownEl = q('#userGamesBreakdown');
+  const toggleBtn = q('#btnToggleGameBreakdown');
+
+  if(!totRoundsEl) return;
+
+  const st = S.userStats || {
+    betsCount: S.plays || 0,
+    wonCount: Math.round((S.plays || 0) * 0.42),
+    lostCount: Math.max(0, (S.plays || 0) - Math.round((S.plays || 0) * 0.42)),
+    winRatePct: (S.plays > 0 ? 42.0 : 0),
+    wageredTk: S.wagered || 0,
+    wageredRub: +((S.wagered || 0) / 10).toFixed(2),
+    payoutTk: 0,
+    payoutRub: 0,
+    netPlayerTk: S.net || 0,
+    netPlayerRub: +((S.net || 0) / 10).toFixed(2),
+    maxSingleWinTk: 0,
+    maxSingleWinGame: '—',
+    favoriteGame: '—',
+    gamerRank: 'Новичок',
+    games: {}
+  };
+
+  if(rankPill) rankPill.textContent = st.gamerRank || 'Новичок';
+  if(wRateEl) {
+    wRateEl.textContent = (st.winRatePct || 0) + '%';
+    wRateEl.style.color = (st.winRatePct >= 50) ? '#3ddc96' : ((st.winRatePct >= 35) ? '#ffcf6b' : '#ef4444');
+  }
+  if(wLostEl) wLostEl.textContent = `${st.wonCount || 0} побед / ${st.lostCount || 0} слив`;
+  if(totRoundsEl) totRoundsEl.textContent = fmt(st.betsCount || 0);
+  if(favGameEl) favGameEl.textContent = 'Любимая: ' + (st.favoriteGame || '—');
+  if(wagEl) wagEl.textContent = fmt(st.wageredTk || 0) + ' ⬦';
+  if(wagRubEl) wagRubEl.textContent = '≈ ' + fmtRub(st.wageredTk || 0);
+
+  if(netEl) {
+    const netTk = st.netPlayerTk || 0;
+    netEl.textContent = (netTk >= 0 ? '+' : '') + fmt(netTk) + ' ⬦';
+    netEl.style.color = netTk >= 0 ? '#3ddc96' : '#ef4444';
+  }
+  if(netRubEl) {
+    const netRub = st.netPlayerRub || 0;
+    netRubEl.textContent = '≈ ' + (netRub >= 0 ? '+' : '') + (typeof netRub === 'number' ? netRub.toFixed(2) : netRub) + ' ₽';
+    netRubEl.style.color = (st.netPlayerTk >= 0) ? '#3ddc96' : '#f87171';
+  }
+  if(maxWinEl) maxWinEl.textContent = fmt(st.maxSingleWinTk || 0) + ' ⬦';
+  if(maxGameEl) maxGameEl.textContent = st.maxSingleWinGame || st.favoriteGame || '—';
+
+  if(toggleBtn){
+    toggleBtn.onclick = () => {
+      __breakdownExpanded = !__breakdownExpanded;
+      if(breakdownEl) breakdownEl.style.display = __breakdownExpanded ? 'flex' : 'none';
+      toggleBtn.textContent = __breakdownExpanded ? 'Свернуть ▲' : 'Развернуть ▼';
+    };
+  }
+
+  if(breakdownEl) {
+    breakdownEl.style.display = __breakdownExpanded ? 'flex' : 'none';
+    const gList = Object.values(st.games || {}).sort((a,b) => b.count - a.count);
+    if(gList.length === 0) {
+      breakdownEl.innerHTML = '<div class="muted small" style="text-align:center;padding:8px 0;font-size:11.5px">Сделайте ставку в любой игре, чтобы собрать детальную статистику!</div>';
+    } else {
+      breakdownEl.innerHTML = gList.map(g => {
+        const netTk = g.netPlayerTk || 0;
+        const netCol = netTk >= 0 ? '#3ddc96' : '#ef4444';
+        return `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;font-size:11.5px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <b style="color:#fff">${g.name}</b>
+              <span style="color:${netCol};font-weight:700">${(netTk >= 0 ? '+' : '')}${fmt(netTk)} ⬦</span>
+            </div>
+            <div class="muted small" style="display:flex;justify-content:space-between;margin-top:3px;font-size:10.5px">
+              <span>Раундов: <b>${g.count}</b> (Win: ${g.winRatePct}%)</span>
+              <span>Оборот: <b>${fmt(g.wageredTk)} ⬦</b></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
 
 let onBetChange=null,cleanup=null;
 function screen(id){
@@ -2419,6 +2579,23 @@ async function loadAdminOverview(){
         </div>`;
     }).join('') : '<div class="muted small">Данных по игрокам пока нет</div>';
 
+    const recentBetsArr = (sAll.recentBets || []).slice(0, 10);
+    const recentBetsHtml = recentBetsArr.length ? recentBetsArr.map(b => {
+      const isWin = b.win > b.bet;
+      const col = isWin ? '#3ddc96' : '#ef4444';
+      const timeStr = new Date(b.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+          <div>
+            <span class="muted small">[${timeStr}]</span> <b>${b.name || 'Игрок'}</b>: ${b.game}
+          </div>
+          <div style="text-align:right">
+            <span class="muted small">ст. ${b.bet} ⬦ →</span> <b style="color:${col}">${isWin ? '+' + b.win + ' ⬦' : '0 ⬦'}</b>
+          </div>
+        </div>
+      `;
+    }).join('') : '<div class="muted small">Ставок пока нет</div>';
+
     pnlBox.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <b style="font-size:13px;color:#ffcf6b">📊 Аналитика ставок и PnL проекта</b>
@@ -2436,9 +2613,23 @@ async function loadAdminOverview(){
           <div class="muted small" style="font-size:10.5px">Ставок: ${sAll.betsCount||0} · RTP: ${sAll.rtpOverallPct||0}%</div>
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11.5px;margin-top:8px">
+        <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px">
+          <span class="muted small">Средняя ставка:</span>
+          <div><b style="color:#ffcf6b">${sAll.avgBetTk || 0} ⬦</b> <span class="muted small">(${sAll.avgBetRub || 0} ₽)</span></div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px">
+          <span class="muted small">Маржа проекта:</span>
+          <div><b style="color:#3ddc96">${sAll.houseEdgePct || 0}%</b> <span class="muted small">(Игроков: ${sAll.totalTrackedPlayers || sAll.activePlayers || 0})</span></div>
+        </div>
+      </div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:12px">
         <span>Касса (Депозиты − Выводы):</span>
         <b style="color:${cashCol}">${(sAll.cashflowNetRub>=0?'+':'') + (sAll.cashflowNetRub||0).toFixed(2)} ₽ (+ ${sAll.totalDepositsRub||0} ₽ / − ${sAll.totalWithdrawalsRub||0} ₽)</b>
+      </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
+        <b style="font-size:12px;color:#38bdf8;display:block;margin-bottom:4px">⚡️ Последние раунды (Live лента):</b>
+        ${recentBetsHtml}
       </div>
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
         <b style="font-size:12px;color:#a5b4fc;display:block;margin-bottom:4px">🎮 Детальный отчёт по играм (Доход казино):</b>
@@ -6856,6 +7047,7 @@ function gameHotDrop(){
     if(hdDep) hdDep.onclick = () => applyQuickDeposit(500, '25');
 
     const openBtn = q('#btnOpenHotDrop');
+    if(openBtn){
       openBtn.onclick = async () => {
         isSpinning = true;
         openBtn.disabled = true;

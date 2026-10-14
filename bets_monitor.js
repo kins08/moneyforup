@@ -298,12 +298,23 @@ function getAnalytics(hours = 12) {
     .sort((a, b) => Math.abs(b.netPlayerTk) - Math.abs(a.netPlayerTk))
     .slice(0, 30);
 
+  const winRateOverallPct = betsCount > 0 ? +((wonCount / betsCount) * 100).toFixed(1) : 0;
+  const avgBetTk = betsCount > 0 ? +(wageredTk / betsCount).toFixed(1) : 0;
+  const avgBetRub = betsCount > 0 ? +(wageredRub / betsCount).toFixed(2) : 0;
+  const houseEdgePct = rtpOverallPct > 0 ? +(100 - rtpOverallPct).toFixed(1) : (betsCount > 0 ? 5.8 : 0);
+  const totalTrackedPlayers = Object.keys(store.players || {}).length;
+
   return {
     hours,
     betsCount,
     wonCount,
     lostCount,
-    activePlayers: playersSet.size || Object.keys(store.players || {}).length,
+    winRateOverallPct,
+    avgBetTk,
+    avgBetRub,
+    houseEdgePct,
+    totalTrackedPlayers,
+    activePlayers: playersSet.size || totalTrackedPlayers,
     wageredTk,
     wageredRub,
     payoutTk,
@@ -318,7 +329,7 @@ function getAnalytics(hours = 12) {
     byGame,
     playersList,
     suspiciousEvents: (store.suspiciousEvents || []).slice(-20).reverse(),
-    recentBets: store.history.slice(-20).reverse()
+    recentBets: store.history.slice(-30).reverse()
   };
 }
 
@@ -363,6 +374,96 @@ function getPlayerDossier(userId, serverUserObj) {
     `├ Где поднял: <i>${escHtml(topGamesStr)}</i>\n` +
     flags
   );
+}
+
+/**
+ * Подробная игровая аналитика пользователя (для профиля и миниаппа)
+ */
+function getPlayerStats(userId, fallbackDbStats) {
+  const p = store.players[String(userId)] || null;
+  const dbSummary = (fallbackDbStats && fallbackDbStats.summary) || {};
+  const dbGames = (fallbackDbStats && fallbackDbStats.byGame) || [];
+
+  const betsCount = Math.max((p && p.betsCount) || 0, Number(dbSummary.totalRounds) || 0);
+  const wonCount = Math.max((p && p.wonCount) || 0, Number(dbSummary.wonRounds) || 0);
+  const lostCount = (p && p.lostCount != null) ? p.lostCount : Math.max(0, betsCount - wonCount);
+  const winRatePct = betsCount > 0 ? +((wonCount / betsCount) * 100).toFixed(1) : 0;
+
+  const wageredTk = Math.max((p && p.wageredTk) || 0, Number(dbSummary.totalWageredTk) || 0);
+  const payoutTk = Math.max((p && p.payoutTk) || 0, Number(dbSummary.totalPayoutTk) || 0);
+  const netPlayerTk = (p && p.netPlayerTk != null) ? p.netPlayerTk : (payoutTk - wageredTk);
+  const maxSingleWinTk = Math.max((p && p.maxSingleWinTk) || 0, Number(dbSummary.maxWinTk) || 0);
+
+  let favoriteGame = (p && p.maxSingleWinGame) || '';
+  let maxGameCount = 0;
+  const gamesMap = {};
+
+  if (p && p.games && Object.keys(p.games).length > 0) {
+    for (const [gName, g] of Object.entries(p.games)) {
+      if (g.count > maxGameCount) {
+        maxGameCount = g.count;
+        favoriteGame = gName;
+      }
+      gamesMap[gName] = {
+        name: gName,
+        count: g.count,
+        won: g.won || 0,
+        lost: g.lost || 0,
+        winRatePct: g.count > 0 ? +(((g.won || 0) / g.count) * 100).toFixed(1) : 0,
+        wageredTk: g.wageredTk || 0,
+        wageredRub: +((g.wageredTk || 0) / TOKENS_PER_RUB).toFixed(2),
+        payoutTk: g.payoutTk || 0,
+        netPlayerTk: g.netPlayerTk || 0,
+        netPlayerRub: +((g.netPlayerTk || 0) / TOKENS_PER_RUB).toFixed(2)
+      };
+    }
+  } else if (dbGames.length > 0) {
+    for (const dg of dbGames) {
+      if (dg.rounds > maxGameCount) {
+        maxGameCount = dg.rounds;
+        favoriteGame = dg.game;
+      }
+      const net = (dg.payoutTk || 0) - (dg.wageredTk || 0);
+      gamesMap[dg.game] = {
+        name: dg.game,
+        count: dg.rounds,
+        won: dg.won || 0,
+        lost: Math.max(0, dg.rounds - (dg.won || 0)),
+        winRatePct: dg.rounds > 0 ? +(((dg.won || 0) / dg.rounds) * 100).toFixed(1) : 0,
+        wageredTk: dg.wageredTk || 0,
+        wageredRub: +((dg.wageredTk || 0) / TOKENS_PER_RUB).toFixed(2),
+        payoutTk: dg.payoutTk || 0,
+        netPlayerTk: net,
+        netPlayerRub: +(net / TOKENS_PER_RUB).toFixed(2)
+      };
+    }
+  }
+
+  // Ранг игрока по опыту
+  let gamerRank = 'Новичок';
+  if (wageredTk >= 100000 || betsCount >= 500) gamerRank = '👑 Легенда MUP';
+  else if (wageredTk >= 30000 || betsCount >= 200) gamerRank = '💎 Хайроллер';
+  else if (wageredTk >= 10000 || betsCount >= 80) gamerRank = '⚡️ Мастер Иксов';
+  else if (wageredTk >= 2000 || betsCount >= 20) gamerRank = '🎯 Опытный игрок';
+  else if (betsCount >= 5) gamerRank = '🎲 Любитель';
+
+  return {
+    betsCount,
+    wonCount,
+    lostCount,
+    winRatePct,
+    wageredTk,
+    wageredRub: +(wageredTk / TOKENS_PER_RUB).toFixed(2),
+    payoutTk,
+    payoutRub: +(payoutTk / TOKENS_PER_RUB).toFixed(2),
+    netPlayerTk,
+    netPlayerRub: +(netPlayerTk / TOKENS_PER_RUB).toFixed(2),
+    maxSingleWinTk,
+    maxSingleWinGame: (p && p.maxSingleWinGame) || favoriteGame || '—',
+    favoriteGame: favoriteGame || '—',
+    gamerRank,
+    games: gamesMap
+  };
 }
 
 /**
@@ -566,6 +667,7 @@ module.exports = {
   flagSuspicious,
   getAnalytics,
   getPlayerDossier,
+  getPlayerStats,
   formatTelegramReport,
   formatGamesReport,
   formatPlayersReport,
