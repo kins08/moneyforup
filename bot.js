@@ -265,6 +265,7 @@ function user(id, name, username) {
       u = fromDb;
       u.rakeback = Number(u.rakeback || 0);
       u.freeCases = Number(u.freeCases || 0);
+      u.freeCase5RefClaimed = Number(u.freeCase5RefClaimed || 0);
       u.notifications = [];
       users.set(id, u);
       if (u.code) byCode.set(u.code, id);
@@ -277,7 +278,7 @@ function user(id, name, username) {
         ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
         totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0,
         cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-        easycashClaimed: false, rakeback: 0, freeCases: 0, notifications: []
+        easycashClaimed: false, rakeback: 0, freeCases: 0, freeCase5RefClaimed: 0, notifications: []
       };
       users.set(id, u);
       byCode.set(code, id);
@@ -353,7 +354,7 @@ const GAMES = {
   skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
   avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
   cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
-  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
+  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
   auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
   racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 1.7 },
   hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
@@ -487,13 +488,30 @@ function playCaseRound(u, c, rawBet, rawRoundId) {
   };
 }
 
-function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
+function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
   const cfg = gameConfig(rawGame);
-  const bet = Math.floor(Number(rawBet) || 0);
+
+  // Если передан предмет из инвентаря для апгрейда
+  let invItem = null;
+  if (rawItemId) {
+    const itId = Math.floor(Number(rawItemId) || 0);
+    if (itId) {
+      const it = db.getInventoryItem(itId);
+      if (!it || Number(it.user_id) !== Number(u.id)) {
+        return { ok: false, error: 'Предмет не найден в вашем инвентаре' };
+      }
+      if (it.sold_at) {
+        return { ok: false, error: 'Предмет уже продан или использован' };
+      }
+      invItem = it;
+    }
+  }
+
+  const bet = invItem ? invItem.price : Math.floor(Number(rawBet) || 0);
   if (!Number.isFinite(bet) || bet < cfg.minBet || bet > cfg.maxBet) {
     return { ok: false, error: `Ставка должна быть от ${cfg.minBet} до ${cfg.maxBet} ⬦` };
   }
-  if (bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
+  if (!invItem && bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
 
   // Кейсы живут по другой модели (предмет = выигрыш) — уводим их в отдельную ветку
   const __case = items.findCaseByName(rawGame);
@@ -513,15 +531,31 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
     if (db.getRound(roundId)) return { ok: false, error: 'Раунд уже проведён' };
   } catch (_) { /* таблицы нет — не блокируем игру */ }
 
-  // ── Жребий: серверный CSPRNG + комиссия, которую невозможно обойти с клиента
-  const winChance = Math.min(0.98, Math.max(0.001, (1 - cfg.edge) / mult));
+  if (invItem) {
+    // Атомарно помечаем предмет сгоревшим/использованным (0 токенов возврата)
+    if (!db.markInventorySold(invItem.id, u.id, 0)) {
+      return { ok: false, error: 'Не удалось использовать предмет' };
+    }
+  }
+
+  // ── Жребий: серверный CSPRNG + комиссия
+  let winChance;
+  const isUpgradeOnlySkin = invItem && Boolean(invItem.upgrade_only);
+  if (isUpgradeOnlySkin) {
+    // Особый акционный скин за 5 друзей: в 97% случаев апгрейд НЕ летит (Near-Miss байт!)
+    winChance = 0.03;
+  } else {
+    // Максимум 75% шанс победы (RTP 94%, House Edge 6%)
+    winChance = Math.min(0.75, Math.max(0.0094, (1 - cfg.edge) / mult));
+  }
+
   const roll = crypto.randomInt(0, 1_000_000) / 1_000_000;
   let win = roll < winChance ? Math.floor(bet * mult) : 0;
 
   // Бизнес-правило: игрок без единого депозита не поднимается выше потолка
   const userDep = u.totalDepositedRub || u.lastDeposit || 0;
   if (userDep <= 0 && !isAdmin(u)) {
-    const after = Math.floor(u.tokens || 0) - bet + win;
+    const after = Math.floor(u.tokens || 0) + (invItem ? win : (win - bet));
     if (after > NON_DEPOSITOR_CAP) {
       win = 0;   // ставка всё равно списывается — играть без депозита можно, выводить нельзя
       betsMonitor.flagSuspicious({
@@ -532,13 +566,29 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
     }
   }
 
-  // ── Деньги: одна запись в ledger на весь раунд (net = выигрыш − ставка)
-  const r = applyBalance(u, win - bet, 'game_round',
-    `${cfg.label} · раунд ${roundId} (ставка ${bet}, ×${mult}, выигрыш ${win})`, roundId);
-  if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+  // ── Деньги: если играли токенами — списываем ставку и начисляем выигрыш;
+  // Если предметом — предмет уже списан из инвентаря, начисляем выигрыш при победе
+  if (invItem) {
+    if (win > 0) {
+      const r = applyBalance(u, win, 'game_round',
+        `${cfg.label} · Апгрейд предмета ${invItem.name} (выигрыш +${win} ⬦)`, roundId);
+      if (!r.ok) {
+        try { db.db.prepare('UPDATE user_inventory SET sold_at = NULL, sold_for = NULL WHERE id = ?').run(invItem.id); } catch (_) {}
+        return { ok: false, error: 'Не удалось начислить токены' };
+      }
+    }
+  } else {
+    const r = applyBalance(u, win - bet, 'game_round',
+      `${cfg.label} · раунд ${roundId} (ставка ${bet}, ×${mult}, выигрыш ${win})`, roundId);
+    if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+  }
 
   try {
-    db.saveRound({ roundId, userId: u.id, game: cfg.label, bet, mult, win, status: 'settled' });
+    db.saveRound({
+      roundId, userId: u.id, game: cfg.label, bet, mult, win, status: 'settled',
+      itemCode: invItem ? invItem.item_code : null,
+      itemPrice: invItem ? invItem.price : null
+    });
   } catch (e) { console.error('[Round] не сохранён:', e.message); }
 
   betsMonitor.recordBet({
@@ -551,7 +601,11 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId) {
   u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
   try { db.saveUser(u); } catch (_) {}
 
-  return { ok: true, roundId, game: cfg.label, gameKey: cfg.key, verdict: win > 0 ? 'win' : 'lose', win, mult, tokens: u.tokens };
+  return {
+    ok: true, roundId, game: cfg.label, gameKey: cfg.key,
+    verdict: win > 0 ? 'win' : 'lose', win, mult, tokens: u.tokens,
+    nearMiss: Boolean(isUpgradeOnlySkin && win === 0)
+  };
 }
 
 function stakeAdd(u, v) {
@@ -1769,6 +1823,8 @@ const server = http.createServer(async (req, res) => {
       easycashClaimed: !!u.easycashClaimed,
       rakeback: +(Number(u.rakeback || 0).toFixed(2)),
       freeCases: Math.floor(Number(u.freeCases || 0)),
+      freeCase5RefClaimed: Number(u.freeCase5RefClaimed || 0),
+      refQualified: db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0,
       lastHotDrop: u.lastHotDrop || 0,
       lastWheelSpin: u.lastWheelSpin || 0,
       isAdmin: isAdmin(tgUser),
@@ -1783,8 +1839,13 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/register' && req.method === 'POST') {
       setRef(u, body.startParam);          // код пригласившего: MF... или старый числовой id
       if (body.termsAcceptedAt) u.termsAt = Number(body.termsAcceptedAt) || Date.now();
-      return send(200, { ...who, numId: u.numId, refCode: u.code, link: refLink(u.code), refInvited: countInvited(u.id), refEarned: Math.round(u.refEarned || 0),
-                         referredBy: u.ref || null, termsAt: u.termsAt });
+      return send(200, {
+        ...who, numId: u.numId, refCode: u.code, link: refLink(u.code),
+        refInvited: countInvited(u.id), refEarned: Math.round(u.refEarned || 0),
+        refQualified: db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0,
+        freeCase5RefClaimed: Number(u.freeCase5RefClaimed || 0),
+        referredBy: u.ref || null, termsAt: u.termsAt
+      });
     }
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
@@ -1874,6 +1935,108 @@ const server = http.createServer(async (req, res) => {
           price: drop.price,
           tier: drop.tier,
           caseName: 'Бесплатный кейс за депозит'
+        }
+      });
+    }
+
+    /* ── Акция: Бесплатный кейс за 5 активных друзей (скин под апгрейд) ──────── */
+    if (url.pathname === '/api/5ref-case/status') {
+      const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
+      const claimed = Boolean(u.freeCase5RefClaimed);
+      return send(200, {
+        ok: true,
+        claimed,
+        qualified,
+        needed: 5,
+        canClaim: !claimed && qualified >= 5,
+        refCode: u.code,
+        refLink: refLink(u.code),
+        item: {
+          code: 'ref5_cyber_dagger',
+          name: 'Cyber-Dagger | Neon Fade',
+          icon: '🗡️',
+          price: 2400,
+          priceRub: 240,
+          tier: 'secret',
+          upgradeOnly: 1
+        }
+      });
+    }
+
+    if (url.pathname === '/api/5ref-case/open' && req.method === 'POST') {
+      if (!checkRateLimit(`ref5case:${u.id}`, 10, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Подождите немного.' });
+      }
+      if (u.freeCase5RefClaimed) {
+        return send(400, { error: 'Вы уже открыли и забрали кейс за 5 друзей!' });
+      }
+      const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
+      if (qualified < 5) {
+        return send(400, { error: `Необходимо пригласить 5 активных друзей (сейчас ${qualified}/5). Друг должен зайти по ссылке и сделать хотя бы 1 прокрут/ставку.` });
+      }
+
+      u.freeCase5RefClaimed = 1;
+      try { db.saveUser(u); } catch (_) {}
+
+      const drop = {
+        code: 'ref5_cyber_dagger',
+        name: 'Cyber-Dagger | Neon Fade',
+        icon: '🗡️',
+        price: 2400,
+        tier: 'secret',
+        upgradeOnly: 1
+      };
+
+      const roundId = 'REF5_' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
+      let itemId = null;
+      try {
+        const saved = db.addInventoryItem({
+          userId: u.id,
+          itemCode: drop.code,
+          name: drop.name,
+          icon: drop.icon,
+          price: drop.price,
+          tier: drop.tier,
+          caseId: 'case_5ref',
+          caseName: 'Кейс за 5 друзей',
+          roundId,
+          upgradeOnly: 1
+        });
+        itemId = saved.id;
+      } catch (e) {
+        console.error(`[Inventory] предмет за 5 друзей не сохранён игроку ${u.id}: ${e.message}`);
+      }
+
+      try {
+        db.saveRound({
+          roundId,
+          userId: u.id,
+          game: 'Кейс за 5 друзей',
+          bet: 0,
+          mult: 1,
+          win: 0,
+          status: 'settled',
+          itemCode: drop.code,
+          itemPrice: drop.price
+        });
+      } catch (e) {
+        console.error('[Round] раунд кейса за 5 друзей не сохранён:', e.message);
+      }
+
+      return send(200, {
+        ok: true,
+        claimed: true,
+        roundId,
+        drop: {
+          id: itemId,
+          code: drop.code,
+          name: drop.name,
+          icon: drop.icon,
+          price: drop.price,
+          tier: drop.tier,
+          caseName: 'Кейс за 5 друзей',
+          upgrade_only: true,
+          upgradeOnly: 1
         }
       });
     }
@@ -1970,7 +2133,8 @@ const server = http.createServer(async (req, res) => {
         body.game,
         bet,
         body.mult != null ? body.mult : body.targetMult,
-        body.roundId || body.round_id
+        body.roundId || body.round_id,
+        body.itemId || body.item_id
       );
       if (!res.ok) return send(400, { error: res.error });
       return send(200, {
@@ -1981,9 +2145,8 @@ const server = http.createServer(async (req, res) => {
         win: res.win,
         mult: res.mult,
         tokens: res.tokens,
-        // Для кейсов: какой предмет выпал. Клиент обязан показать ЭТОТ предмет,
-        // а не выбранный им самим — иначе анимация разойдётся с инвентарём.
-        drop: res.drop || null
+        drop: res.drop || null,
+        nearMiss: Boolean(res.nearMiss)
       });
     }
 
@@ -1997,7 +2160,8 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         items: list.map(it => ({
           id: it.id, code: it.item_code, name: it.name, icon: it.icon,
-          price: it.price, tier: it.tier, caseName: it.case_name, wonAt: it.acquired_at
+          price: it.price, tier: it.tier, caseName: it.case_name, wonAt: it.acquired_at,
+          upgrade_only: Boolean(it.upgrade_only)
         })),
         count: tot.count,
         value: tot.value,
@@ -2017,6 +2181,9 @@ const server = http.createServer(async (req, res) => {
       // игроку, какие id существуют у других.
       if (!it || Number(it.user_id) !== Number(u.id)) return send(404, { error: 'Предмет не найден' });
       if (it.sold_at) return send(400, { error: 'Предмет уже продан' });
+      if (it.upgrade_only) {
+        return send(400, { error: 'Этот предмет нельзя продать — его можно только проапгрейдить в Upgrader!' });
+      }
 
       // Сначала помечаем проданным (атомарно, с условием sold_at IS NULL) —
       // если не вышло, значит продали параллельно, и начислять нельзя.
@@ -2040,11 +2207,12 @@ const server = http.createServer(async (req, res) => {
       let total = 0;
       const sold = [];
       for (const it of list) {
+        if (it.upgrade_only) continue;   // акционные предметы только для апгрейда, не продаются
         if (!db.markInventorySold(it.id, u.id, it.price)) continue;   // продали параллельно — пропускаем
         total += it.price;
         sold.push({ id: it.id, name: it.name, price: it.price });
       }
-      if (!total) return send(400, { error: 'Предметы уже проданы' });
+      if (!total) return send(400, { error: 'В инвентаре нет предметов для продажи (акционные скины можно только проапгрейдить)' });
       const r = applyBalance(u, total, 'inventory_sale', `Продажа инвентаря: ${sold.length} шт`, 'invall' + Date.now());
       if (!r.ok) {
         for (const it of sold) {
@@ -2308,8 +2476,13 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/refs') {
       const invited = [...users.values()].filter(x => Number(x.ref) === u.id).map(x => ({ name: x.name, tokens: Math.round(x.tokens) }));
-      return send(200, { code: u.code, link: refLink(u.code), invited: countInvited(u.id), earned: Math.round(u.refEarned || 0),
-                         percent: REF_PERCENT, list: invited });
+      const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
+      return send(200, {
+        code: u.code, link: refLink(u.code), invited: countInvited(u.id),
+        qualified, earned: Math.round(u.refEarned || 0),
+        freeCase5RefClaimed: Number(u.freeCase5RefClaimed || 0),
+        percent: REF_PERCENT, list: invited
+      });
     }
 
     /* буст и hot drop */

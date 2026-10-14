@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS users (
   code TEXT UNIQUE,
   created_at INTEGER,
   rakeback REAL DEFAULT 0,
-  free_cases INTEGER DEFAULT 0
+  free_cases INTEGER DEFAULT 0,
+  free_case_5ref_claimed INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -144,7 +145,8 @@ CREATE TABLE IF NOT EXISTS user_inventory (
   round_id TEXT,
   acquired_at INTEGER,
   sold_at INTEGER,
-  sold_for INTEGER
+  sold_for INTEGER,
+  upgrade_only INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
 `);
@@ -164,23 +166,28 @@ function __ensureColumns(table, cols) {
     console.error(`[DB] Миграция ${table}: ${e.message}`);
   }
 }
-__ensureColumns('users', [['rakeback', 'REAL DEFAULT 0'], ['free_cases', 'INTEGER DEFAULT 0']]);
+__ensureColumns('users', [
+  ['rakeback', 'REAL DEFAULT 0'],
+  ['free_cases', 'INTEGER DEFAULT 0'],
+  ['free_case_5ref_claimed', 'INTEGER DEFAULT 0']
+]);
 __ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
+__ensureColumns('user_inventory', [['upgrade_only', 'INTEGER DEFAULT 0']]);
 
 // Подготовленные SQL-запросы для быстрого выполнения
 const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
       num_id = ?, name = ?, username = ?, staked = ?, stake_since = ?, accrued_base = ?,
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
-      easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?
+      easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -214,8 +221,8 @@ const stmts = {
   `),
   insertInventoryItem: db.prepare(`
     INSERT INTO user_inventory
-      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
   `),
   listInventory: db.prepare(`
     SELECT * FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
@@ -266,7 +273,8 @@ function getUser(id) {
     easycashClaimed: Boolean(row.easycash_claimed),
     code: row.code,
     rakeback: Number(row.rakeback || 0),
-    freeCases: Number(row.free_cases || 0)
+    freeCases: Number(row.free_cases || 0),
+    freeCase5RefClaimed: Number(row.free_case_5ref_claimed || 0)
   };
 }
 
@@ -312,6 +320,7 @@ function saveUser(u) {
       u.code || null,
       Number(u.rakeback || 0),
       Number(u.freeCases || 0),
+      Number(u.freeCase5RefClaimed || 0),
       u.id
     );
     turso.queueQuery(`
@@ -319,13 +328,14 @@ function saveUser(u) {
         num_id=?, name=?, username=?, staked=?, stake_since=?, accrued_base=?,
         ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
-        easycash_claimed=?, code=?, rakeback=?, free_cases=?
+        easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
       u.ref || 0, u.refEarned || 0, u.refInvited || 0, u.termsAt || 0, u.totalDepositedRub || 0,
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
-      u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0), u.id
+      u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0),
+      Number(u.freeCase5RefClaimed || 0), u.id
     ]);
   } else {
     stmts.insertUser.run(
@@ -350,11 +360,12 @@ function saveUser(u) {
       u.code || null,
       Date.now(),
       Number(u.rakeback || 0),
-      Number(u.freeCases || 0)
+      Number(u.freeCases || 0),
+      Number(u.freeCase5RefClaimed || 0)
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
@@ -362,7 +373,7 @@ function saveUser(u) {
       u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
       u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
-      Number(u.rakeback || 0), Number(u.freeCases || 0)
+      Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0)
     ]);
   }
 }
@@ -596,6 +607,7 @@ module.exports = {
      клиента: иначе игрок пришлёт price: 999999 и продаст вентилятор за миллион. */
   addInventoryItem: (r) => {
     const acAt = r.acquiredAt || Date.now();
+    const upgOnly = (r.upgradeOnly || r.upgrade_only) ? 1 : 0;
     const res = stmts.insertInventoryItem.run(
       r.userId,
       String(r.itemCode),
@@ -606,18 +618,38 @@ module.exports = {
       String(r.caseId || ''),
       String(r.caseName || ''),
       String(r.roundId || ''),
-      acAt
+      acAt,
+      upgOnly
     );
     const newId = Number(res.lastInsertRowid);
     turso.queueQuery(`
-      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
     `, [
       newId, r.userId, String(r.itemCode), String(r.name || ''), String(r.icon || ''),
       Math.floor(r.price || 0), String(r.tier || ''), String(r.caseId || ''),
-      String(r.caseName || ''), String(r.roundId || ''), acAt
+      String(r.caseName || ''), String(r.roundId || ''), acAt, upgOnly
     ]);
     return { ok: true, id: newId };
+  },
+  getQualifiedFriendsCount: (userId) => {
+    try {
+      const row = db.prepare(`
+        SELECT COUNT(DISTINCT u.id) AS count
+        FROM users u
+        WHERE u.ref_id = ?
+          AND (
+            (SELECT COUNT(*) FROM game_rounds gr WHERE gr.user_id = u.id) >= 1
+            OR u.total_deposited_rub > 0
+            OR (SELECT COUNT(*) FROM user_inventory inv WHERE inv.user_id = u.id) >= 1
+            OR u.free_cases > 0
+          )
+      `).get(Number(userId));
+      return row ? Number(row.count || 0) : 0;
+    } catch (e) {
+      console.error('[DB] getQualifiedFriendsCount error:', e.message);
+      return 0;
+    }
   },
   listInventory: (userId) => stmts.listInventory.all(userId),
   getInventoryItem: (id) => stmts.getInventoryItem.get(id),

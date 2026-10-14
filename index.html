@@ -1075,6 +1075,8 @@ function tgApplyServer(d){
   if(typeof d.easycashClaimed==='boolean')S.easycashClaimed=d.easycashClaimed;
   if(typeof d.rakeback==='number')S.rakeback=d.rakeback;
   if(typeof d.freeCases==='number')S.freeCases=d.freeCases;
+  if(typeof d.freeCase5RefClaimed==='number')S.freeCase5RefClaimed=d.freeCase5RefClaimed;
+  if(typeof d.refQualified==='number')S.refQualified=d.refQualified;
   if(typeof d.isAdmin==='boolean')S.isAdmin=d.isAdmin;
   if(d.stats && typeof d.stats === 'object')S.userStats=d.stats;
   if(Array.isArray(d.notifications) && d.notifications.length){
@@ -1231,7 +1233,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,freeCase5RefClaimed:0,refQualified:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[]};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -1985,16 +1987,19 @@ function loadInventory(){
 
 function sellInventoryItem(itemId){
   const item = (S.inventory||[]).find(it => it.id === itemId);
+  if(!item) return;
+  if(item.upgrade_only){
+    showAppNotification('Этот скин нельзя продать — только проапгрейдить в Upgrader!');
+    return;
+  }
 
   // Демо-режим (нет сервера) — деньги ненастоящие, считаем локально
   if(!IS_TG||!API_BASE){
-    if(!item) return;
     S.balance += item.price;
     S.inventory = S.inventory.filter(it => it.id !== itemId);
     save(); syncUI(); tgHaptic('win');
     return;
   }
-  if(!item) return;
 
   tgCall('/api/inventory/sell',{ itemId:itemId }).then(r=>{
     if(typeof r.tokens==='number'){
@@ -2011,26 +2016,29 @@ function sellInventoryItem(itemId){
 }
 
 function sellAllInventory(){
-  const list = S.inventory || [];
-  if(!list.length) return;
+  const list = (S.inventory || []).filter(it => !it.upgrade_only);
+  if(!list.length){
+    showAppNotification('В инвентаре нет предметов для прямой продажи (скин за 5 друзей можно только проапгрейдить!)');
+    return;
+  }
   const totalVal = list.reduce((sum, it) => sum + (it.price || 0), 0);
 
   if(!IS_TG||!API_BASE){        // демо-режим
-    if(confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
+    if(confirm(`Продать все доступные ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)){
       S.balance += totalVal;
-      S.inventory = [];
+      S.inventory = (S.inventory || []).filter(it => it.upgrade_only);
       save(); syncUI(); tgHaptic('win');
     }
     return;
   }
 
-  if(!confirm(`Продать все ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)) return;
+  if(!confirm(`Продать ${list.length} предметов за +${fmt(totalVal)} ⬦ (≈ ${fmtRub(totalVal)})?`)) return;
   tgCall('/api/inventory/sell-all',{}).then(r=>{
     if(typeof r.tokens==='number'){
       S.balance=r.tokens;
       try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
     }
-    S.inventory=[];
+    S.inventory=(S.inventory||[]).filter(it => it.upgrade_only);
     save(); syncUI(); tgHaptic('win');
     showAppNotification(`Продано ${r.count} предмет(ов) · +${fmt(r.total)} ⬦`);
   }).catch(err=>{
@@ -2044,16 +2052,16 @@ function openItemDetailModal(it){
   if(existing) existing.remove();
 
   const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
-  const tierName = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий';
+  const tierName = it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий');
   const rubVal = fmtRub(it.price);
 
   const modal = document.createElement('div');
   modal.className = 'inv-modal-wrap';
   modal.innerHTML = `
-  <div class="inv-modal-box" style="border-color:${col}">
+  <div class="inv-modal-box" style="border-color:${it.upgrade_only ? '#f59e0b' : col}">
     <button class="inv-modal-close" id="btnInvModalClose">✕</button>
 
-    <div style="display:inline-block;padding:2px 10px;border-radius:20px;background:${col}22;border:1px solid ${col};color:${col};font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:10px">
+    <div style="display:inline-block;padding:2px 10px;border-radius:20px;background:${it.upgrade_only ? 'rgba(245,158,11,.2)' : col+'22'};border:1px solid ${it.upgrade_only ? '#f59e0b' : col};color:${it.upgrade_only ? '#f59e0b' : col};font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:10px">
       ${tierName}
     </div>
 
@@ -2062,9 +2070,9 @@ function openItemDetailModal(it){
     <div class="muted small">${it.caseName ? `Выпал из кейса «${it.caseName}»` : 'Предмет из инвентаря'}</div>
 
     <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin:16px 0 14px">
-      <div class="muted small">Гарантированная цена продажи:</div>
+      <div class="muted small">Стоимость предмета:</div>
       <div style="font-size:22px;font-weight:900;color:#ffcf6b;margin-top:2px">
-        +${fmt(it.price)} ⬦ <span style="font-size:13px;color:#94a1b8;font-weight:600">≈ ${rubVal}</span>
+        ${fmt(it.price)} ⬦ <span style="font-size:13px;color:#94a1b8;font-weight:600">≈ ${rubVal}</span>
       </div>
     </div>
 
@@ -2075,22 +2083,28 @@ function openItemDetailModal(it){
         <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 2))} ⬦</b>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db;margin-bottom:3px">
-        <span>Цель ×5.0 (18.5%):</span>
+        <span>Цель ×5.0 (18.8%):</span>
         <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 5))} ⬦</b>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db">
-        <span>Цель ×20.0 (4.5%):</span>
-        <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 20))} ⬦</b>
+        <span>Цель ×100 (до 75% шанс кастомно):</span>
+        <b style="color:#3ddc96">+${fmt(Math.floor(it.price * 100))} ⬦</b>
       </div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="control" id="btnModalGoUpgrade" style="margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:13.5px;font-weight:900;padding:13px;box-shadow:0 4px 16px rgba(245,158,11,.4)">
-        ⚡ АПГРЕЙДИТЬ ПРЕДМЕТ (до ×20)
+        ⚡ АПГРЕЙДИТЬ ПРЕДМЕТ (до ×100)
       </button>
-      <button class="control ghost" id="btnModalSellItem" style="margin:0;border-color:#3ddc96;color:#3ddc96;font-size:13px;font-weight:800;padding:11px">
-        💰 ПРОДАТЬ ЗА +${fmt(it.price)} ⬦
-      </button>
+      ${it.upgrade_only ? `
+        <div style="text-align:center;font-size:12px;color:#ffcf6b;font-weight:700;padding:8px;background:rgba(255,207,107,.1);border-radius:10px;border:1px solid rgba(255,207,107,.3)">
+          🔒 Эксклюзивный скин: доступен только для апгрейда!
+        </div>
+      ` : `
+        <button class="control ghost" id="btnModalSellItem" style="margin:0;border-color:#3ddc96;color:#3ddc96;font-size:13px;font-weight:800;padding:11px">
+          💰 ПРОДАТЬ ЗА +${fmt(it.price)} ⬦
+        </button>
+      `}
     </div>
   </div>`;
 
@@ -2121,13 +2135,14 @@ function renderProfileInventory(){
   if(!grid) return;
   S.inventory = S.inventory || [];
 
-  const totalVal = S.inventory.reduce((sum, it) => sum + (it.price || 0), 0);
+  const sellable = S.inventory.filter(it => !it.upgrade_only);
+  const totalVal = sellable.reduce((sum, it) => sum + (it.price || 0), 0);
   if(countEl){
-    countEl.textContent = `${S.inventory.length} шт. (${fmt(totalVal)} ⬦ ≈ ${fmtRub(totalVal)})`;
+    countEl.textContent = `${S.inventory.length} шт. (к продаже: ${fmt(totalVal)} ⬦ ≈ ${fmtRub(totalVal)})`;
   }
 
   if(bulkArea){
-    if(S.inventory.length > 1){
+    if(sellable.length > 1){
       bulkArea.innerHTML = `<button class="chip ghost" id="btnBulkSell" style="padding:4px 10px;font-size:11px;font-weight:800;border-color:#3ddc96;color:#3ddc96;cursor:pointer">⚡ Продать всё (+${fmt(totalVal)} ⬦)</button>`;
       const bb = q('#btnBulkSell', bulkArea);
       if(bb) bb.onclick = () => sellAllInventory();
@@ -2143,18 +2158,22 @@ function renderProfileInventory(){
 
   grid.innerHTML = S.inventory.map(it => {
     const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
-    const tierName = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий';
+    const tierName = it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий');
     return `
-    <div class="inv-card" style="--inv-tier-col:${col}" data-card-id="${it.id}">
-      <span class="inv-tier-tag">${tierName}</span>
+    <div class="inv-card" style="--inv-tier-col:${it.upgrade_only ? '#f59e0b' : col}" data-card-id="${it.id}">
+      <span class="inv-tier-tag" style="${it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : ''}">${tierName}</span>
       <div class="inv-icon-aura">
         <div class="inv-icon">${it.icon || '📦'}</div>
       </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
       <div class="inv-val">${fmt(it.price)} ⬦ <span>≈ ${fmtRub(it.price)}</span></div>
       <div class="inv-acts">
-        <button class="inv-btn-sell" data-sell-id="${it.id}" title="Продать за ${it.price} ⬦">💰 +${fmt(it.price)}</button>
-        <button class="inv-btn-up" data-up-id="${it.id}" title="Апгрейдить">⚡ ×20</button>
+        ${it.upgrade_only ? `
+          <button class="inv-btn-up" data-up-id="${it.id}" style="grid-column:1/-1;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:900" title="Только апгрейд">⚡ В АПГРЕЙДЕР</button>
+        ` : `
+          <button class="inv-btn-sell" data-sell-id="${it.id}" title="Продать за ${it.price} ⬦">💰 +${fmt(it.price)}</button>
+          <button class="inv-btn-up" data-up-id="${it.id}" title="Апгрейдить">⚡ ×100</button>
+        `}
       </div>
     </div>`;
   }).join('');
@@ -5989,6 +6008,37 @@ function gameCases(){
     const isBoosted = !!testBoosts[curCaseId];
 
     a.innerHTML = `
+      ${!S.freeCase5RefClaimed ? `
+        <div class="ref5-case-banner" id="ref5CaseBanner" style="background:linear-gradient(135deg,rgba(255,207,107,.15),rgba(245,158,11,.08));border:1px solid rgba(255,207,107,.4);border-radius:14px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:34px;filter:drop-shadow(0 4px 12px rgba(255,207,107,.4))">🗡️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:900;color:#ffcf6b;letter-spacing:.5px">🎁 БЕСПЛАТНЫЙ КЕЙС ЗА 5 ДРУЗЕЙ</div>
+              <div class="muted small" style="font-size:11px;margin-top:2px">
+                Пригласи 5 активных друзей (сделали 1+ прокрут) и забери <b>Cyber-Dagger 240 ₽</b> под апгрейд!
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                <div style="flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden">
+                  <div style="height:100%;width:${Math.min(100, ((S.refQualified||0)/5)*100)}%;background:linear-gradient(90deg,#ffcf6b,#3ddc96);border-radius:3px"></div>
+                </div>
+                <span style="font-size:11px;font-weight:800;color:#fff">${S.refQualified || 0} / 5</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            ${(S.refQualified || 0) >= 5 ? `
+              <button class="control" id="btnOpen5RefCase" style="margin:0;width:100%;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;font-weight:900;font-size:13px;padding:10px;box-shadow:0 4px 16px rgba(255,207,107,.35)">
+                🎁 ОТКРЫТЬ КЕЙС 5/5 — ЗАБРАТЬ СКИН 240 ₽
+              </button>
+            ` : `
+              <button class="control ghost" id="btnShare5RefLink" style="margin:0;width:100%;border-color:#ffcf6b;color:#ffcf6b;font-weight:800;font-size:12px;padding:8px">
+                🔗 Пригласить друга (${S.refQualified || 0}/5)
+              </button>
+            `}
+          </div>
+        </div>
+      ` : ''}
+
     <div class="chips" id="caseModes" style="margin-bottom:12px;display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:4px 2px">
       ${Object.values(CASES_DATA).map(c => `
         <button class="chip ${curCaseId===c.id?'on':''}" data-cid="${c.id}" style="flex-shrink:0;white-space:nowrap;font-size:12px;padding:6px 12px">
@@ -6428,6 +6478,59 @@ function gameCases(){
           if(res){ res.className = 'result bad'; res.textContent = e.message || String(e); }
         }
       });
+    }
+
+    const btnOpen5 = q('#btnOpen5RefCase', a);
+    if(btnOpen5){
+      btnOpen5.onclick = async () => {
+        if(busy) return;
+        busy = true;
+        btnOpen5.disabled = true;
+        btnOpen5.textContent = 'ОТКРЫВАЕМ КЕЙС…';
+        try {
+          let r;
+          if(IS_TG && API_BASE){
+            r = await tgCall('/api/5ref-case/open', {});
+          } else {
+            r = {
+              ok: true,
+              claimed: true,
+              drop: { id: Date.now(), code: 'ref5_cyber_dagger', name: 'Cyber-Dagger | Neon Fade', icon: '🗡️', price: 2400, tier: 'secret', upgrade_only: true }
+            };
+          }
+          if(!r || !r.ok) throw new Error((r && r.error) || 'Ошибка открытия');
+          S.freeCase5RefClaimed = 1;
+          save();
+          tgHaptic('win');
+          if(r.drop){
+            S.inventory = S.inventory || [];
+            S.inventory.unshift(r.drop);
+            save(); syncUI();
+          }
+          showAppNotification('🎉 Вы получили Cyber-Dagger 240 ₽! Предмет добавлен в инвентарь для апгрейда!');
+          openItemDetailModal(r.drop);
+          render();
+        } catch(e) {
+          busy = false;
+          btnOpen5.disabled = false;
+          btnOpen5.textContent = '🎁 ОТКРЫТЬ КЕЙС (5/5)';
+          showAppNotification((e && e.message) || 'Не удалось открыть кейс');
+        }
+      };
+    }
+
+    const btnShare5 = q('#btnShare5RefLink', a);
+    if(btnShare5){
+      btnShare5.onclick = () => {
+        const link = refLinkFor(ensureRefCode());
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(link);
+        }
+        showAppNotification('🔗 Ссылка скопирована! Отправьте её 5 друзьям.');
+        if(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink){
+          window.Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Привет! Заходи крутить кейсы в MoneyForUp!'));
+        }
+      };
     }
   }
 
@@ -7575,18 +7678,21 @@ function gameUpgrader(){
   if(!a) return ()=>{};
 
   let isSpinning = false;
-  let curTgtIdx = 1; // Default ×2
   let wheelRot = 0;
   let useInventory = false;
   let directBet = 100;
+  let curMult = 2.0;
+  let curChance = 47.0; // 94 / 2.0 = 47.0%
 
   const targets = [
-    { mult: 1.5, chance: 62.0, name: '×1.5 Рост' },
+    { mult: 1.5, chance: 62.67, name: '×1.5 Рост' },
     { mult: 2.0, chance: 47.0, name: '×2.0 Удвоение' },
-    { mult: 3.0, chance: 31.0, name: '×3.0 Тройка' },
-    { mult: 5.0, chance: 18.5, name: '×5.0 Мега' },
-    { mult: 10.0, chance: 9.2, name: '×10.0 Дроп' },
-    { mult: 20.0, chance: 4.5, name: '×20.0 Джекпот' }
+    { mult: 3.0, chance: 31.33, name: '×3.0 Тройка' },
+    { mult: 5.0, chance: 18.8, name: '×5.0 Мега' },
+    { mult: 10.0, chance: 9.4, name: '×10.0 Дроп' },
+    { mult: 20.0, chance: 4.7, name: '×20.0 Джекпот' },
+    { mult: 50.0, chance: 1.88, name: '×50.0 Ультра' },
+    { mult: 100.0, chance: 0.94, name: '×100.0 Легенда' }
   ];
 
   if(selectedUpgraderItem){
@@ -7618,9 +7724,34 @@ function gameUpgrader(){
       b.classList.toggle('on', +b.dataset.tb === directBet);
     });
 
+    updateStakeVisuals();
+  }
+
+  function setMult(m){
+    let num = parseFloat(m);
+    if(!Number.isFinite(num) || num <= 0) num = 2.0;
+    // Максимум x100, минимум x1.253 (что дает макс 75% шанс)
+    num = Math.min(100.0, Math.max(1.253, num));
+    num = Math.round(num * 100) / 100;
+    curMult = num;
+    curChance = Math.min(75.0, Math.max(0.94, +(94.0 / curMult).toFixed(2)));
+    updateMultVisuals();
+  }
+
+  function setChance(c){
+    let num = parseFloat(c);
+    if(!Number.isFinite(num) || num <= 0) num = 47.0;
+    // Ограничение шанса: максимум 75% и менее кастомно (RTP 94%), минимум 0.94% (при x100)
+    num = Math.min(75.0, Math.max(0.94, num));
+    num = Math.round(num * 100) / 100;
+    curChance = num;
+    curMult = Math.min(100.0, Math.max(1.253, +(94.0 / curChance).toFixed(2)));
+    updateMultVisuals();
+  }
+
+  function updateStakeVisuals(){
     const stakePrice = getStakePrice();
-    const curTgt = targets[curTgtIdx];
-    const targetPrice = Math.floor(stakePrice * curTgt.mult);
+    const targetPrice = Math.floor(stakePrice * curMult);
 
     const sVal = q('#upgStakeVal', a);
     if(sVal) sVal.textContent = `${fmt(stakePrice)} ⬦`;
@@ -7634,16 +7765,42 @@ function gameUpgrader(){
     }
   }
 
+  function updateMultVisuals(){
+    const multInp = q('#upgCustomMultInput', a);
+    if(multInp && +multInp.value !== curMult) multInp.value = curMult;
+
+    const chanceInp = q('#upgCustomChanceInput', a);
+    if(chanceInp && +chanceInp.value !== curChance) chanceInp.value = curChance;
+
+    const tTitle = q('#upgTargetTitle', a);
+    if(tTitle) tTitle.textContent = `×${curMult}`;
+
+    const wheelChance = q('#upgWheelChance', a);
+    if(wheelChance) wheelChance.textContent = `${curChance}%`;
+
+    const resMsg = q('#upgResultMsg', a);
+    if(resMsg && !isSpinning){
+      resMsg.className = 'result';
+      resMsg.textContent = `Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge 6%).`;
+    }
+
+    qa('#upgMultChips button', a).forEach(b => {
+      b.classList.toggle('on', Math.abs(+b.dataset.mult - curMult) < 0.05);
+    });
+
+    updateStakeVisuals();
+    drawWheel(wheelRot);
+  }
+
   function render(){
     const stakePrice = getStakePrice();
-    const curTgt = targets[curTgtIdx];
-    const targetPrice = Math.floor(stakePrice * curTgt.mult);
+    const targetPrice = Math.floor(stakePrice * curMult);
 
     a.innerHTML = `
     <div class="upgrader-stage">
       <div style="text-align:center;margin-bottom:14px">
         <div style="font-size:12px;font-weight:800;color:#ffcf6b;letter-spacing:1px">⚡ UPGRADE ARENA · РЕЖИМ АПГРЕЙДА</div>
-        <div class="muted small" style="margin-top:2px">Выберите предмет или токены, цель умножения и испытайте колесо фортуны!</div>
+        <div class="muted small" style="margin-top:2px">Выберите предмет или токены, кастомную цель до ×100 и испытайте колесо!</div>
       </div>
 
       <!-- Вкладки выбора: Предмет из инвентаря или Токены -->
@@ -7666,6 +7823,7 @@ function gameUpgrader(){
                 <div style="font-size:22px">${it.icon||'📦'}</div>
                 <b style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</b>
                 <span style="color:#ffcf6b;font-weight:700;font-size:11px">${fmt(it.price)} ⬦</span>
+                ${(it.upgrade_only || it.upgradeOnly) ? `<span style="display:inline-block;margin-top:2px;background:rgba(239,68,68,0.25);color:#f87171;font-size:8px;padding:1px 3px;border-radius:3px;font-weight:800">ТОЛЬКО АПГРЕЙД</span>` : ''}
               </button>
             `).join('')}
           </div>
@@ -7717,7 +7875,7 @@ function gameUpgrader(){
         <div class="upgrade-arrow">➔</div>
         <div class="upgrade-item-card" id="upgTargetCard">
           <div style="font-size:32px">🎁</div>
-          <div style="font-size:11px;font-weight:700;color:#3ddc96" id="upgTargetTitle">×${curTgt.mult}</div>
+          <div style="font-size:11px;font-weight:700;color:#3ddc96" id="upgTargetTitle">×${curMult}</div>
           <b style="font-size:13px;color:#3ddc96" id="upgTargetPrice">+${fmt(targetPrice)} ⬦</b>
         </div>
       </div>
@@ -7726,14 +7884,38 @@ function gameUpgrader(){
       <div class="upgrade-circle-wrap">
         <div class="upgrade-pointer"></div>
         <canvas id="upgCanvas" width="180" height="180"></canvas>
-        <div class="upgrade-wheel-text" id="upgWheelChance">${curTgt.chance}%</div>
+        <div class="upgrade-wheel-text" id="upgWheelChance">${curChance}%</div>
       </div>
 
-      <!-- Чипы множителей -->
-      <div class="chips" id="upgMultChips" style="justify-content:center;gap:6px;margin:14px 0 10px">
-        ${targets.map((t, idx) => `
-          <button class="chip ${idx===curTgtIdx?'on':''}" data-uidx="${idx}">×${t.mult}</button>
+      <!-- Предустановленные множители -->
+      <div class="chips" id="upgMultChips" style="justify-content:center;gap:6px;margin:14px 0 10px;flex-wrap:wrap">
+        ${targets.map(t => `
+          <button class="chip ${Math.abs(t.mult - curMult) < 0.05 ?'on':''}" data-mult="${t.mult}">×${t.mult}</button>
         `).join('')}
+      </div>
+
+      <!-- Кастомные настройки множителя и шанса (до x100 и шанс до 75%) -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:700;color:#ffcf6b">⚙️ КАСТОМНЫЙ РЕЖИМ</span>
+          <span class="muted small" style="font-size:10px">Шанс: до 75% · Икс: до ×100</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1">
+            <div class="muted small" style="font-size:10px;margin-bottom:3px">Множитель (до ×100):</div>
+            <div style="position:relative">
+              <input id="upgCustomMultInput" type="number" step="0.1" min="1.25" max="100" value="${curMult}" style="width:100%;background:#131823;border:1px solid rgba(255,255,255,0.12);color:#3ddc96;font-weight:800;border-radius:8px;padding:6px 24px 6px 8px;font-size:13px;box-sizing:border-box">
+              <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#3ddc96;font-weight:800;font-size:12px;pointer-events:none">×</span>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div class="muted small" style="font-size:10px;margin-bottom:3px">Шанс (макс 75%):</div>
+            <div style="position:relative">
+              <input id="upgCustomChanceInput" type="number" step="0.1" min="0.94" max="75" value="${curChance}" style="width:100%;background:#131823;border:1px solid rgba(255,255,255,0.12);color:#ffcf6b;font-weight:800;border-radius:8px;padding:6px 24px 6px 8px;font-size:13px;box-sizing:border-box">
+              <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#ffcf6b;font-weight:800;font-size:12px;pointer-events:none">%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <button class="control" id="btnDoUpgrade" style="margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:14px;padding:14px;font-weight:900" ${isSpinning?'disabled':''}>
@@ -7741,7 +7923,7 @@ function gameUpgrader(){
       </button>
 
       <div class="result" id="upgResultMsg" style="margin-top:12px;font-size:12px">
-        Выберите множитель и запустите колесо. Шанс победы: ${curTgt.chance}%.
+        Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge 6%).
       </div>
     </div>`;
 
@@ -7756,14 +7938,13 @@ function gameUpgrader(){
     const W = cvs.width, H = cvs.height, R = W / 2;
     ctx.clearRect(0, 0, W, H);
 
-    const curTgt = targets[curTgtIdx];
-    const winAngle = (curTgt.chance / 100) * (Math.PI * 2);
+    const winAngle = (curChance / 100) * (Math.PI * 2);
 
     ctx.save();
     ctx.translate(R, R);
     ctx.rotate(rot);
 
-    // [Algorithmic Art]: Внешний обод с радиальным градиентом
+    // Внешний обод с радиальным градиентом
     const outerGrad = ctx.createRadialGradient(0, 0, R - 10, 0, 0, R);
     outerGrad.addColorStop(0, '#1a2233');
     outerGrad.addColorStop(1, '#0b0f19');
@@ -7775,7 +7956,7 @@ function gameUpgrader(){
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Красная зона проигрыша с глубоким неоновым градиентом
+    // Красная зона проигрыша
     const redGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, R - 6);
     redGrad.addColorStop(0, '#381217');
     redGrad.addColorStop(0.85, '#220b0e');
@@ -7788,7 +7969,7 @@ function gameUpgrader(){
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Зелёная выигрышная зона с ярким кибер-градиентом
+    // Зелёная выигрышная зона
     const greenGrad = ctx.createRadialGradient(0, 0, 15, 0, 0, R - 6);
     greenGrad.addColorStop(0, '#34d399');
     greenGrad.addColorStop(0.7, '#10b981');
@@ -7803,7 +7984,7 @@ function gameUpgrader(){
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // [Algorithmic Art]: Процедурные засечки и деления по окружности (60 делений)
+    // Засечки и деления по окружности
     ctx.save();
     for(let i = 0; i < 60; i++){
       ctx.rotate((Math.PI * 2) / 60);
@@ -7817,7 +7998,7 @@ function gameUpgrader(){
     }
     ctx.restore();
 
-    // Центральный высокотехнологичный хаб с двойным кольцом
+    // Центральный хаб
     const hubGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 44);
     hubGrad.addColorStop(0, '#232d42');
     hubGrad.addColorStop(0.7, '#131926');
@@ -7830,7 +8011,7 @@ function gameUpgrader(){
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Внутреннее светящееся кольцо
+    // Внутреннее кольцо
     ctx.beginPath();
     ctx.arc(0, 0, 36, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
@@ -7887,10 +8068,35 @@ function gameUpgrader(){
     qa('#upgMultChips button', a).forEach(btn => {
       btn.onclick = () => {
         if(isSpinning) return;
-        curTgtIdx = +btn.dataset.uidx;
-        render();
+        setMult(+btn.dataset.mult);
       };
     });
+
+    // Custom multiplier & chance input listeners
+    const multInp = q('#upgCustomMultInput', a);
+    if(multInp){
+      multInp.addEventListener('change', () => {
+        if(isSpinning) return;
+        setMult(multInp.value);
+      });
+      multInp.addEventListener('input', () => {
+        if(isSpinning) return;
+        const v = parseFloat(multInp.value);
+        if(v >= 1.25 && v <= 100) setMult(v);
+      });
+    }
+
+    const chanceInp = q('#upgCustomChanceInput', a);
+    if(chanceInp){
+      chanceInp.addEventListener('change', () => {
+        if(isSpinning) return;
+        setChance(chanceInp.value);
+      });
+      chanceInp.addEventListener('input', () => {
+        const v = parseFloat(chanceInp.value);
+        if(v >= 0.94 && v <= 75) setChance(v);
+      });
+    }
 
     const runBtn = q('#btnDoUpgrade', a);
     if(runBtn) runBtn.onclick = () => runUpgrade();
@@ -7919,19 +8125,23 @@ function gameUpgrader(){
     const runBtn = q('#btnDoUpgrade', a);
     if(runBtn){ runBtn.disabled = true; runBtn.textContent = 'ВРАЩЕНИЕ КОЛЕСА…'; }
 
-    const curTgt = targets[curTgtIdx];
-    const winProb = curTgt.chance / 100;
-    const winAngle = winProb * (Math.PI * 2);
+    const targetItem = useInventory ? selectedUpgraderItem : null;
+    const isSpecialPromoItem = Boolean(targetItem && (targetItem.upgrade_only || targetItem.upgradeOnly || targetItem.code === 'ref5_cyber_dagger'));
+
+    const winProb = isSpecialPromoItem ? 0.03 : (curChance / 100);
+    const winAngle = (curChance / 100) * (Math.PI * 2);
     const redSpan = (Math.PI * 2) - winAngle;
 
     let isWin = false;
-    let winTk = Math.floor(stakePrice * curTgt.mult);
+    let winTk = Math.floor(stakePrice * curMult);
+    let serverNearMiss = false;
 
     if(!useInventory){
       if(IS_TG && API_BASE){
         try {
-          const r = await tgCall('/api/play', { game: 'Апгрейдер', bet: stakePrice, mult: curTgt.mult });
+          const r = await tgCall('/api/play', { game: 'Апгрейдер', bet: stakePrice, mult: curMult });
           isWin = (r && r.verdict === 'win');
+          serverNearMiss = Boolean(r && r.nearMiss);
           if(r && r.win != null) winTk = r.win;
           if(r && typeof r.tokens === 'number'){
             S.balance = r.tokens;
@@ -7949,22 +8159,18 @@ function gameUpgrader(){
         isWin = Math.random() < winProb;
       }
     } else {
-      const targetItem = selectedUpgraderItem;
       if(IS_TG && API_BASE){
         try {
-          const sellRes = await tgCall('/api/inventory/sell', { itemId: targetItem.id });
-          if(sellRes && typeof sellRes.tokens === 'number'){
-            S.balance = sellRes.tokens;
-          }
-          S.inventory = (S.inventory || []).filter(x => x.id !== targetItem.id);
-          save(); syncUI();
-          const r = await tgCall('/api/play', { game: 'Апгрейдер', bet: stakePrice, mult: curTgt.mult });
+          // Атомарно играем предметом: сервер сам сжигает предмет и начисляет выигрыш при успехе
+          const r = await tgCall('/api/play', { game: 'Апгрейдер', mult: curMult, itemId: targetItem.id });
           isWin = (r && r.verdict === 'win');
+          serverNearMiss = Boolean(r && r.nearMiss);
           if(r && r.win != null) winTk = r.win;
+          S.inventory = (S.inventory || []).filter(x => x.id !== targetItem.id);
           if(r && typeof r.tokens === 'number'){
             S.balance = r.tokens;
-            save(); syncUI();
           }
+          save(); syncUI();
         } catch(e) {
           isSpinning = false;
           if(runBtn){ runBtn.disabled = false; runBtn.textContent = `⚡ АПГРЕЙДНУТЬ (${fmt(stakePrice)} ⬦)`; }
@@ -7982,20 +8188,22 @@ function gameUpgrader(){
 
     tgHaptic('impact');
 
-    // Безупречный расчет угла остановки стрелки
+    // Расчет угла остановки стрелки
     let targetRelAngle;
     if(isWin){
       const margin = Math.min(0.22, winAngle * 0.2);
       targetRelAngle = margin + Math.random() * (winAngle - 2 * margin);
     } else {
-      if(isNearMissEligible(stakePrice)){
-        // Органичный, не впритык, запас в 12°–24° (0.20–0.42 рад) — без подвоха
+      if(isSpecialPromoItem || serverNearMiss){
+        // Байт 97% для акционного скина за 5 друзей: стрелка замирает буквально в 3°-7° до зелёной зоны
+        const gap = 0.05 + Math.random() * 0.07;
+        targetRelAngle = (2 * Math.PI) - gap;
+      } else if(isNearMissEligible(stakePrice)){
+        // Органичный запас 12°–24° (0.20–0.42 рад) без подвоха для обычных ставок
         const gap = 0.20 + Math.random() * 0.22;
         if(Math.random() < 0.55 && redSpan > gap + 0.15){
-          // Естественно перелетела зелёную зону вглубь красной
           targetRelAngle = winAngle + gap;
         } else if(redSpan > gap + 0.15){
-          // Не доехала до начала зелёной зоны
           targetRelAngle = (2 * Math.PI) - gap;
         } else {
           const margin = Math.min(0.22, redSpan * 0.2);
@@ -8006,6 +8214,7 @@ function gameUpgrader(){
         targetRelAngle = winAngle + margin + Math.random() * (redSpan - 2 * margin);
       }
     }
+
     const targetNormRot = ((2 * Math.PI - targetRelAngle) % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
     const currentNormRot = ((wheelRot % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
     let delta = targetNormRot - currentNormRot;
@@ -8034,7 +8243,7 @@ function gameUpgrader(){
         if(isWin){
           tgHaptic('win');
           if(!IS_TG || !API_BASE){
-            win(winTk, 'Апгрейдер', `Успех ×${curTgt.mult}`);
+            win(winTk, 'Апгрейдер', `Успех ×${curMult}`);
           }
           if(msgEl){
             msgEl.className = 'result good';
@@ -8043,13 +8252,22 @@ function gameUpgrader(){
           if(runBtn) runBtn.textContent = 'УСПЕШНЫЙ АПГРЕЙД ✓';
         } else {
           tgHaptic('lose');
-          if(msgEl){
-            msgEl.className = 'result bad';
-            msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне. Ставка сгорела.`;
-          }
-          if(runBtn) runBtn.textContent = 'СТАВКА/ПРЕДМЕТ СГОРЕЛ ✕';
-          if(isNearMissEligible(stakePrice)){
-            triggerNearMissEffect('Апгрейдер', `Стрелка скользнула рядом с зоной успеха ×${curTgt.mult}!`, stakePrice);
+          if(isSpecialPromoItem || serverNearMiss){
+            if(msgEl){
+              msgEl.className = 'result bad';
+              msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка замерла буквально в миллиметре от зоны успеха ×${curMult}! Предмет сгорел.`;
+            }
+            if(runBtn) runBtn.textContent = 'ПРЕДМЕТ СГОРЕЛ ✕';
+            triggerNearMissEffect('Апгрейдер', `Стрелка скользнула в миллиметре от победы на Cyber-Dagger ×${curMult}! Заряди баланс и отыграйся!`, stakePrice);
+          } else {
+            if(msgEl){
+              msgEl.className = 'result bad';
+              msgEl.innerHTML = `❌ <b>АПГРЕЙД СГОРЕЛ!</b> Стрелка остановилась в красной зоне. Ставка сгорела.`;
+            }
+            if(runBtn) runBtn.textContent = 'СТАВКА/ПРЕДМЕТ СГОРЕЛ ✕';
+            if(isNearMissEligible(stakePrice)){
+              triggerNearMissEffect('Апгрейдер', `Стрелка скользнула рядом с зоной успеха ×${curMult}!`, stakePrice);
+            }
           }
         }
         selectedUpgraderItem = null;
