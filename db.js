@@ -66,7 +66,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at INTEGER,
   rakeback REAL DEFAULT 0,
   free_cases INTEGER DEFAULT 0,
-  free_case_5ref_claimed INTEGER DEFAULT 0
+  free_case_5ref_claimed INTEGER DEFAULT 0,
+  first_deposit_bonus_claimed INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -84,7 +85,8 @@ CREATE TABLE IF NOT EXISTS orders (
   source TEXT,
   tx TEXT,
   created_at INTEGER,
-  updated_at INTEGER
+  updated_at INTEGER,
+  bonus TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS transactions_ledger (
@@ -169,7 +171,11 @@ function __ensureColumns(table, cols) {
 __ensureColumns('users', [
   ['rakeback', 'REAL DEFAULT 0'],
   ['free_cases', 'INTEGER DEFAULT 0'],
-  ['free_case_5ref_claimed', 'INTEGER DEFAULT 0']
+  ['free_case_5ref_claimed', 'INTEGER DEFAULT 0'],
+  ['first_deposit_bonus_claimed', 'INTEGER DEFAULT 0']
+]);
+__ensureColumns('orders', [
+  ['bonus', "TEXT DEFAULT ''"]
 ]);
 __ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
 __ensureColumns('user_inventory', [['upgrade_only', 'INTEGER DEFAULT 0']]);
@@ -179,15 +185,16 @@ const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
       num_id = ?, name = ?, username = ?, staked = ?, stake_since = ?, accrued_base = ?,
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
-      easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?
+      easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?,
+      first_deposit_bonus_claimed = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -197,8 +204,8 @@ const stmts = {
   `),
   getOrder: db.prepare('SELECT * FROM orders WHERE id = ?'),
   insertOrder: db.prepare(`
-    INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateOrderStatus: db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?'),
   getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100'),
@@ -274,7 +281,8 @@ function getUser(id) {
     code: row.code,
     rakeback: Number(row.rakeback || 0),
     freeCases: Number(row.free_cases || 0),
-    freeCase5RefClaimed: Number(row.free_case_5ref_claimed || 0)
+    freeCase5RefClaimed: Number(row.free_case_5ref_claimed || 0),
+    firstDepositBonusClaimed: Number(row.first_deposit_bonus_claimed || 0)
   };
 }
 
@@ -321,6 +329,7 @@ function saveUser(u) {
       Number(u.rakeback || 0),
       Number(u.freeCases || 0),
       Number(u.freeCase5RefClaimed || 0),
+      Number(u.firstDepositBonusClaimed || 0),
       u.id
     );
     turso.queueQuery(`
@@ -328,14 +337,15 @@ function saveUser(u) {
         num_id=?, name=?, username=?, staked=?, stake_since=?, accrued_base=?,
         ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
-        easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?
+        easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?,
+        first_deposit_bonus_claimed=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
       u.ref || 0, u.refEarned || 0, u.refInvited || 0, u.termsAt || 0, u.totalDepositedRub || 0,
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0),
-      Number(u.freeCase5RefClaimed || 0), u.id
+      Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0), u.id
     ]);
   } else {
     stmts.insertUser.run(
@@ -361,11 +371,12 @@ function saveUser(u) {
       Date.now(),
       Number(u.rakeback || 0),
       Number(u.freeCases || 0),
-      Number(u.freeCase5RefClaimed || 0)
+      Number(u.freeCase5RefClaimed || 0),
+      Number(u.firstDepositBonusClaimed || 0)
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
@@ -373,7 +384,7 @@ function saveUser(u) {
       u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
       u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
-      Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0)
+      Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0)
     ]);
   }
 }
@@ -549,16 +560,18 @@ module.exports = {
       ord.source || null,
       ord.tx || null,
       ord.createdAt || Date.now(),
-      Date.now()
+      Date.now(),
+      ord.bonus || ''
     );
     turso.queueQuery(`
-      INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
     `, [
       ord.id, ord.type || 'deposit', ord.userId, ord.tokens, ord.rub, ord.bank || null,
       ord.card || null, ord.sender || null, ord.method || null, ord.details || null,
-      ord.status || 'pending', ord.source || null, ord.tx || null, ord.createdAt || Date.now(), Date.now()
+      ord.status || 'pending', ord.source || null, ord.tx || null, ord.createdAt || Date.now(), Date.now(),
+      ord.bonus || ''
     ]);
   },
   getOrder: (id) => stmts.getOrder.get(id),
@@ -710,6 +723,191 @@ module.exports = {
       return { summary: summary || {}, byGame: byGame || [] };
     } catch (e) {
       return { summary: {}, byGame: [] };
+    }
+  },
+  /** Расширенная админ-аналитика по реальным данным проекта */
+  getAdminMetrics: (period = 'all') => {
+    let since = 0;
+    const now = Date.now();
+    if (period === 'today') {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      since = d.getTime();
+    } else if (period === '7d') {
+      since = now - 7 * 86400 * 1000;
+    } else if (period === '30d') {
+      since = now - 30 * 86400 * 1000;
+    }
+
+    try {
+      // 1. Депозиты (подтвержденные)
+      const depStats = db.prepare(`
+        SELECT COUNT(*) AS count,
+               COALESCE(SUM(rub), 0) AS totalRub,
+               COALESCE(SUM(tokens), 0) AS totalTokens
+        FROM orders
+        WHERE type = 'deposit' AND status = 'paid' AND created_at >= ?
+      `).get(since) || { count: 0, totalRub: 0, totalTokens: 0 };
+
+      // 1.1 Бонус +25% на первый депозит
+      const bonus25Orders = db.prepare(`
+        SELECT COUNT(*) AS count,
+               COALESCE(SUM(CASE WHEN tokens > (rub * 10) THEN (tokens - (rub * 10)) ELSE (rub * 2.5) END), 0) AS bonusTokens,
+               COALESCE(SUM(rub), 0) AS bonusRub
+        FROM orders
+        WHERE type = 'deposit' AND status = 'paid' AND bonus = '25' AND created_at >= ?
+      `).get(since) || { count: 0, bonusTokens: 0, bonusRub: 0 };
+
+      // 2. Выводы (подтвержденные и ожидающие)
+      const wdPaid = db.prepare(`
+        SELECT COUNT(*) AS count,
+               COALESCE(SUM(rub), 0) AS totalRub,
+               COALESCE(SUM(tokens), 0) AS totalTokens
+        FROM orders
+        WHERE type = 'withdraw' AND status = 'paid' AND created_at >= ?
+      `).get(since) || { count: 0, totalRub: 0, totalTokens: 0 };
+
+      const wdPending = db.prepare(`
+        SELECT COUNT(*) AS count,
+               COALESCE(SUM(rub), 0) AS totalRub,
+               COALESCE(SUM(tokens), 0) AS totalTokens
+        FROM orders
+        WHERE type = 'withdraw' AND status = 'pending'
+      `).get() || { count: 0, totalRub: 0, totalTokens: 0 };
+
+      // 3. Пользователи и конверсия
+      const newUsersCount = (db.prepare(`
+        SELECT COUNT(*) AS count FROM users WHERE created_at >= ?
+      `).get(since) || {}).count || 0;
+
+      const totalUsersCount = (db.prepare(`
+        SELECT COUNT(*) AS count FROM users
+      `).get() || {}).count || 0;
+
+      const payingUsersCount = (db.prepare(`
+        SELECT COUNT(DISTINCT user_id) AS count
+        FROM orders
+        WHERE type = 'deposit' AND status = 'paid' AND created_at >= ?
+      `).get(since) || {}).count || 0;
+
+      const totalPayingUsersCount = (db.prepare(`
+        SELECT COUNT(*) AS count FROM users WHERE total_deposited_rub > 0
+      `).get() || {}).count || 0;
+
+      const firstBonusUsersCount = (db.prepare(`
+        SELECT COUNT(*) AS count FROM users WHERE first_deposit_bonus_claimed = 1
+      `).get() || {}).count || 0;
+
+      // 4. Игровые раунды (RTP, GGR, оборот)
+      const roundsSummary = db.prepare(`
+        SELECT COUNT(*) AS count,
+               COALESCE(SUM(bet_tokens), 0) AS wagered,
+               COALESCE(SUM(win_tokens), 0) AS payouts
+        FROM game_rounds
+        WHERE created_at >= ?
+      `).get(since) || { count: 0, wagered: 0, payouts: 0 };
+
+      const wagered = Number(roundsSummary.wagered || 0);
+      const payouts = Number(roundsSummary.payouts || 0);
+      const grossGamingRevenueTk = wagered - payouts;
+      const grossGamingRevenueRub = grossGamingRevenueTk / 10;
+      const rtpPct = wagered > 0 ? Number(((payouts / wagered) * 100).toFixed(1)) : 0;
+
+      // 5. По режимам игры
+      const byGame = db.prepare(`
+        SELECT game,
+               COUNT(*) AS rounds,
+               COALESCE(SUM(bet_tokens), 0) AS wageredTk,
+               COALESCE(SUM(win_tokens), 0) AS payoutTk,
+               COALESCE(SUM(CASE WHEN win_tokens > bet_tokens THEN 1 ELSE 0 END), 0) AS wins,
+               COALESCE(SUM(CASE WHEN win_tokens <= bet_tokens THEN 1 ELSE 0 END), 0) AS losses
+        FROM game_rounds
+        WHERE created_at >= ?
+        GROUP BY game
+        ORDER BY wageredTk DESC
+      `).all(since).map(g => {
+        const wag = Number(g.wageredTk || 0);
+        const pay = Number(g.payoutTk || 0);
+        const netTk = wag - pay;
+        return {
+          game: g.game,
+          rounds: g.rounds,
+          wageredTk: wag,
+          payoutTk: pay,
+          netTk,
+          netRub: netTk / 10,
+          rtpPct: wag > 0 ? Number(((pay / wag) * 100).toFixed(1)) : 0,
+          wins: g.wins,
+          losses: g.losses
+        };
+      });
+
+      // 6. Последние 25 операций ledger
+      const recentLedger = db.prepare(`
+        SELECT l.id, l.user_id, l.amount, l.type, l.reason, l.balance_before, l.balance_after, l.created_at,
+               u.username, u.name
+        FROM transactions_ledger l
+        LEFT JOIN users u ON u.id = l.user_id
+        ORDER BY l.id DESC
+        LIMIT 25
+      `).all().map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        userLabel: row.username ? '@' + row.username : (row.name || 'ID ' + row.user_id),
+        amount: row.amount,
+        type: row.type,
+        reason: row.reason,
+        balanceBefore: row.balance_before,
+        balanceAfter: row.balance_after,
+        createdAt: row.created_at
+      }));
+
+      // 7. По провайдерам пополнений
+      const byProvider = db.prepare(`
+        SELECT COALESCE(source, bank, method, 'СБП') AS provider,
+               COUNT(*) AS count,
+               COALESCE(SUM(rub), 0) AS totalRub
+        FROM orders
+        WHERE type = 'deposit' AND status = 'paid' AND created_at >= ?
+        GROUP BY provider
+        ORDER BY totalRub DESC
+      `).all(since);
+
+      return {
+        ok: true,
+        period,
+        since,
+        summary: {
+          totalUsers: totalUsersCount,
+          newUsers: newUsersCount,
+          totalDepositors: totalPayingUsersCount,
+          periodDepositors: payingUsersCount,
+          depositsCount: depStats.count,
+          depositsRub: depStats.totalRub,
+          depositsTokens: depStats.totalTokens,
+          firstBonusClaimedUsers: firstBonusUsersCount,
+          firstBonusOrdersCount: bonus25Orders.count,
+          firstBonusTokens: bonus25Orders.bonusTokens,
+          firstBonusRubVolume: bonus25Orders.bonusRub,
+          withdrawalsPaidCount: wdPaid.count,
+          withdrawalsPaidRub: wdPaid.totalRub,
+          withdrawalsPendingCount: wdPending.count,
+          withdrawalsPendingRub: wdPending.totalRub,
+          roundsCount: roundsSummary.count,
+          wageredTk: wagered,
+          payoutsTk: payouts,
+          ggrTk: grossGamingRevenueTk,
+          ggrRub: grossGamingRevenueRub,
+          rtpPct,
+          cashflowNetRub: depStats.totalRub - wdPaid.totalRub
+        },
+        byGame,
+        byProvider,
+        recentLedger
+      };
+    } catch (e) {
+      console.error('[DB] getAdminMetrics error:', e.message);
+      return { ok: false, error: e.message };
     }
   },
   pullFromTurso: () => turso.pullFromTurso(db),

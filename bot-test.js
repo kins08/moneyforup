@@ -83,7 +83,8 @@ let bot;
       BOT_TOKEN, API_PORT: String(API_PORT), BOT_DRY_RUN: '1', APP_URL: 'https://app.test/moneyforup-tg.html',
       PUBLIC_URL: `http://127.0.0.1:${API_PORT}`, DB_PATH: tmpDb, BOT_USERNAME: 'your_bot',
       PLATEGA_MERCHANT_ID: PLATEGA.id, PLATEGA_SECRET: PLATEGA.secret, PLATEGA_API: `http://127.0.0.1:${MOCK_PORT}`,
-      COINSO_PROJECT_ID: COINSO.project, COINSO_SECRET_KEY: COINSO.secret, COINSO_API: `http://127.0.0.1:${MOCK_PORT}` },
+      COINSO_PROJECT_ID: COINSO.project, COINSO_SECRET_KEY: COINSO.secret, COINSO_API: `http://127.0.0.1:${MOCK_PORT}`,
+      TURSO_DATABASE_URL: '', TURSO_AUTH_TOKEN: '' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let botLog = '';

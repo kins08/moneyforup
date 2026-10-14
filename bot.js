@@ -649,17 +649,46 @@ function stakeRemove(u, all) {
 /* ------------------------------------------------------------------ */
 /* Пополнение + реферальные 15 %                                       */
 /* ------------------------------------------------------------------ */
-async function creditDeposit(userId, tokens, source) {
+async function creditDeposit(userId, tokens, source, opts = {}) {
   const u = user(userId);
-  // Делаем зачисление ДО всего остального и не подменяем его памятью при сбое:
-  // если запись в ledger не прошла — депозит не зачислен, и вызывающий код обязан это увидеть.
-  const credit = applyBalance(u, tokens, 'deposit', `Пополнение через ${source}`, '');
-  if (!credit.ok) {
-    console.error(`[Deposit] НЕ зачислено ${tokens} ⬦ игроку ${userId}: ${credit.error}`);
-    return { tokens, refPaid: 0, refErr: credit.error, credited: false };
+  const rubAmt = Math.round(Number(opts.rub || (tokens / TOKENS_PER_RUB)));
+  const isFirstDeposit = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
+                         (!u.lastDeposit || u.lastDeposit <= 0) &&
+                         !u.firstDepositBonusClaimed;
+
+  let baseTokens = Math.floor(opts.baseTokens || (rubAmt * TOKENS_PER_RUB));
+  let bonusTokens = 0;
+  let bonusApplied = false;
+
+  if (opts.bonus === '25' || opts.bonusTag === '25') {
+    if (isFirstDeposit) {
+      bonusTokens = Math.floor(baseTokens * 0.25);
+      bonusApplied = true;
+      u.firstDepositBonusClaimed = 1;
+    } else {
+      bonusTokens = 0;
+      bonusApplied = false;
+    }
+  } else if (Number(tokens) > baseTokens && isFirstDeposit) {
+    const diff = Number(tokens) - baseTokens;
+    if (diff === Math.floor(baseTokens * 0.25)) {
+      bonusTokens = diff;
+      bonusApplied = true;
+      u.firstDepositBonusClaimed = 1;
+    }
   }
-  const rubAmt = Math.round(tokens / TOKENS_PER_RUB);
-  const isFirstDeposit = (u.totalDepositedRub || 0) === 0;
+
+  const finalTokens = baseTokens + bonusTokens;
+  const reason = bonusApplied
+    ? `Пополнение через ${source} (+25% бонус: +${bonusTokens} ⬦)`
+    : `Пополнение через ${source}`;
+
+  const credit = applyBalance(u, finalTokens, 'deposit', reason, String(opts.orderId || ''));
+  if (!credit.ok) {
+    console.error(`[Deposit] НЕ зачислено ${finalTokens} ⬦ игроку ${userId}: ${credit.error}`);
+    return { tokens: finalTokens, baseTokens, bonusTokens, refPaid: 0, refErr: credit.error, credited: false, bonusApplied: false };
+  }
+
   if (isFirstDeposit && rubAmt >= 150) {
     u.freeCases = (u.freeCases || 0) + 1;
     (u.notifications = u.notifications || []).push('🎁 Вам начислен бесплатный кейс за первый депозит!');
@@ -673,17 +702,19 @@ async function creditDeposit(userId, tokens, source) {
       bot.api.sendMessage(u.id, '🎁 Вам начислен подарочный <b>Золотой кейс</b> за пополнение от 300 ₽! Откройте его во вкладке «Кейсы».', { parse_mode: 'HTML' }).catch(() => {});
     } catch (_) {}
   }
+
   u.lastDeposit = rubAmt;
   u.totalDepositedRub = (u.totalDepositedRub || 0) + rubAmt;
   u.lastDepositId = (u.lastDepositId || 0) + 1;
   try { db.saveUser(u); } catch (e) { console.error('saveUser (deposit):', e.message); }
   try { betsMonitor.recordCashflow('deposit', rubAmt, u.id, u.username ? '@' + u.username : u.name); } catch (_) {}
+
   let refPaid = 0, refErr = null;
   const refId = Number(u.ref);
   if (refId) {
-    const referrer = user(refId);                              // реферер мог ещё не открыть бота — создаём запись
-    if (Number(u.ref) !== u.id) {                              // самоприглашение отсекаем
-      refPaid = Math.floor(tokens * REF_PERCENT / 100);
+    const referrer = user(refId);
+    if (Number(u.ref) !== u.id) {
+      refPaid = Math.floor(baseTokens * REF_PERCENT / 100);
       if (refPaid > 0) {
         const rp = applyBalance(referrer, refPaid, 'referral', `15% от депозита игрока ID ${u.id}`, String(u.id));
         if (rp.ok) {
@@ -692,16 +723,15 @@ async function creditDeposit(userId, tokens, source) {
           try { db.saveUser(referrer); } catch (e) { console.error('saveUser (referral):', e.message); }
           try {
             await bot.api.sendMessage(referrer.id,
-              `🎁 Ваш реферал пополнил баланс на ${tokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
+              `🎁 Ваш реферал пополнил баланс на ${baseTokens} ⬦ · вам +${refPaid} ⬦ (${REF_PERCENT}%)`);
           } catch (e) { refErr = e.message; }
         } else {
-          // Не начислено — не сообщаем о начислении и не делаем вид, что оно было
           refPaid = 0; refErr = rp.error;
         }
       }
     }
   }
-  return { tokens, refPaid, refErr, credited: true };
+  return { tokens: finalTokens, baseTokens, bonusTokens, refPaid, refErr, credited: true, bonusApplied };
 }
 
 /* ------------------------------------------------------------------ */
@@ -778,7 +808,7 @@ const plategaHeaders = () => ({
   'X-Secret': PLATEGA_SECRET
 });
 
-async function plategaCreate(u, rub, tokens, name) {
+async function plategaCreate(u, rub, tokens, name, opts = {}) {
   if (!plategaOn()) throw new Error('Platega не настроена: добавьте PLATEGA_MERCHANT_ID и PLATEGA_SECRET');
   const orderId = 'PL' + crypto.randomBytes(16).toString('hex');
   const res = await fetch(`${PLATEGA_API}/transaction/process`, {
@@ -795,8 +825,22 @@ async function plategaCreate(u, rub, tokens, name) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.url) throw new Error('Platega: ' + JSON.stringify(data.message || data.error || data));
-  orders.set(orderId, { userId: u.id, tokens, rub, status: 'pending', source: 'Platega', tx: data.transactionId });
-  plategaTx.set(String(data.transactionId), { orderId, userId: u.id, tokens, rub, status: 'pending' });
+  const newOrder = {
+    id: orderId,
+    type: 'deposit',
+    userId: u.id,
+    tokens,
+    rub,
+    baseTokens: opts.baseTokens || (rub * TOKENS_PER_RUB),
+    bonusTokens: opts.bonusTokens || 0,
+    bonus: opts.bonus || '',
+    status: 'pending',
+    source: 'Platega',
+    tx: data.transactionId,
+    createdAt: Date.now()
+  };
+  setOrder(orderId, newOrder);
+  plategaTx.set(String(data.transactionId), { orderId, ...newOrder });
   return { pay_url: data.url, invoice_id: data.transactionId, order_id: orderId, tokens };
 }
 
@@ -817,7 +861,13 @@ async function plategaCredit(txId, orderIdFromHook) {
   // параллельный вебхук + опрос статуса не зачислят депозит дважды (P2-4).
   if (order._crediting) return { paid: true, credited: false, inProgress: true, tokens: order.tokens };
   order._crediting = true;
-  const r = await creditDeposit(order.userId, order.tokens, 'Platega');
+  const r = await creditDeposit(order.userId, order.tokens, 'Platega', {
+    rub: order.rub,
+    bonus: order.bonus,
+    baseTokens: order.baseTokens,
+    bonusTokens: order.bonusTokens,
+    orderId: order.id
+  });
   if (!r.credited) {
     // Зачисление не прошло — снимаем claim и НЕ помечаем заказ оплаченным, чтобы вебхук повторился
     order._crediting = false;
@@ -825,9 +875,14 @@ async function plategaCredit(txId, orderIdFromHook) {
   }
   order._crediting = false;
   order.status = 'paid';
-  if (local) local.status = 'paid';
-  await notifyPaid(order.userId, order.tokens, r.refPaid, 'Platega');
-  return { paid: true, credited: true, tokens: order.tokens, refPaid: r.refPaid };
+  order.tokens = r.tokens;
+  if (local) {
+    local.status = 'paid';
+    local.tokens = r.tokens;
+  }
+  try { db.updateOrderStatus(order.id, 'paid'); } catch (_) {}
+  await notifyPaid(order.userId, r.tokens, r.refPaid, 'Platega');
+  return { paid: true, credited: true, tokens: r.tokens, refPaid: r.refPaid, bonusApplied: r.bonusApplied };
 }
 
 /* ------------------------------------------------------------------ */
@@ -836,7 +891,7 @@ async function plategaCredit(txId, orderIdFromHook) {
 /* ------------------------------------------------------------------ */
 const coinsoOn = () => !!(COINSO_PROJECT_ID && COINSO_SECRET_KEY);
 
-async function createCoinsoInvoice(userId, tokens, rub) {
+async function createCoinsoInvoice(userId, tokens, rub, opts = {}) {
   if (!coinsoOn()) throw new Error('Coinso не настроен (проверьте COINSO_PROJECT_ID и COINSO_SECRET_KEY)');
   const orderId = 'MF_COIN_' + crypto.randomBytes(16).toString('hex');
   const res = await fetch(`${COINSO_API}/payment/create`, {
@@ -860,7 +915,23 @@ async function createCoinsoInvoice(userId, tokens, rub) {
   if (!payUrl) {
     throw new Error('Coinso: ' + (data.message || JSON.stringify(data)));
   }
-  coinsoOrders.set(orderId, { userId, tokens, rub, invoice_id: invId, credited: false });
+  const newOrder = {
+    id: orderId,
+    type: 'deposit',
+    userId,
+    tokens,
+    rub,
+    baseTokens: opts.baseTokens || (rub * TOKENS_PER_RUB),
+    bonusTokens: opts.bonusTokens || 0,
+    bonus: opts.bonus || '',
+    invoice_id: invId,
+    source: 'Coinso',
+    status: 'pending',
+    credited: false,
+    createdAt: Date.now()
+  };
+  setOrder(orderId, newOrder);
+  coinsoOrders.set(orderId, newOrder);
   return {
     order_id: orderId,
     invoice_id: invId,
@@ -876,12 +947,20 @@ async function coinsoCredit(saved, key) {
   if (!saved) return { paid: true, credited: false };
   if (saved.credited) return { paid: true, already: true, tokens: saved.tokens };
   saved.credited = true;                       // claim — до первого await
-  const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso');
+  const r = await creditDeposit(saved.userId, saved.tokens, 'Coinso', {
+    rub: saved.rub,
+    bonus: saved.bonus,
+    baseTokens: saved.baseTokens,
+    bonusTokens: saved.bonusTokens,
+    orderId: saved.orderId || key
+  });
   if (!r.credited) { saved.credited = false; return { paid: true, credited: false, retry: true, error: r.refErr, tokens: saved.tokens }; }
-  await notifyPaid(saved.userId, saved.tokens, r.refPaid, 'Coinso');
+  saved.tokens = r.tokens;
+  try { db.updateOrderStatus(saved.orderId || key, 'paid'); } catch (_) {}
+  await notifyPaid(saved.userId, r.tokens, r.refPaid, 'Coinso');
   const k = key || [...coinsoOrders.entries()].find(([, v]) => v === saved)?.[0];
   if (k) coinsoOrders.delete(k);
-  return { paid: true, credited: true, tokens: saved.tokens, refPaid: r.refPaid };
+  return { paid: true, credited: true, tokens: r.tokens, refPaid: r.refPaid, bonusApplied: r.bonusApplied };
 }
 function findCoinsoOrder(orderId, invoiceId) {
   if (orderId && coinsoOrders.has(orderId)) return [orderId, coinsoOrders.get(orderId)];
@@ -1187,24 +1266,32 @@ async function processOrderAction(orderId, action) {
       // Claim ДО await: повторный клик/параллельный вызов видит status='paid'
       // и не зачислит второй раз. При сбое зачисления возвращаем 'pending'.
       order.status = 'paid';
-      const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП');
+      const r = await creditDeposit(order.userId, order.tokens, order.source || 'СБП', {
+        rub: order.rub,
+        bonus: order.bonus,
+        baseTokens: order.baseTokens,
+        bonusTokens: order.bonusTokens,
+        orderId: order.id
+      });
       if (!r.credited) {
         order.status = 'pending';
         return { ok: false, error: 'Не удалось зачислить баланс — заявка оставлена в ожидании: ' + (r.refErr || '') };
       }
+      order.tokens = r.tokens;
       order.completedAt = Date.now();
       try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
+      const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${r.bonusTokens} ⬦)` : '';
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
-        text: `🎉 Пополнение подтверждено! Зачислено +${order.tokens} ⬦ (${order.rub} ₽).`,
+        text: `🎉 Пополнение подтверждено! Зачислено +${r.tokens} ⬦ (${order.rub} ₽)${bonusText}.`,
         t: Date.now()
       });
       await bot.api.sendMessage(order.userId,
-        `🎉 Оплата получена: <b>+${order.tokens} ⬦</b> (${order.rub} ₽)${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}!\nБаланс успешно пополнен.`,
+        `🎉 Оплата получена: <b>+${r.tokens} ⬦</b> (${order.rub} ₽)${bonusText}${r.refPaid ? `, рефереру +${r.refPaid} ⬦` : ''}!\nБаланс успешно пополнен.`,
         { parse_mode: 'HTML' }
       ).catch(() => {});
-      return { ok: true, status: 'paid', order, refPaid: r.refPaid };
+      return { ok: true, status: 'paid', order, refPaid: r.refPaid, creditedTokens: r.tokens, bonusApplied: r.bonusApplied };
     } else {
       order.status = 'rejected';
       order.completedAt = Date.now();
@@ -1766,14 +1853,22 @@ const server = http.createServer(async (req, res) => {
       if (foundOrder) {
         // Claim ДО await: параллельное СМС-уведомление на ту же сумму не зачислит второй раз
         foundOrder.status = 'paid';
-        const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)');
+        const r = await creditDeposit(foundOrder.userId, foundOrder.tokens, 'СБП / Карта (Авто)', {
+          rub: foundOrder.rub,
+          bonus: foundOrder.bonus,
+          baseTokens: foundOrder.baseTokens,
+          bonusTokens: foundOrder.bonusTokens,
+          orderId: foundId
+        });
         if (!r.credited) {
           foundOrder.status = 'pending';
           return send(500, { error: 'credit failed, retry', amount: amountRub });
         }
+        foundOrder.tokens = r.tokens;
         try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
+        const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${r.bonusTokens} ⬦)` : '';
         await bot.api.sendMessage(foundOrder.userId,
-          `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${foundOrder.tokens} ⬦</b> (${foundOrder.rub} ₽)!\nПриятной игры в MoneyForUp!`,
+          `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${r.tokens} ⬦</b> (${foundOrder.rub} ₽)${bonusText}!\nПриятной игры в MoneyForUp!`,
           { parse_mode: 'HTML' }
         ).catch(() => {});
 
@@ -2247,6 +2342,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* АДМИН-ПАНЕЛЬ: строго только для владельца (isAdmin) */
+    if (url.pathname === '/api/admin/metrics' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      const period = String(body.period || 'all');
+      return send(200, db.getAdminMetrics(period));
+    }
+
     if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
       if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
       const dbOrders = db.getAllOrders();
@@ -2262,6 +2363,7 @@ const server = http.createServer(async (req, res) => {
           userDepositedRub: usrDep,
           rub: o.rub,
           tokens: o.tokens,
+          bonus: o.bonus || '',
           method: o.method || o.bank || o.source || 'СБП / Карта',
           details: o.details || o.card || '',
           status: o.status,
@@ -2269,10 +2371,12 @@ const server = http.createServer(async (req, res) => {
         };
       }).slice(0, 50);
 
+      const period = String(body.period || 'all');
       return send(200, {
         ok: true,
         deposits: allOrders.filter(x => x.type !== 'withdraw').slice(0, 30),
         withdrawals: allOrders.filter(x => x.type === 'withdraw').slice(0, 30),
+        adminMetrics: db.getAdminMetrics(period),
         stats12h: betsMonitor.getAnalytics(12),
         stats24h: betsMonitor.getAnalytics(24),
         statsAll: betsMonitor.getAnalytics(0)
@@ -2612,11 +2716,20 @@ const server = http.createServer(async (req, res) => {
       if (!plategaOn()) return send(503, { error: 'Platega не настроена' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
-      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
-      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
-      if (tokens > maxAllowed) tokens = maxAllowed;
+      const baseTokens = Math.floor(rub * TOKENS_PER_RUB);
+      const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
+                         (!u.lastDeposit || u.lastDeposit <= 0) &&
+                         !u.firstDepositBonusClaimed;
+      const wantsBonus25 = String(body.bonus || '') === '25';
+      const willGetBonus25 = wantsBonus25 && isEligible;
+      const bonusTokens = willGetBonus25 ? Math.floor(baseTokens * 0.25) : 0;
+      const tokens = baseTokens + bonusTokens;
       try {
-        return send(200, await plategaCreate(u, rub, tokens, tgUser.first_name));
+        return send(200, await plategaCreate(u, rub, tokens, tgUser.first_name, {
+          bonus: willGetBonus25 ? '25' : '',
+          baseTokens,
+          bonusTokens
+        }));
       } catch (e) {
         /* провайдер недоступен — отдаём пустой ответ, приложение предложит заявку вручную */
         return send(200, { error: String(e.message || e), tokens });
@@ -2639,11 +2752,20 @@ const server = http.createServer(async (req, res) => {
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
-      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
-      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
-      if (tokens > maxAllowed) tokens = maxAllowed;
+      const baseTokens = Math.floor(rub * TOKENS_PER_RUB);
+      const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
+                         (!u.lastDeposit || u.lastDeposit <= 0) &&
+                         !u.firstDepositBonusClaimed;
+      const wantsBonus25 = String(body.bonus || '') === '25';
+      const willGetBonus25 = wantsBonus25 && isEligible;
+      const bonusTokens = willGetBonus25 ? Math.floor(baseTokens * 0.25) : 0;
+      const tokens = baseTokens + bonusTokens;
       try {
-        const inv = await createCoinsoInvoice(u.id, tokens, rub);
+        const inv = await createCoinsoInvoice(u.id, tokens, rub, {
+          bonus: willGetBonus25 ? '25' : '',
+          baseTokens,
+          bonusTokens
+        });
         return send(200, inv);
       } catch (e) {
         return send(500, { error: String(e.message || e), tokens });
@@ -2661,21 +2783,42 @@ const server = http.createServer(async (req, res) => {
       }
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
       if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
+      const baseTokens = Math.floor(rub * TOKENS_PER_RUB);
+      const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
+                         (!u.lastDeposit || u.lastDeposit <= 0) &&
+                         !u.firstDepositBonusClaimed;
+      const wantsBonus25 = String(body.bonus || '') === '25';
+      const willGetBonus25 = wantsBonus25 && isEligible;
+      const bonusTokens = willGetBonus25 ? Math.floor(baseTokens * 0.25) : 0;
+      const tokens = baseTokens + bonusTokens;
       const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
-      const maxAllowed = Math.floor(rub * TOKENS_PER_RUB * (body.bonus === '25' ? 1.25 : 1.0));
-      let tokens = Math.max(10, Math.floor(Number(body.tokens) || (rub * TOKENS_PER_RUB)));
-      if (tokens > maxAllowed) tokens = maxAllowed;
       const bank = String(body.bank || 'СБП / Карта').trim();
       const card = String(body.card || '').trim();
       const sender = String(body.sender || '').trim();
-      const newOrder = { id, type: 'deposit', userId: u.id, tokens, rub, bank, card, sender, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
+      const newOrder = {
+        id,
+        type: 'deposit',
+        userId: u.id,
+        tokens,
+        baseTokens,
+        bonusTokens,
+        rub,
+        bank,
+        card,
+        sender,
+        status: 'pending',
+        source: 'СБП / Карта',
+        bonus: willGetBonus25 ? '25' : '',
+        createdAt: Date.now()
+      };
       setOrder(id, newOrder);
       if (ADMIN_ID) {
         const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
+        const bonusTagText = willGetBonus25 ? ` (+${bonusTokens} ⬦ бонус +25% на 1-й деп)` : '';
         const msg =
           `💳 <b>Новая заявка на пополнение №${escHtml(id)}</b>\n` +
           `├ Пользователь: <b>${escHtml(uLabel)}</b> (ID: <code>${u.id}</code>)\n` +
-          `├ Сумма: <b>${rub} ₽</b> (к зачислению: <b>+${tokens} ⬦</b>)\n` +
+          `├ Сумма: <b>${rub} ₽</b> (к зачислению: <b>+${tokens} ⬦</b>${bonusTagText})\n` +
           `├ Способ / Банк: <b>${escHtml(bank)}</b>\n` +
           (card ? `├ Реквизит: <code>${escHtml(card)}</code>\n` : '') +
           (sender ? `├ Отправитель / примечание: <code>${escHtml(sender)}</code>\n` : '') +
@@ -2687,7 +2830,7 @@ const server = http.createServer(async (req, res) => {
             .text('❌ Отклонить', 'no:' + id)
         }).catch(e => console.error('Не удалось отправить админу заявку СБП:', e.message));
       }
-      return send(200, { order_id: id, tokens, rub });
+      return send(200, { order_id: id, tokens, rub, bonusApplied: willGetBonus25 });
     }
 
     /* Уведомления пользователю в бот (ежедневный кейс / шкала челленджа) */
