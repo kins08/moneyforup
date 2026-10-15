@@ -153,11 +153,12 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
 .case-boost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,207,107,.15);border:1px solid #ffcf6b;color:#ffcf6b;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;margin-top:6px;animation:pulseTease .8s ease-in-out infinite alternate}
 /* ======== SPLASH, ПРЕВЬЮ ИГР, БУСТ-ИГРЫ, АВАТАРКА ======== */
-.mup-splash{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;overflow:hidden;transition:opacity .6s ease,visibility .6s ease}
+.mup-splash{position:fixed;inset:0;background:radial-gradient(circle at center, #1f0d14 0%, #080306 70%, #000000 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:hidden;transition:opacity .6s ease,visibility .6s ease}
 .mup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-.mup-splash-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:1;display:block}
-.mup-splash-bottom{position:relative;z-index:2;width:100%;max-width:360px;padding:32px 24px calc(28px + var(--tgSafe));display:flex;flex-direction:column;align-items:center;text-align:center;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.75) 40%,rgba(0,0,0,0.94) 100%)}
-.mup-splash-bar{height:5px;width:100%;max-width:220px;background:rgba(255,255,255,.14);border-radius:10px;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.mup-splash-center{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:380px;text-align:center}
+.mup-splash-logo-art{width:90vw;max-width:320px;max-height:55vh;object-fit:contain;display:block;filter:drop-shadow(0 0 35px rgba(239,68,68,.45));margin-bottom:30px;animation:splashBreathe 2.4s ease-in-out infinite alternate}
+@keyframes splashBreathe{0%{transform:scale(0.97);filter:drop-shadow(0 0 20px rgba(239,68,68,.3))}100%{transform:scale(1.02);filter:drop-shadow(0 0 45px rgba(239,68,68,.65))}}
+.mup-splash-bar{height:5px;width:100%;max-width:210px;background:rgba(255,255,255,.12);border-radius:10px;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.6)}
 .mup-splash-bar i{position:absolute;left:-50%;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#ef4444,#f97316);border-radius:10px;box-shadow:0 0 14px rgba(239,68,68,1);animation:splBar 1.2s infinite ease-in-out}
 .mup-splash-text{color:#f1f5f9;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-top:14px;text-shadow:0 2px 6px rgba(0,0,0,.95)}
 @keyframes splBar{0%{left:-50%;width:30%}50%{left:35%;width:60%}100%{left:100%;width:30%}}
@@ -737,8 +738,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <body>
 <!-- Плашка загрузки MUP в стиле футажа -->
 <div id="mupSplash" class="mup-splash">
-  <img src="assets/logo_mup.jpg" alt="MoneyForUp" class="mup-splash-bg">
-  <div class="mup-splash-bottom">
+  <div class="mup-splash-center">
+    <img src="assets/logo_mup.jpg" alt="MoneyForUp" class="mup-splash-logo-art">
     <div class="mup-splash-bar"><i></i></div>
     <div class="mup-splash-text">Загрузка MoneyForUp...</div>
   </div>
