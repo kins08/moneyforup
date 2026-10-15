@@ -8564,11 +8564,9 @@ function gameScratch(){
   let insurance = false;
   let isPlaying = false;
   let scratchGrid = null;
-  let won = false;
-  let winMult = 0;
-  let winTokens = 0;
-  let insuredRefund = 0;
-  let revealedCount = 0;
+  let pendingResult = null;
+  let revealedCells = new Set();
+  let isCardFinished = false;
 
   const SYMBOL_MAP = {
     knife: { icon: '🗡️', name: 'Керамбит', mult: '×50', color: '#ff3366' },
@@ -8588,10 +8586,10 @@ function gameScratch(){
           <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
         </div>
         <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
-          ${[20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet?'active':''}" data-sbet="${b}" style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+          ${[20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!scratchGrid?'active':''}" data-sbet="${b}" ${scratchGrid?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
         </div>
 
-        <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle">
+        <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle" style="${scratchGrid?'pointer-events:none;opacity:.6':''}">
           <div>
             <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка билета (+15%)</div>
             <div style="font-size:11px;color:#94a3b8">При проигрыше вернём 35% ставки</div>
@@ -8635,10 +8633,16 @@ function gameScratch(){
           }).join('')}
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="secondary" id="scratchRevealAllBtn" style="flex:1;padding:12px;font-size:13px;font-weight:800">⚡ Стереть всё</button>
+          <button class="secondary" id="scratchRevealAllBtn" style="flex:1;padding:12px;font-size:13px;font-weight:800" ${isCardFinished?'disabled':''}>⚡ Стереть всё</button>
           <button class="primary" id="scratchNewBtn" style="flex:1;padding:12px;font-size:13px;font-weight:800">Ещё билет</button>
         </div>
-        <div id="scratchResultMsg" style="margin-top:12px"></div>
+        <div id="scratchResultMsg" style="margin-top:12px;${isCardFinished ? '' : 'display:none;'}">
+          ${isCardFinished && pendingResult ? (
+            pendingResult.won
+              ? `<div class="result good">🎉 <b>ВЫИГРЫШ ×${pendingResult.winMult}!</b> Совпали 3 символа: <b>+${fmt(pendingResult.winTokens)} ⬦</b> зачислено на баланс!</div>`
+              : `<div class="result bad">❌ <b>Билет не сыграл!</b> Попробуйте следующий билет!${pendingResult.insuredReturn > 0 ? `<br>🛡️ <i>Страховка сработала: +${pendingResult.insuredReturn} ⬦ возвращено на счёт!</i>` : ''}</div>`
+          ) : ''}
+        </div>
       `;
     }
 
@@ -8649,10 +8653,10 @@ function gameScratch(){
 
   function attachEvents(){
     qa('[data-sbet]').forEach(b => {
-      b.onclick = () => { curBet = Number(b.dataset.sbet); render(); };
+      b.onclick = () => { if(!scratchGrid){ curBet = Number(b.dataset.sbet); render(); } };
     });
     const insToggle = q('#scratchInsToggle');
-    if(insToggle){
+    if(insToggle && !scratchGrid){
       insToggle.onclick = () => { insurance = !insurance; render(); };
     }
     const buyBtn = q('#scratchBuyBtn');
@@ -8665,7 +8669,13 @@ function gameScratch(){
     }
     const newBtn = q('#scratchNewBtn');
     if(newBtn){
-      newBtn.onclick = () => { scratchGrid = null; render(); };
+      newBtn.onclick = () => {
+        scratchGrid = null;
+        pendingResult = null;
+        isCardFinished = false;
+        revealedCells.clear();
+        render();
+      };
     }
   }
 
@@ -8679,6 +8689,9 @@ function gameScratch(){
     }
 
     isPlaying = true;
+    // Списываем только стоимость билета до завершения стирания, чтобы не спойлерить баланс
+    setTokens(Math.max(0, S.balance - totalCost));
+
     const btn = q('#scratchBuyBtn');
     if(btn) {
       btn.disabled = true;
@@ -8699,8 +8712,6 @@ function gameScratch(){
     // Фолбэк для оффлайн/демо
     if(!r || !r.ok){
       if(!IS_TG || !API_BASE){
-        S.balance -= totalCost;
-        save(); syncUI();
         const willWin = Math.random() < 0.37;
         const symKeys = Object.keys(SYMBOL_MAP);
         const wonSym = willWin ? symKeys[Math.floor(Math.random() * symKeys.length)] : null;
@@ -8716,9 +8727,7 @@ function gameScratch(){
           }
           const multVal = parseFloat(SYMBOL_MAP[wonSym].mult.replace('×','')) || 2;
           const winTk = Math.floor(curBet * multVal);
-          S.balance += winTk;
-          save(); syncUI();
-          r = { ok: true, grid, won: true, winMult: multVal, winTokens: winTk, insuredReturn: 0, tokens: S.balance };
+          r = { ok: true, grid, won: true, winMult: multVal, winTokens: winTk, insuredReturn: 0, tokens: S.balance + winTk };
         } else {
           for(let i=0; i<9; i++){
             grid[i] = symKeys[Math.floor(Math.random()*symKeys.length)];
@@ -8726,13 +8735,13 @@ function gameScratch(){
           let insRet = 0;
           if(insurance){
             insRet = Math.floor(curBet * 0.35);
-            S.balance += insRet;
-            save(); syncUI();
           }
-          r = { ok: true, grid, won: false, winMult: 0, winTokens: 0, insuredReturn: insRet, tokens: S.balance };
+          r = { ok: true, grid, won: false, winMult: 0, winTokens: 0, insuredReturn: insRet, tokens: S.balance + insRet };
         }
       } else {
         isPlaying = false;
+        // Возврат токенов при сбое запроса
+        setTokens(S.balance + totalCost);
         showAppNotification(r && r.error ? r.error : 'Не удалось купить билет');
         render();
         return;
@@ -8742,13 +8751,17 @@ function gameScratch(){
     isPlaying = false;
     tgHaptic('medium');
     scratchGrid = r.grid;
-    won = r.won;
-    winMult = r.winMult;
-    winTokens = r.winTokens;
-    insuredRefund = r.insuredReturn || 0;
-    revealedCount = 0;
-    if(r.tokens != null) setTokens(r.tokens);
+    pendingResult = {
+      won: r.won,
+      winMult: r.winMult,
+      winTokens: r.winTokens,
+      insuredReturn: r.insuredReturn || 0,
+      tokens: r.tokens
+    };
+    revealedCells = new Set();
+    isCardFinished = false;
 
+    // ВАЖНО: setTokens(r.tokens) здесь НЕ вызывается, чтобы не раскрывать выигрыш заранее!
     render();
   }
 
@@ -8779,6 +8792,7 @@ function gameScratch(){
       let erasedCount = 0;
 
       function eraseAt(clientX, clientY){
+        if(revealedCells.has(idx) || isCardFinished) return;
         const cRect = canvas.getBoundingClientRect();
         const x = clientX - cRect.left;
         const y = clientY - cRect.top;
@@ -8788,14 +8802,16 @@ function gameScratch(){
         ctx.fill();
         tgHaptic('light');
         erasedCount++;
-        if(erasedCount > 5 && canvas.style.display !== 'none'){
-          canvas.style.transition = 'opacity .3s';
+        if(erasedCount > 5 && !revealedCells.has(idx)){
+          revealedCells.add(idx);
+          canvas.style.transition = 'opacity .25s ease';
           canvas.style.opacity = '0';
           setTimeout(() => {
             canvas.style.display = 'none';
-            revealedCount++;
-            if(revealedCount >= 9) showResult();
-          }, 300);
+            if(revealedCells.size >= 9 && !isCardFinished){
+              finishScratch();
+            }
+          }, 250);
         }
       }
 
@@ -8815,29 +8831,53 @@ function gameScratch(){
   }
 
   function revealAll(){
-    qa('.scratch-cell canvas').forEach(c => {
-      c.style.transition = 'opacity .35s';
+    if(isCardFinished) return;
+    qa('.scratch-cell canvas').forEach((c, idx) => {
+      revealedCells.add(idx);
+      c.style.transition = 'opacity .25s ease';
       c.style.opacity = '0';
-      setTimeout(() => { c.style.display = 'none'; }, 350);
+      setTimeout(() => { c.style.display = 'none'; }, 260);
     });
     tgHaptic('medium');
-    revealedCount = 9;
-    setTimeout(showResult, 380);
+    setTimeout(() => {
+      if(!isCardFinished) finishScratch();
+    }, 280);
   }
 
-  function showResult(){
+  function finishScratch(){
+    if(isCardFinished || !pendingResult) return;
+    isCardFinished = true;
+
+    // Только теперь обновляем баланс на стороне клиента
+    if(pendingResult.tokens != null){
+      setTokens(pendingResult.tokens);
+    }
+
     const resEl = q('#scratchResultMsg');
     if(!resEl) return;
-    if(won){
+
+    if(pendingResult.won){
       tgHaptic('win');
       resEl.className = 'result good';
-      resEl.innerHTML = `🎉 <b>ВЫИГРЫШ ×${winMult}!</b> Совпали 3 символа: <b>+${fmt(winTokens)} ⬦</b> зачислено на баланс!`;
+      resEl.innerHTML = `🎉 <b>ВЫИГРЫШ ×${pendingResult.winMult}!</b> Совпали 3 символа: <b>+${fmt(pendingResult.winTokens)} ⬦</b> зачислено на баланс!`;
     } else {
       tgHaptic('lose');
       resEl.className = 'result bad';
-      const insText = insuredRefund > 0 ? `<br>🛡️ <i>Страховка сработала: +${insuredRefund} ⬦ возвращено на счёт!</i>` : '';
-      resEl.innerHTML = `❌ <b>Билет не сыграл!</b> Попробуйте стереть следующий билет!${insText}`;
+      const insText = pendingResult.insuredReturn > 0 ? `<br>🛡️ <i>Страховка сработала: +${pendingResult.insuredReturn} ⬦ возвращено на счёт!</i>` : '';
+      resEl.innerHTML = `❌ <b>Билет не сыграл!</b> Попробуйте следующий билет!${insText}`;
     }
+
+    resEl.style.opacity = '0';
+    resEl.style.transform = 'translateY(8px)';
+    resEl.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+    resEl.style.display = 'block';
+    requestAnimationFrame(() => {
+      resEl.style.opacity = '1';
+      resEl.style.transform = 'translateY(0)';
+    });
+
+    const revAllBtn = q('#scratchRevealAllBtn');
+    if(revAllBtn) revAllBtn.disabled = true;
   }
 
   render();
@@ -8858,6 +8898,7 @@ function gameRevolver(){
   let isSpinning = false;
   let currentRotation = 0;
   let offlineBullet = 0;
+  let roundOutcome = null; // { type: 'lose' | 'step' | 'win', text: string }
 
   const REVOLVER_MULTS = { 1: 1.18, 2: 1.45, 3: 1.95, 4: 2.90, 5: 5.80, 6: 29.00 };
 
@@ -8914,7 +8955,17 @@ function gameRevolver(){
           </div>
         `}
 
-        <div id="revResultMsg" style="margin-top:14px"></div>
+        ${roundOutcome ? `
+          <div id="revResultMsg" class="result ${roundOutcome.type === 'lose' ? 'bad' : 'good'}" style="margin-top:14px">
+            ${roundOutcome.text}
+          </div>
+        ` : (inRound ? `
+          <div id="revResultMsg" class="result" style="margin-top:14px">
+            🎯 <b>Револьвер заряжен!</b> 1 боевой патрон. Жми «СПУСТИТЬ КУРОК»!
+          </div>
+        ` : `
+          <div id="revResultMsg" style="margin-top:14px;display:none"></div>
+        `)}
       </div>
     `;
 
@@ -8924,7 +8975,7 @@ function gameRevolver(){
 
   function attachEvents(){
     qa('[data-rbet]').forEach(b => {
-      b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.rbet); render(); } };
+      b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.rbet); roundOutcome = null; render(); } };
     });
     const insToggle = q('#revInsToggle');
     if(insToggle && !inRound){
@@ -8947,6 +8998,8 @@ function gameRevolver(){
       return;
     }
 
+    // Сброс предыдущего статуса раунда при новом старте
+    roundOutcome = null;
     isSpinning = true;
     const btn = q('#revStartBtn');
     if(btn){
@@ -8985,14 +9038,10 @@ function gameRevolver(){
     step = 0;
     curMult = 1.0;
     potWin = curBet;
+    roundOutcome = null; // Строгий сброс перед выстрелом
     if(r.balance != null) setTokens(r.balance);
     tgHaptic('medium');
     render();
-    const resEl = q('#revResultMsg');
-    if(resEl){
-      resEl.className = 'result good';
-      resEl.innerHTML = `🎯 <b>Револьвер заряжен!</b> 1 боевой патрон. Жми «СПУСТИТЬ КУРОК»!`;
-    }
   }
 
   async function pullTrigger(){
@@ -9048,25 +9097,25 @@ function gameRevolver(){
     if(r.balance != null) setTokens(r.balance);
 
     if(r.fired){
+      // Отрицательный исход: строго красный (.result.bad)
       inRound = false;
       tgHaptic('lose');
+      const ins = r.insuredReturn ? `<br>🛡️ <i>Страховка вернула +${r.insuredReturn} ⬦ на баланс</i>` : '';
+      roundOutcome = {
+        type: 'lose',
+        text: `💥 <b>БАБАХ! БОЕВОЙ ПАТРОН В КАМОРЕ #${r.bullet || step}!</b> Ставка сгорела.${ins}`
+      };
       render();
-      const resEl = q('#revResultMsg');
-      if(resEl){
-        resEl.className = 'result bad';
-        const ins = r.insuredReturn ? `<br>🛡️ <i>Страховка вернула +${r.insuredReturn} ⬦ на баланс</i>` : '';
-        resEl.innerHTML = `💥 <b>БАБАХ! БОЕВОЙ ПАТРОН В КАМОРЕ #${r.bullet}!</b> Ставка сгорела.${ins}`;
-      }
     } else {
+      // Положительный исход: строго зелёный (.result.good)
       tgHaptic('win');
       curMult = r.mult;
       potWin = r.potWin;
+      roundOutcome = {
+        type: 'step',
+        text: `*Щёлк* <b>ХОЛОСТОЙ!</b> Множитель вырос до <b>×${curMult.toFixed(2)}</b>! Забери <b>${potWin} ⬦</b> или рискни ещё раз!`
+      };
       render();
-      const resEl = q('#revResultMsg');
-      if(resEl){
-        resEl.className = 'result good';
-        resEl.innerHTML = `*Щёлк* <b>ХОЛОСТОЙ!</b> Множитель вырос до <b>×${curMult.toFixed(2)}</b>! Забери <b>${potWin} ⬦</b> или рискни ещё раз!`;
-      }
     }
   }
 
@@ -9095,15 +9144,15 @@ function gameRevolver(){
       }
     }
 
+    // Положительный исход кэшаута: строго зелёный (.result.good)
     inRound = false;
     tgHaptic('win');
     if(r.balance != null) setTokens(r.balance);
+    roundOutcome = {
+      type: 'win',
+      text: `🎉 <b>КЭШАУТ ×${r.mult}!</b> Зачислено <b>+${fmt(r.win)} ⬦</b> на баланс!`
+    };
     render();
-    const resEl = q('#revResultMsg');
-    if(resEl){
-      resEl.className = 'result good';
-      resEl.innerHTML = `🎉 <b>КЭШАУТ ×${r.mult}!</b> Зачислено <b>+${fmt(r.win)} ⬦</b> на баланс!`;
-    }
   }
 
   render();
@@ -9120,6 +9169,7 @@ function gameSafe(){
   let guessesCount = 0;
   let attempts = [];
   let isGuessing = false;
+  let safeOutcome = null; // { won: boolean, text: string }
   let offlineCode = '7429';
 
   async function loadStatus(){
@@ -9129,7 +9179,7 @@ function gameSafe(){
         if(r && r.ok){
           jackpot = r.jackpot;
           guessesCount = r.guessesCount;
-          attempts = r.recentAttempts || [];
+          attempts = (r.recentAttempts || []).map(att => ({ code: att.code, won: att.won || (att.bulls === 4) }));
           if(r.balance != null) setTokens(r.balance);
           render();
         }
@@ -9167,10 +9217,16 @@ function gameSafe(){
           ${isGuessing ? 'Подбор кода...' : '🔓 ВЗЛОМАТЬ СЕЙФ (25 ⬦)'}
         </button>
 
-        <div id="safeResultMsg" style="margin-top:12px"></div>
+        ${safeOutcome ? `
+          <div id="safeResultMsg" class="result ${safeOutcome.won ? 'good' : 'bad'}" style="margin-top:12px">
+            ${safeOutcome.text}
+          </div>
+        ` : `
+          <div id="safeResultMsg" style="margin-top:12px;display:none"></div>
+        `}
       </div>
 
-      <!-- История попыток с подсказками -->
+      <!-- История попыток БЕЗ подсказок совпадений цифр -->
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:14px">
         <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-bottom:8px">ВАШИ ПОСЛЕДНИЕ ПОПЫТКИ:</div>
         <div id="safeAttemptsList">
@@ -9180,8 +9236,7 @@ function gameSafe(){
                 <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px;border:1px solid ${att.won?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.04)'}">
                   <b style="font-family:monospace;letter-spacing:.15em;font-size:14px;color:#fff">${att.code}</b>
                   <div>
-                    <span style="color:#10b981;font-weight:800;margin-right:8px">🎯 ${att.bulls} на месте</span>
-                    <span style="color:#ffcf6b;font-weight:800">🔄 ${att.cows} есть в коде</span>
+                    ${att.won ? '<span style="color:#10b981;font-weight:800">🔓 ВЗЛОМАН</span>' : '<span style="color:#ef4444;font-weight:700">❌ Неверный код</span>'}
                   </div>
                 </div>
               `).join('')}
@@ -9224,6 +9279,7 @@ function gameSafe(){
     }
 
     isGuessing = true;
+    safeOutcome = null;
     const btn = q('#safeSubmitBtn');
     if(btn){
       btn.disabled = true;
@@ -9246,18 +9302,9 @@ function gameSafe(){
       if(!IS_TG || !API_BASE){
         S.balance -= 25;
         save(); syncUI();
-        let b = 0, c = 0;
-        const secUsed = [false, false, false, false];
-        const gUsed = [false, false, false, false];
+        let b = 0;
         for(let i=0; i<4; i++){
-          if(guessCode[i] === offlineCode[i]){ b++; secUsed[i]=true; gUsed[i]=true; }
-        }
-        for(let i=0; i<4; i++){
-          if(!gUsed[i]){
-            for(let j=0; j<4; j++){
-              if(!secUsed[j] && guessCode[i] === offlineCode[j]){ c++; secUsed[j]=true; break; }
-            }
-          }
+          if(guessCode[i] === offlineCode[i]) b++;
         }
         jackpot += 15;
         guessesCount += 1;
@@ -9270,7 +9317,7 @@ function gameSafe(){
           jackpot = 25000;
           offlineCode = String(Math.floor(1000 + Math.random()*9000));
         }
-        r = { ok: true, code: guessCode, won, bulls: b, cows: c, winTokens, jackpot, guessesCount, balance: S.balance };
+        r = { ok: true, code: guessCode, won, winTokens, jackpot, guessesCount, balance: S.balance };
       } else {
         isGuessing = false;
         showAppNotification(r && r.error ? r.error : 'Ошибка отправки кода');
@@ -9284,29 +9331,28 @@ function gameSafe(){
     jackpot = r.jackpot;
     guessesCount = r.guessesCount;
 
-    // Добавляем попытку в начало списка
-    attempts.unshift({ code: guessCode, bulls: r.bulls, cows: r.cows, won: r.won });
+    // Добавляем попытку в начало списка (без подсказок цифр)
+    attempts.unshift({ code: guessCode, won: r.won });
     if(attempts.length > 8) attempts.pop();
 
-    // Очищаем введённый код
     enteredCode = '';
 
-    // Перерисовываем экран (список попыток внизу мгновенно обновляется)
-    render();
-
-    // Показываем сочный результат
-    const res = q('#safeResultMsg');
-    if(res){
-      if(r.won){
-        tgHaptic('win');
-        res.className = 'result good';
-        res.innerHTML = `🎉 <b>СЕЙФ ВЗЛОМАН! ВЫ СОРВАЛИ КУШ!</b> Код <b>${r.code}</b> подошёл! Начислено <b>+${fmt(r.winTokens)} ⬦</b>!`;
-      } else {
-        tgHaptic('medium');
-        res.className = 'result bad';
-        res.innerHTML = `❌ Код <b>${guessCode}</b> не подошёл!<br>Подсказка: <b>🎯 ${r.bulls} на месте</b> · <b>🔄 ${r.cows} есть в коде</b>. Списано 25 ⬦.`;
-      }
+    if(r.won){
+      tgHaptic('win');
+      safeOutcome = {
+        won: true,
+        text: `🎉 <b>СЕЙФ ВЗЛОМАН! ВЫ СОРВАЛИ КУШ!</b> Код <b>${r.code}</b> подошёл! Начислено <b>+${fmt(r.winTokens)} ⬦</b>!`
+      };
+    } else {
+      tgHaptic('medium');
+      safeOutcome = {
+        won: false,
+        text: `❌ Код <b>${guessCode}</b> не подошёл! Списано 25 ⬦. Попробуйте другой шифр!`
+      };
     }
+
+    // Перерисовываем экран (список попыток и баланс мгновенно обновляются)
+    render();
   }
 
   render();
