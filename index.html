@@ -153,7 +153,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
 .case-boost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,207,107,.15);border:1px solid #ffcf6b;color:#ffcf6b;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;margin-top:6px;animation:pulseTease .8s ease-in-out infinite alternate}
 /* ======== SPLASH, ПРЕВЬЮ ИГР, БУСТ-ИГРЫ, АВАТАРКА ======== */
-.mup-splash{position:fixed;inset:0;background:#0d111a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;transition:opacity .5s ease,visibility .5s ease}
+.mup-splash{position:fixed;inset:0;background:radial-gradient(circle at center, #1f0d14 0%, #080306 70%, #000000 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;transition:opacity .5s ease,visibility .5s ease}
 .mup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
 .mup-splash-center{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:340px;position:relative}
 .mup-splash-logo-art{width:78vw;max-width:270px;height:auto;object-fit:contain;display:block;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));animation:splashPopIn .5s cubic-bezier(0.16,1,0.3,1)}
@@ -2212,7 +2212,7 @@ function loadInventory(){
 }
 
 function sellInventoryItem(itemId){
-  const item = (S.inventory||[]).find(it => it.id === itemId);
+  const item = (S.inventory||[]).find(it => String(it.id) === String(itemId));
   if(!item) return;
   if(item.upgrade_only){
     showAppNotification('Этот скин нельзя продать — только проапгрейдить в Upgrader!');
@@ -2222,8 +2222,9 @@ function sellInventoryItem(itemId){
   // Демо-режим (нет сервера) — деньги ненастоящие, считаем локально
   if(!IS_TG||!API_BASE){
     S.balance += item.price;
-    S.inventory = S.inventory.filter(it => it.id !== itemId);
+    S.inventory = S.inventory.filter(it => String(it.id) !== String(itemId));
     save(); syncUI(); tgHaptic('win');
+    renderProfileInventory();
     return;
   }
 
@@ -2232,12 +2233,13 @@ function sellInventoryItem(itemId){
       S.balance=r.tokens;
       try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
     }
-    S.inventory=(S.inventory||[]).filter(it=>it.id!==itemId);
+    S.inventory=(S.inventory||[]).filter(it=>String(it.id)!==String(itemId));
     save(); syncUI(); tgHaptic('win');
+    renderProfileInventory();
     showAppNotification(`Продано: ${item.icon} ${item.name} · +${fmt((r.sold&&r.sold.price)||item.price)} ⬦`);
   }).catch(err=>{
     showAppNotification((err&&err.message)||'Не удалось продать предмет');
-    loadInventory();     // сервер — источник правды, приводим экран к нему
+    loadInventory().then(() => renderProfileInventory());
   });
 }
 
@@ -2344,7 +2346,7 @@ function openItemDetailModal(it){
   if(upBtn) upBtn.onclick = () => {
     modal.remove();
     play('upgrader');
-    if(window.__upgraderSelectItem) window.__upgraderSelectItem(it);
+    if(window.__upgraderSelectItem) window.__upgraderSelectItem(it, 100);
   };
 
   const sellBtn = q('#btnModalSellItem', modal);
@@ -2407,7 +2409,7 @@ function renderProfileInventory(){
   qa('.inv-card', grid).forEach(card => {
     card.onclick = (e) => {
       if(e.target.closest('[data-sell-id]') || e.target.closest('[data-up-id]')) return;
-      const it = S.inventory.find(x => x.id === card.dataset.cardId);
+      const it = S.inventory.find(x => String(x.id) === String(card.dataset.cardId));
       if(it) openItemDetailModal(it);
     };
   });
@@ -2422,10 +2424,10 @@ function renderProfileInventory(){
   qa('[data-up-id]', grid).forEach(b => {
     b.onclick = (e) => {
       e.stopPropagation();
-      const it = S.inventory.find(x => x.id === b.dataset.upId);
+      const it = S.inventory.find(x => String(x.id) === String(b.dataset.upId));
       if(!it) return;
       play('upgrader');
-      if(window.__upgraderSelectItem) window.__upgraderSelectItem(it);
+      if(window.__upgraderSelectItem) window.__upgraderSelectItem(it, 100);
     };
   });
 }
@@ -5214,7 +5216,20 @@ function gameSpin(){
       }
       const roundBet = S.bet;
       busy = true;
-      const rnd = place(roundBet, 'Спин');
+
+      // Динамический выбор сектора Колеса с вариативностью
+      const winSectors = curM.pay.map((p, i) => p >= 1 ? { idx: i, pay: p, w: (curM.w && curM.w[i]) || 10 } : null).filter(Boolean);
+      let candMult = 2.0;
+      if(winSectors.length > 0){
+        const totalW = winSectors.reduce((sum, s) => sum + s.w, 0);
+        let rollW = Math.random() * totalW;
+        for(const s of winSectors){
+          rollW -= s.w;
+          if(rollW <= 0){ candMult = s.pay; break; }
+        }
+      }
+
+      const rnd = place(roundBet, 'Спин', candMult);
       clearSpinTimers();
 
       sr.className = 'result';
@@ -5234,20 +5249,21 @@ function gameSpin(){
           isWin = (rnd.verdict === 'win');
           finalAmt = rnd.win || 0;
         } else {
-          let pick = Math.random() * 100, cum = 0, defIdx = 0;
-          for(let i = 0; i < curM.w.length; i++){ cum += curM.w[i]; if(pick < cum){ defIdx = i; break; } }
-          isWin = evalBaitTrap('spin', curM.pay[defIdx] >= 1, roundBet, Math.max(1.2, curM.pay[defIdx]));
+          const localWinChance = Math.min(0.75, Math.max(0.0094, 0.94 / candMult));
+          isWin = evalBaitTrap('spin', Math.random() < localWinChance, roundBet, candMult);
+          finalAmt = isWin ? Math.floor(roundBet * candMult) : 0;
         }
 
         let idx = 0;
         if(isWin){
-          const winIdxs = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
-          if(finalAmt > 0){
-            const targetPay = finalAmt / roundBet;
-            winIdxs.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
-            idx = winIdxs[0];
+          const targetPay = (finalAmt > 0) ? (finalAmt / roundBet) : candMult;
+          const matched = curM.pay.map((p, i) => Math.abs(p - targetPay) < 0.05 ? i : -1).filter(i => i !== -1);
+          if(matched.length > 0){
+            idx = matched[Math.floor(Math.random() * matched.length)];
           } else {
-            idx = winIdxs[Math.floor(Math.random() * winIdxs.length)] || 0;
+            const winIdxs = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
+            winIdxs.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
+            idx = winIdxs[0] || 0;
           }
         } else {
           const lossIdxs = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
@@ -5425,7 +5441,20 @@ function gameDrop(){
       }
       const roundBet = S.bet;
       busy = true;
-      const rnd = place(roundBet, 'Дроп');
+
+      // Динамический кандидат победного множителя с вариативностью
+      const winSlotsAll = curM.pay.map((p, i) => p >= 1 ? { slot: i, pay: p } : null).filter(Boolean);
+      let candMult = 2.0;
+      if(winSlotsAll.length > 0){
+        const totalW = winSlotsAll.reduce((sum, s) => sum + (1 / Math.sqrt(s.pay)), 0);
+        let rollW = Math.random() * totalW;
+        for(const s of winSlotsAll){
+          rollW -= (1 / Math.sqrt(s.pay));
+          if(rollW <= 0){ candMult = s.pay; break; }
+        }
+      }
+
+      const rnd = place(roundBet, 'Дроп', candMult);
       qa('.slot').forEach(e => e.classList.remove('hit'));
       dr.className = 'result';
       dr.textContent = 'Шарик проходит развилки…';
@@ -5440,19 +5469,21 @@ function gameDrop(){
           isWin = (rnd.verdict === 'win');
           finalAmt = rnd.win || 0;
         } else {
-          const randSlot = Math.floor(Math.random() * curM.slots);
-          isWin = evalBaitTrap('drop', curM.pay[randSlot] >= 1, roundBet, Math.max(1.2, curM.pay[randSlot]));
+          const localWinChance = Math.min(0.75, Math.max(0.0094, 0.94 / candMult));
+          isWin = evalBaitTrap('drop', Math.random() < localWinChance, roundBet, candMult);
+          finalAmt = isWin ? Math.floor(roundBet * candMult) : 0;
         }
 
         let slot = 0;
         if(isWin){
-          const winSlots = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
-          if(finalAmt > 0){
-            const targetPay = finalAmt / roundBet;
-            winSlots.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
-            slot = winSlots[0];
+          const targetPay = (finalAmt > 0) ? (finalAmt / roundBet) : candMult;
+          const matched = curM.pay.map((p, i) => Math.abs(p - targetPay) < 0.05 ? i : -1).filter(i => i !== -1);
+          if(matched.length > 0){
+            slot = matched[Math.floor(Math.random() * matched.length)];
           } else {
-            slot = winSlots[Math.floor(Math.random() * winSlots.length)] || 0;
+            const winSlots = curM.pay.map((p, i) => p >= 1 ? i : -1).filter(i => i !== -1);
+            winSlots.sort((a, b) => Math.abs(curM.pay[a] - targetPay) - Math.abs(curM.pay[b] - targetPay));
+            slot = winSlots[0] || 0;
           }
         } else {
           const lossSlots = curM.pay.map((p, i) => p < 1 ? i : -1).filter(i => i !== -1);
@@ -5492,7 +5523,7 @@ function gameDrop(){
       const sl = q('#ds' + k); if(sl) sl.classList.add('hit');
       const v = curM.pay[k];
       const isWin = (__rnd && __rnd.verdict) ? (__rnd.verdict === 'win') : (v >= 1);
-      const amount = (__rnd && __rnd.verdict === 'win') ? (__rnd.win || Math.floor(roundBet * v)) : (isWin ? Math.floor(roundBet * v) : 0);
+      const amount = (__rnd && __rnd.verdict === 'win') ? (__rnd.win || Math.floor(roundBet * v)) : (isWin && !__rnd ? Math.floor(roundBet * v) : 0);
       if(amount > 0) win(amount, 'Дроп', 'лунка ' + (k + 1) + ' ×' + fx(v, v % 1 ? 1 : 0), __rnd);
       dr.className = 'result ' + (amount >= roundBet ? 'good' : 'bad');
       dr.innerHTML = 'Шарик упал в лунку ' + (k + 1) + ': <b style="color:' + band(v) + '">×' + fx(v, v % 1 ? 1 : 0) + '</b> → ' + (amount > 0 ? '<b>+' + fmt(amount) + ' ⬦</b> (≈ ' + fmtRub(amount) + ')' : 'возврат 0 ⬦ (ставка ' + roundBet + ' ⬦ ≈ ' + fmtRub(roundBet) + ')');
@@ -6612,7 +6643,7 @@ function gameCases(){
           const upBtn = q('#btnCaseUpgrade');
           if(upBtn) upBtn.onclick = () => {
             play('upgrader');
-            if(window.__upgraderSelectItem) window.__upgraderSelectItem(dropItem);
+            if(window.__upgraderSelectItem) window.__upgraderSelectItem(dropItem, 100);
           };
 
           const sellBtn = q('#btnCaseSellInstant');
@@ -7941,8 +7972,10 @@ function initLiveTicker(){
    РЕЖИМ 11: АПГРЕЙДЕР (UPGRADER) — Классика RubUp & Case-Battle
    ======================================================================= */
 let selectedUpgraderItem = null;
-window.__upgraderSelectItem = function(item){
+let selectedUpgraderMult = null;
+window.__upgraderSelectItem = function(item, targetMult){
   selectedUpgraderItem = item;
+  selectedUpgraderMult = targetMult ? Number(targetMult) : 100;
 };
 
 function gameUpgrader(){
@@ -7953,8 +7986,9 @@ function gameUpgrader(){
   let wheelRot = 0;
   let useInventory = false;
   let directBet = 100;
-  let curMult = 2.0;
-  let curChance = 47.0; // 94 / 2.0 = 47.0%
+  let curMult = (selectedUpgraderMult != null) ? selectedUpgraderMult : 100.0;
+  let curChance = +(94.0 / curMult).toFixed(2);
+  selectedUpgraderMult = null;
 
   const targets = [
     { mult: 1.5, chance: 62.67, name: '×1.5 Рост' },
@@ -8582,10 +8616,14 @@ function gameScratch(){
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">НОМИНАЛ БИЛЕТА</span>
-          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="scratchCustomBet" class="betinput" min="20" max="50000" step="10" value="${curBet}" style="width:85px;height:30px;padding:4px 8px;font-size:13px;font-weight:900;text-align:right" ${scratchGrid?'disabled':''}>
+            <span style="font-size:13px;font-weight:900;color:#fff">⬦</span>
+          </div>
         </div>
         <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
           ${[20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!scratchGrid?'active':''}" data-sbet="${b}" ${scratchGrid?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+          <button class="chip" id="scratchBetMax" ${scratchGrid?'disabled':''} style="padding:6px 12px;font-size:12px">МАКС</button>
         </div>
 
         <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle" style="${scratchGrid?'pointer-events:none;opacity:.6':''}">
@@ -8654,6 +8692,30 @@ function gameScratch(){
     qa('[data-sbet]').forEach(b => {
       b.onclick = () => { if(!scratchGrid){ curBet = Number(b.dataset.sbet); render(); } };
     });
+    const sInp = q('#scratchCustomBet');
+    if(sInp && !scratchGrid){
+      sInp.oninput = () => {
+        const v = Math.floor(+sInp.value || 0);
+        if(v >= 20){
+          curBet = Math.min(50000, v);
+          const tc = insurance ? Math.floor(curBet * 1.15) : curBet;
+          const bEl = q('#scratchBuyBtn');
+          if(bEl) bEl.textContent = `КУПИТЬ БИЛЕТ ЗА ${tc} ⬦`;
+          qa('[data-sbet]').forEach(b => b.classList.toggle('active', +b.dataset.sbet === curBet));
+        }
+      };
+      sInp.onblur = () => {
+        curBet = Math.max(20, Math.min(50000, Math.floor(+sInp.value || 20)));
+        render();
+      };
+    }
+    const sMax = q('#scratchBetMax');
+    if(sMax && !scratchGrid){
+      sMax.onclick = () => {
+        curBet = Math.max(20, Math.min(50000, Math.floor(S.balance || 20)));
+        render();
+      };
+    }
     const insToggle = q('#scratchInsToggle');
     if(insToggle && !scratchGrid){
       insToggle.onclick = () => { insurance = !insurance; render(); };
@@ -8907,10 +8969,14 @@ function gameRevolver(){
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">СТАВКА В РАУНДЕ</span>
-          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="revCustomBet" class="betinput" min="10" max="50000" step="10" value="${curBet}" style="width:85px;height:30px;padding:4px 8px;font-size:13px;font-weight:900;text-align:right" ${inRound?'disabled':''}>
+            <span style="font-size:13px;font-weight:900;color:#fff">⬦</span>
+          </div>
         </div>
         <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
           ${[10, 20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-rbet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+          <button class="chip" id="revBetMax" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">МАКС</button>
         </div>
 
         <div class="insurance-toggle ${insurance?'active':''}" id="revInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
@@ -8976,6 +9042,30 @@ function gameRevolver(){
     qa('[data-rbet]').forEach(b => {
       b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.rbet); roundOutcome = null; render(); } };
     });
+    const rInp = q('#revCustomBet');
+    if(rInp && !inRound){
+      rInp.oninput = () => {
+        const v = Math.floor(+rInp.value || 0);
+        if(v >= 10){
+          curBet = Math.min(50000, v);
+          const tc = insurance ? Math.floor(curBet * 1.15) : curBet;
+          const sBtn = q('#revStartBtn');
+          if(sBtn) sBtn.textContent = `ЗАРЯДИТЬ РЕВОЛЬВЕР (${tc} ⬦)`;
+          qa('[data-rbet]').forEach(b => b.classList.toggle('active', +b.dataset.rbet === curBet));
+        }
+      };
+      rInp.onblur = () => {
+        curBet = Math.max(10, Math.min(50000, Math.floor(+rInp.value || 10)));
+        render();
+      };
+    }
+    const rMax = q('#revBetMax');
+    if(rMax && !inRound){
+      rMax.onclick = () => {
+        curBet = Math.max(10, Math.min(50000, Math.floor(S.balance || 10)));
+        render();
+      };
+    }
     const insToggle = q('#revInsToggle');
     if(insToggle && !inRound){
       insToggle.onclick = () => { insurance = !insurance; render(); };

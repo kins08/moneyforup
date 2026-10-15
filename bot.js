@@ -1938,7 +1938,7 @@ const server = http.createServer(async (req, res) => {
       totalDeposited: u.totalDepositedRub || u.lastDeposit || 0,
       lastDeposit: u.lastDeposit || 0,
       lastCashbackAt: u.lastCashbackAt || 0,
-      cashbackClaimed: (u.cashbackClaimedDepositId === u.lastDepositId && u.lastDepositId > 0),
+      cashbackClaimed: Boolean(u.cashbackClaimedDepositId && (u.cashbackClaimedDepositId === (Number(u.lastDepositId) || 1)) && (u.lastDeposit > 0 || u.totalDepositedRub > 0)),
       easycashClaimed: !!u.easycashClaimed,
       rakeback: +(Number(u.rakeback || 0).toFixed(2)),
       freeCases: Math.floor(Number(u.freeCases || 0)),
