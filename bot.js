@@ -517,14 +517,15 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
   }
 
   const bet = invItem ? invItem.price : Math.floor(Number(rawBet) || 0);
-  if (!Number.isFinite(bet) || bet < cfg.minBet || bet > cfg.maxBet) {
-    return { ok: false, error: `Ставка должна быть от ${cfg.minBet} до ${cfg.maxBet} ⬦` };
-  }
-  if (!invItem && bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
 
   // Кейсы живут по другой модели (предмет = выигрыш) — уводим их в отдельную ветку
   const __case = items.findCaseByName(rawGame);
   if (__case) return playCaseRound(u, __case, rawBet, rawRoundId);
+
+  if (!Number.isFinite(bet) || bet < cfg.minBet || bet > cfg.maxBet) {
+    return { ok: false, error: `Ставка должна быть от ${cfg.minBet} до ${cfg.maxBet} ⬦` };
+  }
+  if (!invItem && bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
 
   // Множитель — выбор игрока, но строго в границах игры
   let mult = Number(rawMult);
