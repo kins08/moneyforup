@@ -153,14 +153,13 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .case-win-banner{animation:avitoPulseWin .6s ease;border:1px solid #ffcf6b;border-radius:16px;padding:14px;background:linear-gradient(145deg,#2a2517,#1b1912);margin-top:10px;text-align:center}
 .case-boost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,207,107,.15);border:1px solid #ffcf6b;color:#ffcf6b;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;margin-top:6px;animation:pulseTease .8s ease-in-out infinite alternate}
 /* ======== SPLASH, ПРЕВЬЮ ИГР, БУСТ-ИГРЫ, АВАТАРКА ======== */
-.mup-splash{position:fixed;inset:0;background:#050608;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;transition:opacity .6s ease,visibility .6s ease}
+.mup-splash{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;overflow:hidden;transition:opacity .6s ease,visibility .6s ease}
 .mup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-.mup-splash-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:320px;text-align:center}
-.mup-splash-logo-img{width:100%;max-width:260px;height:auto;object-fit:contain;margin-bottom:28px;filter:drop-shadow(0 0 25px rgba(239,68,68,.35));animation:splashPulse 2s ease-in-out infinite alternate}
-@keyframes splashPulse{0%{transform:scale(0.98);filter:drop-shadow(0 0 15px rgba(239,68,68,.25))}100%{transform:scale(1.02);filter:drop-shadow(0 0 32px rgba(239,68,68,.55))}}
-.mup-splash-bar{height:4px;width:100%;max-width:200px;background:#181215;border-radius:10px;overflow:hidden;position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
-.mup-splash-bar i{position:absolute;left:-50%;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#ef4444,#f97316);border-radius:10px;box-shadow:0 0 10px rgba(239,68,68,.8);animation:splBar 1.2s infinite ease-in-out}
-.mup-splash-text{color:#94a3b8;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-top:14px}
+.mup-splash-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:1;display:block}
+.mup-splash-bottom{position:relative;z-index:2;width:100%;max-width:360px;padding:32px 24px calc(28px + var(--tgSafe));display:flex;flex-direction:column;align-items:center;text-align:center;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.75) 40%,rgba(0,0,0,0.94) 100%)}
+.mup-splash-bar{height:5px;width:100%;max-width:220px;background:rgba(255,255,255,.14);border-radius:10px;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.mup-splash-bar i{position:absolute;left:-50%;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#ef4444,#f97316);border-radius:10px;box-shadow:0 0 14px rgba(239,68,68,1);animation:splBar 1.2s infinite ease-in-out}
+.mup-splash-text{color:#f1f5f9;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-top:14px;text-shadow:0 2px 6px rgba(0,0,0,.95)}
 @keyframes splBar{0%{left:-50%;width:30%}50%{left:35%;width:60%}100%{left:100%;width:30%}}
 
 .game-card-cover{width:100%;height:84px;border-radius:14px;overflow:hidden;margin-bottom:10px;position:relative;background:#20161a}
@@ -738,8 +737,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <body>
 <!-- Плашка загрузки MUP в стиле футажа -->
 <div id="mupSplash" class="mup-splash">
-  <div class="mup-splash-wrap">
-    <img src="assets/logo_mup.jpg" alt="MoneyForUp" class="mup-splash-logo-img">
+  <img src="assets/logo_mup.jpg" alt="MoneyForUp" class="mup-splash-bg">
+  <div class="mup-splash-bottom">
     <div class="mup-splash-bar"><i></i></div>
     <div class="mup-splash-text">Загрузка MoneyForUp...</div>
   </div>
