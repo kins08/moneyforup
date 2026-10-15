@@ -815,8 +815,17 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 </div>
 <!-- ======== ЗАКРЫТАЯ ПАНЕЛЬ АДМИНИСТРАТОРА (ВИДНА СТРОГО ТОЛЬКО ВЛАДЕЛЬЦУ) ======== -->
 <div id="adminExclusiveWrap" style="display:none;margin-top:18px">
-  <div class="section"><b style="color:#ffcf6b">👑 Админ-панель (Пополнения, Выводы, PnL)</b><button class="chip" id="btnAdminRefresh" style="padding:4px 10px;font-size:11px">🔄 Обновить</button></div>
+  <div class="section"><b style="color:#ffcf6b">👑 Админ-панель (Аналитика, Пополнения, Выводы)</b><button class="chip" id="btnAdminRefresh" style="padding:4px 10px;font-size:11px">🔄 Обновить</button></div>
   <div class="item" style="border-color:rgba(245,158,11,.45);background:linear-gradient(145deg,#241c15,#181310)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="muted small" style="font-weight:700">Период аналитики:</span>
+      <div class="chips" id="adminPeriodFilter" style="margin:0">
+        <button class="chip" data-adm-period="today" style="padding:4px 8px;font-size:11px">Сегодня</button>
+        <button class="chip" data-adm-period="7d" style="padding:4px 8px;font-size:11px">7 дней</button>
+        <button class="chip" data-adm-period="30d" style="padding:4px 8px;font-size:11px">30 дней</button>
+        <button class="chip on" data-adm-period="all" style="padding:4px 8px;font-size:11px">Всё время</button>
+      </div>
+    </div>
     <div id="adminPnlBox" style="margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08)">
       <div class="muted small">Загрузка аналитики проекта...</div>
     </div>
@@ -1118,14 +1127,16 @@ if(IS_TG&&API_BASE){
       if(codeInp)codeInp.value='';
       return 'promo';
     }
+    const curBonus = (typeof PAY === 'object' && PAY.bonus) || window.__activeDepositBonus || '';
     if(methodId===0){
       /* Прямой перевод на карту / СБП (строго заявка администратору, без автозачисления!) */
       msg.className='result';msg.textContent='Отправляем заявку администратору на проверку…';
       const curB = window.__curBankInfo ? window.__curBankInfo() : { name: 'СБП / Карта', val: '' };
-      const o = await tgCall('/api/order-sbp', { rub, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
+      const o = await tgCall('/api/order-sbp', { rub, tokens: tk, bonus: curBonus, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
       if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
+      const bonusNote = o.bonusApplied ? ' (включая бонус +25%!)' : '';
       msg.className='result';
-      msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> ('+fmt(o.tokens)+' ⬦) отправлена администратору!<br>Ожидайте подтверждения перевода на <b>'+curB.name+'</b> — как только администратор подтвердит платёж, токены зачислятся автоматически.';
+      msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> ('+fmt(o.tokens)+' ⬦'+bonusNote+') отправлена администратору!<br>Ожидайте подтверждения перевода на <b>'+curB.name+'</b> — как только администратор подтвердит платёж, токены зачислятся автоматически.';
       tgHaptic('light');
       (async()=>{
         for(let i=0;i<120;i++){
@@ -1152,7 +1163,7 @@ if(IS_TG&&API_BASE){
     if(methodId===5){
       /* Coinso (CryptoProc): только Криптовалюта (USDT, TON, BTC, ETH) */
       msg.className='result';msg.textContent='Создаём криптовалютный счёт Coinso…';
-      const d=await tgCall('/api/coinso-invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
+      const d=await tgCall('/api/coinso-invoice',{rub,tokens:tk,bonus:curBonus,termsAcceptedAt:S.termsAt});
       if(!d||!d.pay_url)throw new Error((d&&d.error)||'Сервер не вернул ссылку Coinso');
       try{(TG.openLink?TG.openLink(d.pay_url):window.open(d.pay_url,'_blank','noopener'))}catch(e){}
       msg.className='result good';
@@ -1175,7 +1186,7 @@ if(IS_TG&&API_BASE){
     }
     /* Telegram Stars */
     msg.className='result';msg.textContent='Создаём счёт в Telegram…';
-    const d=await tgCall('/api/invoice',{rub,tokens:tk,termsAcceptedAt:S.termsAt});
+    const d=await tgCall('/api/invoice',{rub,tokens:tk,bonus:curBonus,termsAcceptedAt:S.termsAt});
     if(!d||!d.invoice_link)throw new Error((d&&d.error)||'сервер не вернул ссылку на оплату');
     await new Promise(resolve=>{
       TG.openInvoice(d.invoice_link,async st=>{
@@ -1532,6 +1543,8 @@ let __lastRevengeModalTime = 0;
 let __lastNearMissToastTime = 0;
 
 function applyQuickDeposit(amtRub, bonusTag, methodId){
+  window.__activeDepositBonus = bonusTag || '';
+  if(typeof PAY === 'object') PAY.bonus = bonusTag || '';
   screen('profile');
   const payInp = q('#payRub');
   if(payInp){
@@ -1559,7 +1572,9 @@ function applyQuickDeposit(amtRub, bonusTag, methodId){
     payMsg.style.display = 'block';
     payMsg.className = 'result good';
     if(bonusTag === '25'){
-      payMsg.innerHTML = `🔥 <b>Активирован горячий бонус +25%!</b> При пополнении на ${amtRub} ₽ вы получите <b>+${fmt(Math.floor(amtRub * RATE * 0.25))} ⬦</b> сверху!`;
+      const baseTk = Math.floor(amtRub * RATE);
+      const bonTk = Math.floor(baseTk * 0.25);
+      payMsg.innerHTML = `🔥 <b>Активирован горячий бонус +25%!</b> При пополнении на ${amtRub} ₽ вы получите <b>+${fmt(baseTk + bonTk)} ⬦</b> (${fmt(baseTk)} базовых + ${fmt(bonTk)} бонусных)!`;
     } else if(bonusTag === 'goldcase'){
       payMsg.innerHTML = `🎁 <b>Активирован бесплатный золотой кейс!</b> При пополнении от 300 ₽ легендарный секретный бокс добавится в ваш профиль!`;
     }
@@ -2349,21 +2364,26 @@ function paySync(){
   const rub=Math.max(0,Math.floor(PAY.amt)||0),tk=rub*RATE,accepted=!!S.termsAt;
   const chk=q('#termsChk');if(chk)chk.checked=accepted;
 
+  const curBonus = (typeof PAY === 'object' && PAY.bonus) || window.__activeDepositBonus || '';
+  const bonusTk = (curBonus === '25' && rub >= 150) ? Math.floor(tk * 0.25) : 0;
+  const totalTk = tk + bonusTk;
+  const bonusBadge = bonusTk > 0 ? ` <span style="color:#ef4444;font-weight:800">(+${fmt(bonusTk)} ⬦ бонус +25%!)</span>` : '';
+
   if(PAY.m===4){
     q('#payPreview').innerHTML='Активация промокода · моментальное начисление токенов';
     q('#payGo').textContent=!accepted?'Сначала примите соглашение':'Активировать промокод';
     q('#payGo').disabled=!accepted;
   }else if(PAY.m===0){
-    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m];
-    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(tk)+' ⬦)');
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(totalTk)+' ⬦</b>'+bonusBadge+' ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m];
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Я перевёл '+rub+' ₽ (получить '+fmt(totalTk)+' ⬦'+(bonusTk>0?' с бонусом':'')+')');
     q('#payGo').disabled=tk<1||!accepted;
   }else if(PAY.m===5){
-    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(USDT, TON, BTC, ETH)</span>';
-    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Оплатить криптой ('+rub+' ₽ / '+fmt(tk)+' ⬦)');
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(totalTk)+' ⬦</b>'+bonusBadge+' ≈ '+fmtRub(tk)+' · способ: '+PAY.names[PAY.m]+' <span class="muted">(USDT, TON, BTC, ETH)</span>';
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Оплатить криптой ('+rub+' ₽ / '+fmt(totalTk)+' ⬦'+(bonusTk>0?' с бонусом':'')+')');
     q('#payGo').disabled=tk<1||!accepted;
   }else{
-    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(tk)+' ⬦</b> ≈ '+fmtRub(tk);
-    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(tk)+' ⬦');
+    q('#payPreview').innerHTML='К зачислению: <b>'+fmt(totalTk)+' ⬦</b>'+bonusBadge+' ≈ '+fmtRub(tk);
+    q('#payGo').textContent=tk<1?'Укажите сумму':(!accepted?'Сначала примите соглашение':'Пополнить на '+fmt(totalTk)+' ⬦'+(bonusTk>0?' с бонусом':''));
     q('#payGo').disabled=tk<1||!accepted;
   }
 }
@@ -2564,122 +2584,171 @@ function checkAdminVisibility(){
   }
 }
 
-async function loadAdminOverview(){
+window.__adminCurPeriod = 'all';
+
+async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
+  window.__adminCurPeriod = period;
   const pnlBox = q('#adminPnlBox');
   const wList = q('#adminWithdrawList');
   const dList = q('#adminDepositList');
   if(!pnlBox || !IS_TG || !API_BASE) return;
   try{
-    const res = await tgCall('/api/admin/overview', {});
+    const res = await tgCall('/api/admin/overview', { period });
     if(!res || !res.ok){
       q('#adminExclusiveWrap').style.display = 'none';
       return;
     }
-    const s12 = res.stats12h || {};
+    const m = (res.adminMetrics && res.adminMetrics.summary) || {};
     const sAll = res.statsAll || {};
-    const net12Col = (s12.projectNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
-    const netAllCol = (sAll.projectNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
-    const cashCol = (sAll.cashflowNetRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
 
-    const gamesArr = Object.entries(sAll.byGame || {}).sort((a, b) => (b[1].wagered || 0) - (a[1].wagered || 0));
-    const gamesHtml = gamesArr.length ? gamesArr.map(([gName, g]) => {
-      const gNetRub = ((g.netProject || 0) / 10).toFixed(1);
-      const gCol = (g.netProject || 0) >= 0 ? '#3ddc96' : '#ef4444';
+    const netPeriodRub = typeof m.ggrRub === 'number' ? m.ggrRub : (sAll.projectNetRub || 0);
+    const netPeriodCol = netPeriodRub >= 0 ? '#3ddc96' : '#ef4444';
+    const cashNetRub = typeof m.cashflowNetRub === 'number' ? m.cashflowNetRub : (sAll.cashflowNetRub || 0);
+    const cashCol = cashNetRub >= 0 ? '#3ddc96' : '#ef4444';
+
+    const periodLabels = {
+      today: 'Сегодня (с 00:00)',
+      '7d': 'За последние 7 дней',
+      '30d': 'За последние 30 дней',
+      all: 'За всё время'
+    };
+    const curPeriodLabel = periodLabels[period] || 'За всё время';
+
+    // 1. По режимам игр
+    const gamesData = (res.adminMetrics && res.adminMetrics.byGame && res.adminMetrics.byGame.length)
+      ? res.adminMetrics.byGame
+      : Object.entries(sAll.byGame || {}).map(([gName, g]) => ({
+          game: gName,
+          rounds: g.count,
+          wageredTk: g.wagered,
+          payoutTk: g.payout,
+          netRub: (g.netProject || 0) / 10,
+          rtpPct: g.rtpPct || 0,
+          wins: g.won || 0,
+          losses: (g.count || 0) - (g.won || 0)
+        }));
+
+    const gamesHtml = gamesData.length ? gamesData.map(g => {
+      const gCol = (g.netRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
       return `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px">
           <div>
-            <b style="color:#fff">${gName}</b>
-            <span class="muted small"> · ${g.count} ст. (RTP ${g.rtpPct||0}%, Win ${g.winRatePct||0}%)</span>
+            <b style="color:#fff">${g.game}</b>
+            <span class="muted small"> · ${g.rounds} раундов (RTP ${g.rtpPct}%, Оборот: ${fmt(g.wageredTk)} ⬦)</span>
           </div>
-          <b style="color:${gCol}">${(g.netProject>=0?'+':'')}${gNetRub} ₽</b>
+          <b style="color:${gCol}">${(g.netRub>=0?'+':'') + Number(g.netRub||0).toFixed(1)} ₽</b>
         </div>`;
-    }).join('') : '<div class="muted small">Ставок по играм пока нет</div>';
+    }).join('') : '<div class="muted small">Ставок по играм за выбранный период нет</div>';
 
-    const playersArr = (sAll.playersList || []).slice(0, 10);
-    const playersHtml = playersArr.length ? playersArr.map(p => {
-      const pNetRub = ((p.netPlayerTk || 0) / 10).toFixed(1);
-      const depRub = p.depositsRub || 0;
-      const depBadge = depRub > 0
-        ? `<span style="color:#3ddc96;font-weight:700">Деп: ${depRub} ₽</span>`
-        : `<span style="color:#f87171;font-weight:800">⚠️ 0 ₽ деп</span>`;
-      const topG = p.games && Object.keys(p.games).length
-        ? Object.entries(p.games).sort((a,b)=>b[1].count-a[1].count).slice(0,2).map(([gn,gd])=>`${gn}(${gd.count})`).join(', ')
-        : '—';
-      return `
-        <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <b>${p.name} <span class="muted small">(${p.uid})</span></b>
-            <span>${depBadge} · Бал: <b style="color:#ffcf6b">${fmt(p.currentBalanceTk||0)} ⬦</b></span>
-          </div>
-          <div class="muted small" style="display:flex;justify-content:space-between;margin-top:2px">
-            <span>Ставок: ${p.betsCount} (Вин: ${p.wonCount} / Слив: ${p.lostCount}) · Игры: ${topG}</span>
-            <span style="color:${(p.netPlayerTk||0)>0?'#f87171':'#3ddc96'}">Игрок: ${(p.netPlayerTk>=0?'+':'')}${pNetRub} ₽</span>
-          </div>
-        </div>`;
-    }).join('') : '<div class="muted small">Данных по игрокам пока нет</div>';
+    // 2. По провайдерам пополнений
+    const provArr = (res.adminMetrics && res.adminMetrics.byProvider) || [];
+    const provHtml = provArr.length ? provArr.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px">
+        <span class="muted">${p.provider}:</span>
+        <b>${p.totalRub} ₽ <span class="muted small">(${p.count} деп.)</span></b>
+      </div>
+    `).join('') : '<div class="muted small">Нет пополнений за период</div>';
 
-    const recentBetsArr = (sAll.recentBets || []).slice(0, 10);
-    const recentBetsHtml = recentBetsArr.length ? recentBetsArr.map(b => {
-      const isWin = b.win > b.bet;
-      const col = isWin ? '#3ddc96' : '#ef4444';
-      const timeStr = new Date(b.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    // 3. Последние транзакции Transactions Ledger
+    const ledgerArr = (res.adminMetrics && res.adminMetrics.recentLedger) || [];
+    const ledgerHtml = ledgerArr.length ? ledgerArr.slice(0, 15).map(l => {
+      const isPositive = l.amount > 0;
+      const col = isPositive ? '#3ddc96' : '#ef4444';
+      const timeStr = new Date(l.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
       return `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
           <div>
-            <span class="muted small">[${timeStr}]</span> <b>${b.name || 'Игрок'}</b>: ${b.game}
+            <span class="muted small">[${timeStr}]</span> <b>${l.userLabel}</b>
+            <div class="muted small" style="font-size:10px">${l.reason || l.type}</div>
           </div>
           <div style="text-align:right">
-            <span class="muted small">ст. ${b.bet} ⬦ →</span> <b style="color:${col}">${isWin ? '+' + b.win + ' ⬦' : '0 ⬦'}</b>
+            <b style="color:${col}">${isPositive ? '+' : ''}${fmt(l.amount)} ⬦</b>
+            <div class="muted small" style="font-size:9.5px">итог: ${fmt(l.balanceAfter)} ⬦</div>
           </div>
-        </div>
-      `;
-    }).join('') : '<div class="muted small">Ставок пока нет</div>';
+        </div>`;
+    }).join('') : '<div class="muted small">Операций в журнале пока нет</div>';
 
+    // Рендерим панель PnL и аналитики
     pnlBox.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <b style="font-size:13px;color:#ffcf6b">📊 Аналитика ставок и PnL проекта</b>
-        <span class="muted small">12ч / Всё время</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b style="font-size:13px;color:#ffcf6b">📊 Сводка проекта: ${curPeriodLabel}</b>
+        <span class="pill" style="font-size:10px;background:rgba(255,207,107,.15);color:#ffcf6b">Реальные SQL-данные</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+
+      <!-- Сводка 1: Финансы и Касса -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:8px">
         <div style="background:rgba(255,255,255,.04);padding:8px;border-radius:8px">
-          <div class="muted small">Доход казино (12ч):</div>
-          <b style="font-size:14px;color:${net12Col}">${(s12.projectNetRub>=0?'+':'') + (s12.projectNetRub||0).toFixed(2)} ₽</b>
-          <div class="muted small" style="font-size:10.5px">Побед игр.: ${s12.wonCount||0} | Сливов: ${s12.lostCount||0}</div>
+          <div class="muted small">💰 Пополнения:</div>
+          <b style="font-size:14px;color:#3ddc96">+${fmt(m.depositsRub || 0)} ₽</b>
+          <div class="muted small" style="font-size:10px">${m.depositsCount || 0} заявок (${fmt(m.depositsTokens || 0)} ⬦)</div>
         </div>
         <div style="background:rgba(255,255,255,.04);padding:8px;border-radius:8px">
-          <div class="muted small">Доход казино (Всё время):</div>
-          <b style="font-size:14px;color:${netAllCol}">${(sAll.projectNetRub>=0?'+':'') + (sAll.projectNetRub||0).toFixed(2)} ₽</b>
-          <div class="muted small" style="font-size:10.5px">Ставок: ${sAll.betsCount||0} · RTP: ${sAll.rtpOverallPct||0}%</div>
+          <div class="muted small">💸 Выплаты / Ожидание:</div>
+          <b style="font-size:14px;color:#ef4444">−${fmt(m.withdrawalsPaidRub || 0)} ₽</b>
+          <div class="muted small" style="font-size:10px">${m.withdrawalsPaidCount || 0} вып. | ждёт: ${m.withdrawalsPendingRub || 0} ₽</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11.5px;margin-top:8px">
+
+      <!-- Касса и Доход казино -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11.5px;margin-bottom:8px">
         <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px">
-          <span class="muted small">Средняя ставка:</span>
-          <div><b style="color:#ffcf6b">${sAll.avgBetTk || 0} ⬦</b> <span class="muted small">(${sAll.avgBetRub || 0} ₽)</span></div>
+          <span class="muted small">Чистая касса (Деп − Вывод):</span>
+          <div><b style="font-size:13px;color:${cashCol}">${(cashNetRub >= 0 ? '+' : '') + fmt(cashNetRub)} ₽</b></div>
         </div>
         <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px">
-          <span class="muted small">Маржа проекта:</span>
-          <div><b style="color:#3ddc96">${sAll.houseEdgePct || 0}%</b> <span class="muted small">(Игроков: ${sAll.totalTrackedPlayers || sAll.activePlayers || 0})</span></div>
+          <span class="muted small">GGR (Доход от ставок):</span>
+          <div><b style="font-size:13px;color:${netPeriodCol}">${(netPeriodRub >= 0 ? '+' : '') + Number(netPeriodRub).toFixed(1)} ₽</b></div>
+          <div class="muted small" style="font-size:9.5px">RTP: ${m.rtpPct || 0}% (${m.roundsCount || 0} раундов)</div>
         </div>
       </div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:12px">
-        <span>Касса (Депозиты − Выводы):</span>
-        <b style="color:${cashCol}">${(sAll.cashflowNetRub>=0?'+':'') + (sAll.cashflowNetRub||0).toFixed(2)} ₽ (+ ${sAll.totalDepositsRub||0} ₽ / − ${sAll.totalWithdrawalsRub||0} ₽)</b>
+
+      <!-- Сводка 2: Бонус +25% на первый депозит -->
+      <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1px solid rgba(239,68,68,0.35);padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:11.5px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b style="color:#fca5a5">🔥 Акция: +25% к первому депозиту</b>
+          <span class="pill" style="font-size:9.5px;background:rgba(239,68,68,.3);color:#fca5a5">HOTFIX</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+          <div>Игроков получило: <b>${m.firstBonusClaimedUsers || 0}</b></div>
+          <div>Заказов с бонусом: <b>${m.firstBonusOrdersCount || 0}</b></div>
+          <div>Выдано бонусов: <b style="color:#ffcf6b">+${fmt(m.firstBonusTokens || 0)} ⬦</b></div>
+          <div>Объём депозитов: <b>${fmt(m.firstBonusRubVolume || 0)} ₽</b></div>
+        </div>
       </div>
-      <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
-        <b style="font-size:12px;color:#38bdf8;display:block;margin-bottom:4px">⚡️ Последние раунды (Live лента):</b>
-        ${recentBetsHtml}
+
+      <!-- Сводка 3: Пользователи и Конверсия -->
+      <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px;font-size:11.5px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <b style="color:#a5b4fc">👥 Пользователи и конверсия:</b>
+          <span class="muted small">База: ${m.totalUsers || 0}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span>Новых за период: <b>+${m.newUsers || 0}</b></span>
+          <span>Депозиторов: <b>${m.periodDepositors || 0}</b> (всего: ${m.totalDepositors || 0})</span>
+          <span>Конверсия: <b style="color:#3ddc96">${m.totalUsers > 0 ? ((m.totalDepositors / m.totalUsers) * 100).toFixed(1) : 0}%</b></span>
+        </div>
       </div>
+
+      <!-- Провайдеры -->
+      <div style="background:rgba(255,255,255,.02);padding:6px 8px;border-radius:8px;margin-bottom:8px">
+        <b style="font-size:11.5px;color:#94a3b8;display:block;margin-bottom:2px">💳 Пополнение по провайдерам:</b>
+        ${provHtml}
+      </div>
+
+      <!-- Детально по играм -->
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
-        <b style="font-size:12px;color:#a5b4fc;display:block;margin-bottom:4px">🎮 Детальный отчёт по играм (Доход казино):</b>
+        <b style="font-size:12px;color:#38bdf8;display:block;margin-bottom:4px">🎮 Аналитика игровых режимов:</b>
         ${gamesHtml}
       </div>
+
+      <!-- Последние операции в Transactions Ledger -->
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
-        <b style="font-size:12px;color:#fcd34d;display:block;margin-bottom:4px">👥 Детальный отчёт по игрокам (Депозиты и игры):</b>
-        ${playersHtml}
+        <b style="font-size:12px;color:#fcd34d;display:block;margin-bottom:4px">📜 Последние операции (Transactions Ledger):</b>
+        ${ledgerHtml}
       </div>
     `;
 
+    // Выводы и пополнения (заявки)
     const wds = res.withdrawals || [];
     if(!wds.length){
       wList.innerHTML = '<div class="muted small">Заявок на вывод пока нет</div>';
@@ -2718,11 +2787,18 @@ async function loadAdminOverview(){
     if(!deps.length){
       dList.innerHTML = '<div class="muted small">Заявок на пополнение пока нет</div>';
     } else {
-      dList.innerHTML = deps.map(d => `
+      dList.innerHTML = deps.map(d => {
+        const bonusTag = d.bonus === '25'
+          ? `<span style="background:rgba(239,68,68,.25);color:#fca5a5;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800">🔥 +25% БОНУС</span>`
+          : '';
+        return `
         <div class="item" style="padding:10px;background:rgba(0,0,0,.25);border-color:${d.status==='pending'?'rgba(96,165,250,.5)':'rgba(255,255,255,.06)'}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <div>
-              <b style="font-size:13px;color:#fff">№${d.id} · +${d.rub} ₽ (+${fmt(d.tokens)} ⬦)</b>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <b style="font-size:13px;color:#fff">№${d.id} · +${d.rub} ₽ (+${fmt(d.tokens)} ⬦)</b>
+                ${bonusTag}
+              </div>
               <div class="muted small">${d.userName} · ${d.method}</div>
             </div>
             <div>
@@ -2732,8 +2808,8 @@ async function loadAdminOverview(){
               ` : `<span class="pill" style="background:${d.status==='paid'?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};color:${d.status==='paid'?'#86efac':'#fca5a5'}">${d.status==='paid'?'✅ Зачислено':'❌ Отклонено'}</span>`}
             </div>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
     qa('[data-adm-act]', q('#adminExclusiveWrap')).forEach(el => {
@@ -2745,7 +2821,7 @@ async function loadAdminOverview(){
           const r = await tgCall('/api/admin/order-action', { orderId: id, action: act });
           if(r && r.ok){
             showAppNotification(act === 'wd_ok' ? '☑️ Вывод отмечен выполненным! Игроку отправлено уведомление.' : (act === 'ok' ? '✅ Пополнение подтверждено и начислено игроку!' : '❌ Заявка отклонена.'));
-            loadAdminOverview();
+            loadAdminOverview(window.__adminCurPeriod || 'all');
           }
         } catch(_) {}
       };
@@ -2755,7 +2831,19 @@ async function loadAdminOverview(){
   }catch(_){}
 }
 const btnAdmRef = q('#btnAdminRefresh');
-if(btnAdmRef) btnAdmRef.addEventListener('click', loadAdminOverview);
+if(btnAdmRef) btnAdmRef.addEventListener('click', () => loadAdminOverview(window.__adminCurPeriod || 'all'));
+
+const admPeriodWrap = q('#adminPeriodFilter');
+if(admPeriodWrap){
+  admPeriodWrap.addEventListener('click', e => {
+    const btn = e.target.closest('[data-adm-period]');
+    if(!btn) return;
+    qa('#adminPeriodFilter .chip').forEach(c => c.classList.toggle('on', c === btn));
+    window.__adminCurPeriod = btn.dataset.admPeriod;
+    loadAdminOverview(window.__adminCurPeriod);
+  });
+}
+
 checkAdminVisibility();
 const wGoEl=q('#withdrawGo');
 if(wGoEl)wGoEl.addEventListener('click',startWithdrawal);
