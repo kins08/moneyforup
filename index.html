@@ -524,6 +524,299 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   border-radius: 4px;
 }
 
+/* ── СТИЛИ НОВЫХ ИГР ── */
+.insurance-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px dashed rgba(16, 185, 129, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: all .2s;
+}
+.insurance-toggle.active {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.insurance-toggle .toggle-sw {
+  width: 36px;
+  height: 20px;
+  border-radius: 20px;
+  background: #2a3449;
+  position: relative;
+  transition: background .2s;
+}
+.insurance-toggle.active .toggle-sw {
+  background: #10b981;
+}
+.insurance-toggle .toggle-sw::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+}
+.insurance-toggle.active .toggle-sw::after {
+  transform: translateX(16px);
+}
+
+/* Скретч-карты */
+.scratch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 330px;
+  margin: 14px auto;
+}
+.scratch-cell {
+  position: relative;
+  height: 94px;
+  border-radius: 12px;
+  background: #161c28;
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.scratch-cell .hidden-content {
+  text-align: center;
+  z-index: 1;
+}
+.scratch-cell .symbol-icon {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 8px rgba(0,229,255,0.4));
+}
+.scratch-cell .symbol-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+.scratch-cell .symbol-mult {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffcf6b;
+}
+.scratch-cell canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* Револьвер */
+.rev-drum-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 20px auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a2234 40%, #0d121c 100%);
+  border: 3px solid #2a3449;
+  box-shadow: 0 0 24px rgba(0,229,255,0.15), inset 0 0 15px rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+.rev-center {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #0b0e14;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 10px rgba(56,189,248,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.rev-chamber {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #111722;
+  border: 2px solid #2a3449;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #64748b;
+  transition: all .25s;
+}
+.rev-chamber.checked {
+  border-color: #10b981;
+  background: rgba(16,185,129,0.15);
+  color: #10b981;
+}
+.rev-chamber.fired {
+  border-color: #ef4444;
+  background: rgba(239,68,68,0.3);
+  color: #ef4444;
+  box-shadow: 0 0 15px #ef4444;
+}
+
+/* Взлом Сейфа */
+.safe-jackpot-box {
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.06));
+  border: 1.5px solid rgba(245,158,11,0.5);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(245,158,11,0.15);
+}
+.safe-slots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.safe-slot {
+  width: 48px;
+  height: 56px;
+  border-radius: 12px;
+  background: #101622;
+  border: 2px solid #2a3449;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  font-family: monospace;
+}
+.safe-slot.filled {
+  border-color: #00e5ff;
+  color: #00e5ff;
+  box-shadow: 0 0 10px rgba(0,229,255,0.3);
+}
+.safe-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.safe-key {
+  height: 48px;
+  border-radius: 12px;
+  background: #192233;
+  border: 1px solid #2a3449;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: all .1s;
+}
+.safe-key:active {
+  transform: scale(0.95);
+  background: #25334c;
+}
+
+/* Адский Лифт */
+.elv-shaft {
+  background: #0f1521;
+  border: 1px solid #253043;
+  border-radius: 16px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.elv-floors {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.elv-floor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  transition: all .25s;
+}
+.elv-floor-row.current {
+  background: rgba(0,229,255,0.12);
+  border-color: #00e5ff;
+  color: #00e5ff;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(0,229,255,0.2);
+}
+.elv-floor-row.passed {
+  color: #10b981;
+  background: rgba(16,185,129,0.05);
+}
+.elv-doors {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+.elv-door {
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1d2636, #121926);
+  border: 2px solid #2d3b53;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.elv-door:hover {
+  border-color: #00e5ff;
+  transform: translateY(-2px);
+}
+.elv-door.selected {
+  border-color: #ffcf6b;
+  box-shadow: 0 0 14px rgba(255,207,107,0.4);
+}
+
+/* PvP Дуэли */
+.duel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.duel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 12px;
+  background: #141b28;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
 </style>
 </head>
 <body>
@@ -665,8 +958,13 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<div class="section"><b>Игры</b><span class="muted small">11 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">16 режимов</span></div>
 <div class="cards">
+<button class="game" data-game="scratch"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="scratch">14 онлайн</span></span><div class="game-card-cover"><img src="assets/game_scratch.jpg" alt="Скретч-карты"></div><div class="gi">🪙🎟️</div><strong>Скретч-карты</strong><span>Сотри монеткой защитный слой и забери до ×50!</span><i class="arrow">→</i></button>
+<button class="game" data-game="revolver"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="revolver">12 онлайн</span></span><div class="game-card-cover"><img src="assets/game_revolver.jpg" alt="Револьвер"></div><div class="gi">🔫💀</div><strong>Револьвер (Рулетка)</strong><span>Спускай курок или забирай банк до ×29!</span><i class="arrow">→</i></button>
+<button class="game" data-game="safe"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="safe">19 онлайн</span></span><div class="game-card-cover"><img src="assets/game_safe.jpg" alt="Взлом Сейфа"></div><div class="gi">🔐💎</div><strong>Взлом Сейфа</strong><span>Угадай 4 цифры и сорви Джекпот платформы!</span><i class="arrow">→</i></button>
+<button class="game" data-game="elevator"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="elevator">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_elevator.jpg" alt="Адский Лифт"></div><div class="gi">🛗⚡</div><strong>Адский Лифт</strong><span>Выбирай двери и поднимайся по этажам до ×20!</span><i class="arrow">→</i></button>
+<button class="game" data-game="duel"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="duel">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_duel.jpg" alt="PvP Дуэль"></div><div class="gi">⚔️💥</div><strong>PvP Дуэль (1v1)</strong><span>Брось вызов реальному игроку и забери оба банка!</span><i class="arrow">→</i></button>
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Умножай выигранные предметы или рискуй токенами до ×20</span><i class="arrow">→</i></button>
@@ -8333,9 +8631,927 @@ function gameUpgrader(){
 }
 
 
+/* ── 1. Скретч-карты: «Сотри монеткой» ─────────────────────────────────── */
+function gameScratch(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let curBet = 50;
+  let insurance = false;
+  let isPlaying = false;
+  let scratchGrid = null;
+  let gridState = null;
+  let won = false;
+  let winMult = 0;
+  let winTokens = 0;
+  let insuredRefund = 0;
+
+  const SYMBOL_MAP = {
+    knife: { icon: '🗡️', name: 'Керамбит', mult: '×50', color: '#ff3366' },
+    gold:  { icon: '🏆', name: 'Золото',   mult: '×20', color: '#f59e0b' },
+    ruby:  { icon: '💎', name: 'Рубин',    mult: '×10', color: '#ec4899' },
+    chip:  { icon: '🪙', name: 'Фишка',    mult: '×5',  color: '#38bdf8' },
+    coin:  { icon: '⚡', name: 'Монета',   mult: '×2',  color: '#a855f7' },
+    star:  { icon: '⭐', name: 'Звезда',   mult: '×1.5',color: '#10b981' }
+  };
+
+  function render(){
+    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
+    let html = `
+      <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">НОМИНАЛ БИЛЕТА</span>
+          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
+        </div>
+        <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+          ${[20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet?'active':''}" data-sbet="${b}" style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+        </div>
+
+        <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle">
+          <div>
+            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка билета (+12%)</div>
+            <div style="font-size:11px;color:#94a3b8">При проигрыше вернём 35% ставки</div>
+          </div>
+          <div class="toggle-sw"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:#94a3b8">
+          <span>Списание со счёта:</span>
+          <b style="color:#ffcf6b;font-size:14px">${totalCost} ⬦</b>
+        </div>
+      </div>
+    `;
+
+    if(!scratchGrid){
+      html += `
+        <div style="text-align:center;padding:24px 14px;background:#101622;border:1px solid #1f2b3e;border-radius:18px">
+          <div style="font-size:48px;line-height:1;margin-bottom:10px">🪙</div>
+          <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px">Мгновенная лотерея «Сотри монеткой»</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Сотри защитный слой пальцем. Если совпадут 3 одинаковых символа — куш твой!</div>
+          <button class="primary" id="scratchBuyBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">КУПИТЬ БИЛЕТ ЗА ${totalCost} ⬦</button>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="scratch-grid" id="scratchGridEl">
+          ${scratchGrid.map((symId, idx) => {
+            const sym = SYMBOL_MAP[symId] || { icon: '❓', name: 'Символ', mult: '', color: '#fff' };
+            return `
+              <div class="scratch-cell" data-idx="${idx}">
+                <div class="hidden-content">
+                  <div class="symbol-icon">${sym.icon}</div>
+                  <div class="symbol-name" style="color:${sym.color}">${sym.name}</div>
+                  <div class="symbol-mult">${sym.mult}</div>
+                </div>
+                <canvas id="sc_canvas_${idx}"></canvas>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="secondary" id="scratchRevealAllBtn" style="flex:1;padding:12px;font-size:13px;font-weight:800">⚡ Стереть всё</button>
+          <button class="primary" id="scratchNewBtn" style="flex:1;padding:12px;font-size:13px;font-weight:800">Ещё билет</button>
+        </div>
+        <div id="scratchResultMsg" style="margin-top:12px"></div>
+      `;
+    }
+
+    a.innerHTML = html;
+    attachEvents();
+    if(scratchGrid) initCanvases();
+  }
+
+  function attachEvents(){
+    qa('[data-sbet]').forEach(b => {
+      b.onclick = () => { curBet = Number(b.dataset.sbet); render(); };
+    });
+    const insToggle = q('#scratchInsToggle');
+    if(insToggle){
+      insToggle.onclick = () => { insurance = !insurance; render(); };
+    }
+    const buyBtn = q('#scratchBuyBtn');
+    if(buyBtn){
+      buyBtn.onclick = buyTicket;
+    }
+    const revAllBtn = q('#scratchRevealAllBtn');
+    if(revAllBtn){
+      revAllBtn.onclick = revealAll;
+    }
+    const newBtn = q('#scratchNewBtn');
+    if(newBtn){
+      newBtn.onclick = () => { scratchGrid = null; render(); };
+    }
+  }
+
+  async function buyTicket(){
+    if(isPlaying) return;
+    isPlaying = true;
+    const btn = q('#scratchBuyBtn');
+    if(btn) btn.textContent = 'Покупка билета...';
+
+    const r = await fetch(API_BASE + '/api/scratch/play', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+    }).then(x => x.json()).catch(() => null);
+
+    isPlaying = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Не удалось купить билет');
+      render();
+      return;
+    }
+
+    tgHaptic('medium');
+    scratchGrid = r.grid;
+    won = r.won;
+    winMult = r.winMult;
+    winTokens = r.winTokens;
+    insuredRefund = r.insuredReturn || 0;
+    if(r.tokens != null) setTokens(r.tokens);
+
+    render();
+  }
+
+  function initCanvases(){
+    qa('.scratch-cell canvas').forEach((canvas, idx) => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width || 100;
+      canvas.height = rect.height || 94;
+      const ctx = canvas.getContext('2d');
+
+      // Рисуем металлический защитный слой
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, '#334155');
+      grad.addColorStop(0.5, '#475569');
+      grad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🪙 СОТРИ', canvas.width / 2, canvas.height / 2 + 4);
+
+      let isErasing = false;
+      function erase(e){
+        if(!isErasing) return;
+        const cRect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - cRect.left;
+        const y = clientY - cRect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        tgHaptic('light');
+      }
+
+      canvas.onpointerdown = (e) => { isErasing = true; erase(e); };
+      window.addEventListener('pointermove', erase);
+      window.addEventListener('pointerup', () => {
+        if(isErasing){
+          isErasing = false;
+          checkCompletion();
+        }
+      });
+    });
+  }
+
+  function revealAll(){
+    qa('.scratch-cell canvas').forEach(c => {
+      c.style.transition = 'opacity .35s';
+      c.style.opacity = '0';
+      setTimeout(() => { c.style.display = 'none'; }, 350);
+    });
+    tgHaptic('medium');
+    setTimeout(showResult, 400);
+  }
+
+  function checkCompletion(){
+    // При частичном стирании проверяем и показываем результат
+    showResult();
+  }
+
+  function showResult(){
+    const resEl = q('#scratchResultMsg');
+    if(!resEl) return;
+    if(won){
+      tgHaptic('win');
+      resEl.className = 'result good';
+      resEl.innerHTML = `🎉 <b>ВЫИГРЫШ ×${winMult}!</b> Совпали 3 символа: <b>+${winTokens} ⬦</b> зачислено на баланс!`;
+    } else {
+      tgHaptic('lose');
+      resEl.className = 'result bad';
+      const insText = insuredRefund > 0 ? `<br>🛡️ <i>Страховка сработала: +${insuredRefund} ⬦ возвращено на счёт!</i>` : '';
+      resEl.innerHTML = `❌ <b>Билет не сыграл!</b> Попробуйте стереть следующий билет!${insText}`;
+    }
+  }
+
+  render();
+  return () => {};
+}
+
+/* ── 2. Револьвер: «Русская рулетка» ────────────────────────────────────── */
+function gameRevolver(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let curBet = 50;
+  let insurance = false;
+  let inRound = false;
+  let step = 0;
+  let curMult = 1.0;
+  let potWin = 0;
+  let isSpinning = false;
+
+  const REVOLVER_MULTS = { 1: 1.18, 2: 1.45, 3: 1.95, 4: 2.90, 5: 5.80, 6: 29.00 };
+
+  function render(){
+    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
+    let html = `
+      <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">СТАВКА В РАУНДЕ</span>
+          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
+        </div>
+        <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+          ${[10, 25, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-rbet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+        </div>
+
+        <div class="insurance-toggle ${insurance?'active':''}" id="revInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
+          <div>
+            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка патрона (+12%)</div>
+            <div style="font-size:11px;color:#94a3b8">При выстреле вернём 35% ставки</div>
+          </div>
+          <div class="toggle-sw"></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;background:#101622;border:1px solid #1f2b3e;border-radius:20px;padding:20px 14px">
+        <div style="display:flex;justify-content:space-around;font-size:12px;color:#94a3b8;margin-bottom:10px">
+          <div>Текущий множитель: <b style="color:#00e5ff;font-size:15px">×${curMult.toFixed(2)}</b></div>
+          <div>Куш на кону: <b style="color:#ffcf6b;font-size:15px">${potWin || curBet} ⬦</b></div>
+        </div>
+
+        <!-- Барабан револьвера на 6 камор -->
+        <div class="rev-drum-wrap" id="revDrumEl">
+          <div class="rev-center">💀</div>
+          ${[0, 1, 2, 3, 4, 5].map(i => {
+            const angle = (i * 60) * (Math.PI / 180);
+            const r = 58;
+            const x = Math.round(r * Math.sin(angle));
+            const y = Math.round(-r * Math.cos(angle));
+            const isChecked = step > i;
+            return `<div class="rev-chamber ${isChecked?'checked':''}" style="transform:translate(${x}px, ${y}px)">${i+1}</div>`;
+          }).join('')}
+        </div>
+
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px">В барабане 6 камор. 1 боевой патрон. Каждый холостой повышает множитель!</div>
+
+        ${!inRound ? `
+          <button class="primary" id="revStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">ЗАРЯДИТЬ РЕВОЛЬВЕР (${totalCost} ⬦)</button>
+        ` : `
+          <div style="display:flex;gap:10px">
+            <button class="primary" id="revTriggerBtn" style="flex:1.2;padding:14px;font-size:15px;font-weight:900;background:linear-gradient(135deg,#ef4444,#dc2626)">🎯 СПУСТИТЬ КУРОК</button>
+            <button class="secondary" id="revCashoutBtn" style="flex:1;padding:14px;font-size:14px;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);color:#fff">💰 ЗАБРАТЬ (${potWin} ⬦)</button>
+          </div>
+        `}
+
+        <div id="revResultMsg" style="margin-top:14px"></div>
+      </div>
+    `;
+
+    a.innerHTML = html;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    qa('[data-rbet]').forEach(b => {
+      b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.rbet); render(); } };
+    });
+    const insToggle = q('#revInsToggle');
+    if(insToggle && !inRound){
+      insToggle.onclick = () => { insurance = !insurance; render(); };
+    }
+    const startBtn = q('#revStartBtn');
+    if(startBtn) startBtn.onclick = startRound;
+    const trgBtn = q('#revTriggerBtn');
+    if(trgBtn) trgBtn.onclick = pullTrigger;
+    const cashBtn = q('#revCashoutBtn');
+    if(cashBtn) cashBtn.onclick = doCashout;
+  }
+
+  async function startRound(){
+    if(inRound || isSpinning) return;
+    const r = await fetch(API_BASE + '/api/revolver/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+    }).then(x => x.json()).catch(() => null);
+
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Не удалось начать раунд');
+      return;
+    }
+    inRound = true;
+    step = 0;
+    curMult = 1.0;
+    potWin = curBet;
+    if(r.balance != null) setTokens(r.balance);
+    tgHaptic('medium');
+    render();
+  }
+
+  async function pullTrigger(){
+    if(!inRound || isSpinning) return;
+    isSpinning = true;
+
+    // Вращаем барабан
+    const drum = q('#revDrumEl');
+    if(drum) drum.style.transform = `rotate(${(step + 1) * 60 + 360}deg)`;
+
+    const r = await fetch(API_BASE + '/api/revolver/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData() })
+    }).then(x => x.json()).catch(() => null);
+
+    isSpinning = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Ошибка выстрела');
+      return;
+    }
+
+    step = r.step;
+    if(r.balance != null) setTokens(r.balance);
+
+    if(r.fired){
+      // ВЫСТРЕЛ!
+      inRound = false;
+      tgHaptic('lose');
+      render();
+      const resEl = q('#revResultMsg');
+      if(resEl){
+        resEl.className = 'result bad';
+        const ins = r.insuredReturn ? `<br>🛡️ <i>Страховка вернула +${r.insuredReturn} ⬦ на баланс</i>` : '';
+        resEl.innerHTML = `💥 <b>БАБАХ! БОЕВОЙ ПАТРОН В КАМОРЕ #${r.bullet}!</b> Ставка сгорела.${ins}`;
+      }
+    } else {
+      // ХОЛОСТОЙ
+      tgHaptic('light');
+      curMult = r.mult;
+      potWin = r.potWin;
+      render();
+      const resEl = q('#revResultMsg');
+      if(resEl){
+        resEl.className = 'result good';
+        resEl.innerHTML = `*Щёлк* <b>ХОЛОСТОЙ!</b> Множитель вырос до <b>×${curMult.toFixed(2)}</b>! Рискнёшь ещё раз или заберёшь куш?`;
+      }
+    }
+  }
+
+  async function doCashout(){
+    if(!inRound || isSpinning) return;
+    const r = await fetch(API_BASE + '/api/revolver/cashout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData() })
+    }).then(x => x.json()).catch(() => null);
+
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Ошибка кэшаута');
+      return;
+    }
+    inRound = false;
+    tgHaptic('win');
+    if(r.balance != null) setTokens(r.balance);
+    render();
+    const resEl = q('#revResultMsg');
+    if(resEl){
+      resEl.className = 'result good';
+      resEl.innerHTML = `🎉 <b>КЭШАУТ ×${r.mult}!</b> Зачислено <b>+${r.win} ⬦</b> на баланс!`;
+    }
+  }
+
+  render();
+  return () => {};
+}
+
+/* ── 3. Взлом Сейфа: «Crack the Safe» ────────────────────────────────────── */
+function gameSafe(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let enteredCode = '';
+  let jackpot = 25000;
+  let guessesCount = 0;
+  let attempts = [];
+  let isGuessing = false;
+
+  async function loadStatus(){
+    const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
+    if(r && r.ok){
+      jackpot = r.jackpot;
+      guessesCount = r.guessesCount;
+      attempts = r.recentAttempts || [];
+      if(r.balance != null) setTokens(r.balance);
+      render();
+    }
+  }
+
+  function render(){
+    const slots = [0, 1, 2, 3].map(i => {
+      const ch = enteredCode[i] || '';
+      return `<div class="safe-slot ${ch?'filled':''}">${ch || '·'}</div>`;
+    }).join('');
+
+    let html = `
+      <div class="safe-jackpot-box">
+        <div style="font-size:11px;font-weight:900;color:#f59e0b;letter-spacing:.06em;text-transform:uppercase">ДЖЕКПОТ СЕЙФА</div>
+        <div style="font-size:32px;font-weight:900;color:#ffcf6b;margin:4px 0;text-shadow:0 0 16px rgba(255,207,107,0.5)">
+          ${fmt(jackpot)} ⬦
+        </div>
+        <div style="font-size:11px;color:#94a3b8">Растёт с каждой попыткой взлома! Сделано попыток: <b>${guessesCount}</b></div>
+      </div>
+
+      <div style="background:#101622;border:1px solid #1f2b3e;border-radius:20px;padding:18px;margin-bottom:14px">
+        <div class="safe-slots">${slots}</div>
+
+        <!-- Цифровая клавиатура -->
+        <div class="safe-keypad">
+          ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="safe-key" data-digit="${n}">${n}</button>`).join('')}
+          <button class="safe-key" id="safeClearBtn" style="color:#ef4444;font-size:14px">СБРОС</button>
+          <button class="safe-key" data-digit="0">0</button>
+          <button class="safe-key" id="safeBackBtn" style="color:#94a3b8;font-size:15px">⌫</button>
+        </div>
+
+        <button class="primary" id="safeSubmitBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000" ${enteredCode.length<4?'disabled':''}>
+          🔓 ВЗЛОМАТЬ СЕЙФ (25 ⬦)
+        </button>
+
+        <div id="safeResultMsg" style="margin-top:12px"></div>
+      </div>
+
+      <!-- История попыток с подсказками -->
+      <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:14px">
+        <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-bottom:8px">ВАШИ ПОСЛЕДНИЕ ПОПЫТКИ:</div>
+        ${attempts.length === 0 ? `<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">Вы ещё не пробовали взломать сейф</div>` : `
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${attempts.map(att => `
+              <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px">
+                <b style="font-family:monospace;letter-spacing:.1em;color:#fff">${att.code}</b>
+                <div>
+                  <span style="color:#10b981;font-weight:800;margin-right:8px">🎯 ${att.bulls} на месте</span>
+                  <span style="color:#ffcf6b;font-weight:800">🔄 ${att.cows} есть в коде</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+
+    a.innerHTML = html;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    qa('[data-digit]').forEach(b => {
+      b.onclick = () => {
+        if(enteredCode.length < 4){
+          enteredCode += b.dataset.digit;
+          tgHaptic('light');
+          render();
+        }
+      };
+    });
+    const clr = q('#safeClearBtn');
+    if(clr) clr.onclick = () => { enteredCode = ''; render(); };
+    const bck = q('#safeBackBtn');
+    if(bck) bck.onclick = () => { enteredCode = enteredCode.slice(0, -1); render(); };
+    const sub = q('#safeSubmitBtn');
+    if(sub) sub.onclick = submitGuess;
+  }
+
+  async function submitGuess(){
+    if(enteredCode.length !== 4 || isGuessing) return;
+    isGuessing = true;
+    const btn = q('#safeSubmitBtn');
+    if(btn) btn.textContent = 'Подбор кода...';
+
+    const r = await fetch(API_BASE + '/api/safe/guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), code: enteredCode })
+    }).then(x => x.json()).catch(() => null);
+
+    isGuessing = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Ошибка взлома');
+      render();
+      return;
+    }
+
+    if(r.balance != null) setTokens(r.balance);
+    jackpot = r.jackpot;
+    guessesCount = r.guessesCount;
+    attempts.unshift({ code: enteredCode, bulls: r.bulls, cows: r.cows });
+    if(attempts.length > 6) attempts.pop();
+
+    if(r.won){
+      tgHaptic('win');
+      render();
+      const res = q('#safeResultMsg');
+      if(res){
+        res.className = 'result good';
+        res.innerHTML = `🎉 <b>СЕЙФ ВЗЛОМАН! ВЫ СОРВАЛИ КУШ!</b> Код ${r.code} подошёл! Начислено <b>+${fmt(r.winTokens)} ⬦</b>!`;
+      }
+    } else {
+      tgHaptic('medium');
+      render();
+      const res = q('#safeResultMsg');
+      if(res){
+        res.className = 'result bad';
+        res.innerHTML = `❌ Код не подошёл! Подсказка: <b>🎯 ${r.bulls} на своём месте</b>, <b>🔄 ${r.cows} есть в коде</b>.`;
+      }
+    }
+    enteredCode = '';
+  }
+
+  loadStatus();
+  return () => {};
+}
+
+/* ── 4. Адский Лифт: «Tower Climb» ──────────────────────────────────────── */
+function gameElevator(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let curBet = 50;
+  let insurance = false;
+  let inRound = false;
+  let floor = 0;
+  let curMult = 1.0;
+  let potWin = 0;
+  let isMoving = false;
+
+  const ELEVATOR_MULTS = { 1: 1.42, 2: 2.05, 3: 2.98, 4: 4.35, 5: 6.35, 6: 9.25, 7: 13.50, 8: 20.00 };
+
+  function render(){
+    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
+    let html = `
+      <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">СТАВКА В ЛИФТЕ</span>
+          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
+        </div>
+        <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+          ${[10, 25, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-ebet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+        </div>
+
+        <div class="insurance-toggle ${insurance?'active':''}" id="elvInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
+          <div>
+            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка троса (+12%)</div>
+            <div style="font-size:11px;color:#94a3b8">При обрыве вернём 35% ставки</div>
+          </div>
+          <div class="toggle-sw"></div>
+        </div>
+      </div>
+
+      <div class="elv-shaft">
+        <div class="elv-floors">
+          ${[8, 7, 6, 5, 4, 3, 2, 1].map(f => {
+            const isCur = (floor === f);
+            const isPassed = (floor > f);
+            return `
+              <div class="elv-floor-row ${isCur?'current':''} ${isPassed?'passed':''}">
+                <span>Этаж ${f} ${isCur?'🛗':''}</span>
+                <span>×${ELEVATOR_MULTS[f].toFixed(2)}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${!inRound ? `
+          <button class="primary" id="elvStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">ВОЙТИ В ЛИФТ (${totalCost} ⬦)</button>
+        ` : `
+          <div style="text-align:center;margin:10px 0;font-size:12.5px;color:#94a3b8">
+            Выберите одну из 3 дверей. 1 дверь аварийная, 2 проходные!
+          </div>
+          <div class="elv-doors">
+            <button class="elv-door" data-door="1"><span style="font-size:24px">🚪</span><b>Дверь 1</b></button>
+            <button class="elv-door" data-door="2"><span style="font-size:24px">🚪</span><b>Дверь 2</b></button>
+            <button class="elv-door" data-door="3"><span style="font-size:24px">🚪</span><b>Дверь 3</b></button>
+          </div>
+          <button class="secondary" id="elvCashoutBtn" style="width:100%;margin-top:12px;padding:12px;font-size:14px;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);color:#fff" ${floor===0?'disabled':''}>
+            💰 ВЫЙТИ НА ЭТАЖЕ (${potWin || curBet} ⬦)
+          </button>
+        `}
+
+        <div id="elvResultMsg" style="margin-top:12px"></div>
+      </div>
+    `;
+
+    a.innerHTML = html;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    qa('[data-ebet]').forEach(b => {
+      b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.ebet); render(); } };
+    });
+    const insToggle = q('#elvInsToggle');
+    if(insToggle && !inRound){
+      insToggle.onclick = () => { insurance = !insurance; render(); };
+    }
+    const startBtn = q('#elvStartBtn');
+    if(startBtn) startBtn.onclick = startRound;
+    qa('[data-door]').forEach(b => {
+      b.onclick = () => chooseDoor(Number(b.dataset.door));
+    });
+    const cashBtn = q('#elvCashoutBtn');
+    if(cashBtn) cashBtn.onclick = doCashout;
+  }
+
+  async function startRound(){
+    if(inRound || isMoving) return;
+    const r = await fetch(API_BASE + '/api/elevator/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+    }).then(x => x.json()).catch(() => null);
+
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Не удалось начать подъем');
+      return;
+    }
+    inRound = true;
+    floor = 0;
+    curMult = 1.0;
+    potWin = curBet;
+    if(r.balance != null) setTokens(r.balance);
+    tgHaptic('medium');
+    render();
+  }
+
+  async function chooseDoor(door){
+    if(!inRound || isMoving) return;
+    isMoving = true;
+
+    const r = await fetch(API_BASE + '/api/elevator/step', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), door })
+    }).then(x => x.json()).catch(() => null);
+
+    isMoving = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Ошибка перехода');
+      return;
+    }
+
+    if(r.balance != null) setTokens(r.balance);
+
+    if(r.crashed){
+      // ОБРЫВ ТРОСА
+      inRound = false;
+      tgHaptic('lose');
+      render();
+      const res = q('#elvResultMsg');
+      if(res){
+        res.className = 'result bad';
+        const ins = r.insuredReturn ? `<br>🛡️ <i>Страховка вернула +${r.insuredReturn} ⬦ на счёт</i>` : '';
+        res.innerHTML = `⚠️ <b>ОБРЫВ ТРОСА!</b> Дверь #${r.hazardDoor} была ловушкой! Лифт упал с ${r.floor} этажа.${ins}`;
+      }
+    } else {
+      // ПЕРЕХОД НА НОВЫЙ ЭТАЖ
+      floor = r.floor;
+      curMult = r.mult;
+      potWin = r.potWin;
+      tgHaptic('win');
+      render();
+
+      if(r.maxFloor){
+        inRound = false;
+        const res = q('#elvResultMsg');
+        if(res){
+          res.className = 'result good';
+          res.innerHTML = `🏆 <b>КРЫША НЕБОСКРЁБА ДОСТИГНУТА!</b> Авто-кэшаут ×${r.mult}: <b>+${r.win} ⬦</b> зачислено!`;
+        }
+      }
+    }
+  }
+
+  async function doCashout(){
+    if(!inRound || floor === 0 || isMoving) return;
+    const r = await fetch(API_BASE + '/api/elevator/cashout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData() })
+    }).then(x => x.json()).catch(() => null);
+
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Ошибка выхода');
+      return;
+    }
+    inRound = false;
+    tgHaptic('win');
+    if(r.balance != null) setTokens(r.balance);
+    render();
+    const res = q('#elvResultMsg');
+    if(res){
+      res.className = 'result good';
+      res.innerHTML = `🎉 <b>ВЫ ВЫШЛИ НА ${floor} ЭТАЖЕ!</b> Множитель ×${r.mult}: <b>+${r.win} ⬦</b> зачислено на баланс!`;
+    }
+  }
+
+  render();
+  return () => {};
+}
+
+/* ── 5. PvP Дуэли: «1v1 Skin & Coin Battles» ─────────────────────────────── */
+function gameDuel(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+
+  let duels = [];
+  let curBet = 50;
+  let activeTab = 'list'; // 'list' | 'create'
+  let isLoading = false;
+
+  async function loadDuels(){
+    const r = await fetch(API_BASE + '/api/duels/list?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
+    if(r && r.ok){
+      duels = r.duels || [];
+      if(r.balance != null) setTokens(r.balance);
+      render();
+    }
+  }
+
+  function render(){
+    let html = `
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="pillbtn ${activeTab==='list'?'active':''}" id="duelTabList" style="flex:1;padding:10px;font-size:13px;font-weight:900">⚔️ АКТИВНЫЕ ДУЭЛИ (${duels.length})</button>
+        <button class="pillbtn ${activeTab==='create'?'active':''}" id="duelTabCreate" style="flex:1;padding:10px;font-size:13px;font-weight:900">➕ СОЗДАТЬ ДУЭЛЬ</button>
+      </div>
+    `;
+
+    if(activeTab === 'create'){
+      html += `
+        <div style="background:#101622;border:1px solid #1f2b3e;border-radius:20px;padding:20px 16px;text-align:center">
+          <div style="font-size:42px;margin-bottom:8px">⚔️</div>
+          <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:4px">Бросить вызов в PvP Дуэли</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">Победитель забирает оба банка (комиссия площадки 5%)</div>
+
+          <div style="text-align:left;margin-bottom:8px;font-size:12px;font-weight:800;color:#94a3b8">РАЗМЕР СТАВКИ</div>
+          <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px">
+            ${[20, 50, 100, 250, 500, 1000].map(b => `<button class="chip ${b===curBet?'active':''}" data-dbet="${b}" style="padding:6px 12px;font-size:12px">${b} ⬦</button>`).join('')}
+          </div>
+
+          <button class="primary" id="duelCreateBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:12px">
+            ⚔️ СОЗДАТЬ ДУЭЛЬ НА ${curBet} ⬦
+          </button>
+          <div id="duelCreateResult" style="margin-top:12px"></div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="duel-list">
+          ${duels.length === 0 ? `
+            <div style="text-align:center;padding:32px 14px;background:#101622;border:1px solid #1f2b3e;border-radius:18px">
+              <div style="font-size:36px;margin-bottom:8px">🛡️</div>
+              <div style="font-size:15px;font-weight:800;color:#fff">Пока нет открытых дуэлей</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:4px">Создайте первую дуэль и позовите друзей по ссылке!</div>
+            </div>
+          ` : duels.map(d => {
+            const isMine = (Number(d.creator_id) === Number(S.user ? S.user.id : 0));
+            return `
+              <div class="duel-item">
+                <div>
+                  <div style="font-size:13.5px;font-weight:800;color:#fff">${esc(d.creator_name || 'Игрок')}</div>
+                  <div style="font-size:11px;color:#94a3b8">Ставка: <b style="color:#ffcf6b">${d.bet_tokens} ⬦</b> · Банк: <b>${Math.floor(d.bet_tokens * 1.9)} ⬦</b></div>
+                </div>
+                ${isMine ? `
+                  <button class="secondary" data-cancel-duel="${d.id}" style="padding:8px 12px;font-size:12px;color:#ef4444">Отменить</button>
+                ` : `
+                  <button class="primary" data-join-duel="${d.id}" style="padding:8px 16px;font-size:12px;font-weight:900">В БОЙ ⚔️</button>
+                `}
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div id="duelPlayResult" style="margin-top:12px"></div>
+      `;
+    }
+
+    a.innerHTML = html;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    const tabL = q('#duelTabList');
+    if(tabL) tabL.onclick = () => { activeTab = 'list'; loadDuels(); };
+    const tabC = q('#duelTabCreate');
+    if(tabC) tabC.onclick = () => { activeTab = 'create'; render(); };
+
+    qa('[data-dbet]').forEach(b => {
+      b.onclick = () => { curBet = Number(b.dataset.dbet); render(); };
+    });
+
+    const crBtn = q('#duelCreateBtn');
+    if(crBtn) crBtn.onclick = createDuel;
+
+    qa('[data-join-duel]').forEach(b => {
+      b.onclick = () => joinDuel(b.dataset.joinDuel);
+    });
+
+    qa('[data-cancel-duel]').forEach(b => {
+      b.onclick = () => cancelDuel(b.dataset.cancelDuel);
+    });
+  }
+
+  async function createDuel(){
+    if(isLoading) return;
+    isLoading = true;
+    const r = await fetch(API_BASE + '/api/duels/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), bet: curBet })
+    }).then(x => x.json()).catch(() => null);
+
+    isLoading = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Не удалось создать дуэль');
+      return;
+    }
+    tgHaptic('medium');
+    if(r.balance != null) setTokens(r.balance);
+    activeTab = 'list';
+    loadDuels();
+    setTimeout(() => {
+      const msg = q('#duelPlayResult');
+      if(msg){
+        msg.className = 'result good';
+        msg.innerHTML = `✅ <b>Дуэль создана!</b> Ссылка для друга: <code>t.me/${BOT_NAME}?startapp=duel_${r.duelId}</code>`;
+      }
+    }, 200);
+  }
+
+  async function joinDuel(duelId){
+    if(isLoading) return;
+    isLoading = true;
+    const r = await fetch(API_BASE + '/api/duels/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), duelId })
+    }).then(x => x.json()).catch(() => null);
+
+    isLoading = false;
+    if(!r || !r.ok){
+      alert(r && r.error ? r.error : 'Не удалось вступить в дуэль');
+      return;
+    }
+
+    if(r.balance != null) setTokens(r.balance);
+    loadDuels();
+
+    const msg = q('#duelPlayResult');
+    if(msg){
+      if(r.iWon){
+        tgHaptic('win');
+        msg.className = 'result good';
+        msg.innerHTML = `🏆 <b>ПОБЕДА В ДУЭЛИ!</b> Ваш ролл: <b>${r.rollOpponent}</b> vs <b>${r.rollCreator}</b> соперника! Выигрыш <b>+${r.prize} ⬦</b> зачислен на баланс!`;
+      } else {
+        tgHaptic('lose');
+        msg.className = 'result bad';
+        msg.innerHTML = `❌ <b>ПОРАЖЕНИЕ В ДУЭЛИ!</b> Ваш ролл: <b>${r.rollOpponent}</b> vs <b>${r.rollCreator}</b> соперника.`;
+      }
+    }
+  }
+
+  async function cancelDuel(duelId){
+    const r = await fetch(API_BASE + '/api/duels/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tgInitData(), duelId })
+    }).then(x => x.json()).catch(() => null);
+    if(r && r.ok){
+      if(r.balance != null) setTokens(r.balance);
+      loadDuels();
+    }
+  }
+
+  loadDuels();
+  return () => {};
+}
+
+
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны'};
-const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа',elevator:'Адский Лифт',duel:'PvP Дуэль'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe,elevator:gameElevator,duel:gameDuel};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';

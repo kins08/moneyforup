@@ -151,7 +151,51 @@ CREATE TABLE IF NOT EXISTS user_inventory (
   upgrade_only INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
+
+CREATE TABLE IF NOT EXISTS vault_safe (
+  id INTEGER PRIMARY KEY,
+  jackpot_tokens INTEGER DEFAULT 25000,
+  secret_code TEXT DEFAULT '7429',
+  guesses_count INTEGER DEFAULT 0,
+  last_won_at INTEGER DEFAULT 0,
+  last_winner_id INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS safe_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  code TEXT NOT NULL,
+  bulls INTEGER NOT NULL,
+  cows INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_safe_attempts_user ON safe_attempts(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS pvp_duels (
+  id TEXT PRIMARY KEY,
+  creator_id INTEGER NOT NULL,
+  opponent_id INTEGER,
+  bet_tokens INTEGER NOT NULL,
+  winner_id INTEGER,
+  status TEXT DEFAULT 'open',
+  roll_creator INTEGER,
+  roll_opponent INTEGER,
+  created_at INTEGER NOT NULL,
+  settled_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_pvp_duels_status ON pvp_duels(status, created_at DESC);
 `);
+
+// Инициализируем сейф по умолчанию, если ещё не создан
+try {
+  const safeInit = db.prepare('SELECT id FROM vault_safe WHERE id = 1').get();
+  if (!safeInit) {
+    const initCode = String(Math.floor(1000 + Math.random() * 9000));
+    db.prepare('INSERT INTO vault_safe (id, jackpot_tokens, secret_code, guesses_count) VALUES (1, 25000, ?, 0)').run(initCode);
+  }
+} catch (e) {
+  console.warn('[DB] vault_safe init warning:', e.message);
+}
 
 /* Мягкая миграция: CREATE TABLE IF NOT EXISTS не добавит колонки в уже
    существующую таблицу, а база в проде живёт давно. Добавляем недостающие. */
@@ -907,6 +951,172 @@ module.exports = {
       };
     } catch (e) {
       console.error('[DB] getAdminMetrics error:', e.message);
+      return { ok: false, error: e.message };
+    }
+  },
+  // ── Взлом Сейфа (Crack the Safe) ──
+  getSafeData: (userId) => {
+    try {
+      const safe = db.prepare('SELECT jackpot_tokens, guesses_count, last_won_at, last_winner_id FROM vault_safe WHERE id = 1').get() || {
+        jackpot_tokens: 25000, guesses_count: 0
+      };
+      const recentAttempts = db.prepare(`
+        SELECT code, bulls, cows, created_at
+        FROM safe_attempts
+        WHERE user_id = ?
+        ORDER BY id DESC
+        LIMIT 6
+      `).all(userId);
+      return {
+        jackpot: safe.jackpot_tokens,
+        guessesCount: safe.guesses_count,
+        recentAttempts
+      };
+    } catch (e) {
+      console.error('[DB] getSafeData error:', e.message);
+      return { jackpot: 25000, guessesCount: 0, recentAttempts: [] };
+    }
+  },
+
+  attemptSafeGuess: (userId, guessCode) => {
+    try {
+      const safe = db.prepare('SELECT secret_code, jackpot_tokens, guesses_count FROM vault_safe WHERE id = 1').get();
+      if (!safe) return { ok: false, error: 'Сейф недоступен' };
+      const secret = String(safe.secret_code);
+      const guess = String(guessCode);
+
+      let bulls = 0; // точное совпадение
+      let cows = 0;  // есть в числе, но на другой позиции
+      const secretUsed = [false, false, false, false];
+      const guessUsed = [false, false, false, false];
+
+      for (let i = 0; i < 4; i++) {
+        if (guess[i] === secret[i]) {
+          bulls++;
+          secretUsed[i] = true;
+          guessUsed[i] = true;
+        }
+      }
+      for (let i = 0; i < 4; i++) {
+        if (!guessUsed[i]) {
+          for (let j = 0; j < 4; j++) {
+            if (!secretUsed[j] && guess[i] === secret[j]) {
+              cows++;
+              secretUsed[j] = true;
+              break;
+            }
+          }
+        }
+      }
+
+      const won = (bulls === 4);
+      const now = Date.now();
+      db.prepare(`
+        INSERT INTO safe_attempts (user_id, code, bulls, cows, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(userId, guess, bulls, cows, now);
+
+      let winTokens = 0;
+      if (won) {
+        winTokens = safe.jackpot_tokens;
+        const newCode = String(Math.floor(1000 + Math.random() * 9000));
+        db.prepare(`
+          UPDATE vault_safe
+          SET jackpot_tokens = 10000, secret_code = ?, guesses_count = 0, last_won_at = ?, last_winner_id = ?
+          WHERE id = 1
+        `).run(newCode, now, userId);
+      } else {
+        db.prepare(`
+          UPDATE vault_safe
+          SET jackpot_tokens = jackpot_tokens + 15, guesses_count = guesses_count + 1
+          WHERE id = 1
+        `).run();
+      }
+
+      const updatedSafe = db.prepare('SELECT jackpot_tokens, guesses_count FROM vault_safe WHERE id = 1').get();
+      return {
+        ok: true,
+        won,
+        bulls,
+        cows,
+        winTokens,
+        jackpot: updatedSafe.jackpot_tokens,
+        guessesCount: updatedSafe.guesses_count
+      };
+    } catch (e) {
+      console.error('[DB] attemptSafeGuess error:', e.message);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  // ── PvP Дуэли (Skin & Coin Flip 1v1) ──
+  getActiveDuels: () => {
+    try {
+      return db.prepare(`
+        SELECT d.id, d.creator_id, d.bet_tokens, d.created_at, u.name as creator_name, u.username as creator_username
+        FROM pvp_duels d
+        LEFT JOIN users u ON u.id = d.creator_id
+        WHERE d.status = 'open'
+        ORDER BY d.created_at DESC
+        LIMIT 15
+      `).all();
+    } catch (e) {
+      console.error('[DB] getActiveDuels error:', e.message);
+      return [];
+    }
+  },
+
+  createDuel: (duelId, creatorId, betTokens) => {
+    try {
+      db.prepare(`
+        INSERT INTO pvp_duels (id, creator_id, bet_tokens, status, created_at)
+        VALUES (?, ?, ?, 'open', ?)
+      `).run(duelId, creatorId, betTokens, Date.now());
+      return { ok: true };
+    } catch (e) {
+      console.error('[DB] createDuel error:', e.message);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  getDuel: (duelId) => {
+    try {
+      return db.prepare(`
+        SELECT d.*, u.name as creator_name, u.username as creator_username
+        FROM pvp_duels d
+        LEFT JOIN users u ON u.id = d.creator_id
+        WHERE d.id = ?
+      `).get(duelId);
+    } catch (e) {
+      return null;
+    }
+  },
+
+  settleDuel: (duelId, opponentId, winnerId, rollCreator, rollOpponent) => {
+    try {
+      db.prepare(`
+        UPDATE pvp_duels
+        SET opponent_id = ?, winner_id = ?, status = 'settled',
+            roll_creator = ?, roll_opponent = ?, settled_at = ?
+        WHERE id = ? AND status = 'open'
+      `).run(opponentId, winnerId, rollCreator, rollOpponent, Date.now(), duelId);
+      return { ok: true };
+    } catch (e) {
+      console.error('[DB] settleDuel error:', e.message);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  cancelDuel: (duelId, creatorId) => {
+    try {
+      const res = db.prepare(`
+        UPDATE pvp_duels
+        SET status = 'canceled', settled_at = ?
+        WHERE id = ? AND creator_id = ? AND status = 'open'
+      `).run(Date.now(), duelId, creatorId);
+      return { ok: res.changes > 0 };
+    } catch (e) {
+      console.error('[DB] cancelDuel error:', e.message);
       return { ok: false, error: e.message };
     }
   },
