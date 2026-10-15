@@ -9374,7 +9374,7 @@ qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)
 window.MONEYFORUP_DEBUG={state:S,TERMS,REF_PERCENT,CASHBACK_RANKS,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
 window.MATHPLAY_DEBUG=window.MONEYFORUP_DEBUG;   // алиас для старых сборок/тестов
 
-setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 850);
+setTimeout(() => { const sp = document.getElementById('mupSplash'); if(sp) sp.classList.add('hide'); }, 1800);
 tgInit();tgRegister();tgLoadBalance();syncUI();   // баланс+реквизиты+инвентарь сразу, а не после первого раунда
 setInterval(()=>{if(IS_TG&&API_BASE&&!document.hidden)tgLoadBalance();},20000);  // баланс не устаревает, пока приложение открыто
 initLiveTicker();

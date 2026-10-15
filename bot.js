@@ -1024,6 +1024,20 @@ bot.command('start', async ctx => {
     `💎 <b>Ваш баланс:</b> <code>${u.tokens} ⬦</code> (~${(u.tokens / TOKENS_PER_RUB).toFixed(2)} ₽)\n\n` +
     `Нажимайте кнопку ниже и начинайте игру! 👇`;
 
+  const logoPath = path.join(__dirname, 'assets', 'logo_mup.jpg');
+  if (fs.existsSync(logoPath)) {
+    try {
+      const { InputFile } = require('grammy');
+      await ctx.replyWithPhoto(new InputFile(logoPath), {
+        caption: text,
+        parse_mode: 'HTML',
+        reply_markup: kb
+      });
+      return;
+    } catch (err) {
+      console.warn('[bot.start] Не удалось отправить фото, фолбэк на текст:', err.message);
+    }
+  }
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
 });
 
