@@ -1231,6 +1231,15 @@ const IS_TG=!!(TG&&TG.initData);
 const TGU=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user)?TG.initDataUnsafe.user:null;
 const TGSTART=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.start_param)?TG.initDataUnsafe.start_param:'';
 function tgInitData(){ return (TG && TG.initData) ? TG.initData : (window.TELEGRAM_INIT_DATA || ''); }
+function setTokens(val){
+  if(typeof val === 'number' && !isNaN(val)){
+    S.balance = Math.max(0, Math.floor(val));
+    S.tgBalance = S.balance;
+    try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
+    save();
+    syncUI();
+  }
+}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function tgHaptic(kind){
   try{const h=TG&&TG.HapticFeedback;if(!h)return;
@@ -8551,7 +8560,7 @@ function gameScratch(){
   const a=q('#gameArea');
   if(!a) return ()=>{};
 
-  let curBet = 50;
+  let curBet = 20;
   let insurance = false;
   let isPlaying = false;
   let scratchGrid = null;
@@ -8559,6 +8568,7 @@ function gameScratch(){
   let winMult = 0;
   let winTokens = 0;
   let insuredRefund = 0;
+  let revealedCount = 0;
 
   const SYMBOL_MAP = {
     knife: { icon: '🗡️', name: 'Керамбит', mult: '×50', color: '#ff3366' },
@@ -8602,7 +8612,9 @@ function gameScratch(){
           <div style="font-size:48px;line-height:1;margin-bottom:10px">🪙</div>
           <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px">Мгновенная лотерея «Сотри монеткой»</div>
           <div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Сотри защитный слой пальцем. Если совпадут 3 одинаковых символа — куш твой!</div>
-          <button class="primary" id="scratchBuyBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">КУПИТЬ БИЛЕТ ЗА ${totalCost} ⬦</button>
+          <button class="primary" id="scratchBuyBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900" ${isPlaying?'disabled':''}>
+            ${isPlaying ? 'Покупка билета...' : `КУПИТЬ БИЛЕТ ЗА ${totalCost} ⬦`}
+          </button>
         </div>
       `;
     } else {
@@ -8659,34 +8671,82 @@ function gameScratch(){
 
   async function buyTicket(){
     if(isPlaying) return;
-    isPlaying = true;
-    const btn = q('#scratchBuyBtn');
-    if(btn) btn.textContent = 'Покупка билета...';
-
-    let r = null;
-    try {
-      r = await fetch(API_BASE + '/api/scratch/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-      }).then(x => x.json()).catch(() => null);
-    } catch(_) {}
-    finally {
-      isPlaying = false;
-    }
-
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Не удалось купить билет');
-      render();
+    const totalCost = insurance ? Math.floor(curBet * 1.15) : curBet;
+    if(S.balance < totalCost){
+      tgHaptic('error');
+      showAppNotification('Недостаточно токенов для покупки билета!');
       return;
     }
 
+    isPlaying = true;
+    const btn = q('#scratchBuyBtn');
+    if(btn) {
+      btn.disabled = true;
+      btn.textContent = 'Покупка билета...';
+    }
+
+    let r = null;
+    try {
+      if(IS_TG && API_BASE){
+        r = await fetch(API_BASE + '/api/scratch/play', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+        }).then(x => x.json()).catch(() => null);
+      }
+    } catch(_) {}
+
+    // Фолбэк для оффлайн/демо
+    if(!r || !r.ok){
+      if(!IS_TG || !API_BASE){
+        S.balance -= totalCost;
+        save(); syncUI();
+        const willWin = Math.random() < 0.37;
+        const symKeys = Object.keys(SYMBOL_MAP);
+        const wonSym = willWin ? symKeys[Math.floor(Math.random() * symKeys.length)] : null;
+        const grid = new Array(9).fill(null);
+        if(willWin){
+          const pos = [0,1,2,3,4,5,6,7,8].sort(()=>Math.random()-0.5).slice(0,3);
+          pos.forEach(p => { grid[p] = wonSym; });
+          for(let i=0; i<9; i++){
+            if(!grid[i]){
+              const others = symKeys.filter(k => k !== wonSym);
+              grid[i] = others[Math.floor(Math.random()*others.length)];
+            }
+          }
+          const multVal = parseFloat(SYMBOL_MAP[wonSym].mult.replace('×','')) || 2;
+          const winTk = Math.floor(curBet * multVal);
+          S.balance += winTk;
+          save(); syncUI();
+          r = { ok: true, grid, won: true, winMult: multVal, winTokens: winTk, insuredReturn: 0, tokens: S.balance };
+        } else {
+          for(let i=0; i<9; i++){
+            grid[i] = symKeys[Math.floor(Math.random()*symKeys.length)];
+          }
+          let insRet = 0;
+          if(insurance){
+            insRet = Math.floor(curBet * 0.35);
+            S.balance += insRet;
+            save(); syncUI();
+          }
+          r = { ok: true, grid, won: false, winMult: 0, winTokens: 0, insuredReturn: insRet, tokens: S.balance };
+        }
+      } else {
+        isPlaying = false;
+        showAppNotification(r && r.error ? r.error : 'Не удалось купить билет');
+        render();
+        return;
+      }
+    }
+
+    isPlaying = false;
     tgHaptic('medium');
     scratchGrid = r.grid;
     won = r.won;
     winMult = r.winMult;
     winTokens = r.winTokens;
     insuredRefund = r.insuredReturn || 0;
+    revealedCount = 0;
     if(r.tokens != null) setTokens(r.tokens);
 
     render();
@@ -8728,10 +8788,14 @@ function gameScratch(){
         ctx.fill();
         tgHaptic('light');
         erasedCount++;
-        if(erasedCount > 6){
+        if(erasedCount > 5 && canvas.style.display !== 'none'){
           canvas.style.transition = 'opacity .3s';
           canvas.style.opacity = '0';
-          setTimeout(() => { canvas.style.display = 'none'; showResult(); }, 300);
+          setTimeout(() => {
+            canvas.style.display = 'none';
+            revealedCount++;
+            if(revealedCount >= 9) showResult();
+          }, 300);
         }
       }
 
@@ -8757,6 +8821,7 @@ function gameScratch(){
       setTimeout(() => { c.style.display = 'none'; }, 350);
     });
     tgHaptic('medium');
+    revealedCount = 9;
     setTimeout(showResult, 380);
   }
 
@@ -8766,7 +8831,7 @@ function gameScratch(){
     if(won){
       tgHaptic('win');
       resEl.className = 'result good';
-      resEl.innerHTML = `🎉 <b>ВЫИГРЫШ ×${winMult}!</b> Совпали 3 символа: <b>+${winTokens} ⬦</b> зачислено на баланс!`;
+      resEl.innerHTML = `🎉 <b>ВЫИГРЫШ ×${winMult}!</b> Совпали 3 символа: <b>+${fmt(winTokens)} ⬦</b> зачислено на баланс!`;
     } else {
       tgHaptic('lose');
       resEl.className = 'result bad';
@@ -8784,13 +8849,15 @@ function gameRevolver(){
   const a=q('#gameArea');
   if(!a) return ()=>{};
 
-  let curBet = 50;
+  let curBet = 20;
   let insurance = false;
   let inRound = false;
   let step = 0;
   let curMult = 1.0;
   let potWin = 0;
   let isSpinning = false;
+  let currentRotation = 0;
+  let offlineBullet = 0;
 
   const REVOLVER_MULTS = { 1: 1.18, 2: 1.45, 3: 1.95, 4: 2.90, 5: 5.80, 6: 29.00 };
 
@@ -8803,7 +8870,7 @@ function gameRevolver(){
           <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
         </div>
         <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
-          ${[10, 25, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-rbet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
+          ${[10, 20, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-rbet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
         </div>
 
         <div class="insurance-toggle ${insurance?'active':''}" id="revInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
@@ -8822,7 +8889,7 @@ function gameRevolver(){
         </div>
 
         <!-- Барабан револьвера на 6 камор -->
-        <div class="rev-drum-wrap" id="revDrumEl">
+        <div class="rev-drum-wrap" id="revDrumEl" style="transform:rotate(${currentRotation}deg)">
           <div class="rev-center">💀</div>
           ${[0, 1, 2, 3, 4, 5].map(i => {
             const angle = (i * 60) * (Math.PI / 180);
@@ -8837,11 +8904,13 @@ function gameRevolver(){
         <div style="font-size:12px;color:#64748b;margin-bottom:16px">В барабане 6 камор. 1 боевой патрон. Каждый холостой повышает множитель!</div>
 
         ${!inRound ? `
-          <button class="primary" id="revStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">ЗАРЯДИТЬ РЕВОЛЬВЕР (${totalCost} ⬦)</button>
+          <button class="primary" id="revStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900" ${isSpinning?'disabled':''}>
+            ${isSpinning ? 'Зарядка барабана...' : `ЗАРЯДИТЬ РЕВОЛЬВЕР (${totalCost} ⬦)`}
+          </button>
         ` : `
           <div style="display:flex;gap:10px">
-            <button class="primary" id="revTriggerBtn" style="flex:1.2;padding:14px;font-size:15px;font-weight:900;background:linear-gradient(135deg,#ef4444,#dc2626)">🎯 СПУСТИТЬ КУРОК</button>
-            <button class="secondary" id="revCashoutBtn" style="flex:1;padding:14px;font-size:14px;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);color:#fff">💰 ЗАБРАТЬ (${potWin} ⬦)</button>
+            <button class="primary" id="revTriggerBtn" style="flex:1.2;padding:14px;font-size:15px;font-weight:900;background:linear-gradient(135deg,#ef4444,#dc2626)" ${isSpinning?'disabled':''}>🎯 СПУСТИТЬ КУРОК</button>
+            <button class="secondary" id="revCashoutBtn" style="flex:1;padding:14px;font-size:14px;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);color:#fff" ${isSpinning||step===0?'disabled':''}>💰 ЗАБРАТЬ (${potWin || curBet} ⬦)</button>
           </div>
         `}
 
@@ -8871,27 +8940,47 @@ function gameRevolver(){
 
   async function startRound(){
     if(inRound || isSpinning) return;
+    const totalCost = insurance ? Math.floor(curBet * 1.15) : curBet;
+    if(S.balance < totalCost){
+      tgHaptic('error');
+      showAppNotification('Недостаточно токенов для ставки в Револьвере!');
+      return;
+    }
+
     isSpinning = true;
     const btn = q('#revStartBtn');
-    if(btn) btn.textContent = 'Зарядка...';
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Зарядка барабана...';
+    }
 
     let r = null;
     try {
-      r = await fetch(API_BASE + '/api/revolver/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-      }).then(x => x.json()).catch(() => null);
+      if(IS_TG && API_BASE){
+        r = await fetch(API_BASE + '/api/revolver/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+        }).then(x => x.json()).catch(() => null);
+      }
     } catch(_) {}
-    finally {
-      isSpinning = false;
+
+    // Фолбэк для оффлайн/демо
+    if(!r || !r.ok){
+      if(!IS_TG || !API_BASE){
+        S.balance -= totalCost;
+        save(); syncUI();
+        offlineBullet = Math.floor(1 + Math.random() * 6);
+        r = { ok: true, step: 0, bet: curBet, balance: S.balance };
+      } else {
+        isSpinning = false;
+        showAppNotification(r && r.error ? r.error : 'Не удалось начать раунд');
+        render();
+        return;
+      }
     }
 
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Не удалось начать раунд');
-      render();
-      return;
-    }
+    isSpinning = false;
     inRound = true;
     step = 0;
     curMult = 1.0;
@@ -8899,6 +8988,11 @@ function gameRevolver(){
     if(r.balance != null) setTokens(r.balance);
     tgHaptic('medium');
     render();
+    const resEl = q('#revResultMsg');
+    if(resEl){
+      resEl.className = 'result good';
+      resEl.innerHTML = `🎯 <b>Револьвер заряжен!</b> 1 боевой патрон. Жми «СПУСТИТЬ КУРОК»!`;
+    }
   }
 
   async function pullTrigger(){
@@ -8906,27 +9000,50 @@ function gameRevolver(){
     isSpinning = true;
 
     // Вращаем барабан
+    currentRotation += 720 + 60;
     const drum = q('#revDrumEl');
-    if(drum) drum.style.transform = `rotate(${(step + 1) * 60 + 720}deg)`;
+    if(drum) drum.style.transform = `rotate(${currentRotation}deg)`;
+    tgHaptic('light');
 
     let r = null;
     try {
-      r = await fetch(API_BASE + '/api/revolver/trigger', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tgInitData() })
-      }).then(x => x.json()).catch(() => null);
+      if(IS_TG && API_BASE){
+        r = await fetch(API_BASE + '/api/revolver/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tgInitData() })
+        }).then(x => x.json()).catch(() => null);
+      }
     } catch(_) {}
-    finally {
-      isSpinning = false;
-    }
 
+    // Фолбэк для оффлайн/демо
     if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Ошибка выстрела');
-      render();
-      return;
+      if(!IS_TG || !API_BASE){
+        step++;
+        const fired = (step === offlineBullet);
+        if(fired){
+          let insuredReturn = 0;
+          if(insurance){
+            insuredReturn = Math.floor(curBet * 0.35);
+            S.balance += insuredReturn;
+            save(); syncUI();
+          }
+          r = { ok: true, fired: true, step, bullet: offlineBullet, win: 0, insuredReturn, balance: S.balance };
+        } else {
+          const m = REVOLVER_MULTS[step] || 1.18;
+          const pw = Math.floor(curBet * m);
+          r = { ok: true, fired: false, step, mult: m, potWin: pw, balance: S.balance };
+        }
+      } else {
+        isSpinning = false;
+        showAppNotification(r && r.error ? r.error : 'Ошибка выстрела');
+        render();
+        return;
+      }
     }
 
+    await sleep(400);
+    isSpinning = false;
     step = r.step;
     if(r.balance != null) setTokens(r.balance);
 
@@ -8941,33 +9058,43 @@ function gameRevolver(){
         resEl.innerHTML = `💥 <b>БАБАХ! БОЕВОЙ ПАТРОН В КАМОРЕ #${r.bullet}!</b> Ставка сгорела.${ins}`;
       }
     } else {
-      tgHaptic('light');
+      tgHaptic('win');
       curMult = r.mult;
       potWin = r.potWin;
       render();
       const resEl = q('#revResultMsg');
       if(resEl){
         resEl.className = 'result good';
-        resEl.innerHTML = `*Щёлк* <b>ХОЛОСТОЙ!</b> Множитель вырос до <b>×${curMult.toFixed(2)}</b>! Рискнёшь ещё раз или заберёшь куш?`;
+        resEl.innerHTML = `*Щёлк* <b>ХОЛОСТОЙ!</b> Множитель вырос до <b>×${curMult.toFixed(2)}</b>! Забери <b>${potWin} ⬦</b> или рискни ещё раз!`;
       }
     }
   }
 
   async function doCashout(){
-    if(!inRound || isSpinning) return;
+    if(!inRound || isSpinning || step === 0) return;
     let r = null;
     try {
-      r = await fetch(API_BASE + '/api/revolver/cashout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tgInitData() })
-      }).then(x => x.json()).catch(() => null);
+      if(IS_TG && API_BASE){
+        r = await fetch(API_BASE + '/api/revolver/cashout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tgInitData() })
+        }).then(x => x.json()).catch(() => null);
+      }
     } catch(_) {}
 
+    // Фолбэк для оффлайн/демо
     if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Ошибка кэшаута');
-      return;
+      if(!IS_TG || !API_BASE){
+        S.balance += potWin;
+        save(); syncUI();
+        r = { ok: true, win: potWin, mult: curMult, balance: S.balance };
+      } else {
+        showAppNotification(r && r.error ? r.error : 'Ошибка выхода');
+        return;
+      }
     }
+
     inRound = false;
     tgHaptic('win');
     if(r.balance != null) setTokens(r.balance);
@@ -8975,7 +9102,7 @@ function gameRevolver(){
     const resEl = q('#revResultMsg');
     if(resEl){
       resEl.className = 'result good';
-      resEl.innerHTML = `🎉 <b>КЭШАУТ ×${r.mult}!</b> Зачислено <b>+${r.win} ⬦</b> на баланс!`;
+      resEl.innerHTML = `🎉 <b>КЭШАУТ ×${r.mult}!</b> Зачислено <b>+${fmt(r.win)} ⬦</b> на баланс!`;
     }
   }
 
@@ -8993,16 +9120,19 @@ function gameSafe(){
   let guessesCount = 0;
   let attempts = [];
   let isGuessing = false;
+  let offlineCode = '7429';
 
   async function loadStatus(){
     try {
-      const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
-      if(r && r.ok){
-        jackpot = r.jackpot;
-        guessesCount = r.guessesCount;
-        attempts = r.recentAttempts || [];
-        if(r.balance != null) setTokens(r.balance);
-        render();
+      if(IS_TG && API_BASE){
+        const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
+        if(r && r.ok){
+          jackpot = r.jackpot;
+          guessesCount = r.guessesCount;
+          attempts = r.recentAttempts || [];
+          if(r.balance != null) setTokens(r.balance);
+          render();
+        }
       }
     } catch(_) {}
   }
@@ -9033,8 +9163,8 @@ function gameSafe(){
           <button class="safe-key" id="safeBackBtn" style="color:#94a3b8;font-size:15px">⌫</button>
         </div>
 
-        <button class="primary" id="safeSubmitBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000" ${enteredCode.length<4?'disabled':''}>
-          🔓 ВЗЛОМАТЬ СЕЙФ (25 ⬦)
+        <button class="primary" id="safeSubmitBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000" ${enteredCode.length<4||isGuessing?'disabled':''}>
+          ${isGuessing ? 'Подбор кода...' : '🔓 ВЗЛОМАТЬ СЕЙФ (25 ⬦)'}
         </button>
 
         <div id="safeResultMsg" style="margin-top:12px"></div>
@@ -9043,19 +9173,21 @@ function gameSafe(){
       <!-- История попыток с подсказками -->
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:14px">
         <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-bottom:8px">ВАШИ ПОСЛЕДНИЕ ПОПЫТКИ:</div>
-        ${attempts.length === 0 ? `<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">Вы ещё не пробовали взломать сейф</div>` : `
-          <div style="display:flex;flex-direction:column;gap:6px">
-            ${attempts.map(att => `
-              <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px">
-                <b style="font-family:monospace;letter-spacing:.1em;color:#fff">${att.code}</b>
-                <div>
-                  <span style="color:#10b981;font-weight:800;margin-right:8px">🎯 ${att.bulls} на месте</span>
-                  <span style="color:#ffcf6b;font-weight:800">🔄 ${att.cows} есть в коде</span>
+        <div id="safeAttemptsList">
+          ${attempts.length === 0 ? `<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">Вы ещё не пробовали взломать сейф</div>` : `
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${attempts.map(att => `
+                <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px;border:1px solid ${att.won?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.04)'}">
+                  <b style="font-family:monospace;letter-spacing:.15em;font-size:14px;color:#fff">${att.code}</b>
+                  <div>
+                    <span style="color:#10b981;font-weight:800;margin-right:8px">🎯 ${att.bulls} на месте</span>
+                    <span style="color:#ffcf6b;font-weight:800">🔄 ${att.cows} есть в коде</span>
+                  </div>
                 </div>
-              </div>
-            `).join('')}
-          </div>
-        `}
+              `).join('')}
+            </div>
+          `}
+        </div>
       </div>
     `;
 
@@ -9066,7 +9198,7 @@ function gameSafe(){
   function attachEvents(){
     qa('[data-digit]').forEach(b => {
       b.onclick = () => {
-        if(enteredCode.length < 4){
+        if(enteredCode.length < 4 && !isGuessing){
           enteredCode += b.dataset.digit;
           tgHaptic('light');
           render();
@@ -9074,61 +9206,107 @@ function gameSafe(){
       };
     });
     const clr = q('#safeClearBtn');
-    if(clr) clr.onclick = () => { enteredCode = ''; render(); };
+    if(clr) clr.onclick = () => { if(!isGuessing){ enteredCode = ''; render(); } };
     const bck = q('#safeBackBtn');
-    if(bck) bck.onclick = () => { enteredCode = enteredCode.slice(0, -1); render(); };
+    if(bck) bck.onclick = () => { if(!isGuessing){ enteredCode = enteredCode.slice(0, -1); render(); } };
     const sub = q('#safeSubmitBtn');
     if(sub) sub.onclick = submitGuess;
   }
 
   async function submitGuess(){
     if(enteredCode.length !== 4 || isGuessing) return;
-    isGuessing = true;
-    const btn = q('#safeSubmitBtn');
-    if(btn) btn.textContent = 'Подбор кода...';
+    const guessCode = enteredCode;
 
-    let r = null;
-    try {
-      r = await fetch(API_BASE + '/api/safe/guess', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tgInitData(), code: enteredCode })
-      }).then(x => x.json()).catch(() => null);
-    } catch(_) {}
-    finally {
-      isGuessing = false;
-    }
-
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Ошибка взлома');
-      render();
+    if(S.balance < 25){
+      tgHaptic('error');
+      showAppNotification('Недостаточно токенов на балансе (нужно 25 ⬦)!');
       return;
     }
 
+    isGuessing = true;
+    const btn = q('#safeSubmitBtn');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Подбор кода...';
+    }
+
+    let r = null;
+    try {
+      if(IS_TG && API_BASE){
+        r = await fetch(API_BASE + '/api/safe/guess', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tgInitData(), code: guessCode })
+        }).then(x => x.json()).catch(() => null);
+      }
+    } catch(_) {}
+
+    // Фолбэк для оффлайн/демо
+    if(!r || !r.ok){
+      if(!IS_TG || !API_BASE){
+        S.balance -= 25;
+        save(); syncUI();
+        let b = 0, c = 0;
+        const secUsed = [false, false, false, false];
+        const gUsed = [false, false, false, false];
+        for(let i=0; i<4; i++){
+          if(guessCode[i] === offlineCode[i]){ b++; secUsed[i]=true; gUsed[i]=true; }
+        }
+        for(let i=0; i<4; i++){
+          if(!gUsed[i]){
+            for(let j=0; j<4; j++){
+              if(!secUsed[j] && guessCode[i] === offlineCode[j]){ c++; secUsed[j]=true; break; }
+            }
+          }
+        }
+        jackpot += 15;
+        guessesCount += 1;
+        const won = (b === 4);
+        let winTokens = 0;
+        if(won){
+          winTokens = jackpot;
+          S.balance += winTokens;
+          save(); syncUI();
+          jackpot = 25000;
+          offlineCode = String(Math.floor(1000 + Math.random()*9000));
+        }
+        r = { ok: true, code: guessCode, won, bulls: b, cows: c, winTokens, jackpot, guessesCount, balance: S.balance };
+      } else {
+        isGuessing = false;
+        showAppNotification(r && r.error ? r.error : 'Ошибка отправки кода');
+        render();
+        return;
+      }
+    }
+
+    isGuessing = false;
     if(r.balance != null) setTokens(r.balance);
     jackpot = r.jackpot;
     guessesCount = r.guessesCount;
-    attempts.unshift({ code: enteredCode, bulls: r.bulls, cows: r.cows });
-    if(attempts.length > 6) attempts.pop();
 
-    if(r.won){
-      tgHaptic('win');
-      render();
-      const res = q('#safeResultMsg');
-      if(res){
+    // Добавляем попытку в начало списка
+    attempts.unshift({ code: guessCode, bulls: r.bulls, cows: r.cows, won: r.won });
+    if(attempts.length > 8) attempts.pop();
+
+    // Очищаем введённый код
+    enteredCode = '';
+
+    // Перерисовываем экран (список попыток внизу мгновенно обновляется)
+    render();
+
+    // Показываем сочный результат
+    const res = q('#safeResultMsg');
+    if(res){
+      if(r.won){
+        tgHaptic('win');
         res.className = 'result good';
-        res.innerHTML = `🎉 <b>СЕЙФ ВЗЛОМАН! ВЫ СОРВАЛИ КУШ!</b> Код ${r.code} подошёл! Начислено <b>+${fmt(r.winTokens)} ⬦</b>!`;
-      }
-    } else {
-      tgHaptic('medium');
-      render();
-      const res = q('#safeResultMsg');
-      if(res){
+        res.innerHTML = `🎉 <b>СЕЙФ ВЗЛОМАН! ВЫ СОРВАЛИ КУШ!</b> Код <b>${r.code}</b> подошёл! Начислено <b>+${fmt(r.winTokens)} ⬦</b>!`;
+      } else {
+        tgHaptic('medium');
         res.className = 'result bad';
-        res.innerHTML = `❌ Код не подошёл! Подсказка: <b>🎯 ${r.bulls} на своём месте</b>, <b>🔄 ${r.cows} есть в коде</b>.`;
+        res.innerHTML = `❌ Код <b>${guessCode}</b> не подошёл!<br>Подсказка: <b>🎯 ${r.bulls} на месте</b> · <b>🔄 ${r.cows} есть в коде</b>. Списано 25 ⬦.`;
       }
     }
-    enteredCode = '';
   }
 
   render();
