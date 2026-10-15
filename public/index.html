@@ -732,90 +732,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   background: #25334c;
 }
 
-/* Адский Лифт */
-.elv-shaft {
-  background: #0f1521;
-  border: 1px solid #253043;
-  border-radius: 16px;
-  padding: 14px;
-  position: relative;
-  overflow: hidden;
-}
-.elv-floors {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-.elv-floor-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid transparent;
-  font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
-  transition: all .25s;
-}
-.elv-floor-row.current {
-  background: rgba(0,229,255,0.12);
-  border-color: #00e5ff;
-  color: #00e5ff;
-  font-weight: 900;
-  box-shadow: 0 0 12px rgba(0,229,255,0.2);
-}
-.elv-floor-row.passed {
-  color: #10b981;
-  background: rgba(16,185,129,0.05);
-}
-.elv-doors {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 12px;
-}
-.elv-door {
-  height: 90px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #1d2636, #121926);
-  border: 2px solid #2d3b53;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all .2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-}
-.elv-door:hover {
-  border-color: #00e5ff;
-  transform: translateY(-2px);
-}
-.elv-door.selected {
-  border-color: #ffcf6b;
-  box-shadow: 0 0 14px rgba(255,207,107,0.4);
-}
-
-/* PvP Дуэли */
-.duel-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0;
-}
-.duel-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  border-radius: 12px;
-  background: #141b28;
-  border: 1px solid rgba(255,255,255,0.06);
-}
 
 </style>
 </head>
@@ -958,13 +874,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<div class="section"><b>Игры</b><span class="muted small">16 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">14 режимов</span></div>
 <div class="cards">
-<button class="game" data-game="scratch"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="scratch">14 онлайн</span></span><div class="game-card-cover"><img src="assets/game_scratch.jpg" alt="Скретч-карты"></div><div class="gi">🪙🎟️</div><strong>Скретч-карты</strong><span>Сотри монеткой защитный слой и забери до ×50!</span><i class="arrow">→</i></button>
-<button class="game" data-game="revolver"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="revolver">12 онлайн</span></span><div class="game-card-cover"><img src="assets/game_revolver.jpg" alt="Револьвер"></div><div class="gi">🔫💀</div><strong>Револьвер (Рулетка)</strong><span>Спускай курок или забирай банк до ×29!</span><i class="arrow">→</i></button>
-<button class="game" data-game="safe"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="safe">19 онлайн</span></span><div class="game-card-cover"><img src="assets/game_safe.jpg" alt="Взлом Сейфа"></div><div class="gi">🔐💎</div><strong>Взлом Сейфа</strong><span>Угадай 4 цифры и сорви Джекпот платформы!</span><i class="arrow">→</i></button>
-<button class="game" data-game="elevator"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="elevator">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_elevator.jpg" alt="Адский Лифт"></div><div class="gi">🛗⚡</div><strong>Адский Лифт</strong><span>Выбирай двери и поднимайся по этажам до ×20!</span><i class="arrow">→</i></button>
-<button class="game" data-game="duel"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="duel">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_duel.jpg" alt="PvP Дуэль"></div><div class="gi">⚔️💥</div><strong>PvP Дуэль (1v1)</strong><span>Брось вызов реальному игроку и забери оба банка!</span><i class="arrow">→</i></button>
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Умножай выигранные предметы или рискуй токенами до ×20</span><i class="arrow">→</i></button>
@@ -1005,6 +916,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 </svg></div><strong>Дроп</strong><span>Шарик падает по развилкам в 8 лунок</span><i class="arrow">→</i></button>
 <button class="game" data-game="skuf"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="skuf">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_skuf.jpg" alt="Скуф vs Альтушка"></div><div class="gi">🎀🖤</div><strong>Скуф vs Альтушка</strong><span>Ищи Альтушек на поле 5×5 и не попадись на Скуфа</span><i class="arrow">→</i></button>
 <button class="game" data-game="avito"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="avito">3 онлайн</span></span><div class="game-card-cover"><img src="assets/game_avito.jpg" alt="Перекуп на Авито"></div><div class="gi">🏎️📦</div><strong>Перекуп на Авито</strong><span>Торгуйся за лоты и перепродавай с иксами</span><i class="arrow">→</i></button>
+<button class="game" data-game="scratch"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="scratch">14 онлайн</span></span><div class="game-card-cover"><img src="assets/game_scratch.jpg" alt="Скретч-карты"></div><div class="gi">🪙🎟️</div><strong>Скретч-карты</strong><span>Сотри защитный слой монеткой и забери до ×50!</span><i class="arrow">→</i></button>
+<button class="game" data-game="revolver"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="revolver">12 онлайн</span></span><div class="game-card-cover"><img src="assets/game_revolver.jpg" alt="Револьвер"></div><div class="gi">🔫💀</div><strong>Револьвер</strong><span>Спускай курок или забирай банк до ×29!</span><i class="arrow">→</i></button>
+<button class="game" data-game="safe"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="safe">19 онлайн</span></span><div class="game-card-cover"><img src="assets/game_safe.jpg" alt="Взлом Сейфа"></div><div class="gi">🔐💎</div><strong>Взлом Сейфа</strong><span>Угадай 4 цифры и сорви Джекпот платформы!</span><i class="arrow">→</i></button>
 </div>
 </section>
 
@@ -1316,6 +1230,7 @@ const TG=(window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;
 const IS_TG=!!(TG&&TG.initData);
 const TGU=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user)?TG.initDataUnsafe.user:null;
 const TGSTART=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.start_param)?TG.initDataUnsafe.start_param:'';
+function tgInitData(){ return (TG && TG.initData) ? TG.initData : (window.TELEGRAM_INIT_DATA || ''); }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function tgHaptic(kind){
   try{const h=TG&&TG.HapticFeedback;if(!h)return;
@@ -8631,7 +8546,7 @@ function gameUpgrader(){
 }
 
 
-/* ── 1. Скретч-карты: «Сотри монеткой» ─────────────────────────────────── */
+/* ── 1. Скретч-карты: «Сотри защитный слой» ─────────────────────────────── */
 function gameScratch(){
   const a=q('#gameArea');
   if(!a) return ()=>{};
@@ -8640,7 +8555,6 @@ function gameScratch(){
   let insurance = false;
   let isPlaying = false;
   let scratchGrid = null;
-  let gridState = null;
   let won = false;
   let winMult = 0;
   let winTokens = 0;
@@ -8656,7 +8570,7 @@ function gameScratch(){
   };
 
   function render(){
-    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
+    const totalCost = insurance ? Math.floor(curBet * 1.15) : curBet;
     let html = `
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -8669,7 +8583,7 @@ function gameScratch(){
 
         <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle">
           <div>
-            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка билета (+12%)</div>
+            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка билета (+15%)</div>
             <div style="font-size:11px;color:#94a3b8">При проигрыше вернём 35% ставки</div>
           </div>
           <div class="toggle-sw"></div>
@@ -8749,13 +8663,18 @@ function gameScratch(){
     const btn = q('#scratchBuyBtn');
     if(btn) btn.textContent = 'Покупка билета...';
 
-    const r = await fetch(API_BASE + '/api/scratch/play', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-    }).then(x => x.json()).catch(() => null);
+    let r = null;
+    try {
+      r = await fetch(API_BASE + '/api/scratch/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+      }).then(x => x.json()).catch(() => null);
+    } catch(_) {}
+    finally {
+      isPlaying = false;
+    }
 
-    isPlaying = false;
     if(!r || !r.ok){
       alert(r && r.error ? r.error : 'Не удалось купить билет');
       render();
@@ -8776,47 +8695,58 @@ function gameScratch(){
   function initCanvases(){
     qa('.scratch-cell canvas').forEach((canvas, idx) => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width || 100;
-      canvas.height = rect.height || 94;
+      const w = Math.round(rect.width) || 96;
+      const h = Math.round(rect.height) || 94;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
+      if(!ctx) return;
 
-      // Рисуем металлический защитный слой
-      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      const grad = ctx.createLinearGradient(0, 0, w, h);
       grad.addColorStop(0, '#334155');
       grad.addColorStop(0.5, '#475569');
       grad.addColorStop(1, '#1e293b');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, w, h);
 
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('🪙 СОТРИ', canvas.width / 2, canvas.height / 2 + 4);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🪙 СОТРИ', w / 2, h / 2);
 
       let isErasing = false;
-      function erase(e){
-        if(!isErasing) return;
+      let erasedCount = 0;
+
+      function eraseAt(clientX, clientY){
         const cRect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const x = clientX - cRect.left;
         const y = clientY - cRect.top;
-
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
-        ctx.arc(x, y, 18, 0, Math.PI * 2);
+        ctx.arc(x, y, 22, 0, Math.PI * 2);
         ctx.fill();
         tgHaptic('light');
+        erasedCount++;
+        if(erasedCount > 6){
+          canvas.style.transition = 'opacity .3s';
+          canvas.style.opacity = '0';
+          setTimeout(() => { canvas.style.display = 'none'; showResult(); }, 300);
+        }
       }
 
-      canvas.onpointerdown = (e) => { isErasing = true; erase(e); };
-      window.addEventListener('pointermove', erase);
-      window.addEventListener('pointerup', () => {
-        if(isErasing){
-          isErasing = false;
-          checkCompletion();
-        }
-      });
+      canvas.onpointerdown = (e) => {
+        isErasing = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+        eraseAt(e.clientX, e.clientY);
+      };
+      canvas.onpointermove = (e) => {
+        if(isErasing) eraseAt(e.clientX, e.clientY);
+      };
+      canvas.onpointerup = canvas.onpointercancel = (e) => {
+        isErasing = false;
+        try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
+      };
     });
   }
 
@@ -8827,12 +8757,7 @@ function gameScratch(){
       setTimeout(() => { c.style.display = 'none'; }, 350);
     });
     tgHaptic('medium');
-    setTimeout(showResult, 400);
-  }
-
-  function checkCompletion(){
-    // При частичном стирании проверяем и показываем результат
-    showResult();
+    setTimeout(showResult, 380);
   }
 
   function showResult(){
@@ -8870,7 +8795,7 @@ function gameRevolver(){
   const REVOLVER_MULTS = { 1: 1.18, 2: 1.45, 3: 1.95, 4: 2.90, 5: 5.80, 6: 29.00 };
 
   function render(){
-    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
+    const totalCost = insurance ? Math.floor(curBet * 1.15) : curBet;
     let html = `
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -8883,7 +8808,7 @@ function gameRevolver(){
 
         <div class="insurance-toggle ${insurance?'active':''}" id="revInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
           <div>
-            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка патрона (+12%)</div>
+            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка патрона (+15%)</div>
             <div style="font-size:11px;color:#94a3b8">При выстреле вернём 35% ставки</div>
           </div>
           <div class="toggle-sw"></div>
@@ -8946,14 +8871,25 @@ function gameRevolver(){
 
   async function startRound(){
     if(inRound || isSpinning) return;
-    const r = await fetch(API_BASE + '/api/revolver/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-    }).then(x => x.json()).catch(() => null);
+    isSpinning = true;
+    const btn = q('#revStartBtn');
+    if(btn) btn.textContent = 'Зарядка...';
+
+    let r = null;
+    try {
+      r = await fetch(API_BASE + '/api/revolver/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+      }).then(x => x.json()).catch(() => null);
+    } catch(_) {}
+    finally {
+      isSpinning = false;
+    }
 
     if(!r || !r.ok){
       alert(r && r.error ? r.error : 'Не удалось начать раунд');
+      render();
       return;
     }
     inRound = true;
@@ -8971,17 +8907,23 @@ function gameRevolver(){
 
     // Вращаем барабан
     const drum = q('#revDrumEl');
-    if(drum) drum.style.transform = `rotate(${(step + 1) * 60 + 360}deg)`;
+    if(drum) drum.style.transform = `rotate(${(step + 1) * 60 + 720}deg)`;
 
-    const r = await fetch(API_BASE + '/api/revolver/trigger', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData() })
-    }).then(x => x.json()).catch(() => null);
+    let r = null;
+    try {
+      r = await fetch(API_BASE + '/api/revolver/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData() })
+      }).then(x => x.json()).catch(() => null);
+    } catch(_) {}
+    finally {
+      isSpinning = false;
+    }
 
-    isSpinning = false;
     if(!r || !r.ok){
       alert(r && r.error ? r.error : 'Ошибка выстрела');
+      render();
       return;
     }
 
@@ -8989,7 +8931,6 @@ function gameRevolver(){
     if(r.balance != null) setTokens(r.balance);
 
     if(r.fired){
-      // ВЫСТРЕЛ!
       inRound = false;
       tgHaptic('lose');
       render();
@@ -9000,7 +8941,6 @@ function gameRevolver(){
         resEl.innerHTML = `💥 <b>БАБАХ! БОЕВОЙ ПАТРОН В КАМОРЕ #${r.bullet}!</b> Ставка сгорела.${ins}`;
       }
     } else {
-      // ХОЛОСТОЙ
       tgHaptic('light');
       curMult = r.mult;
       potWin = r.potWin;
@@ -9015,11 +8955,14 @@ function gameRevolver(){
 
   async function doCashout(){
     if(!inRound || isSpinning) return;
-    const r = await fetch(API_BASE + '/api/revolver/cashout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData() })
-    }).then(x => x.json()).catch(() => null);
+    let r = null;
+    try {
+      r = await fetch(API_BASE + '/api/revolver/cashout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData() })
+      }).then(x => x.json()).catch(() => null);
+    } catch(_) {}
 
     if(!r || !r.ok){
       alert(r && r.error ? r.error : 'Ошибка кэшаута');
@@ -9052,14 +8995,16 @@ function gameSafe(){
   let isGuessing = false;
 
   async function loadStatus(){
-    const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
-    if(r && r.ok){
-      jackpot = r.jackpot;
-      guessesCount = r.guessesCount;
-      attempts = r.recentAttempts || [];
-      if(r.balance != null) setTokens(r.balance);
-      render();
-    }
+    try {
+      const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
+      if(r && r.ok){
+        jackpot = r.jackpot;
+        guessesCount = r.guessesCount;
+        attempts = r.recentAttempts || [];
+        if(r.balance != null) setTokens(r.balance);
+        render();
+      }
+    } catch(_) {}
   }
 
   function render(){
@@ -9142,13 +9087,18 @@ function gameSafe(){
     const btn = q('#safeSubmitBtn');
     if(btn) btn.textContent = 'Подбор кода...';
 
-    const r = await fetch(API_BASE + '/api/safe/guess', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), code: enteredCode })
-    }).then(x => x.json()).catch(() => null);
+    let r = null;
+    try {
+      r = await fetch(API_BASE + '/api/safe/guess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData(), code: enteredCode })
+      }).then(x => x.json()).catch(() => null);
+    } catch(_) {}
+    finally {
+      isGuessing = false;
+    }
 
-    isGuessing = false;
     if(!r || !r.ok){
       alert(r && r.error ? r.error : 'Ошибка взлома');
       render();
@@ -9181,377 +9131,14 @@ function gameSafe(){
     enteredCode = '';
   }
 
+  render();
   loadStatus();
   return () => {};
 }
 
-/* ── 4. Адский Лифт: «Tower Climb» ──────────────────────────────────────── */
-function gameElevator(){
-  const a=q('#gameArea');
-  if(!a) return ()=>{};
-
-  let curBet = 50;
-  let insurance = false;
-  let inRound = false;
-  let floor = 0;
-  let curMult = 1.0;
-  let potWin = 0;
-  let isMoving = false;
-
-  const ELEVATOR_MULTS = { 1: 1.42, 2: 2.05, 3: 2.98, 4: 4.35, 5: 6.35, 6: 9.25, 7: 13.50, 8: 20.00 };
-
-  function render(){
-    const totalCost = insurance ? Math.floor(curBet * 1.12) : curBet;
-    let html = `
-      <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:16px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em">СТАВКА В ЛИФТЕ</span>
-          <span style="font-size:13px;font-weight:900;color:#fff">${curBet} ⬦</span>
-        </div>
-        <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
-          ${[10, 25, 50, 100, 250, 500].map(b => `<button class="chip ${b===curBet&&!inRound?'active':''}" data-ebet="${b}" ${inRound?'disabled':''} style="padding:6px 12px;font-size:12px">${b}</button>`).join('')}
-        </div>
-
-        <div class="insurance-toggle ${insurance?'active':''}" id="elvInsToggle" style="${inRound?'pointer-events:none;opacity:.6':''}">
-          <div>
-            <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка троса (+12%)</div>
-            <div style="font-size:11px;color:#94a3b8">При обрыве вернём 35% ставки</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-      </div>
-
-      <div class="elv-shaft">
-        <div class="elv-floors">
-          ${[8, 7, 6, 5, 4, 3, 2, 1].map(f => {
-            const isCur = (floor === f);
-            const isPassed = (floor > f);
-            return `
-              <div class="elv-floor-row ${isCur?'current':''} ${isPassed?'passed':''}">
-                <span>Этаж ${f} ${isCur?'🛗':''}</span>
-                <span>×${ELEVATOR_MULTS[f].toFixed(2)}</span>
-              </div>
-            `;
-          }).join('')}
-        </div>
-
-        ${!inRound ? `
-          <button class="primary" id="elvStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900">ВОЙТИ В ЛИФТ (${totalCost} ⬦)</button>
-        ` : `
-          <div style="text-align:center;margin:10px 0;font-size:12.5px;color:#94a3b8">
-            Выберите одну из 3 дверей. 1 дверь аварийная, 2 проходные!
-          </div>
-          <div class="elv-doors">
-            <button class="elv-door" data-door="1"><span style="font-size:24px">🚪</span><b>Дверь 1</b></button>
-            <button class="elv-door" data-door="2"><span style="font-size:24px">🚪</span><b>Дверь 2</b></button>
-            <button class="elv-door" data-door="3"><span style="font-size:24px">🚪</span><b>Дверь 3</b></button>
-          </div>
-          <button class="secondary" id="elvCashoutBtn" style="width:100%;margin-top:12px;padding:12px;font-size:14px;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);color:#fff" ${floor===0?'disabled':''}>
-            💰 ВЫЙТИ НА ЭТАЖЕ (${potWin || curBet} ⬦)
-          </button>
-        `}
-
-        <div id="elvResultMsg" style="margin-top:12px"></div>
-      </div>
-    `;
-
-    a.innerHTML = html;
-    attachEvents();
-  }
-
-  function attachEvents(){
-    qa('[data-ebet]').forEach(b => {
-      b.onclick = () => { if(!inRound){ curBet = Number(b.dataset.ebet); render(); } };
-    });
-    const insToggle = q('#elvInsToggle');
-    if(insToggle && !inRound){
-      insToggle.onclick = () => { insurance = !insurance; render(); };
-    }
-    const startBtn = q('#elvStartBtn');
-    if(startBtn) startBtn.onclick = startRound;
-    qa('[data-door]').forEach(b => {
-      b.onclick = () => chooseDoor(Number(b.dataset.door));
-    });
-    const cashBtn = q('#elvCashoutBtn');
-    if(cashBtn) cashBtn.onclick = doCashout;
-  }
-
-  async function startRound(){
-    if(inRound || isMoving) return;
-    const r = await fetch(API_BASE + '/api/elevator/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-    }).then(x => x.json()).catch(() => null);
-
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Не удалось начать подъем');
-      return;
-    }
-    inRound = true;
-    floor = 0;
-    curMult = 1.0;
-    potWin = curBet;
-    if(r.balance != null) setTokens(r.balance);
-    tgHaptic('medium');
-    render();
-  }
-
-  async function chooseDoor(door){
-    if(!inRound || isMoving) return;
-    isMoving = true;
-
-    const r = await fetch(API_BASE + '/api/elevator/step', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), door })
-    }).then(x => x.json()).catch(() => null);
-
-    isMoving = false;
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Ошибка перехода');
-      return;
-    }
-
-    if(r.balance != null) setTokens(r.balance);
-
-    if(r.crashed){
-      // ОБРЫВ ТРОСА
-      inRound = false;
-      tgHaptic('lose');
-      render();
-      const res = q('#elvResultMsg');
-      if(res){
-        res.className = 'result bad';
-        const ins = r.insuredReturn ? `<br>🛡️ <i>Страховка вернула +${r.insuredReturn} ⬦ на счёт</i>` : '';
-        res.innerHTML = `⚠️ <b>ОБРЫВ ТРОСА!</b> Дверь #${r.hazardDoor} была ловушкой! Лифт упал с ${r.floor} этажа.${ins}`;
-      }
-    } else {
-      // ПЕРЕХОД НА НОВЫЙ ЭТАЖ
-      floor = r.floor;
-      curMult = r.mult;
-      potWin = r.potWin;
-      tgHaptic('win');
-      render();
-
-      if(r.maxFloor){
-        inRound = false;
-        const res = q('#elvResultMsg');
-        if(res){
-          res.className = 'result good';
-          res.innerHTML = `🏆 <b>КРЫША НЕБОСКРЁБА ДОСТИГНУТА!</b> Авто-кэшаут ×${r.mult}: <b>+${r.win} ⬦</b> зачислено!`;
-        }
-      }
-    }
-  }
-
-  async function doCashout(){
-    if(!inRound || floor === 0 || isMoving) return;
-    const r = await fetch(API_BASE + '/api/elevator/cashout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData() })
-    }).then(x => x.json()).catch(() => null);
-
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Ошибка выхода');
-      return;
-    }
-    inRound = false;
-    tgHaptic('win');
-    if(r.balance != null) setTokens(r.balance);
-    render();
-    const res = q('#elvResultMsg');
-    if(res){
-      res.className = 'result good';
-      res.innerHTML = `🎉 <b>ВЫ ВЫШЛИ НА ${floor} ЭТАЖЕ!</b> Множитель ×${r.mult}: <b>+${r.win} ⬦</b> зачислено на баланс!`;
-    }
-  }
-
-  render();
-  return () => {};
-}
-
-/* ── 5. PvP Дуэли: «1v1 Skin & Coin Battles» ─────────────────────────────── */
-function gameDuel(){
-  const a=q('#gameArea');
-  if(!a) return ()=>{};
-
-  let duels = [];
-  let curBet = 50;
-  let activeTab = 'list'; // 'list' | 'create'
-  let isLoading = false;
-
-  async function loadDuels(){
-    const r = await fetch(API_BASE + '/api/duels/list?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
-    if(r && r.ok){
-      duels = r.duels || [];
-      if(r.balance != null) setTokens(r.balance);
-      render();
-    }
-  }
-
-  function render(){
-    let html = `
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="pillbtn ${activeTab==='list'?'active':''}" id="duelTabList" style="flex:1;padding:10px;font-size:13px;font-weight:900">⚔️ АКТИВНЫЕ ДУЭЛИ (${duels.length})</button>
-        <button class="pillbtn ${activeTab==='create'?'active':''}" id="duelTabCreate" style="flex:1;padding:10px;font-size:13px;font-weight:900">➕ СОЗДАТЬ ДУЭЛЬ</button>
-      </div>
-    `;
-
-    if(activeTab === 'create'){
-      html += `
-        <div style="background:#101622;border:1px solid #1f2b3e;border-radius:20px;padding:20px 16px;text-align:center">
-          <div style="font-size:42px;margin-bottom:8px">⚔️</div>
-          <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:4px">Бросить вызов в PvP Дуэли</div>
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">Победитель забирает оба банка (комиссия площадки 5%)</div>
-
-          <div style="text-align:left;margin-bottom:8px;font-size:12px;font-weight:800;color:#94a3b8">РАЗМЕР СТАВКИ</div>
-          <div class="chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px">
-            ${[20, 50, 100, 250, 500, 1000].map(b => `<button class="chip ${b===curBet?'active':''}" data-dbet="${b}" style="padding:6px 12px;font-size:12px">${b} ⬦</button>`).join('')}
-          </div>
-
-          <button class="primary" id="duelCreateBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:12px">
-            ⚔️ СОЗДАТЬ ДУЭЛЬ НА ${curBet} ⬦
-          </button>
-          <div id="duelCreateResult" style="margin-top:12px"></div>
-        </div>
-      `;
-    } else {
-      html += `
-        <div class="duel-list">
-          ${duels.length === 0 ? `
-            <div style="text-align:center;padding:32px 14px;background:#101622;border:1px solid #1f2b3e;border-radius:18px">
-              <div style="font-size:36px;margin-bottom:8px">🛡️</div>
-              <div style="font-size:15px;font-weight:800;color:#fff">Пока нет открытых дуэлей</div>
-              <div style="font-size:12px;color:#94a3b8;margin-top:4px">Создайте первую дуэль и позовите друзей по ссылке!</div>
-            </div>
-          ` : duels.map(d => {
-            const isMine = (Number(d.creator_id) === Number(S.user ? S.user.id : 0));
-            return `
-              <div class="duel-item">
-                <div>
-                  <div style="font-size:13.5px;font-weight:800;color:#fff">${esc(d.creator_name || 'Игрок')}</div>
-                  <div style="font-size:11px;color:#94a3b8">Ставка: <b style="color:#ffcf6b">${d.bet_tokens} ⬦</b> · Банк: <b>${Math.floor(d.bet_tokens * 1.9)} ⬦</b></div>
-                </div>
-                ${isMine ? `
-                  <button class="secondary" data-cancel-duel="${d.id}" style="padding:8px 12px;font-size:12px;color:#ef4444">Отменить</button>
-                ` : `
-                  <button class="primary" data-join-duel="${d.id}" style="padding:8px 16px;font-size:12px;font-weight:900">В БОЙ ⚔️</button>
-                `}
-              </div>
-            `;
-          }).join('')}
-        </div>
-        <div id="duelPlayResult" style="margin-top:12px"></div>
-      `;
-    }
-
-    a.innerHTML = html;
-    attachEvents();
-  }
-
-  function attachEvents(){
-    const tabL = q('#duelTabList');
-    if(tabL) tabL.onclick = () => { activeTab = 'list'; loadDuels(); };
-    const tabC = q('#duelTabCreate');
-    if(tabC) tabC.onclick = () => { activeTab = 'create'; render(); };
-
-    qa('[data-dbet]').forEach(b => {
-      b.onclick = () => { curBet = Number(b.dataset.dbet); render(); };
-    });
-
-    const crBtn = q('#duelCreateBtn');
-    if(crBtn) crBtn.onclick = createDuel;
-
-    qa('[data-join-duel]').forEach(b => {
-      b.onclick = () => joinDuel(b.dataset.joinDuel);
-    });
-
-    qa('[data-cancel-duel]').forEach(b => {
-      b.onclick = () => cancelDuel(b.dataset.cancelDuel);
-    });
-  }
-
-  async function createDuel(){
-    if(isLoading) return;
-    isLoading = true;
-    const r = await fetch(API_BASE + '/api/duels/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), bet: curBet })
-    }).then(x => x.json()).catch(() => null);
-
-    isLoading = false;
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Не удалось создать дуэль');
-      return;
-    }
-    tgHaptic('medium');
-    if(r.balance != null) setTokens(r.balance);
-    activeTab = 'list';
-    loadDuels();
-    setTimeout(() => {
-      const msg = q('#duelPlayResult');
-      if(msg){
-        msg.className = 'result good';
-        msg.innerHTML = `✅ <b>Дуэль создана!</b> Ссылка для друга: <code>t.me/${BOT_NAME}?startapp=duel_${r.duelId}</code>`;
-      }
-    }, 200);
-  }
-
-  async function joinDuel(duelId){
-    if(isLoading) return;
-    isLoading = true;
-    const r = await fetch(API_BASE + '/api/duels/join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), duelId })
-    }).then(x => x.json()).catch(() => null);
-
-    isLoading = false;
-    if(!r || !r.ok){
-      alert(r && r.error ? r.error : 'Не удалось вступить в дуэль');
-      return;
-    }
-
-    if(r.balance != null) setTokens(r.balance);
-    loadDuels();
-
-    const msg = q('#duelPlayResult');
-    if(msg){
-      if(r.iWon){
-        tgHaptic('win');
-        msg.className = 'result good';
-        msg.innerHTML = `🏆 <b>ПОБЕДА В ДУЭЛИ!</b> Ваш ролл: <b>${r.rollOpponent}</b> vs <b>${r.rollCreator}</b> соперника! Выигрыш <b>+${r.prize} ⬦</b> зачислен на баланс!`;
-      } else {
-        tgHaptic('lose');
-        msg.className = 'result bad';
-        msg.innerHTML = `❌ <b>ПОРАЖЕНИЕ В ДУЭЛИ!</b> Ваш ролл: <b>${r.rollOpponent}</b> vs <b>${r.rollCreator}</b> соперника.`;
-      }
-    }
-  }
-
-  async function cancelDuel(duelId){
-    const r = await fetch(API_BASE + '/api/duels/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: tgInitData(), duelId })
-    }).then(x => x.json()).catch(() => null);
-    if(r && r.ok){
-      if(r.balance != null) setTokens(r.balance);
-      loadDuels();
-    }
-  }
-
-  loadDuels();
-  return () => {};
-}
-
-
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа',elevator:'Адский Лифт',duel:'PvP Дуэль'};
-const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe,elevator:gameElevator,duel:gameDuel};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';

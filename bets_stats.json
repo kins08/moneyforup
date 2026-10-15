@@ -1,11 +1,11 @@
 {
-  "updatedAt": 1792038293630,
-  "totalBetsCount": 3944,
+  "updatedAt": 1792068859680,
+  "totalBetsCount": 4883,
   "wonBetsCount": 1,
-  "lostBetsCount": 3943,
-  "totalWageredTokens": 9453690,
+  "lostBetsCount": 4882,
+  "totalWageredTokens": 11704900,
   "totalPayoutTokens": 120,
-  "totalProjectNetTokens": 9453570,
+  "totalProjectNetTokens": 11704780,
   "totalDepositsRub": 0,
   "totalWithdrawalsRub": 0,
   "players": {
@@ -122,6 +122,35 @@
         "Потолок бездепозитного баланса (сервер) (раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦)"
       ],
       "lastActiveAt": 1792009023925
+    },
+    "942132": {
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "betsCount": 939,
+      "wonCount": 0,
+      "lostCount": 939,
+      "wageredTk": 2251210,
+      "payoutTk": 0,
+      "netPlayerTk": -2251210,
+      "depositsRub": 0,
+      "withdrawalsRub": 0,
+      "currentBalanceTk": 40,
+      "maxSingleWinTk": 0,
+      "maxSingleWinGame": "",
+      "games": {
+        "Апгрейдер": {
+          "count": 939,
+          "won": 0,
+          "lost": 939,
+          "wageredTk": 2251210,
+          "payoutTk": 0,
+          "netPlayerTk": -2251210
+        }
+      },
+      "suspiciousFlags": [
+        "Потолок бездепозитного баланса (сервер) (раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦)"
+      ],
+      "lastActiveAt": 1792068859680
     },
     "976965": {
       "uid": 976965,
@@ -920,6 +949,195 @@
     {
       "t": 1792038293302,
       "uid": 889450,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068845677,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068846098,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068846190,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068847007,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068848180,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068848429,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068849391,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068849616,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068850682,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068850989,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068851141,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068851200,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068851342,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068851676,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068852772,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068853238,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068853615,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068853829,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068854901,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068854958,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068855243,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068855919,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068857302,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068857530,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068857792,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068858978,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "reason": "Потолок бездепозитного баланса (сервер)",
+      "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
+    },
+    {
+      "t": 1792068859312,
+      "uid": 942132,
       "name": "@TestReferrer",
       "reason": "Потолок бездепозитного баланса (сервер)",
       "details": "раунд Апгрейдер: ставка 2400 ⬦, попытка поднять до 4840 ⬦"
@@ -36416,6 +36634,8457 @@
     {
       "t": 1792038293630,
       "uid": 889450,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845403,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 10,
+      "win": 0,
+      "netProject": 10
+    },
+    {
+      "t": 1792068845419,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845436,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845451,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845475,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845491,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845507,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845524,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845539,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845555,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845570,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845586,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845602,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845617,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845633,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845648,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845664,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845679,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845695,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845710,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845736,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845751,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845766,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845781,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845796,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845811,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845827,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845842,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845857,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845873,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845888,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845903,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845919,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845934,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845949,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845964,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845978,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068845993,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846008,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846023,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846039,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846055,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846071,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846086,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846101,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846116,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846131,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846146,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846162,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846177,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846192,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846208,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846223,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846238,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846254,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846269,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846284,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846299,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846314,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846329,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846344,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846360,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846375,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846390,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846405,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846425,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846440,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846454,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846470,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846485,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846499,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846514,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846528,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846543,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846561,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846576,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846593,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846608,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846623,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846638,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846652,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846667,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846682,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846696,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846711,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846726,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846740,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846755,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846770,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846785,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846800,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846817,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846832,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846846,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846860,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846875,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846889,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846904,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846918,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846933,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846948,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846964,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846979,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068846994,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847009,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847024,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847040,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847056,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847071,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847086,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847101,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847115,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847130,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847145,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847160,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847185,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847200,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847214,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847230,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847245,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847259,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847274,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847289,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847303,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847318,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847333,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847348,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847362,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847377,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847392,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847407,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847422,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847442,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847459,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847474,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847492,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847507,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847523,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847538,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847553,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847568,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847583,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847598,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847612,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847628,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847642,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847657,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847672,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847687,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847701,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847716,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847731,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847746,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847761,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847776,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847791,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847805,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847820,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847835,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847849,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847864,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847879,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847893,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847909,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847924,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847941,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847956,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847971,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068847986,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848001,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848016,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848031,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848046,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848061,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848076,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848091,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848106,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848121,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848136,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848151,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848167,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848183,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848205,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848221,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848235,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848250,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848265,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848281,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848297,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848313,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848328,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848342,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848357,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848372,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848387,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848402,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848417,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848447,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848467,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848483,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848498,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848513,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848527,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848542,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848564,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848578,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848592,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848608,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848623,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848638,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848653,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848668,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848683,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848701,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848717,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848734,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848751,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848766,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848781,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848799,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848814,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848830,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848846,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848861,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848876,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848892,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848908,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848924,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848940,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848955,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848970,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068848985,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849001,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849016,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849031,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849046,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849061,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849077,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849092,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849107,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849122,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849137,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849152,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849167,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849182,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849197,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849212,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849228,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849244,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849259,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849274,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849288,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849303,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849318,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849334,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849349,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849364,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849379,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849394,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849409,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849424,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849439,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849454,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849469,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849509,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849525,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849544,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849559,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849574,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849589,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849604,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849619,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849635,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849651,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849667,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849682,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849697,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849712,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849726,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849741,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849756,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849772,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849787,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849802,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849817,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849833,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849848,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849863,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849884,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849902,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849917,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849932,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849947,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849962,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849977,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068849992,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850007,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850022,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850037,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850052,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850067,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850081,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850096,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850111,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850126,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850145,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850159,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850174,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850189,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850204,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850219,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850234,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850249,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850263,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850278,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850294,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850309,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850323,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850338,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850354,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850369,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850384,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850399,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850416,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850446,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850461,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850476,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850491,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850511,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850532,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850547,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850565,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850581,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850596,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850611,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850625,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850640,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850655,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850670,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850685,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850700,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850715,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850730,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850745,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850760,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850776,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850791,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850806,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850821,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850837,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850852,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850867,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850881,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850896,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850917,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850931,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850946,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850961,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850977,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068850992,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851007,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851022,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851037,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851051,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851067,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851083,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851099,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851114,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851129,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851144,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851159,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851173,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851188,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851202,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851217,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851232,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851254,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851269,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851285,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851300,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851315,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851329,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851344,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851359,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851373,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851388,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851404,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851418,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851433,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851447,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851462,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851477,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851492,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851507,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851527,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851541,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851556,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851572,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851590,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851605,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851620,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851634,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851648,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851663,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851678,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851696,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851710,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851725,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851739,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851754,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851768,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851782,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851796,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851811,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851825,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851841,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851856,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851871,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851885,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851899,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851914,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851928,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851942,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851956,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851970,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068851986,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852000,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852014,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852028,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852044,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852060,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852075,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852089,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852104,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852119,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852133,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852147,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852162,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852176,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852190,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852204,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852218,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852233,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852248,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852263,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852283,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852300,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852315,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852329,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852343,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852358,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852372,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852387,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852401,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852415,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852445,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852459,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852474,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852503,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852518,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852551,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852567,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852584,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852599,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852613,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852629,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852643,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852658,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852673,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852687,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852702,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852716,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852731,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852745,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852759,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852774,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852788,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852803,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852818,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852833,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852847,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852861,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852876,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852890,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852905,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852919,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852933,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852948,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852962,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852977,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068852992,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853006,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853021,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853037,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853051,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853066,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853080,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853094,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853110,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853125,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853139,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853153,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853168,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853182,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853197,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853211,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853226,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853241,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853255,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853270,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853285,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853301,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853315,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853330,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853345,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853360,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853374,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853389,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853404,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853419,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853433,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853448,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853463,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853478,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853493,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853511,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853526,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853540,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853555,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853574,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853589,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853603,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853618,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853633,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853654,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853669,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853684,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853699,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853715,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853732,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853749,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853769,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853785,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853800,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853817,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853831,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853846,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853870,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853885,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853899,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853914,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853933,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853948,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853963,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853978,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068853993,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854007,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854022,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854036,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854050,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854065,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854079,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854093,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854108,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854124,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854141,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854156,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854171,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854184,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854199,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854213,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854228,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854242,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854256,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854271,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854286,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854299,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854314,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854328,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854342,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854357,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854372,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854386,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854401,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854417,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854446,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854460,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854475,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854504,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854519,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854534,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854549,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854565,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854580,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854603,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854623,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854638,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854655,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854669,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854684,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854699,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854714,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854729,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854744,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854759,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854773,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854787,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854802,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854816,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854831,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854845,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854859,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854874,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854888,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854903,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854917,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854932,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854946,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854961,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854975,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068854989,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855014,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855035,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855049,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855064,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855078,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855094,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855109,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855124,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855138,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855152,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855167,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855181,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855203,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855217,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855231,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855246,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855260,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855275,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855289,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855304,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855318,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855332,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855347,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855362,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855378,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855394,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855409,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855424,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855439,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855453,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855468,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855482,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855496,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855511,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855525,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855539,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855554,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855568,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855582,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855596,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855616,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855635,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855649,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855666,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855681,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855696,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855710,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855725,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855740,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855755,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855773,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855787,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855802,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855817,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855832,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855847,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855862,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855878,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855892,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855907,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855921,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855936,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855951,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855966,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855981,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068855996,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856015,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856031,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856045,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856060,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856075,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856089,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856104,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856119,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856134,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856149,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856164,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856179,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856193,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856208,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856222,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856237,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856251,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856266,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856281,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856295,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856309,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856324,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856339,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856359,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856374,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856388,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856403,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856417,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856446,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856460,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856475,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856513,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856528,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856542,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856556,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856571,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856586,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856600,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856615,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856634,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856653,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856668,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856685,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856700,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856714,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856729,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856745,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856760,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856777,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856793,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856807,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856822,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856837,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856853,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856867,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856882,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856896,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856911,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856925,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856940,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856954,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856969,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856984,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068856998,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857013,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857027,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857042,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857056,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857070,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857085,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857100,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857115,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857130,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857145,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857159,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857175,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857189,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857203,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857218,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857232,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857246,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857261,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857275,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857290,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857304,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857318,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857332,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857346,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857361,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857375,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857389,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857403,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857418,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857432,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857446,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857461,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857475,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857503,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857518,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857532,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857547,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857562,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857578,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857594,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857608,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857623,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857637,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857657,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857671,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857687,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857701,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857716,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857736,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857751,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857765,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857779,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857794,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857818,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857832,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857847,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857864,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857881,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857896,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857911,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857926,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857940,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857955,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857969,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857984,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068857999,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858013,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858030,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858045,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858060,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858075,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858090,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858105,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858119,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858133,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858149,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858163,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858178,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858193,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858207,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858221,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858236,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858252,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858267,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858282,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858297,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858311,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858326,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858340,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858355,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858370,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858384,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858399,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858413,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858427,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858443,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858457,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858472,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858486,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858500,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858515,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858529,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858544,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858558,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858573,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858587,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858601,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858616,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858630,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858645,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858660,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858682,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858699,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858719,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858734,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858749,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858763,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858778,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858793,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858810,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858827,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858844,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858861,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858877,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858892,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858908,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858923,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858938,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858952,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858966,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858981,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068858995,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859009,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859025,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859040,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859055,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859070,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859090,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859105,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859119,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859134,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859156,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859170,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859185,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859199,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859214,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859228,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859242,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859257,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859271,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859285,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859300,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859314,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859328,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859343,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859358,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859372,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859386,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859400,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859416,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859431,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859445,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859460,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859475,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859489,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859503,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859518,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859533,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859547,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859562,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859577,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859592,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859606,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859621,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859636,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859651,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859665,
+      "uid": 942132,
+      "name": "@TestReferrer",
+      "game": "Апгрейдер",
+      "bet": 2400,
+      "win": 0,
+      "netProject": 2400
+    },
+    {
+      "t": 1792068859680,
+      "uid": 942132,
       "name": "@TestReferrer",
       "game": "Апгрейдер",
       "bet": 2400,

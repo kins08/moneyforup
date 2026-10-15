@@ -1,6 +1,7 @@
 /**
- * Тест новых режимов и механик:
- * Скретч-карты, Револьвер, Взлом Сейфа, Адский Лифт, PvP Дуэли, Страховка ставки.
+ * Тест актуальных новых режимов и механик:
+ * Скретч-карты, Револьвер, Взлом Сейфа, Страховка ставки (+15%).
+ * (Режимы «Адский Лифт» и «PvP Дуэли» удалены по ТЗ).
  */
 const http = require('http');
 const crypto = require('crypto');
@@ -68,7 +69,7 @@ function request(urlPath, opts = {}) {
 }
 
 async function run() {
-  console.log('=== ЗАПУСК ТЕСТА НОВЫХ ИГРОВЫХ РЕЖИМОВ И МЕХАНИК ===\n');
+  console.log('=== ЗАПУСК ТЕСТА АКТУАЛЬНЫХ РЕЖИМОВ (SCRATCH, REVOLVER, SAFE, 15% СТРАХОВКА) ===\n');
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-new-modes-'));
   const dbPath = path.join(tmpDir, 'test.db');
@@ -100,19 +101,22 @@ async function run() {
 
     // Пользователь A (стартовый баланс 50 токенов)
     const uAInit = initData(2001, 'PlayerA');
-    await request('/api/register', { body: { initData: uAInit, termsAcceptedAt: Date.now() } });
+    const regRes = await request('/api/register', { body: { initData: uAInit, termsAcceptedAt: Date.now() } });
+    check(regRes.status === 200 && regRes.body && regRes.body.id === 2001, 'Регистрация пользователя A');
 
-    // Пользователь B (стартовый баланс 50 токенов)
-    const uBInit = initData(2002, 'PlayerB');
-    await request('/api/register', { body: { initData: uBInit, termsAcceptedAt: Date.now() } });
-
-    // 1. Тест Скретч-карт (/api/scratch/play)
+    // 1. Тест Скретч-карт с 15% страховкой (/api/scratch/play)
+    // Ставка 20 -> стоимость с 15% страховкой Math.floor(20 * 1.15) = 23 токена.
     const scRes = await request('/api/scratch/play', {
       body: { initData: uAInit, bet: 20, insurance: true }
     });
-    check(scRes.status === 200 && scRes.body.ok, 'Скретч-карты: раунд успешно сыгран');
-    check(Array.isArray(scRes.body.grid) && scRes.body.grid.length === 9, 'Скретч-карты: сервер сгенерировал 9 ячеек');
-    check(typeof scRes.body.won === 'boolean', 'Скретч-карты: сервер вернул вердикт won');
+    check(scRes.status === 200 && scRes.body.ok, 'Скретч-карты: раунд со страховкой успешно сыгран');
+    check(Array.isArray(scRes.body.grid) && scRes.body.grid.length === 9, 'Скретч-карты: сгенерировано 9 ячеек');
+    check(typeof scRes.body.won === 'boolean', 'Скретч-карты: результат выигрыша получен');
+    if (!scRes.body.won) {
+      check(scRes.body.insuredReturn === 7, 'Скретч-карты: при проигрыше страховка вернула 35% ставки (20 * 0.35 = 7 ⬦)');
+    } else {
+      check(scRes.body.winTokens > 0, 'Скретч-карты: выигрыш начислен корректно');
+    }
 
     // 2. Тест Взлома Сейфа (/api/safe/status и /api/safe/guess)
     const safeStat = await request('/api/safe/status?initData=' + encodeURIComponent(uAInit));
@@ -122,65 +126,39 @@ async function run() {
       body: { initData: uAInit, code: '1234' }
     });
     check(guessRes.status === 200 && guessRes.body.ok, 'Сейф: попытка ввода кода принята');
-    check(typeof guessRes.body.bulls === 'number' && typeof guessRes.body.cows === 'number', 'Сейф: вернулись подсказки быков и коров');
-    check(guessRes.body.jackpot >= 25015, 'Сейф: джекпот увеличился после неудачной попытки (+15 ⬦)');
+    check(typeof guessRes.body.bulls === 'number' && typeof guessRes.body.cows === 'number', 'Сейф: возвращены быки и коровы');
+    check(guessRes.body.jackpot >= 25015, 'Сейф: джекпот пополнен взносом за попытку (+15 ⬦)');
 
-    // 3. Тест Револьвера (/api/revolver/start, /api/revolver/trigger, /api/revolver/cashout)
+    // 3. Тест Револьвера с 15% страховкой (/api/revolver/start, /api/revolver/trigger, /api/revolver/cashout)
+    // Пользователь B
+    const uBInit = initData(2002, 'PlayerB');
+    await request('/api/register', { body: { initData: uBInit, termsAcceptedAt: Date.now() } });
+
     const revStart = await request('/api/revolver/start', {
-      body: { initData: uAInit, bet: 10, insurance: false }
+      body: { initData: uBInit, bet: 20, insurance: true }
     });
-    check(revStart.status === 200 && revStart.body.ok, 'Револьвер: раунд успешно начат');
+    check(revStart.status === 200 && revStart.body.ok, 'Револьвер: раунд с 15% страховкой начат (списано 23 ⬦)');
 
     const revTrig = await request('/api/revolver/trigger', {
-      body: { initData: uAInit }
+      body: { initData: uBInit }
     });
-    check(revTrig.status === 200 && revTrig.body.ok, 'Револьвер: курок спущен (шаг 1)');
+    check(revTrig.status === 200 && revTrig.body.ok, 'Револьвер: спущен курок (камера 1)');
     if (!revTrig.body.fired) {
-      check(revTrig.body.mult === 1.18, 'Револьвер: множитель после 1-го холостого шага = ×1.18');
+      check(revTrig.body.mult === 1.18, 'Револьвер: множитель холостого выстрела = ×1.18');
       const revCash = await request('/api/revolver/cashout', {
-        body: { initData: uAInit }
+        body: { initData: uBInit }
       });
       check(revCash.status === 200 && revCash.body.ok, 'Револьвер: кэшаут успешно начислен');
     } else {
-      check(revTrig.body.win === 0, 'Револьвер: при боевом выстреле ставка сгорела');
+      check(revTrig.body.insuredReturn === 7, 'Револьвер: при боевом выстреле со страховкой вернулось 35% (7 ⬦)');
     }
 
-    // 4. Тест Адского Лифта (/api/elevator/start, /api/elevator/step, /api/elevator/cashout)
-    const elvStart = await request('/api/elevator/start', {
-      body: { initData: uAInit, bet: 10 }
-    });
-    check(elvStart.status === 200 && elvStart.body.ok, 'Лифт: подъем успешно начат');
+    // 4. Проверка отсутствия удалённых эндпоинтов elevator и duels (отдают 404)
+    const deadElv = await request('/api/elevator/start', { body: { initData: uAInit, bet: 10 } });
+    check(deadElv.status === 404, 'Эндпоинт лифта удалён (404)');
 
-    const elvStep = await request('/api/elevator/step', {
-      body: { initData: uAInit, door: 1 }
-    });
-    check(elvStep.status === 200 && elvStep.body.ok, 'Лифт: выбор двери обработан');
-    if (!elvStep.body.crashed) {
-      check(elvStep.body.floor === 1 && elvStep.body.mult === 1.42, 'Лифт: успешный подъем на 1 этаж (×1.42)');
-      const elvCash = await request('/api/elevator/cashout', {
-        body: { initData: uAInit }
-      });
-      check(elvCash.status === 200 && elvCash.body.ok, 'Лифт: кэшаут на этаже успешно начислен');
-    } else {
-      check(elvStep.body.crashed === true, 'Лифт: ловушка сработала корректно');
-    }
-
-    // 5. Тест PvP Дуэлей (/api/duels/create, /api/duels/list, /api/duels/join)
-    const dCreate = await request('/api/duels/create', {
-      body: { initData: uAInit, bet: 20 }
-    });
-    check(dCreate.status === 200 && dCreate.body.duelId, 'PvP Дуэль: успешно создана игроком A');
-    const duelId = dCreate.body.duelId;
-
-    const dList = await request('/api/duels/list?initData=' + encodeURIComponent(uBInit));
-    check(dList.status === 200 && dList.body.duels.some(d => d.id === duelId), 'PvP Дуэль: видна в общем списке открытых дуэлей');
-
-    const dJoin = await request('/api/duels/join', {
-      body: { initData: uBInit, duelId }
-    });
-    check(dJoin.status === 200 && dJoin.body.ok, 'PvP Дуэль: игрок B успешно принял вызов');
-    check(dJoin.body.rollCreator && dJoin.body.rollOpponent, 'PvP Дуэль: оба игрока бросили кости');
-    check(dJoin.body.prize === 38, 'PvP Дуэль: приз победителю рассчитан со ставкой 20 (20 * 2 * 0.95 = 38 ⬦, 5% маржа дома)');
+    const deadDuel = await request('/api/duels/list?initData=' + encodeURIComponent(uAInit));
+    check(deadDuel.status === 404, 'Эндпоинт дуэлей удалён (404)');
 
   } finally {
     botProcess.kill();

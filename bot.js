@@ -362,9 +362,7 @@ const GAMES = {
   challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
   scratch:       { label: 'Скретч-карты',      minBet: 20, maxBet: 50000,  minMult: 1.5, maxMult: 200,  edge: 0.065, defaultMult: 2.0 },
   revolver:      { label: 'Револьвер',         minBet: 10, maxBet: 50000,  minMult: 1.18, maxMult: 29,  edge: 0.06,  defaultMult: 1.5 },
-  elevator:      { label: 'Адский Лифт',       minBet: 10, maxBet: 50000,  minMult: 1.42, maxMult: 20,  edge: 0.06,  defaultMult: 2.0 },
   safe:          { label: 'Взлом Сейфа',       minBet: 25, maxBet: 25,     minMult: 1.0, maxMult: 1000, edge: 0.05,  defaultMult: 1.0 },
-  duel:          { label: 'PvP Дуэль',         minBet: 20, maxBet: 10000,  minMult: 1.9, maxMult: 1.9,   edge: 0.05,  defaultMult: 1.9 },
   // Неизвестная игра: консервативный профиль вместо отказа — чтобы клиент не ломался
   __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.08,  defaultMult: 2.0 }
 };
@@ -396,7 +394,6 @@ function sampleCrash(seedIdx) {
 
 const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
 const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance, createdAt }
-const activeElevators = new Map();  // userId -> { bet, floor, insurance, createdAt }
 
 setInterval(() => {
   const now = Date.now();
@@ -405,9 +402,6 @@ setInterval(() => {
   }
   for (const [uid, rev] of activeRevolvers.entries()) {
     if (now - rev.createdAt > 300000) activeRevolvers.delete(uid);
-  }
-  for (const [uid, elv] of activeElevators.entries()) {
-    if (now - elv.createdAt > 300000) activeElevators.delete(uid);
   }
 }, 60000).unref();
 
@@ -423,9 +417,7 @@ function gameConfig(rawName) {
     'тайный_аукцион': 'auction', 'ракетка': 'racket', 'hot_drop': 'hotdrop',
     'дис': 'dice', 'кости': 'dice', 'челлендж': 'challenge', 'challenge24': 'challenge',
     'челлендж_24ч': 'challenge', 'скретч': 'scratch', 'скретч_карты': 'scratch',
-    'револьвер': 'revolver', 'русская_рулетка': 'revolver', 'лифт': 'elevator',
-    'адский_лифт': 'elevator', 'сейф': 'safe', 'взлом_сейфа': 'safe',
-    'дуэль': 'duel', 'pvp_дуэль': 'duel'
+    'револьвер': 'revolver', 'русская_рулетка': 'revolver', 'сейф': 'safe', 'взлом_сейфа': 'safe'
   };
   const mapped = aliases[key];
   if (mapped && GAMES[mapped]) return { key: mapped, ...GAMES[mapped] };
@@ -2345,11 +2337,11 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`scratch:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком часто. Играйте чуть медленнее.' });
       const bet = Math.max(10, Math.floor(Number(body.bet) || 20));
       const withInsurance = Boolean(body.insurance);
-      const cost = withInsurance ? Math.floor(bet * 1.12) : bet;
+      const cost = withInsurance ? Math.floor(bet * 1.15) : bet;
       if (Math.floor(u.tokens || 0) < cost) return send(400, { error: `Недостаточно токенов (требуется ${cost} ⬦)` });
 
       const roundId = 'SC_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -cost, 'scratch_buy', `Скретч-билет (${bet} ⬦${withInsurance ? ' + страховка 12%' : ''})`, roundId);
+      const debit = applyBalance(u, -cost, 'scratch_buy', `Скретч-билет (${bet} ⬦${withInsurance ? ' + страховка 15%' : ''})`, roundId);
       if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
 
       // Рейкбек
@@ -2437,11 +2429,11 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/revolver/start' && req.method === 'POST') {
       const bet = Math.max(10, Math.floor(Number(body.bet) || 20));
       const withInsurance = Boolean(body.insurance);
-      const cost = withInsurance ? Math.floor(bet * 1.12) : bet;
+      const cost = withInsurance ? Math.floor(bet * 1.15) : bet;
       if (Math.floor(u.tokens || 0) < cost) return send(400, { error: `Недостаточно токенов (нужно ${cost} ⬦)` });
 
       const roundId = 'REV_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -cost, 'revolver_start', `Револьвер · Ставка (${bet} ⬦${withInsurance ? ' + страховка' : ''})`, roundId);
+      const debit = applyBalance(u, -cost, 'revolver_start', `Револьвер · Ставка (${bet} ⬦${withInsurance ? ' + страховка 15%' : ''})`, roundId);
       if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
 
       // Заряжаем револьвер: 1 случайная камора из 6 боевая
@@ -2491,75 +2483,6 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, win, mult, balance: u.tokens });
     }
 
-    /* ── Адский Лифт: Tower Climb ───────────────────────────────────────────── */
-    const ELEVATOR_MULTS = { 1: 1.42, 2: 2.05, 3: 2.98, 4: 4.35, 5: 6.35, 6: 9.25, 7: 13.50, 8: 20.00 };
-
-    if (url.pathname === '/api/elevator/start' && req.method === 'POST') {
-      const bet = Math.max(10, Math.floor(Number(body.bet) || 20));
-      const withInsurance = Boolean(body.insurance);
-      const cost = withInsurance ? Math.floor(bet * 1.12) : bet;
-      if (Math.floor(u.tokens || 0) < cost) return send(400, { error: `Недостаточно токенов (нужно ${cost} ⬦)` });
-
-      const roundId = 'ELV_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -cost, 'elevator_start', `Лифт · Ставка (${bet} ⬦${withInsurance ? ' + страховка' : ''})`, roundId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
-
-      activeElevators.set(u.id, { roundId, bet, floor: 0, insurance: withInsurance, createdAt: Date.now() });
-      try { db.saveRound({ roundId, userId: u.id, game: 'Адский Лифт', bet, mult: 1, win: 0, status: 'active' }); } catch (_) {}
-
-      return send(200, { ok: true, roundId, floor: 0, bet, balance: u.tokens });
-    }
-
-    if (url.pathname === '/api/elevator/step' && req.method === 'POST') {
-      const elv = activeElevators.get(u.id);
-      if (!elv) return send(400, { error: 'Нет активного раунда в Лифте' });
-
-      const chosenDoor = Math.min(3, Math.max(1, Number(body.door) || 1));
-      // 1 опасная дверь из 3
-      const hazardDoor = crypto.randomInt(1, 4);
-
-      if (chosenDoor === hazardDoor) {
-        // ОБРЫВ ТРОСА: Лифт упал
-        activeElevators.delete(u.id);
-        let insuredReturn = 0;
-        if (elv.insurance) {
-          insuredReturn = Math.floor(elv.bet * 0.35);
-          applyBalance(u, insuredReturn, 'insurance_refund', `🛡️ Страховка ставки: возврат 35% (+${insuredReturn} ⬦)`, elv.roundId);
-        }
-        try { db.saveRound({ roundId: elv.roundId, userId: u.id, game: 'Адский Лифт', bet: elv.bet, mult: 0, win: 0, status: 'settled' }); } catch (_) {}
-        return send(200, { ok: true, crashed: true, hazardDoor, floor: elv.floor, insuredReturn, balance: u.tokens });
-      }
-
-      // УСПЕХ: переход на следующий этаж
-      elv.floor++;
-      const mult = ELEVATOR_MULTS[elv.floor] || 1.42;
-      const potWin = Math.floor(elv.bet * mult);
-
-      // Если доехал до максимального этажа (8) — авто-кэшаут
-      if (elv.floor >= 8) {
-        activeElevators.delete(u.id);
-        applyBalance(u, potWin, 'elevator_win', `Лифт: финиш на 8 этаже ×${mult} (+${potWin} ⬦)`, elv.roundId);
-        try { db.saveRound({ roundId: elv.roundId, userId: u.id, game: 'Адский Лифт', bet: elv.bet, mult, win: potWin, status: 'settled' }); } catch (_) {}
-        return send(200, { ok: true, crashed: false, floor: 8, maxFloor: true, mult, win: potWin, balance: u.tokens });
-      }
-
-      return send(200, { ok: true, crashed: false, floor: elv.floor, mult, potWin, balance: u.tokens });
-    }
-
-    if (url.pathname === '/api/elevator/cashout' && req.method === 'POST') {
-      const elv = activeElevators.get(u.id);
-      if (!elv) return send(400, { error: 'Нет активного раунда в Лифте' });
-      if (elv.floor === 0) return send(400, { error: 'Поднимитесь хотя бы на 1 этаж' });
-
-      const mult = ELEVATOR_MULTS[elv.floor] || 1.42;
-      const win = Math.floor(elv.bet * mult);
-      activeElevators.delete(u.id);
-
-      applyBalance(u, win, 'elevator_cashout', `Лифт: выход на ${elv.floor} этаже ×${mult} (+${win} ⬦)`, elv.roundId);
-      try { db.saveRound({ roundId: elv.roundId, userId: u.id, game: 'Адский Лифт', bet: elv.bet, mult, win, status: 'settled' }); } catch (_) {}
-      return send(200, { ok: true, win, mult, balance: u.tokens });
-    }
-
     /* ── Взлом Сейфа: Crack the Safe ────────────────────────────────────────── */
     if (url.pathname === '/api/safe/status') {
       const data = db.getSafeData(u.id);
@@ -2602,77 +2525,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    /* ── PvP Дуэли: 1v1 Skin & Coin Battles ──────────────────────────────────── */
-    if (url.pathname === '/api/duels/list') {
-      const list = db.getActiveDuels();
-      return send(200, { ok: true, duels: list, balance: u.tokens });
-    }
 
-    if (url.pathname === '/api/duels/create' && req.method === 'POST') {
-      const bet = Math.max(20, Math.floor(Number(body.bet) || 50));
-      if (Math.floor(u.tokens || 0) < bet) return send(400, { error: `Недостаточно токенов для создания дуэли (${bet} ⬦)` });
-
-      const duelId = 'DL_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -bet, 'duel_create', `Создание PvP Дуэли на ${bet} ⬦`, duelId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
-
-      db.createDuel(duelId, u.id, bet);
-      return send(200, { ok: true, duelId, bet, balance: u.tokens });
-    }
-
-    if (url.pathname === '/api/duels/join' && req.method === 'POST') {
-      const duelId = String(body.duelId || '');
-      const duel = db.getDuel(duelId);
-      if (!duel || duel.status !== 'open') return send(400, { error: 'Дуэль не найдена или уже завершена' });
-      if (Number(duel.creator_id) === Number(u.id)) return send(400, { error: 'Нельзя принять собственную дуэль' });
-
-      const bet = Number(duel.bet_tokens);
-      if (Math.floor(u.tokens || 0) < bet) return send(400, { error: `Недостаточно токенов для принятия дуэли (${bet} ⬦)` });
-
-      const debit = applyBalance(u, -bet, 'duel_join', `Принятие PvP Дуэли #${duelId} (${bet} ⬦)`, duelId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
-
-      const rollCreator = crypto.randomInt(1, 1000000);
-      let rollOpponent = crypto.randomInt(1, 1000000);
-      if (rollCreator === rollOpponent) rollOpponent = (rollOpponent + 1) % 1000000;
-
-      const creatorWins = rollCreator > rollOpponent;
-      const winnerId = creatorWins ? duel.creator_id : u.id;
-      // 5% комиссия проекта: победитель забирает 190% от ставки
-      const prize = Math.floor(bet * 2 * 0.95);
-
-      db.settleDuel(duelId, u.id, winnerId, rollCreator, rollOpponent);
-
-      const winnerUser = user(winnerId);
-      applyBalance(winnerUser, prize, 'duel_win', `🏆 Победа в PvP Дуэли #${duelId} (+${prize} ⬦)`, duelId);
-
-      try {
-        db.saveRound({ roundId: duelId + '_c', userId: duel.creator_id, game: 'PvP Дуэль', bet, mult: creatorWins ? 1.9 : 0, win: creatorWins ? prize : 0, status: 'settled' });
-        db.saveRound({ roundId: duelId + '_o', userId: u.id, game: 'PvP Дуэль', bet, mult: !creatorWins ? 1.9 : 0, win: !creatorWins ? prize : 0, status: 'settled' });
-      } catch (_) {}
-
-      return send(200, {
-        ok: true,
-        duelId,
-        rollCreator,
-        rollOpponent,
-        winnerId,
-        iWon: (winnerId === u.id),
-        prize,
-        balance: u.tokens
-      });
-    }
-
-    if (url.pathname === '/api/duels/cancel' && req.method === 'POST') {
-      const duelId = String(body.duelId || '');
-      const duel = db.getDuel(duelId);
-      if (!duel || duel.status !== 'open' || Number(duel.creator_id) !== Number(u.id)) {
-        return send(400, { error: 'Нельзя отменить эту дуэль' });
-      }
-      db.cancelDuel(duelId, u.id);
-      applyBalance(u, duel.bet_tokens, 'duel_cancel', `Возврат ставки за отмену дуэли #${duelId}`);
-      return send(200, { ok: true, balance: u.tokens });
-    }
 
     /* Получение актуальных платёжных реквизитов (только для авторизованных пользователей) */
     if (url.pathname === '/api/requisites') {
