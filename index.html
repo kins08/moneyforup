@@ -6526,14 +6526,15 @@ function gameCases(){
         const isProfit = winItem.price >= curCase.cost;
         const diff = winItem.price - curCase.cost;
 
+        // Генерируем ленту из 60 карточек
+        const targetIndex = 45;
+
         // Находим супер-дорогую вещь (топ джекпот) для тизера в случае проигрыша
         const sortedItems = [...curCase.items].sort((a, b) => b.price - a.price);
         const topJackpot = sortedItems[0] || curCase.items[0];
         // Органичный отступ: через 2 карточки (+2 или -2), чтобы он был виден в окне рулетки без подозрительного «впритык»
         const teaserSlot = (Math.random() < 0.5) ? (targetIndex + 2) : (targetIndex - 2);
 
-        // Генерируем ленту из 60 карточек
-        const targetIndex = 45;
         const stripItems = [];
         for(let i = 0; i < 60; i++){
           if(i === targetIndex){
