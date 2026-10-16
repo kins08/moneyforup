@@ -176,3 +176,138 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* Games polish 2: focused controls, readable lists and catalog cards */
+html,
+body {
+  scrollbar-color: #d64a3f #17131b;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.bot-bets-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.bot-bets-list::-webkit-scrollbar-track {
+  background: #17131b;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.bot-bets-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f5c451 0%, #d64a3f 100%);
+  border: 2px solid #17131b;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.bot-bets-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffe39a 0%, #ef6658 100%);
+}
+
+.bot-bets-list {
+  scrollbar-color: #d64a3f #17131b;
+  scrollbar-width: thin;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  border: 1px solid #d7a83e;
+  border-radius: 4px;
+  background: #121018;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  accent-color: #f5c451;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]::before {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border: solid #f5c451;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) scale(0);
+  transform-origin: center;
+  transition: transform .12s ease;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]:checked::before {
+  transform: rotate(-45deg) scale(1);
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(245, 196, 81, .7);
+  outline-offset: 2px;
+}
+
+.dual-bet-box:nth-child(1) .dual-bet-btn {
+  animation: gamesRedBetPulse 3.2s ease-in-out infinite;
+}
+
+.dual-bet-box:nth-child(2) .dual-bet-btn {
+  animation: gamesBlueBetPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes gamesRedBetPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(220, 38, 38, .34); }
+  50% { box-shadow: 0 4px 18px rgba(239, 68, 68, .62), 0 0 28px rgba(220, 38, 38, .24); }
+}
+
+@keyframes gamesBlueBetPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(37, 99, 235, .34); }
+  50% { box-shadow: 0 4px 18px rgba(59, 130, 246, .62), 0 0 28px rgba(37, 99, 235, .24); }
+}
+
+.dual-bet-box:nth-child(1) .dual-bet-chips button.on,
+.dual-bet-box:nth-child(2) .dual-bet-chips button.on {
+  border-color: #ffe39a;
+  box-shadow: 0 0 0 1px rgba(245, 196, 81, .45), 0 0 18px rgba(245, 196, 81, .42);
+}
+
+.cards > .game {
+  border: 1px solid rgba(245, 196, 81, .42);
+  background:
+    radial-gradient(circle at 50% 115%, rgba(245, 196, 81, .12), transparent 58%),
+    linear-gradient(145deg, rgba(42, 29, 31, .9), rgba(20, 16, 24, .94));
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, .22), 0 10px 26px rgba(0, 0, 0, .24);
+  overflow: hidden;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+.cards > .game:hover {
+  transform: translateY(-2px) scale(1.018);
+  border-color: rgba(255, 227, 154, .9);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 12px 28px rgba(0, 0, 0, .32), 0 0 24px rgba(245, 196, 81, .28);
+  filter: saturate(1.08);
+}
+
+.cards > .game[data-game="racket"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(239, 68, 68, .38); }
+.cards > .game[data-game="dice"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(96, 165, 250, .36); }
+.cards > .game[data-game="upgrader"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(234, 179, 8, .38); }
+.cards > .game[data-game="cases"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(168, 85, 247, .36); }
+.cards > .game[data-game="hotdrop"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(249, 115, 22, .4); }
+.cards > .game[data-game="auction"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(45, 212, 191, .36); }
+.cards > .game[data-game="jumper"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(74, 222, 128, .36); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dual-bet-box:nth-child(1) .dual-bet-btn,
+  .dual-bet-box:nth-child(2) .dual-bet-btn {
+    animation: none;
+  }
+
+  .cards > .game {
+    transition: none;
+  }
+}
