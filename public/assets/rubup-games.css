@@ -1,0 +1,313 @@
+/* RubUp games polish: shared visual language for all game screens */
+:root {
+  --games-red: #d6403a;
+  --games-red-bright: #f05a4f;
+  --games-gold: #f5c451;
+  --games-gold-soft: rgba(245, 196, 81, .22);
+  --games-ink: #101114;
+  --games-panel: rgba(28, 24, 29, .82);
+}
+
+.gameTop,
+.dice-slider-card,
+.dice-display,
+.crashbox,
+.dropwrap,
+.case-roulette,
+.hd-roulette,
+.avito-box,
+.case-win-banner,
+.hd-win-banner {
+  background: linear-gradient(145deg, rgba(42, 29, 31, .88), var(--games-panel));
+  border-color: rgba(245, 196, 81, .24);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .32), 0 0 22px rgba(214, 64, 58, .10), inset 0 1px 0 rgba(255, 255, 255, .06);
+  backdrop-filter: blur(14px);
+}
+
+.gameTop { padding: 10px; border-radius: 18px; }
+
+.control,
+.actions .control,
+.back,
+.chip,
+.dual-bet-chips button {
+  border: 1px solid rgba(245, 196, 81, .38);
+  background: linear-gradient(180deg, #ed6658 0%, var(--games-red) 56%, #a82d32 100%);
+  color: #fff;
+  box-shadow: 0 5px 0 #7d2228, 0 10px 20px rgba(214, 64, 58, .22), inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+
+.control:active,
+.actions .control:active,
+.back:active,
+.chip:active,
+.dual-bet-chips button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #7d2228, 0 5px 12px rgba(214, 64, 58, .18), inset 0 1px 0 rgba(255, 255, 255, .18);
+  filter: brightness(.94);
+}
+
+.betrow, .chips, .dual-bet-chips { gap: 8px; }
+.betinput, .dual-bet-input { background: rgba(16, 17, 20, .78); border-color: rgba(245, 196, 81, .34); box-shadow: inset 0 2px 8px rgba(0, 0, 0, .28); }
+.chip, .dual-bet-chips button { min-height: 34px; padding: 7px 12px; border-radius: 11px; font-weight: 800; color: #fff5d2; }
+.chip.on, .dual-bet-chips button.on { background: linear-gradient(180deg, #f2bf56, #c77e24); border-color: #ffe39a; color: #2a1814; box-shadow: 0 4px 0 #8b4e1e, 0 0 18px rgba(245, 196, 81, .38), inset 0 1px 0 rgba(255, 255, 255, .45); }
+
+.slot, .scratch-cell .symbol-mult, .lt-mult, .xbig, .dice-roll-num.win, .hd-win-val, .case-win-banner { color: var(--games-gold); text-shadow: 0 0 12px rgba(245, 196, 81, .52); }
+.slot { border-color: rgba(245, 196, 81, .34); }
+.avito-box.win, .case-win-banner, .hd-win-banner { animation: rubupWinFlash 1.25s ease-out both; border-color: var(--games-gold); }
+@keyframes rubupWinFlash {
+  0% { box-shadow: 0 0 0 rgba(245, 196, 81, 0); filter: brightness(1); }
+  35% { box-shadow: 0 0 34px rgba(245, 196, 81, .72), 0 0 70px rgba(214, 64, 58, .24); filter: brightness(1.18); }
+  100% { box-shadow: 0 12px 30px rgba(0, 0, 0, .32), 0 0 18px rgba(245, 196, 81, .18); filter: brightness(1); }
+}
+
+/* ===== More motion ===== */
+
+/* 1. Плавное появление игровых блоков при открытии игры */
+.gameTop,
+.dice-slider-card,
+.dice-display,
+.crashbox,
+.dropwrap,
+.case-roulette,
+.hd-roulette,
+.avito-box {
+  animation: rubupRise .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes rubupRise {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 2. Кнопки: подъём при наведении + блик, пробегающий по кнопке */
+.control, .actions .control, .back, .chip, .dual-bet-chips button {
+  position: relative;
+  overflow: hidden;
+}
+.control:hover, .actions .control:hover, .back:hover, .chip:hover, .dual-bet-chips button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.control::after, .actions .control::after, .back::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent);
+  transform: skewX(-20deg);
+  animation: rubupShine 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes rubupShine {
+  0%, 60% { left: -60%; }
+  100% { left: 130%; }
+}
+
+/* 3. Главная кнопка действия пульсирует, привлекая внимание */
+.actions .control:first-child {
+  animation: rubupPulse 2.2s ease-in-out infinite;
+}
+@keyframes rubupPulse {
+  0%, 100% { box-shadow: 0 5px 0 #7d2228, 0 10px 20px rgba(214, 64, 58, .22), inset 0 1px 0 rgba(255, 255, 255, .25); }
+  50% { box-shadow: 0 5px 0 #7d2228, 0 0 30px rgba(240, 90, 79, .65), inset 0 1px 0 rgba(255, 255, 255, .25); }
+}
+
+/* 4. Выбранный чип ставки мягко светится */
+.chip.on, .dual-bet-chips button.on {
+  animation: rubupGlow 1.8s ease-in-out infinite;
+}
+@keyframes rubupGlow {
+  0%, 100% { box-shadow: 0 4px 0 #8b4e1e, 0 0 12px rgba(245, 196, 81, .30), inset 0 1px 0 rgba(255, 255, 255, .45); }
+  50% { box-shadow: 0 4px 0 #8b4e1e, 0 0 26px rgba(245, 196, 81, .70), inset 0 1px 0 rgba(255, 255, 255, .45); }
+}
+
+/* 5. Множители и иксы слегка «дышат» */
+.xbig, .lt-mult {
+  display: inline-block;
+  animation: rubupBreath 2.4s ease-in-out infinite;
+}
+@keyframes rubupBreath {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(245, 196, 81, .40); }
+  50% { transform: scale(1.06); text-shadow: 0 0 20px rgba(245, 196, 81, .85); }
+}
+
+/* 6. Выигрыш: число подпрыгивает, баннер выезжает с отскоком */
+.dice-roll-num.win, .hd-win-val {
+  display: inline-block;
+  animation: rubupPop .6s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+@keyframes rubupPop {
+  0% { transform: scale(.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.case-win-banner, .hd-win-banner {
+  animation: rubupWinFlash 1.25s ease-out both, rubupBounceIn .7s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+@keyframes rubupBounceIn {
+  0% { transform: translateY(-20px) scale(.9); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* 7. Слоты и ячейки: подсветка рамки при наведении */
+.slot, .scratch-cell {
+  transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.slot:hover, .scratch-cell:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: var(--games-gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35), 0 0 18px rgba(245, 196, 81, .35);
+}
+
+/* 8. Рулетки: золотая рамка мягко мерцает, пока идёт игра */
+.case-roulette, .hd-roulette {
+  animation: rubupRise .45s cubic-bezier(.2, .8, .2, 1) both, rubupBorder 2.6s ease-in-out infinite;
+}
+@keyframes rubupBorder {
+  0%, 100% { border-color: rgba(245, 196, 81, .22); }
+  50% { border-color: rgba(245, 196, 81, .70); }
+}
+
+/* Уважение к настройке «уменьшить анимацию» в системе */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Games polish 2: focused controls, readable lists and catalog cards */
+html,
+body {
+  scrollbar-color: #d64a3f #17131b;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.bot-bets-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.bot-bets-list::-webkit-scrollbar-track {
+  background: #17131b;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.bot-bets-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f5c451 0%, #d64a3f 100%);
+  border: 2px solid #17131b;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.bot-bets-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffe39a 0%, #ef6658 100%);
+}
+
+.bot-bets-list {
+  scrollbar-color: #d64a3f #17131b;
+  scrollbar-width: thin;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  border: 1px solid #d7a83e;
+  border-radius: 4px;
+  background: #121018;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  accent-color: #f5c451;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]::before {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border: solid #f5c451;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) scale(0);
+  transform-origin: center;
+  transition: transform .12s ease;
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]:checked::before {
+  transform: rotate(-45deg) scale(1);
+}
+
+.dual-bet-auto .termsline input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(245, 196, 81, .7);
+  outline-offset: 2px;
+}
+
+.dual-bet-box:nth-child(1) .dual-bet-btn {
+  animation: gamesRedBetPulse 3.2s ease-in-out infinite;
+}
+
+.dual-bet-box:nth-child(2) .dual-bet-btn {
+  animation: gamesBlueBetPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes gamesRedBetPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(220, 38, 38, .34); }
+  50% { box-shadow: 0 4px 18px rgba(239, 68, 68, .62), 0 0 28px rgba(220, 38, 38, .24); }
+}
+
+@keyframes gamesBlueBetPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(37, 99, 235, .34); }
+  50% { box-shadow: 0 4px 18px rgba(59, 130, 246, .62), 0 0 28px rgba(37, 99, 235, .24); }
+}
+
+.dual-bet-box:nth-child(1) .dual-bet-chips button.on,
+.dual-bet-box:nth-child(2) .dual-bet-chips button.on {
+  border-color: #ffe39a;
+  box-shadow: 0 0 0 1px rgba(245, 196, 81, .45), 0 0 18px rgba(245, 196, 81, .42);
+}
+
+.cards > .game {
+  border: 1px solid rgba(245, 196, 81, .42);
+  background:
+    radial-gradient(circle at 50% 115%, rgba(245, 196, 81, .12), transparent 58%),
+    linear-gradient(145deg, rgba(42, 29, 31, .9), rgba(20, 16, 24, .94));
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, .22), 0 10px 26px rgba(0, 0, 0, .24);
+  overflow: hidden;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+.cards > .game:hover {
+  transform: translateY(-2px) scale(1.018);
+  border-color: rgba(255, 227, 154, .9);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 12px 28px rgba(0, 0, 0, .32), 0 0 24px rgba(245, 196, 81, .28);
+  filter: saturate(1.08);
+}
+
+.cards > .game[data-game="racket"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(239, 68, 68, .38); }
+.cards > .game[data-game="dice"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(96, 165, 250, .36); }
+.cards > .game[data-game="upgrader"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(234, 179, 8, .38); }
+.cards > .game[data-game="cases"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(168, 85, 247, .36); }
+.cards > .game[data-game="hotdrop"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(249, 115, 22, .4); }
+.cards > .game[data-game="auction"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(45, 212, 191, .36); }
+.cards > .game[data-game="jumper"]:hover { box-shadow: inset 0 0 30px rgba(0, 0, 0, .24), 0 0 26px rgba(74, 222, 128, .36); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dual-bet-box:nth-child(1) .dual-bet-btn,
+  .dual-bet-box:nth-child(2) .dual-bet-btn {
+    animation: none;
+  }
+
+  .cards > .game {
+    transition: none;
+  }
+}
