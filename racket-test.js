@@ -141,6 +141,11 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
   click($('[data-game="racket"]'));
   await sleep(60);
   check($('#gameTitle').textContent === 'Ракетка', 'экран Ракетки открыт');
+  {
+    const mo = doc.querySelector('[data-mode-online="play"]');
+    check(!!mo && !mo.classList.contains('off') && /онлайн/.test(mo.textContent),
+      'в шапке режима виден зелёный индикатор «онлайн»: «' + (mo ? mo.textContent.trim() : 'нет') + '»');
+  }
   check(showBal() === 100, 'стартовый баланс пришёл с сервера: ' + showBal() + ' ⬦');
   type($('#b1Inp'), '60'); type($('#b2Inp'), '60');
   const tgl = el => { if (el.checked) { el.checked = false; el.dispatchEvent(new window.Event('change', { bubbles: true })); } };
@@ -237,6 +242,11 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
     await sleep(80);
     dclick(dq('[data-game="racket"]'));
     await sleep(60);
+    {
+      const dmo = ddoc.querySelector('[data-mode-online="play"]');
+      check(!!dmo && dmo.classList.contains('off') && /оффлайн/.test(dmo.textContent),
+        'демо-режим: индикатор серый («оффлайн»), сервер не подключён: «' + (dmo ? dmo.textContent.trim() : 'нет') + '»');
+    }
     dclick(dq('#b1Btn'));                               // ставка в очередь (локальный баланс)
     DEMO_NOW = tFly(R1);                                // старт полёта: демо-ставка списывается локально
     await sleep(150);

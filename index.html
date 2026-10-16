@@ -238,6 +238,11 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .game-online-badge{position:absolute;top:9px;right:9px;background:rgba(15,23,42,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:3px 7px;font-size:10px;font-weight:750;display:flex;align-items:center;gap:4px;color:#f1f5f9;z-index:4;box-shadow:0 3px 10px rgba(0,0,0,.5)}
 .online-dot{width:6px;height:6px;border-radius:50%;background:#3ddc96;box-shadow:0 0 8px #3ddc96;animation:onlinePulse 1.8s infinite ease-in-out}
 @keyframes onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.85)}}
+/* Зелёный кружок «онлайн» в шапке самого режима (не только в карточке лобби). */
+.mode-online{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(15,23,42,.88);border:1px solid rgba(61,220,150,.38);border-radius:11px;padding:4px 10px;font-size:11px;font-weight:750;color:#c7f9e4;white-space:nowrap}
+.mode-online .online-dot{width:7px;height:7px}
+.mode-online.off{color:#94a3b8;border-color:rgba(148,163,184,.32)}
+.mode-online.off .online-dot{background:#94a3b8;box-shadow:none;animation:none}
 
 /* VIP Ранги кэшбэка */
 .vip-card{background:linear-gradient(135deg,#1e1b2e,#171424);border:1px solid rgba(168,85,247,.32);border-radius:20px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;transition:transform .2s,border-color .2s}
@@ -1173,13 +1178,13 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 <!-- ======== ИГРА ======== -->
 <section class="screen" id="play">
-<div class="gameTop"><button class="back" id="back">‹</button><div><div class="eyebrow" id="gameLabel">ИГРА</div><div class="gameTitle" id="gameTitle">Игра</div></div></div>
+<div class="gameTop"><button class="back" id="back">‹</button><div><div class="eyebrow" id="gameLabel">ИГРА</div><div class="gameTitle" id="gameTitle">Игра</div></div><span class="mode-online" data-mode-online="play"><span class="online-dot"></span><span class="mode-online-val">онлайн</span></span></div>
 <div id="gameArea"></div>
 </section>
 
 <!-- ======== ЧЕЛЛЕНДЖ 24 ЧАСА ======== -->
 <section class="screen" id="challenge">
-<div class="gameTop"><button class="back" id="chBack">‹</button><div><div class="eyebrow" id="chLabel" style="color:var(--accent)">ОСОБЫЙ РЕЖИМ</div><div class="gameTitle" id="chTitle">Челлендж 24ч</div></div></div>
+<div class="gameTop"><button class="back" id="chBack">‹</button><div><div class="eyebrow" id="chLabel" style="color:var(--accent)">ОСОБЫЙ РЕЖИМ</div><div class="gameTitle" id="chTitle">Челлендж 24ч</div></div><span class="mode-online" data-mode-online="challenge"><span class="online-dot"></span><span class="mode-online-val">онлайн</span></span></div>
 <div id="challengeArea"></div>
 </section>
 
@@ -2506,6 +2511,7 @@ function screen(id){
   root.scrollTop=0;
   const se=document.scrollingElement||document.documentElement;
   if(se)se.scrollTop=0;
+  paintModeBadges();
   if(id==='challenge'){
     cleanup=gameChallenge('#challengeArea');
   }
@@ -3509,23 +3515,32 @@ if(vipCardEl) vipCardEl.addEventListener('click', showVipRanksModal);
 /* =======================================================================
    ОНЛАЙН РЕЖИМОВ (каждые 5 минут, Ракетка и Кейсы в топе)
    ======================================================================= */
-function updateModesOnline(){
+function modeOnlineCount(g){
+  g = g || '';
   const cycle5m = Math.floor(Date.now() / 300000); // 5 минут
+  let hash = 0;
+  for(let i = 0; i < g.length; i++) hash = ((hash << 5) - hash) + g.charCodeAt(i);
+  const pseudo = Math.abs(Math.sin(cycle5m * 12.9898 + hash * 78.233)) * 10000;
+  const r = pseudo - Math.floor(pseudo);
+  if(g === 'racket') return 9 + Math.floor(r * 4);  // 9..12 (было 15..20, уменьшено в ~1.7x)
+  if(g === 'cases')  return 8 + Math.floor(r * 4);  // 8..11 (было 14..19, уменьшено в ~1.7x)
+  return 2 + Math.floor(r * 5);                     // 2..6 (было 4..12, уменьшено в ~1.7x)
+}
+function updateModesOnline(){
   qa('[data-online-game]').forEach(el => {
-    const g = el.dataset.onlineGame || '';
-    let hash = 0;
-    for(let i = 0; i < g.length; i++) hash = ((hash << 5) - hash) + g.charCodeAt(i);
-    const pseudo = Math.abs(Math.sin(cycle5m * 12.9898 + hash * 78.233)) * 10000;
-    const r = pseudo - Math.floor(pseudo);
-    let count = 2;
-    if(g === 'racket'){
-      count = 9 + Math.floor(r * 4); // 9..12 (было 15..20, уменьшено в ~1.7x)
-    } else if(g === 'cases'){
-      count = 8 + Math.floor(r * 4); // 8..11 (было 14..19, уменьшено в ~1.7x)
-    } else {
-      count = 2 + Math.floor(r * 5); // 2..6 (было 4..12, уменьшено в ~1.7x)
-    }
-    el.textContent = count + ' онлайн';
+    el.textContent = modeOnlineCount(el.dataset.onlineGame) + ' онлайн';
+  });
+}
+/* Зелёный кружок «онлайн» в шапке самого режима (не только в карточке лобби).
+   Кружок зелёный, когда приложение реально подключено к серверу; иначе серый. */
+let currentMode = '';
+function paintModeBadges(){
+  const online = !!(IS_TG && API_BASE);
+  qa('[data-mode-online]').forEach(badge => {
+    badge.classList.toggle('off', !online);
+    const key = (badge.dataset.modeOnline === 'challenge') ? 'challenge24' : currentMode;
+    const val = badge.querySelector('.mode-online-val');
+    if(val) val.textContent = online ? (modeOnlineCount(key) + ' онлайн') : 'оффлайн';
   });
 }
 
@@ -9484,6 +9499,8 @@ function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
   q('#gameTitle').textContent=NAMES[type]||'Игра';
+  currentMode = type || '';
+  paintModeBadges();
   q('#gameArea').innerHTML='';
   cleanup=(BUILD[type]||(()=>{}))();
 }
@@ -9500,7 +9517,8 @@ initLiveTicker();
 updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);
 updateModesOnline();
-setInterval(updateModesOnline, 30000);
+paintModeBadges();
+setInterval(()=>{ updateModesOnline(); paintModeBadges(); }, 30000);
 initTurboOfferTimer();
 
 const turboCard = q('#gamesTurboOfferCard');
