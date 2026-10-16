@@ -115,22 +115,28 @@ async function pullFromTurso(dbSync) {
     const uRes = await client.execute('SELECT * FROM users');
     if (uRes.rows.length > 0) {
       const insUser = dbSync.prepare(`
-        INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           name=excluded.name, username=excluded.username, tokens=excluded.tokens, staked=excluded.staked,
           stake_since=excluded.stake_since, accrued_base=excluded.accrued_base, ref_earned=excluded.ref_earned,
           ref_invited=excluded.ref_invited, terms_at=excluded.terms_at, total_deposited_rub=excluded.total_deposited_rub,
           last_deposit_rub=excluded.last_deposit_rub, last_deposit_id=excluded.last_deposit_id,
           ref_id=excluded.ref_id, last_cashback_at=excluded.last_cashback_at, cashback_claimed_dep_id=excluded.cashback_claimed_dep_id,
-          easycash_claimed=excluded.easycash_claimed, code=excluded.code
+          easycash_claimed=excluded.easycash_claimed, code=excluded.code,
+          rakeback=excluded.rakeback, free_cases=excluded.free_cases, free_case_5ref_claimed=excluded.free_case_5ref_claimed,
+          first_deposit_bonus_claimed=excluded.first_deposit_bonus_claimed,
+          last_hot_drop=excluded.last_hot_drop, last_wheel_spin=excluded.last_wheel_spin, last_streak_at=excluded.last_streak_at
       `);
       for (const r of uRes.rows) {
         insUser.run(
           r.id, r.num_id, r.name, r.username, r.tokens, r.staked, r.stake_since, r.accrued_base,
           r.ref_id, r.ref_earned, r.ref_invited, r.terms_at, r.total_deposited_rub,
           r.last_deposit_rub, r.last_deposit_id, r.last_cashback_at, r.cashback_claimed_dep_id,
-          r.easycash_claimed, r.code, r.created_at
+          r.easycash_claimed, r.code, r.created_at,
+          Number(r.rakeback || 0), Number(r.free_cases || 0), Number(r.free_case_5ref_claimed || 0),
+          Number(r.first_deposit_bonus_claimed || 0),
+          Number(r.last_hot_drop || 0), Number(r.last_wheel_spin || 0), Number(r.last_streak_at || 0)
         );
       }
     }
@@ -188,13 +194,14 @@ async function pullFromTurso(dbSync) {
     const invRes = await client.execute('SELECT * FROM user_inventory ORDER BY id ASC');
     if (invRes.rows.length > 0) {
       const insInv = dbSync.prepare(`
-        INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       for (const r of invRes.rows) {
         insInv.run(
           r.id, r.user_id, r.item_code, r.name, r.icon, r.price, r.tier,
-          r.case_id, r.case_name, r.round_id, r.acquired_at, r.sold_at, r.sold_for
+          r.case_id, r.case_name, r.round_id, r.acquired_at, r.sold_at, r.sold_for,
+          Number(r.upgrade_only || 0)
         );
       }
     }

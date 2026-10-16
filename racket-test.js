@@ -48,6 +48,32 @@ async function apiHandle(url, opts) {
     srv.plays.push({ game: body.game, bet, verdict: srv.verdict, win, tokens: srv.tokens });
     return ok_({ ok: true, roundId: 'RT' + srv.plays.length, game: 'Ракетка', verdict: srv.verdict, win, mult: RK_MULT, tokens: srv.tokens });
   }
+  /* Ракетка (текущий контракт бэкенда): ставка списывается в /api/racket/bet,
+     выплата — в /api/racket/cashout; точку краха клиент узнаёт только из
+     /api/racket/state (сервер раскрывает её по факту). Мок отдаёт «полёт без
+     краха» (crashed:false), чтобы клиент мог забрать вручную. */
+  if (u.includes('/api/racket/bet')) {
+    const body = JSON.parse(opts.body || '{}');
+    const bet = Math.floor(Number(body.bet) || 0);
+    srv.attempts++;
+    if (bet < 10) return err_(400, 'Ставка должна быть от 10 до 100000 ⬦');
+    if (bet > srv.tokens) return err_(400, 'Недостаточно токенов');
+    srv.tokens -= bet;
+    srv.lastBet = bet;
+    srv.plays.push({ game: 'Ракетка', bet, roundId: body.roundId, tokens: srv.tokens });
+    return ok_({ ok: true, roundId: body.roundId, bet, tokens: srv.tokens });
+  }
+  if (u.includes('/api/racket/cashout')) {
+    const body = JSON.parse(opts.body || '{}');
+    const bet = srv.lastBet || 0;
+    const win = srv.verdict === 'win' ? Math.floor(bet * RK_MULT) : 0;
+    srv.tokens += win;
+    return ok_({ ok: true, verdict: srv.verdict, win, mult: RK_MULT, tokens: srv.tokens });
+  }
+  if (u.includes('/api/racket/state')) {
+    srv.stateCalls = (srv.stateCalls || 0) + 1;
+    return ok_({ ok: true, crashed: false, crash: null });
+  }
   if (u.includes('/api/balance')) { srv.balanceCalls++; return ok_({ tokens: srv.tokens, totalDeposited: 1000, refCode: 'RKTEST01' }); }
   if (u.includes('/api/register')) return ok_({ refCode: 'RKTEST01', tokens: srv.tokens, totalDeposited: 1000 });
   if (u.includes('/api/requisites')) return ok_({ ok: true, configured: {}, sbp: { phone: '', holder: '' }, cards: {} });
@@ -183,6 +209,9 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
   check(tk.length > 0 && tk[0].amt === 102, 'тикер показывает фактическую сумму 102 ⬦: ' + (tk[0] && tk[0].amt));
   check(srv.tokens === 342, 'баланс на сервере сошёлся: ' + srv.tokens + ' ⬦ (300 − 60 + 102)');
   check(showBal() === 342, 'и на экране ровно серверный баланс: ' + showBal() + ' ⬦');
+
+  /* ── 5b. точка краха приходит от сервера (клиент её больше не вычисляет) ──── */
+  check((srv.stateCalls || 0) > 0, 'клиент спрашивал точку краха у сервера (/api/racket/state): вызовов ' + (srv.stateCalls || 0));
 
   /* ── 6. никаких ошибок в консоли страницы ─────────────────────────────────── */
   check(errors.length === 0, 'страница без ошибок: ' + JSON.stringify(errors.slice(0, 3)));

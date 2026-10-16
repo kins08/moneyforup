@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+ <link rel="stylesheet" href="assets/rubup-catalog.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="anypay-verification" content="a2cfd08bac3ce33249c2b0a9e29d">
@@ -3970,6 +3971,7 @@ function gameRacket(){
 
   let curRound=-1,phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
   let boomT=0,roundCrashed=false,flightStarted=false;
+  let lastStatePoll=0, serverCrashed=false;   // точка взрыва теперь серверная
 
   // Двойная ставка (Bet 1 и Bet 2)
   const B1 = {
@@ -4682,7 +4684,10 @@ function gameRacket(){
           rr.innerHTML = `Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmt(B.paid)} ⬦</b> (≈ ${fmtRub(B.paid)}).`;
           if(window.pushLiveTickerWin){
             const pr = tgProfile();
-            window.pushLiveTickerWin(pr.name || 'Вы', 'Ракетка', B.paid, B.cashX);
+            // Множитель сервера (res.mult), а не bet×клиентский кэшаут: тикер не должен
+            // обещать то, чего сервер не начислял (R4).
+            const svMult = (res.mult != null) ? res.mult : B.cashX;
+            window.pushLiveTickerWin(pr.name || 'Вы', 'Ракетка', B.paid, svMult);
           }
         } else {
           B.paid = 0;
@@ -4705,6 +4710,18 @@ function gameRacket(){
     render(Date.now()%ROUND_MS);
   }
 
+  async function pollRacketState(){
+    if(!IS_TG || !API_BASE) return;
+    if(serverCrashed) return;
+    try{
+      const res=await tgCall('/api/racket/state',{ rIdx: curRound });
+      if(res && res.ok && res.crashed && typeof res.crash==='number'){
+        serverCrashed=true;
+        crash=res.crash;   // loop сам перейдёт в 'done', когда potX дойдёт до crash
+      }
+    }catch(e){}
+  }
+
   function loop(){
     if(dead)return;
     const now=Date.now();
@@ -4714,7 +4731,12 @@ function gameRacket(){
     // Переход в новый 30-секундный раунд
     if(rIdx!==curRound){
       curRound=rIdx;
-      crash=sampleCrash(curRound);
+      serverCrashed=false;
+      lastStatePoll=0;
+      // Онлайн: точку взрыва знает только сервер, клиент получит её по факту краша
+      // (pollRacketState) — предсказать её из индекса раунда больше нельзя.
+      // Оффлайн-демо: считаем локально, как раньше.
+      crash=(IS_TG && API_BASE)?Infinity:sampleCrash(curRound);
       currentRoundBots=generateBotsForRound(curRound);
       currentRoundBank=currentRoundBots.reduce((sum,b)=>sum+b.bet,0);
       lastBotsRenderTime=0;
@@ -4754,6 +4776,11 @@ function gameRacket(){
         if(totalAtRisk >= 310 && crash > 1.05){
           crash = 1.00;
         }
+      }
+      // Точка взрыва ещё неизвестна — спрашиваем сервер, но не чаще ~2.5 раз в секунду.
+      if(crash===Infinity && Date.now()-lastStatePoll>400){
+        lastStatePoll=Date.now();
+        pollRacketState();
       }
       const flightSec=(rTime-WAIT_MS)/1000;
       const s=flightSec*ROCKET_SPEED;
@@ -8630,7 +8657,7 @@ function gameScratch(){
         <div class="insurance-toggle ${insurance?'active':''}" id="scratchInsToggle" style="${scratchGrid?'pointer-events:none;opacity:.6':''}">
           <div>
             <div style="font-size:12.5px;font-weight:800;color:#fff">🛡️ Страховка билета (+15%)</div>
-            <div style="font-size:11px;color:#94a3b8">При проигрыше вернём 35% ставки</div>
+            <div style="font-size:11px;color:#94a3b8">При проигрыше вернём 20% ставки</div>
           </div>
           <div class="toggle-sw"></div>
         </div>
@@ -8796,7 +8823,7 @@ function gameScratch(){
           }
           let insRet = 0;
           if(insurance){
-            insRet = Math.floor(curBet * 0.35);
+            insRet = Math.floor(curBet * 0.20);
           }
           r = { ok: true, grid, won: false, winMult: 0, winTokens: 0, insuredReturn: insRet, tokens: S.balance + insRet };
         }

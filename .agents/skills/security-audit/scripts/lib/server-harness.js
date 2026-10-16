@@ -90,7 +90,7 @@ async function startServer(opts = {}) {
 
   // ── Изолированная копия проекта ──────────────────────────────────────────
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
-  for (const f of ['bot.js', 'db.js', 'bets_monitor.js', 'items.js', 'turso.js']) {
+  for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'turso.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }
@@ -127,7 +127,7 @@ async function startServer(opts = {}) {
       API_PORT: String(port),
       APP_URL: 'https://example.com/app',
       ADMIN_ID: String(adminId),
-      PAYMENT_WEBHOOK_SECRET: 'audit-secret',
+      PAYMENT_WEBHOOK_SECRET: 'audit-secret-0123456789abcdef',
       ...(opts.env || {})
     },
     stdio: ['ignore', 'pipe', 'pipe']

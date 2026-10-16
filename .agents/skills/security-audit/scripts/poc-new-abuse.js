@@ -52,7 +52,7 @@ function scratchRtp(rounds = 400000) {
   const totalWeight = SYMBOLS.reduce((s, x) => s + x.weight, 0);
   let paid = 0;
   for (let i = 0; i < rounds; i++) {
-    if (Math.random() < 0.37) {
+    if (Math.random() < 0.25) {   // winChance из исправленного bot.js (RTP ~93.75%)
       let roll = Math.random() * totalWeight, s = null;
       for (const sym of SYMBOLS) { if (roll < sym.weight) { s = sym; break; } roll -= sym.weight; }
       if (!s) s = SYMBOLS[SYMBOLS.length - 1];
@@ -60,6 +60,11 @@ function scratchRtp(rounds = 400000) {
     }
   }
   return paid / rounds; // на 1 ⬦ ставки (cost = bet)
+}
+// Проверка страховки скретча: доплата +15%, возврат 20% при проигрыше, RTP базы 93.75%.
+function scratchInsuranceEv() {
+  const baseRtp = 0.25 * ((1 * 50 + 3 * 20 + 6 * 10 + 15 * 5 + 35 * 2 + 40 * 1.5) / 100); // 0.9375
+  return baseRtp + (1 - 0.25) * 0.20 - 1.15; // должно быть ≤ 0
 }
 // Mastermind-решатель: перебор с учётом обратной связи bulls+cows
 function feedback(secret, guess) {
@@ -139,28 +144,35 @@ function solveRounds(secret) {
   {
     const rtp = scratchRtp();
     const edge = (rtp - 1) * 100;
+    const insEv = scratchInsuranceEv();
     console.log('  RTP = ' + (rtp * 100).toFixed(2) + '% (заявлено в коде ~93.5%)');
+    console.log('  EV страховки = ' + (insEv * 100).toFixed(2) + '% от ставки');
     if (rtp > 1) bad('C: RTP > 100% — игрок в плюсе на ' + edge.toFixed(1) + '% с каждой ставки (печатает токены)');
-    else ok('C: RTP < 100%');
+    else if (insEv > 0) bad('C: страховка скретча плюсовая для игрока: +' + (insEv * 100).toFixed(2) + '%');
+    else ok('C: RTP < 100% и страховка минусовая для игрока');
   }
 
-  // ── D) Сейф: джекпот 25 000 при 25 ⬦/попытка и обратной связи ────────────
+  // ── D) Сейф: джекпот против цены решения 4-значного сейфа ────────────────
   console.log(C.b('\nD) /api/safe/guess: цена решения 4-значного сейфа против джекпота'));
   {
     let total = 0, n = 300;
     for (let i = 0; i < n; i++) total += solveRounds(String(Math.floor(1000 + Math.random() * 9000)));
     const avg = total / n;
     const cost = avg * 25;
-    console.log('  среднее число попыток: ' + avg.toFixed(2) + ' (цена ' + cost.toFixed(0) + ' ⬦) при джекпоте 10000–25000 ⬦');
-    if (cost < 10000) bad('D: решение сейфа прибыльно в среднем (+' + (10000 - cost).toFixed(0) + ' ⬦ за цикл даже при джекпоте 10000)');
-    else ok('D: сейф не прибылен');
+    // Пул теперь прогрессивный: 0 на старте, +15 за промах, обнуление при выигрыше.
+    const poolAtWin = 15 * (avg - 1);
+    const profit = poolAtWin - cost;
+    console.log('  среднее число попыток: ' + avg.toFixed(2) + ' (цена ' + cost.toFixed(0) + ' ⬦)');
+    console.log('  пул к моменту выигрыша ≈ ' + poolAtWin.toFixed(0) + ' ⬦ (без бесплатного сида)');
+    if (profit > 0) bad('D: решение сейфа прибыльно в среднем (+' + profit.toFixed(0) + ' ⬦ за цикл)');
+    else ok('D: сейф не прибылен (прогрессивный пул, без бесплатного сида)');
   }
 
-  // ── E) /api/play: нижняя граница шанса 0.0094 ломает EV при большом мультипликаторе ──
-  console.log(C.b('\nE) /api/play game=safe mult=1000: пол 0.0094 при maxMult > (1-edge)/0.0094'));
+  // ── E) /api/play: нижняя граница шанса ломает EV при большом мультипликаторе ──
+  console.log(C.b('\nE) /api/play game=safe mult=1000: проверка отсутствия пола шанса'));
   {
-    // GAMES.safe: minBet=maxBet=25, maxMult=1000, edge=0.05
-    const p = Math.max(0.0094, (1 - 0.05) / 1000);   // = 0.0094 (пол)
+    // GAMES.safe: maxMult=1000, edge=0.05. Пол 0.0094 убран ⇒ p = (1-edge)/mult.
+    const p = (1 - 0.05) / 1000;
     const win = Math.floor(25 * 1000);               // 25000
     const evPerRound = p * win - 25;
     console.log('  шанс победы = ' + p + ', выплата = ' + win + ' ⬦, ставка = 25 ⬦ ⇒ EV = ' + evPerRound.toFixed(1) + ' ⬦/раунд');
@@ -177,8 +189,14 @@ function solveRounds(secret) {
       const after = srv.bal(7003);
       const net = after - before;
       console.log('  раундов: ' + rounds + ', побед: ' + wins + ', выплата: ' + payout + ' ⬦, сальдо: ' + (net >= 0 ? '+' : '') + net + ' ⬦');
-      if (net > 0) bad('E: /api/play уводит игру в плюс игроку (сальдо +' + net + ' ⬦ за ' + rounds + ' раундов)');
-      else ok('E: игра с большим мультипликатором остаётся минусовой для игрока');
+      // У низкого шанса огромная дисперсия: сальдо за 1500 раундов недостоверно.
+      // Надёжнее сравнить частоту побед с гипотезами «пол есть» (0.0094) и «пола нет» (0.00095).
+      const expFlawed = rounds * 0.0094;      // ~14 побед, если пол 0.0094 на месте
+      const expFixed = rounds * p;            // ~1.4 победы без пола
+      const threshold = Math.sqrt(expFlawed * expFixed); // ~4.4
+      console.log('  ожидаемо побед: с полом ≈ ' + expFlawed.toFixed(1) + ', без пола ≈ ' + expFixed.toFixed(1) + ' (порог ' + threshold.toFixed(1) + ')');
+      if (wins > threshold) bad('E: частота побед соответствует ПРИСУТСТВУЮЩЕМУ полу 0.0094 (' + wins + ' побед)');
+      else ok('E: частота побед соответствует честному шансу без пола (' + wins + ' побед)');
     } finally { await srv.stop(); }
   }
 

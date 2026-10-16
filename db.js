@@ -14,6 +14,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const turso = require('./turso');
 
 let DatabaseSync;
@@ -41,160 +42,29 @@ const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
 
-// Инициализация структуры таблиц
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY,
-  num_id INTEGER,
-  name TEXT,
-  username TEXT,
-  tokens INTEGER DEFAULT 50,
-  staked REAL DEFAULT 0,
-  stake_since INTEGER DEFAULT 0,
-  accrued_base REAL DEFAULT 0,
-  ref_id INTEGER DEFAULT 0,
-  ref_earned INTEGER DEFAULT 0,
-  ref_invited INTEGER DEFAULT 0,
-  terms_at INTEGER DEFAULT 0,
-  total_deposited_rub INTEGER DEFAULT 0,
-  last_deposit_rub INTEGER DEFAULT 0,
-  last_deposit_id INTEGER DEFAULT 0,
-  last_cashback_at INTEGER DEFAULT 0,
-  cashback_claimed_dep_id INTEGER DEFAULT 0,
-  easycash_claimed INTEGER DEFAULT 0,
-  code TEXT UNIQUE,
-  created_at INTEGER,
-  rakeback REAL DEFAULT 0,
-  free_cases INTEGER DEFAULT 0,
-  free_case_5ref_claimed INTEGER DEFAULT 0,
-  first_deposit_bonus_claimed INTEGER DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS orders (
-  id TEXT PRIMARY KEY,
-  type TEXT,
-  user_id INTEGER,
-  tokens INTEGER,
-  rub INTEGER,
-  bank TEXT,
-  card TEXT,
-  sender TEXT,
-  method TEXT,
-  details TEXT,
-  status TEXT,
-  source TEXT,
-  tx TEXT,
-  created_at INTEGER,
-  updated_at INTEGER,
-  bonus TEXT DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS transactions_ledger (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER,
-  amount INTEGER,
-  type TEXT,
-  reason TEXT,
-  reference_id TEXT,
-  balance_before INTEGER,
-  balance_after INTEGER,
-  created_at INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS promo_codes (
-  code TEXT PRIMARY KEY,
-  tokens INTEGER,
-  max_uses INTEGER,
-  created_at INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS promo_activations (
-  promo_code TEXT,
-  user_id INTEGER,
-  activated_at INTEGER,
-  PRIMARY KEY (promo_code, user_id)
-);
-
-CREATE TABLE IF NOT EXISTS game_rounds (
-  round_id TEXT PRIMARY KEY,
-  user_id INTEGER,
-  game TEXT,
-  bet_tokens INTEGER,
-  mult REAL,
-  win_tokens INTEGER,
-  status TEXT,
-  created_at INTEGER,
-  settled_at INTEGER,
-  -- выпавший предмет (кейсы): код и его цена на момент раунда
-  item_code TEXT,
-  item_price INTEGER
-);
-
-/* Инвентарь игрока — СЕРВЕРНЫЙ. Раньше предметы жили только в браузере
-   (localStorage), и сервер не знал ни что у игрока есть, ни сколько это стоит.
-   Значит продажу нельзя было ни проверить, ни начислить честно.
-   sold_at = NULL — предмет ещё у игрока; иначе продан и повторно не продаётся. */
-CREATE TABLE IF NOT EXISTS user_inventory (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  item_code TEXT NOT NULL,
-  name TEXT,
-  icon TEXT,
-  price INTEGER NOT NULL,
-  tier TEXT,
-  case_id TEXT,
-  case_name TEXT,
-  round_id TEXT,
-  acquired_at INTEGER,
-  sold_at INTEGER,
-  sold_for INTEGER,
-  upgrade_only INTEGER DEFAULT 0
-);
-CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
-
-CREATE TABLE IF NOT EXISTS vault_safe (
-  id INTEGER PRIMARY KEY,
-  jackpot_tokens INTEGER DEFAULT 25000,
-  secret_code TEXT DEFAULT '7429',
-  guesses_count INTEGER DEFAULT 0,
-  last_won_at INTEGER DEFAULT 0,
-  last_winner_id INTEGER DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS safe_attempts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  code TEXT NOT NULL,
-  bulls INTEGER NOT NULL,
-  cows INTEGER NOT NULL,
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_safe_attempts_user ON safe_attempts(user_id, created_at DESC);
-
-CREATE TABLE IF NOT EXISTS pvp_duels (
-  id TEXT PRIMARY KEY,
-  creator_id INTEGER NOT NULL,
-  opponent_id INTEGER,
-  bet_tokens INTEGER NOT NULL,
-  winner_id INTEGER,
-  status TEXT DEFAULT 'open',
-  roll_creator INTEGER,
-  roll_opponent INTEGER,
-  created_at INTEGER NOT NULL,
-  settled_at INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_pvp_duels_status ON pvp_duels(status, created_at DESC);
-`);
+// Инициализация структуры таблиц. Схема лежит в schema.js и общая с Turso.
+const { SCHEMA_SQL, EXTRA_COLUMNS } = require('./schema');
+db.exec(SCHEMA_SQL);
 
 // Инициализируем сейф по умолчанию, если ещё не создан
 try {
   const safeInit = db.prepare('SELECT id FROM vault_safe WHERE id = 1').get();
   if (!safeInit) {
-    const initCode = String(Math.floor(1000 + Math.random() * 9000));
-    db.prepare('INSERT INTO vault_safe (id, jackpot_tokens, secret_code, guesses_count) VALUES (1, 25000, ?, 0)').run(initCode);
+    const initCode = String(1000 + crypto.randomInt(0, 9000));
+    db.prepare('INSERT INTO vault_safe (id, jackpot_tokens, secret_code, guesses_count) VALUES (1, 0, ?, 0)').run(initCode);
   }
 } catch (e) {
   console.warn('[DB] vault_safe init warning:', e.message);
+}
+
+/* Обнуляем «бесплатный» сид джекпота сейфа (был 25 000 при создании / 10 000 после
+   выигрыша). Он не заработан игроками, а скрипт-солвер вскрывает код за ~8 попыток
+   (bulls/cows) и забирает весь пул. Теперь пул — честный прогрессивный: растёт только
+   с промахов (+15 за попытку) и обнуляется при выигрыше. */
+try {
+  db.prepare('UPDATE vault_safe SET jackpot_tokens = 0 WHERE id = 1 AND jackpot_tokens IN (25000, 10000)').run();
+} catch (e) {
+  console.warn('[DB] vault_safe seed reset warning:', e.message);
 }
 
 /* Мягкая миграция: CREATE TABLE IF NOT EXISTS не добавит колонки в уже
@@ -212,25 +82,18 @@ function __ensureColumns(table, cols) {
     console.error(`[DB] Миграция ${table}: ${e.message}`);
   }
 }
-__ensureColumns('users', [
-  ['rakeback', 'REAL DEFAULT 0'],
-  ['free_cases', 'INTEGER DEFAULT 0'],
-  ['free_case_5ref_claimed', 'INTEGER DEFAULT 0'],
-  ['first_deposit_bonus_claimed', 'INTEGER DEFAULT 0']
-]);
-__ensureColumns('orders', [
-  ['bonus', "TEXT DEFAULT ''"]
-]);
-__ensureColumns('game_rounds', [['item_code', 'TEXT'], ['item_price', 'INTEGER']]);
-__ensureColumns('user_inventory', [['upgrade_only', 'INTEGER DEFAULT 0']]);
+__ensureColumns('users', EXTRA_COLUMNS.users);
+__ensureColumns('orders', EXTRA_COLUMNS.orders);
+__ensureColumns('game_rounds', EXTRA_COLUMNS.game_rounds);
+__ensureColumns('user_inventory', EXTRA_COLUMNS.user_inventory);
 
 // Подготовленные SQL-запросы для быстрого выполнения
 const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
@@ -238,7 +101,7 @@ const stmts = {
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
       easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?,
-      first_deposit_bonus_claimed = ?
+      first_deposit_bonus_claimed = ?, last_hot_drop = ?, last_wheel_spin = ?, last_streak_at = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -286,7 +149,10 @@ const stmts = {
   inventoryTotals: db.prepare(`
     SELECT COUNT(*) AS count, COALESCE(SUM(price), 0) AS value
     FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
-  `)
+  `),
+  insertChallengeClaim: db.prepare(
+    'INSERT OR IGNORE INTO challenge_claims (user_id, quest_id, claim_date, created_at) VALUES (?, ?, ?, ?)'
+  )
 };
 
 // Предустановленные промокоды
@@ -326,7 +192,10 @@ function getUser(id) {
     rakeback: Number(row.rakeback || 0),
     freeCases: Number(row.free_cases || 0),
     freeCase5RefClaimed: Number(row.free_case_5ref_claimed || 0),
-    firstDepositBonusClaimed: Number(row.first_deposit_bonus_claimed || 0)
+    firstDepositBonusClaimed: Number(row.first_deposit_bonus_claimed || 0),
+    lastHotDrop: Number(row.last_hot_drop || 0),
+    lastWheelSpin: Number(row.last_wheel_spin || 0),
+    lastStreakAt: Number(row.last_streak_at || 0)
   };
 }
 
@@ -374,6 +243,9 @@ function saveUser(u) {
       Number(u.freeCases || 0),
       Number(u.freeCase5RefClaimed || 0),
       Number(u.firstDepositBonusClaimed || 0),
+      Number(u.lastHotDrop || 0),
+      Number(u.lastWheelSpin || 0),
+      Number(u.lastStreakAt || 0),
       u.id
     );
     turso.queueQuery(`
@@ -382,14 +254,15 @@ function saveUser(u) {
         ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
         easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?,
-        first_deposit_bonus_claimed=?
+        first_deposit_bonus_claimed=?, last_hot_drop=?, last_wheel_spin=?, last_streak_at=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
       u.ref || 0, u.refEarned || 0, u.refInvited || 0, u.termsAt || 0, u.totalDepositedRub || 0,
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0),
-      Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0), u.id
+      Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0), u.id
     ]);
   } else {
     stmts.insertUser.run(
@@ -416,11 +289,14 @@ function saveUser(u) {
       Number(u.rakeback || 0),
       Number(u.freeCases || 0),
       Number(u.freeCase5RefClaimed || 0),
-      Number(u.firstDepositBonusClaimed || 0)
+      Number(u.firstDepositBonusClaimed || 0),
+      Number(u.lastHotDrop || 0),
+      Number(u.lastWheelSpin || 0),
+      Number(u.lastStreakAt || 0)
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
@@ -428,7 +304,8 @@ function saveUser(u) {
       u.staked || 0, u.stakeSince || 0, u.accruedBase || 0, u.ref || 0, u.refEarned || 0, u.refInvited || 0,
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
       u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
-      Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0)
+      Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0)
     ]);
   }
 }
@@ -578,6 +455,7 @@ function atomicClaimChannel(userId, bonus) {
 module.exports = {
   db,
   DB_PATH,
+  SCHEMA_SQL,
   getUser,
   saveUser,
   atomicBalanceChange,
@@ -958,7 +836,7 @@ module.exports = {
   getSafeData: (userId) => {
     try {
       const safe = db.prepare('SELECT jackpot_tokens, guesses_count, last_won_at, last_winner_id FROM vault_safe WHERE id = 1').get() || {
-        jackpot_tokens: 25000, guesses_count: 0
+        jackpot_tokens: 0, guesses_count: 0
       };
       const recentAttempts = db.prepare(`
         SELECT code, bulls, cows, created_at
@@ -974,7 +852,7 @@ module.exports = {
       };
     } catch (e) {
       console.error('[DB] getSafeData error:', e.message);
-      return { jackpot: 25000, guessesCount: 0, recentAttempts: [] };
+      return { jackpot: 0, guessesCount: 0, recentAttempts: [] };
     }
   },
 
@@ -1019,10 +897,10 @@ module.exports = {
       let winTokens = 0;
       if (won) {
         winTokens = safe.jackpot_tokens;
-        const newCode = String(Math.floor(1000 + Math.random() * 9000));
+        const newCode = String(1000 + crypto.randomInt(0, 9000));
         db.prepare(`
           UPDATE vault_safe
-          SET jackpot_tokens = 10000, secret_code = ?, guesses_count = 0, last_won_at = ?, last_winner_id = ?
+          SET jackpot_tokens = 0, secret_code = ?, guesses_count = 0, last_won_at = ?, last_winner_id = ?
           WHERE id = 1
         `).run(newCode, now, userId);
       } else {
@@ -1118,6 +996,22 @@ module.exports = {
     } catch (e) {
       console.error('[DB] cancelDuel error:', e.message);
       return { ok: false, error: e.message };
+    }
+  },
+  /* Идемпотентный клейм челленджа: одна выплата на (игрок, квест, дата).
+     Возвращает true только если запись реально вставлена (первый клейм). */
+  tryClaimChallenge: (userId, questId, claimDate) => {
+    try {
+      const res = stmts.insertChallengeClaim.run(userId, String(questId), String(claimDate), Date.now());
+      if (!res || Number(res.changes) < 1) return false;
+      turso.queueQuery(
+        'INSERT OR IGNORE INTO challenge_claims (user_id, quest_id, claim_date, created_at) VALUES (?, ?, ?, ?)',
+        [userId, String(questId), String(claimDate), Date.now()]
+      );
+      return true;
+    } catch (e) {
+      console.error('[DB] tryClaimChallenge error:', e.message);
+      return false;
     }
   },
   pullFromTurso: () => turso.pullFromTurso(db),

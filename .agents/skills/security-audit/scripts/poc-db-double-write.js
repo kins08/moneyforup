@@ -23,6 +23,7 @@ const ROOT = path.resolve(__dirname, '../../../..');
 const DB_SRC = path.join(ROOT, 'db.js');
 const BOT_SRC = path.join(ROOT, 'bot.js');
 const TURSO_SRC = path.join(ROOT, 'turso.js');
+const SCHEMA_SRC = path.join(ROOT, 'schema.js');
 
 for (const f of [DB_SRC, BOT_SRC]) {
   if (!fs.existsSync(f)) { console.error('Не найден ' + f); process.exit(2); }
@@ -31,6 +32,9 @@ for (const f of [DB_SRC, BOT_SRC]) {
 // ── Изолированная копия db.js: создаст свою ./data рядом с собой, в temp ─────
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-test-'));
 fs.copyFileSync(DB_SRC, path.join(TMP, 'db.js'));
+if (fs.existsSync(SCHEMA_SRC)) {
+  fs.copyFileSync(SCHEMA_SRC, path.join(TMP, 'schema.js'));
+}
 if (fs.existsSync(TURSO_SRC)) {
   fs.copyFileSync(TURSO_SRC, path.join(TMP, 'turso.js'));
 }

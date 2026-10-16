@@ -62,9 +62,20 @@ function safeEqualStr(a, b) {
   if (A.length !== B.length) return false;
   return crypto.timingSafeEqual(A, B);
 }
+/* CSPRNG для ДЕНЕЖНЫХ исходов. Math.random() (xorshift) наблюдаем и при большом
+   числе запросов предсказуем — для ставок и секретных кодов не годится. */
+const rnd01 = () => crypto.randomInt(0, 1_000_000) / 1_000_000;
+const rndInt = (n) => crypto.randomInt(0, n);
+/* IP клиента для rate-limit. X-Forwarded-For подделывается кем угодно, поэтому
+   доверяем ему ТОЛЬКО если приложение реально стоит за доверенным прокси
+   (TRUST_PROXY=1). Иначе берём настоящий адрес сокета. */
+const TRUST_PROXY = /^(1|true|yes)$/i.test(String(process.env.TRUST_PROXY || ''));
 function clientIp(req) {
-  const fwd = String((req.headers && req.headers['x-forwarded-for']) || '').split(',')[0].trim();
-  return fwd || (req.socket && req.socket.remoteAddress) || 'unknown';
+  if (TRUST_PROXY) {
+    const fwd = String((req.headers && req.headers['x-forwarded-for']) || '').split(',')[0].trim();
+    if (fwd) return fwd;
+  }
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
@@ -245,6 +256,15 @@ function resolveRef(param) {
 function setRef(u, param) {
   const refId = resolveRef(param);
   if (!refId || refId === u.id || u.ref) return 0;      // самоприглашение и повторную привязку отсекаем
+  // Запрещаем циклы в реферальном графе (A→B→A и длиннее): иначе два своих
+  // аккаунта можно привязать друг к другу и раскручивать бонусы взаимно.
+  let cur = Number(refId), hops = 0;
+  while (cur && hops++ < 50) {
+    if (cur === Number(u.id)) return 0;
+    const next = users.get(cur) || db.getUser(cur);
+    if (!next) break;
+    cur = Number(next.ref) || 0;
+  }
   u.ref = refId;
   try { db.saveUser(u); } catch (_) {}
   const referrer = user(refId);
@@ -367,19 +387,20 @@ const GAMES = {
   __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.08,  defaultMult: 2.0 }
 };
 
-/* ── Ракетка (Crash Game 24/7): детерминированная модель крушения по раундам ── */
+/* ── Ракетка (Crash Game 24/7): точка взрыва — СЕРВЕРНЫЙ секрет ──
+   Раньше crash = sampleCrash(rIdx), где rIdx приходил от клиента, а сама функция
+   детерминирована и есть в открытом index.html. Значит, читер считал точку взрыва
+   заранее и ставил только на «хорошие» раунды — гарантированный плюс.
+   Теперь r берётся из CSPRNG на сервере, раунд фиксируется по серверным часам,
+   а точка взрыва раскрывается клиенту только когда полёт до неё уже дошёл. */
 const RK = { tcap: 12, k: 0.18 };
-function sampleCrash(seedIdx) {
-  let r;
-  if (seedIdx != null) {
-    let a = (seedIdx ^ 0x6D2B79F5) >>> 0;
-    a = Math.imul(a ^ (a >>> 15), a | 1);
-    a ^= a + Math.imul(a ^ (a >>> 7), a | 61);
-    r = ((a ^ (a >>> 14)) >>> 0) / 4294967296;
-  } else {
-    r = Math.random();
-  }
-  if (r < 0.08) return 1.00;
+const RACKET_ROUND_MS = 30000;
+const RACKET_WAIT_MS = 15000;
+const RACKET_SPEED = 0.58;
+
+/* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте). */
+function crashFromR(r) {
+  if (r < 0.08) return 1.00;                                   // мгновенный взрыв
   if (r < 0.14) return +(1.01 + ((r - 0.08) / 0.06) * 0.09).toFixed(2);
   if (r < 0.29) return +(1.10 + ((r - 0.14) / 0.15) * 0.20).toFixed(2);
   if (r < 0.53) return +(1.30 + ((r - 0.29) / 0.24) * 0.25).toFixed(2);
@@ -392,6 +413,23 @@ function sampleCrash(seedIdx) {
   return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
 }
 
+/* Точка взрыва раунда живёт только на сервере и раскрывается по факту (см. /api/racket/state). */
+const racketRounds = new Map(); // rIdx -> { crash, createdAt }
+function getRacketRound(rIdx) {
+  let r = racketRounds.get(rIdx);
+  if (!r) {
+    r = { crash: crashFromR(rnd01()), createdAt: Date.now() };
+    racketRounds.set(rIdx, r);
+  }
+  return r;
+}
+/* Момент времени (мс от начала раунда), когда множитель полёта достигает crash. */
+function racketBustMs(crash) {
+  const L = Math.log(Math.max(1, crash)) / RK.k;      // tau(s)*k = ln(crash)
+  const s = (-1 + Math.sqrt(1 + 0.24 * L)) / 0.12;     // 0.06 s^2 + s - L = 0
+  return RACKET_WAIT_MS + (s / RACKET_SPEED) * 1000;
+}
+
 const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
 const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance, createdAt }
 
@@ -399,6 +437,10 @@ setInterval(() => {
   const now = Date.now();
   for (const [id, bet] of activeRacketBets.entries()) {
     if (now - bet.createdAt > 300000) activeRacketBets.delete(id);
+  }
+  for (const [rIdx, round] of racketRounds.entries()) {
+    // держим только текущий и пару прошлых раундов (нужно для истории/поздних кэшаутов)
+    if (now - rIdx * RACKET_ROUND_MS > 300000) racketRounds.delete(rIdx);
   }
   for (const [uid, rev] of activeRevolvers.entries()) {
     if (now - rev.createdAt > 300000) activeRevolvers.delete(uid);
@@ -555,8 +597,11 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
     // Особый акционный скин за 5 друзей: в 97% случаев апгрейд НЕ летит (Near-Miss байт!)
     winChance = 0.03;
   } else {
-    // Максимум 75% шанс победы (RTP 94%, House Edge 6%)
-    winChance = Math.min(0.75, Math.max(0.0094, (1 - cfg.edge) / mult));
+    // RTP = (1 − edge) ровно при любом множителе: winChance = (1 − edge) / mult.
+    // Нижней отсечки быть НЕ должно: она поднимала шанс при больших mult (напр. safe ×1000)
+    // и делала игру печатным станком (EV > 0). Верхний предел 0.75 уменьшает выплату
+    // только в пользу кассы, поэтому он безопасен.
+    winChance = Math.min(0.75, (1 - cfg.edge) / mult);
   }
 
   const roll = crypto.randomInt(0, 1_000_000) / 1_000_000;
@@ -885,10 +930,10 @@ async function plategaCredit(txId, orderIdFromHook) {
   }
   order._crediting = false;
   order.status = 'paid';
-  order.tokens = r.tokens;
+  order.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
   if (local) {
     local.status = 'paid';
-    local.tokens = r.tokens;
+    local.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
   }
   try { db.updateOrderStatus(order.id, 'paid'); } catch (_) {}
   await notifyPaid(order.userId, r.tokens, r.refPaid, 'Platega');
@@ -965,7 +1010,7 @@ async function coinsoCredit(saved, key) {
     orderId: saved.orderId || key
   });
   if (!r.credited) { saved.credited = false; return { paid: true, credited: false, retry: true, error: r.refErr, tokens: saved.tokens }; }
-  saved.tokens = r.tokens;
+  saved.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
   try { db.updateOrderStatus(saved.orderId || key, 'paid'); } catch (_) {}
   await notifyPaid(saved.userId, r.tokens, r.refPaid, 'Coinso');
   const k = key || [...coinsoOrders.entries()].find(([, v]) => v === saved)?.[0];
@@ -1301,7 +1346,7 @@ async function processOrderAction(orderId, action) {
         order.status = 'pending';
         return { ok: false, error: 'Не удалось зачислить баланс — заявка оставлена в ожидании: ' + (r.refErr || '') };
       }
-      order.tokens = r.tokens;
+      order.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
       order.completedAt = Date.now();
       try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
       const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${r.bonusTokens} ⬦)` : '';
@@ -1617,7 +1662,7 @@ bot.callbackQuery(['boost_hotdrop', 'boost_v10'], async ctx => {
   const elapsed = now - u.lastHotDrop;
   if (elapsed >= ONE_HOUR) {
     const rewards = [20, 35, 50, 75, 120, 250];
-    const win = rewards[Math.floor(Math.random() * rewards.length)];
+    const win = rewards[rndInt(rewards.length)];
     applyBalance(u, win, 'bonus_hotdrop_tg', 'Hot Drop в боте');
     u.lastHotDrop = now;
     try { db.saveUser(u); } catch (e) { console.error('saveUser (hotdrop tg):', e.message); }
@@ -1838,7 +1883,20 @@ const server = http.createServer(async (req, res) => {
       const authHeader = req.headers['authorization'] || '';
       const secret = body.secret || authHeader.replace(/^Bearer\s+/i, '');
       const EXPECTED_SECRET = process.env.PAYMENT_WEBHOOK_SECRET;
-      if (!EXPECTED_SECRET || !safeEqualStr(String(secret || ''), EXPECTED_SECRET)) {
+      // Публичный плейсхолдер из .env.example — не секрет (репозиторий открыт).
+      // Поэтому вебхук выключается, если секрет не задан, слишком короткий или равен
+      // известному значению-примеру. Ошибка видна в логе, а не «тихо работает как публичный ключ».
+      const INSECURE_WEBHOOK_SECRETS = new Set([
+        'your_super_secret_key_here', 'MUP_SECRET_KEY_2026', 'changeme', 'secret'
+      ]);
+      const secretConfigured = !!EXPECTED_SECRET &&
+        EXPECTED_SECRET.length >= 16 &&
+        !INSECURE_WEBHOOK_SECRETS.has(EXPECTED_SECRET);
+      if (!secretConfigured) {
+        console.error('[Payment Webhook] PAYMENT_WEBHOOK_SECRET не задан или небезопасен — зачисление по SMS отключено');
+        return send(503, { error: 'payment webhook disabled: check PAYMENT_WEBHOOK_SECRET' });
+      }
+      if (!safeEqualStr(String(secret || ''), EXPECTED_SECRET)) {
         return send(403, { error: 'unauthorized: invalid webhook secret' });
       }
 
@@ -1888,7 +1946,7 @@ const server = http.createServer(async (req, res) => {
           foundOrder.status = 'pending';
           return send(500, { error: 'credit failed, retry', amount: amountRub });
         }
-        foundOrder.tokens = r.tokens;
+        foundOrder.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
         try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
         const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${r.bonusTokens} ⬦)` : '';
         await bot.api.sendMessage(foundOrder.userId,
@@ -2169,7 +2227,8 @@ const server = http.createServer(async (req, res) => {
       if (bet < 10 || bet > 100000) return send(400, { error: 'Ставка должна быть от 10 до 100000 ⬦' });
       if (bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно токенов' });
 
-      const rIdx = Number(body.rIdx) || Math.floor(Date.now() / 30000);
+      const rIdx = Math.floor(Date.now() / RACKET_ROUND_MS);   // раунд решает сервер, не клиент
+      const round = getRacketRound(rIdx);                      // фиксируем (секретную) точку взрыва раунда
       const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex')));
 
       const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${bet} ⬦)`, roundId);
@@ -2205,7 +2264,7 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Выигрыш уже забран' });
       }
 
-      const serverCrash = sampleCrash(saved.rIdx);
+      const serverCrash = getRacketRound(saved.rIdx).crash;
       const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
 
       // Ракета разбилась до того, как игрок нажал кэшаут
@@ -2235,6 +2294,24 @@ const server = http.createServer(async (req, res) => {
       });
 
       return send(200, { ok: true, verdict: 'win', win, mult: realMult, tokens: u.tokens });
+    }
+
+    /* ── Ракетка: состояние раунда. Точку взрыва отдаём ТОЛЬКО когда полёт до неё
+       уже дошёл — иначе модифицированный клиент узнал бы её заранее и забрал выигрыш. */
+    if (url.pathname === '/api/racket/state' && req.method === 'POST') {
+      const serverIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
+      const reqIdx = Number(body.rIdx);
+      // Принимаем клиентский индекс только в пределах ±1 раунда (защита от перебора
+      // будущих/произвольных раундов); иначе берём серверный.
+      const rIdx = (Number.isFinite(reqIdx) && Math.abs(reqIdx - serverIdx) <= 1) ? reqIdx : serverIdx;
+      const round = getRacketRound(rIdx);
+      const busted = (Date.now() - rIdx * RACKET_ROUND_MS) >= racketBustMs(round.crash);
+      return send(200, {
+        ok: true,
+        rIdx,
+        crashed: busted,
+        crash: busted ? round.crash : null
+      });
     }
 
     /* Запись результата ставки в отдельный файл мониторинга + серверный античит баланса */
@@ -2371,8 +2448,10 @@ const server = http.createServer(async (req, res) => {
         { id: 'star',  name: 'Звезда',   mult: 1.5, weight: 40 }
       ];
 
-      // Вероятность победы ~37%, обеспечивающая общий RTP ~93.5%
-      const willWin = Math.random() < 0.37;
+      // Раньше стояло 0.37 — при среднем множителе выплаты 3.75 это RTP ≈ 139%,
+      // т.е. игрок стабильно зарабатывал. Держим RTP = winChance * avgMult ≈ 93.75%
+      // (winChance 0.25 × 3.75), как и было задумано комментарием ниже.
+      const willWin = rnd01() < 0.25;
       const grid = new Array(9).fill(null);
       let wonSymbol = null;
       let winTokens = 0;
@@ -2381,7 +2460,7 @@ const server = http.createServer(async (req, res) => {
       if (willWin) {
         // Выбираем выигрышный символ с учетом весов
         const totalWeight = SYMBOLS.reduce((s, x) => s + x.weight, 0);
-        let roll = Math.random() * totalWeight;
+        let roll = rnd01() * totalWeight;
         for (const s of SYMBOLS) {
           if (roll < s.weight) { wonSymbol = s; break; }
           roll -= s.weight;
@@ -2391,8 +2470,13 @@ const server = http.createServer(async (req, res) => {
         winMult = wonSymbol.mult;
         winTokens = Math.floor(bet * winMult);
 
-        // Ставим выигрышный символ ровно в 3 случайные позиции
-        const positions = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5).slice(0, 3);
+        // Ставим выигрышный символ ровно в 3 случайные позиции (крипто-перемешивание)
+        const positions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        for (let i = positions.length - 1; i > 0; i--) {
+          const j = rndInt(i + 1);
+          [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+        positions.length = 3;
         positions.forEach(p => { grid[p] = wonSymbol.id; });
 
         // Заполняем остальные 6 ячеек случайными символами (не более 2 одинаковых)
@@ -2400,7 +2484,7 @@ const server = http.createServer(async (req, res) => {
         for (let i = 0; i < 9; i++) {
           if (grid[i]) continue;
           const candidates = SYMBOLS.filter(s => s.id !== wonSymbol.id && (counts[s.id] || 0) < 2);
-          const pick = candidates[Math.floor(Math.random() * candidates.length)] || SYMBOLS[SYMBOLS.length - 1];
+          const pick = candidates[rndInt(candidates.length)] || SYMBOLS[SYMBOLS.length - 1];
           grid[i] = pick.id;
           counts[pick.id] = (counts[pick.id] || 0) + 1;
         }
@@ -2412,7 +2496,7 @@ const server = http.createServer(async (req, res) => {
         const counts = {};
         for (let i = 0; i < 9; i++) {
           const candidates = SYMBOLS.filter(s => (counts[s.id] || 0) < 2);
-          const pick = candidates[Math.floor(Math.random() * candidates.length)] || SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+          const pick = candidates[rndInt(candidates.length)] || SYMBOLS[rndInt(SYMBOLS.length)];
           grid[i] = pick.id;
           counts[pick.id] = (counts[pick.id] || 0) + 1;
         }
@@ -2421,8 +2505,10 @@ const server = http.createServer(async (req, res) => {
 
       let insuredReturn = 0;
       if (!willWin && withInsurance) {
-        insuredReturn = Math.floor(bet * 0.35);
-        applyBalance(u, insuredReturn, 'insurance_refund', `🛡️ Страховка ставки: возврат 35% (+${insuredReturn} ⬦)`, roundId);
+        // Возврат 20%, а не 35%: при winChance 0.25 и доплате +15% страховка с 35 %
+        // давала игроку EV ≈ +5% за каждый билет (печатный станок). 0.20 держит EV ≈ −6.25%.
+        insuredReturn = Math.floor(bet * 0.20);
+        applyBalance(u, insuredReturn, 'insurance_refund', `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, roundId);
       }
 
       try { db.saveUser(u); } catch (_) {}
@@ -2843,7 +2929,7 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: `Hot Drop перезаряжается. Подождите ${leftSec} сек.` });
       }
       const rewards = [20, 25, 35, 50, 75, 100, 250];
-      const win = rewards[Math.floor(Math.random() * rewards.length)];
+      const win = rewards[rndInt(rewards.length)];
       const r = applyBalance(u, win, 'bonus_hotdrop', 'Hot Drop');
       if (!r.ok) return send(500, { error: 'Не удалось начислить награду, попробуйте позже' });
       u.lastHotDrop = now;
@@ -2864,12 +2950,12 @@ const server = http.createServer(async (req, res) => {
       }
       const depRub = u.totalDepositedRub || u.lastDeposit || 0;
       let targetIdx = 0;
-      const rand = Math.random();
+      const rand = rnd01();
       if (depRub <= 0) {
-        targetIdx = (rand < 0.65) ? ((Math.random() < 0.5) ? 0 : 6) : ((Math.random() < 0.5) ? 1 : 4);
+        targetIdx = (rand < 0.65) ? ((rnd01() < 0.5) ? 0 : 6) : ((rnd01() < 0.5) ? 1 : 4);
       } else {
-        if (rand < 0.45) targetIdx = (Math.random() < 0.5) ? 0 : 6;
-        else if (rand < 0.82) targetIdx = (Math.random() < 0.5) ? 1 : 4;
+        if (rand < 0.45) targetIdx = (rnd01() < 0.5) ? 0 : 6;
+        else if (rand < 0.82) targetIdx = (rnd01() < 0.5) ? 1 : 4;
         else if (rand < 0.94) targetIdx = 2;
         else if (rand < 0.99) targetIdx = 3;
         else targetIdx = 5;
@@ -2883,21 +2969,43 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, prize, targetIdx, balance: u.tokens });
     }
 
-    /* Награды за челленджи и ежедневный стрик */
+    /* Награды за челленджи и ежедневный стрик.
+       Сервер — источник истины: сумму квеста берём из собственного списка, а не из
+       тела запроса, и делаем клейм идемпотентным (одна выплата на квест в сутки).
+       Раньше `amount` полностью управлялся клиентом, а кулдаун был только у стрика —
+       это позволяло рисовать награды из воздуха бесконечным числом запросов. */
     if (url.pathname === '/api/claim-challenge' && req.method === 'POST') {
       if (!checkRateLimit(`claim-ch:${u.id}`, 20, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
       const type = String(body.type || 'quest');
-      const amt = Math.min(250, Math.max(10, Math.floor(Number(body.amount) || 20)));
       const now = Date.now();
+      const day = new Date(now).toISOString().slice(0, 10); // UTC-сутки, как сбрасывает клиент
+
       if (type === 'streak') {
         const ONE_DAY = 20 * 3600 * 1000;
         u.lastStreakAt = u.lastStreakAt || 0;
         if (now - u.lastStreakAt < ONE_DAY) {
           return send(400, { error: 'Стрик-бонус уже получен сегодня' });
         }
+        // Сумма стрика тоже серверная: принимаем только значения из лестницы наград.
+        const STREAK_REWARDS = [25, 45, 70, 100, 140, 180, 250];
+        const reqAmt = Math.floor(Number(body.amount) || 0);
+        const amt = STREAK_REWARDS.includes(reqAmt) ? reqAmt : STREAK_REWARDS[0];
         u.lastStreakAt = now;
+        const r = applyBalance(u, amt, 'bonus_challenge', 'Ежедневный стрик');
+        if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
+        try { db.saveUser(u); } catch (_) {}
+        return send(200, { ok: true, amount: amt, balance: u.tokens });
       }
-      const r = applyBalance(u, amt, 'bonus_challenge', type === 'streak' ? 'Ежедневный стрик' : 'Челлендж 24ч');
+
+      // Квесты: фиксированные награды на сервере, одна выплата на (квест, сутки).
+      const QUEST_REWARDS = { q1: 30, q2: 25, q3: 20 };
+      const questId = String(body.questId || '');
+      const amt = QUEST_REWARDS[questId];
+      if (!amt) return send(400, { error: 'Неизвестный квест' });
+      if (!db.tryClaimChallenge(u.id, questId, day)) {
+        return send(400, { error: 'Награда за этот квест уже получена' });
+      }
+      const r = applyBalance(u, amt, 'bonus_challenge', 'Челлендж 24ч');
       if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
       try { db.saveUser(u); } catch (_) {}
       return send(200, { ok: true, amount: amt, balance: u.tokens });
