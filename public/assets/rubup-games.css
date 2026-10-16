@@ -61,3 +61,118 @@
   35% { box-shadow: 0 0 34px rgba(245, 196, 81, .72), 0 0 70px rgba(214, 64, 58, .24); filter: brightness(1.18); }
   100% { box-shadow: 0 12px 30px rgba(0, 0, 0, .32), 0 0 18px rgba(245, 196, 81, .18); filter: brightness(1); }
 }
+
+/* ===== More motion ===== */
+
+/* 1. Плавное появление игровых блоков при открытии игры */
+.gameTop,
+.dice-slider-card,
+.dice-display,
+.crashbox,
+.dropwrap,
+.case-roulette,
+.hd-roulette,
+.avito-box {
+  animation: rubupRise .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes rubupRise {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 2. Кнопки: подъём при наведении + блик, пробегающий по кнопке */
+.control, .actions .control, .back, .chip, .dual-bet-chips button {
+  position: relative;
+  overflow: hidden;
+}
+.control:hover, .actions .control:hover, .back:hover, .chip:hover, .dual-bet-chips button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.control::after, .actions .control::after, .back::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent);
+  transform: skewX(-20deg);
+  animation: rubupShine 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes rubupShine {
+  0%, 60% { left: -60%; }
+  100% { left: 130%; }
+}
+
+/* 3. Главная кнопка действия пульсирует, привлекая внимание */
+.actions .control:first-child {
+  animation: rubupPulse 2.2s ease-in-out infinite;
+}
+@keyframes rubupPulse {
+  0%, 100% { box-shadow: 0 5px 0 #7d2228, 0 10px 20px rgba(214, 64, 58, .22), inset 0 1px 0 rgba(255, 255, 255, .25); }
+  50% { box-shadow: 0 5px 0 #7d2228, 0 0 30px rgba(240, 90, 79, .65), inset 0 1px 0 rgba(255, 255, 255, .25); }
+}
+
+/* 4. Выбранный чип ставки мягко светится */
+.chip.on, .dual-bet-chips button.on {
+  animation: rubupGlow 1.8s ease-in-out infinite;
+}
+@keyframes rubupGlow {
+  0%, 100% { box-shadow: 0 4px 0 #8b4e1e, 0 0 12px rgba(245, 196, 81, .30), inset 0 1px 0 rgba(255, 255, 255, .45); }
+  50% { box-shadow: 0 4px 0 #8b4e1e, 0 0 26px rgba(245, 196, 81, .70), inset 0 1px 0 rgba(255, 255, 255, .45); }
+}
+
+/* 5. Множители и иксы слегка «дышат» */
+.xbig, .lt-mult {
+  display: inline-block;
+  animation: rubupBreath 2.4s ease-in-out infinite;
+}
+@keyframes rubupBreath {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(245, 196, 81, .40); }
+  50% { transform: scale(1.06); text-shadow: 0 0 20px rgba(245, 196, 81, .85); }
+}
+
+/* 6. Выигрыш: число подпрыгивает, баннер выезжает с отскоком */
+.dice-roll-num.win, .hd-win-val {
+  display: inline-block;
+  animation: rubupPop .6s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+@keyframes rubupPop {
+  0% { transform: scale(.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.case-win-banner, .hd-win-banner {
+  animation: rubupWinFlash 1.25s ease-out both, rubupBounceIn .7s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+@keyframes rubupBounceIn {
+  0% { transform: translateY(-20px) scale(.9); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* 7. Слоты и ячейки: подсветка рамки при наведении */
+.slot, .scratch-cell {
+  transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.slot:hover, .scratch-cell:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: var(--games-gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35), 0 0 18px rgba(245, 196, 81, .35);
+}
+
+/* 8. Рулетки: золотая рамка мягко мерцает, пока идёт игра */
+.case-roulette, .hd-roulette {
+  animation: rubupRise .45s cubic-bezier(.2, .8, .2, 1) both, rubupBorder 2.6s ease-in-out infinite;
+}
+@keyframes rubupBorder {
+  0%, 100% { border-color: rgba(245, 196, 81, .22); }
+  50% { border-color: rgba(245, 196, 81, .70); }
+}
+
+/* Уважение к настройке «уменьшить анимацию» в системе */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
