@@ -1,17 +1,21 @@
 # Security changelog
 
-## Проверено 2026-10-16
+Дата проверки: 2026-10-16.
 
-- Подтверждено, что ветка `security-fixes-2026-10` ранее содержала placeholder-файлы: `bot.js` 45 B, `db.js` 44 B, `turso.js` 47 B.
-- Добавлены `.gitignore` и `tools/init-turso.js` с миграциями для cooldown, fingerprint-колонок self-referral и идемпотентных платёжных таблиц.
-- Добавлены/сохранены схемы `processed_payments`, `referral_payouts`, `challenge_claims` в миграции.
+## Подтверждено в локальных исходниках
 
-## Не завершено
+- Ветка содержит полные локальные версии `bot.js`, `db.js`, `turso.js`, `index.html`, `tg_block.js` и `tools/init-turso.js` в рабочем наборе.
+- В SQLite-схеме добавлены `processed_payments` и `referral_payouts` с уникальными ключами; free-case использует атомарное условное списание.
+- Добавлены поля/миграции `rakeback`, `free_cases`, `free_case_5ref_claimed`, `first_deposit_bonus_claimed`, `upgrade_only`, `bonus`.
+- Turso имеет очередь batch-записи и pull-обработку основных таблиц.
+- Двойной claim платежа и реферальной выплаты отклоняется уникальным ключом на тестовой временной SQLite-БД.
 
-- Полноценные `bot.js`, `db.js`, `turso.js` не загружены в ветку: GitHub upload большого локального набора не выполнен.
-- `index.html` и `tg_block.js` не изменены; опасные `innerHTML` и клиентский `Math.random` остаются.
-- Единая транзакция платёж → баланс → referral 15%, self-referral fingerprint enforcement, атомарное принятие дуэли и полная Turso-синхронизация не завершены.
-- Эндпоинт дуэлей/accept в `bot.js` не найден; grep нашёл только упоминания termsAcceptedAt.
-- Требуемые smoke-тесты не выполнены; `npm audit` пропущен, так как `node_modules` отсутствует.
+## Осталось до merge
 
-PR #6 оставлен draft и с заголовком `DO NOT MERGE`.
+- Финансовый flow `депозит -> баланс -> реферальная выплата` не объединён в одну общую БД-транзакцию; сейчас используются отдельные атомарные операции и persistent claims.
+- Анти-самореферал по отпечатку реквизитов/IP/устройства не реализован: соответствующие данные не заведены в схему.
+- В репозитории не найден отдельный accept-duel HTTP endpoint; реализованного атомарного accept API также нет. Есть только `createDuel`, `settleDuel`, `cancelDuel`.
+- В `index.html` остаются динамические `innerHTML` и клиентские `Math.random` в игровых/денежных сценариях; полный перенос расчётов на сервер не выполнен.
+- Полный HTTP smoke-набор с реальными webhook-конкурентами не запускался.
+
+PR остаётся draft с пометкой `DO NOT MERGE` до устранения перечисленных ограничений.
