@@ -23,4 +23,6 @@ data/
 *.db-wal
 *.db-shm
 
+# Сгенерированные/локальные данные
 bets_stats.json
+security-fixes-*.patch
