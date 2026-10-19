@@ -221,6 +221,56 @@ async function pullFromTurso(dbSync) {
       }
     }
 
+    // 7. Новые режимы: история кейсов, апгрейды и серверные сессии «Лесенки».
+    // Без этого после рестарта Render сессии терялись бы, хотя сервер обещает
+    // их сохранность.
+    try {
+      const coRes = await client.execute('SELECT * FROM case_opens');
+      if (coRes.rows.length > 0) {
+        const insCo = dbSync.prepare(`INSERT OR IGNORE INTO case_opens
+          (request_id, user_id, mode_id, price, item_code, item_name, item_icon, item_price, item_tier, inventory_id, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        for (const r of coRes.rows) insCo.run(r.request_id, r.user_id, r.mode_id, r.price, r.item_code,
+          r.item_name, r.item_icon, r.item_price, r.item_tier, r.inventory_id, r.created_at);
+      }
+      const urRes = await client.execute('SELECT * FROM upgrade_runs');
+      if (urRes.rows.length > 0) {
+        const insUr = dbSync.prepare(`INSERT OR IGNORE INTO upgrade_runs
+          (request_id, user_id, mode, source_type, source_value, source_item_id, targets_json, won,
+           target_code, target_name, target_icon, target_value, target_tier, chance, aggregate_chance, inventory_id, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        for (const r of urRes.rows) insUr.run(r.request_id, r.user_id, r.mode, r.source_type, r.source_value,
+          r.source_item_id, r.targets_json, r.won, r.target_code, r.target_name, r.target_icon,
+          r.target_value, r.target_tier, r.chance, r.aggregate_chance, r.inventory_id, r.created_at);
+      }
+      const usRes = await client.execute('SELECT * FROM upgrade_sessions');
+      if (usRes.rows.length > 0) {
+        const insUs = dbSync.prepare(`INSERT OR IGNORE INTO upgrade_sessions
+          (id, request_id, user_id, mode, steps_total, step_index, source_value, current_value,
+           source_type, source_item_id, status, ladder_json, created_at, updated_at, settled_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        for (const r of usRes.rows) insUs.run(r.id, r.request_id, r.user_id, r.mode, r.steps_total,
+          r.step_index, r.source_value, r.current_value, r.source_type, r.source_item_id,
+          r.status, r.ladder_json, r.created_at, r.updated_at, r.settled_at);
+      }
+      const uaRes = await client.execute('SELECT * FROM upgrade_actions');
+      if (uaRes.rows.length > 0) {
+        const insUa = dbSync.prepare(`INSERT OR IGNORE INTO upgrade_actions
+          (request_id, session_id, user_id, step_index, action, result_json, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        for (const r of uaRes.rows) insUa.run(r.request_id, r.session_id, r.user_id, r.step_index,
+          r.action, r.result_json, r.created_at);
+      }
+      const irRes = await client.execute('SELECT * FROM idempotent_results');
+      if (irRes.rows.length > 0) {
+        const insIr = dbSync.prepare(`INSERT OR IGNORE INTO idempotent_results
+          (request_id, user_id, kind, result_json, created_at) VALUES (?, ?, ?, ?, ?)`);
+        for (const r of irRes.rows) insIr.run(r.request_id, r.user_id, r.kind, r.result_json, r.created_at);
+      }
+    } catch (e) {
+      console.warn('[Turso] новые таблицы не восстановлены (миграция не применена?):', e.message);
+    }
+
     console.log(
       `[Turso] ✅ База синхронизирована: ${uRes.rows.length} пользователей, ` +
       `${oRes.rows.length} заказов, ${lRes.rows.length} транзакций ledger, ${invRes.rows.length} предметов инвентаря.`

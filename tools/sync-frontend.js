@@ -4,33 +4,49 @@
  * Синхронизация двух копий фронта (P2-5).
  *
  * В прод (Cloudflare, wrangler.jsonc -> assets.directory: "public") уходит
- * ТОЛЬКО public/index.html, а корень index.html — вторая копия того же файла.
- * Правка только одной из них = фикс не доехал до прода (или наоборот).
+ * ТОЛЬКО public/, а корневые index.html и assets/case-modes.js — источники
+ * правды. Правка только одной из копий = фикс не доехал до прода (или наоборот).
  *
- * Источник правды — корневой index.html.
- *   node tools/sync-frontend.js           # скопировать index.html -> public/index.html
- *   node tools/sync-frontend.js --check   # только проверить, что копии идентичны (exit 1, если нет)
+ *   node tools/sync-frontend.js           # скопировать источник -> public/
+ *   node tools/sync-frontend.js --check   # только проверить (exit 1, если нет)
  */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const SRC = path.join(ROOT, 'index.html');
-const DST = path.join(ROOT, 'public', 'index.html');
+const PAIRS = [
+  ['index.html', path.join('public', 'index.html')],
+  [path.join('assets', 'case-modes.js'), path.join('public', 'assets', 'case-modes.js')]
+];
 const checkOnly = process.argv.includes('--check');
+let failed = false;
 
-const src = fs.readFileSync(SRC);
-const dst = fs.existsSync(DST) ? fs.readFileSync(DST) : null;
-
-if (dst && src.equals(dst)) {
-  console.log('✓ index.html и public/index.html идентичны');
-  process.exit(0);
+for (const [srcRel, dstRel] of PAIRS) {
+  const srcPath = path.join(ROOT, srcRel);
+  const dstPath = path.join(ROOT, dstRel);
+  if (!fs.existsSync(srcPath)) {
+    console.error(`✗ Нет источника: ${srcRel}`);
+    failed = true;
+    continue;
+  }
+  const src = fs.readFileSync(srcPath);
+  const dst = fs.existsSync(dstPath) ? fs.readFileSync(dstPath) : null;
+  if (dst && src.equals(dst)) {
+    console.log(`✓ ${srcRel} и ${dstRel} идентичны`);
+    continue;
+  }
+  if (checkOnly) {
+    console.error(`✗ Копии фронта разошлись: ${srcRel} != ${dstRel}`);
+    failed = true;
+    continue;
+  }
+  fs.mkdirSync(path.dirname(dstPath), { recursive: true });
+  fs.writeFileSync(dstPath, src);
+  console.log(`✓ ${dstRel} обновлён из ${srcRel} (${src.length} байт)`);
 }
-if (checkOnly) {
-  console.error('✗ Копии фронта разошлись: index.html != public/index.html');
+
+if (failed) {
   console.error('  Запустите: node tools/sync-frontend.js  (или npm run sync:frontend)');
   process.exit(1);
 }
-fs.mkdirSync(path.dirname(DST), { recursive: true });
-fs.writeFileSync(DST, src);
-console.log(`✓ public/index.html обновлён из index.html (${src.length} байт)`);
+process.exit(0);

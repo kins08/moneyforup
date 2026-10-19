@@ -47,6 +47,17 @@ npm start                     # или: node --env-file=.env bot.js
 | POST | `/api/check-platega` | `{ initData, invoice_id }` | `{ paid, tokens }` |
 | POST | `/api/coinso-invoice` | `{ initData, rub, termsAcceptedAt }` | `{ pay_url, invoice_id, order_id, tokens }` |
 | POST | `/api/check-coinso` | `{ initData, invoice_id, order_id }` | `{ paid, tokens }` |
+| POST | `/api/cases/catalog` | `{ initData }` | пять новых режимов, предметы, шансы, история |
+| POST | `/api/cases/open` | `{ initData, modeId, requestId }` | `{ drop, tokens, duplicate }` — цена и дроп серверные |
+| POST | `/api/cases/history` | `{ initData, limit? }` | журнал открытий игрока |
+| POST | `/api/upgrade/catalog` | `{ initData }` | режимы риска SAFE/BALANCED/EXTREME, цели, инвентарь, таблицы лесенки |
+| POST | `/api/upgrade/run` | `{ initData, mode, sourceType, amount?, itemId?, targets[], requestId }` | `{ won, target, chance, distribution, tokens }` |
+| POST | `/api/upgrade/ladder/start` | `{ initData, mode, steps: 3\|5\|10, sourceType, amount?, itemId?, requestId }` | серверная сессия лесенки |
+| POST | `/api/upgrade/ladder/step` | `{ initData, sessionId, expectedStep, requestId }` | результат шага, обновлённая сессия |
+| POST | `/api/upgrade/ladder/cashout` | `{ initData, sessionId, requestId }` | кэшаут текущей стоимости |
+| POST | `/api/upgrade/ladder/state` | `{ initData, sessionId? }` | активная сессия после перезагрузки |
+| POST | `/api/upgrade/history` | `{ initData, limit? }` | журнал апгрейдов |
+| POST | `/api/revolver/state` | `{ initData }` | активный раунд револьвера (восстановление после сбоя) |
 | POST | `/api/withdraw` | `{ initData, rub, method, details }` | заявка на вывод (минимум 200 ₽, нужен депозит) |
 | POST | `/api/order-sbp` | `{ initData, rub, termsAcceptedAt }` | `{ order_id, tokens }` |
 | POST | `/platega-webhook` | уведомление Platega (заголовки `X-MerchantId`, `X-Secret`) | `{ ok }` |
@@ -105,12 +116,40 @@ CREATE TABLE orders (
 5. **Две копии фронта**: в прод (Cloudflare) уходит только `public/index.html`, корневой `index.html` — вторая копия. Источник правды — корневой файл; после правок гоняйте `npm run sync:frontend`, перед коммитом — `npm run check:frontend`.
 6. **Чеки и налоги**: в РФ для приёма от физлиц нужна онлайн-касса (54-ФЗ) — её обычно даёт агрегатор (ЮKassa, Т-Банк Касса). Telegram Stars закрывает чеки сам, но берёт ~30 %.
 
+### Новые режимы кейсов и Апгрейдер
+
+В отдельном разделе «Кейсы» (`casehub`) пять режимов: **STARTER DROP** (250 ⬦),
+**CYBER RUSH** (750 ⬦), **GOLDEN VAULT** (3 500 ⬦), **GLITCH MODE** (11 000 ⬦) и
+**OMEGA CORE** (35 000 ⬦). Их цены, состав и веса лежат в одном файле
+`assets/case-modes.js`; этот же UMD-файл грузит браузер, поэтому значения не
+дублируются между фронтом и бэком. RTP каждого режима 82–86 %. Открытие
+идемпотентно по `requestId` (таблица `case_opens`), цена и дроп проверяются на
+сервере, предмет сразу попадает в `user_inventory`.
+
+Апгрейдер (`upgrader`) переработан в серверную Upgrade Arena:
+* три режима риска с разными `edge`, потолком цели и максимальным шансом;
+* источник — токены или предмет инвентаря, цель — предмет из серверного
+  каталога `items.js`; шанс = `min(cap, (1 − edge) × S / T)`;
+* мульти-апгрейд до 5 целей: цель выбирается равновероятно, совокупный шанс —
+  среднее шансов, вероятности не учитываются дважды;
+* лесенка на 3/5/10 шагов: сессия и каждый шаг хранятся в SQLite
+  (`upgrade_sessions`, `upgrade_actions`), переживают перезагрузку и повтор
+  запроса; один активный шаг нельзя выполнить дважды;
+* серия: несколько последовательных серверных раундов с отдельным
+  `requestId` на каждый и остановкой при сетевой ошибке.
+
+Баланс меняется только внутри транзакций `db.atomicOpenCase()`,
+`db.atomicUpgradeRun()`, `db.atomicLadder*()`, `db.atomicScratchPlay()`,
+`db.atomicSafeGuess()`; клиент не присылает ни цену, ни результат.
+
 ### Тесты
 
 ```bash
 npm test                # bot-test.js: 36 проверок — Platega/Coinso, подписи вебхуков, идемпотентность, реферальные 15 %, auth_date из будущего, энтропия orderId
 npm run test:security   # e2e аудита: исход игры решает сервер, инвентарь серверный, баланс применяется ровно один раз
-npm run check:frontend  # index.html и public/index.html идентичны
+npm run test:new        # математика апгрейдера, RTP пяти кейсов, E2E кейсов/апгрейда/лесенки/идемпотентности
+npm run test:ui         # jsdom smoke: раздел «Кейсы», Upgrade Arena, мульти/лесенка/серия, отсутствие JS-ошибок
+npm run check:frontend  # index.html и public/index.html идентичны; assets/case-modes.js синхронизирован
 ```
 
 Тесты поднимают мок-серверы платёжек и бота с `BOT_DRY_RUN=1` в изолированной временной БД — Telegram и боевая база не трогаются. Полный регламент аудита — `.agents/skills/security-audit/` (реестр находок: `reference/known-findings.md`).
@@ -139,13 +178,13 @@ npm run check:frontend  # index.html и public/index.html идентичны
 На Cloudflare уходит **только статика** — `public/` (`wrangler.jsonc` → `assets.directory`); бот и API живут на Render/Fly и исключены через `.cfignore`.
 
 ```bash
-npx wrangler deploy --dry-run   # проверка сборки без токенов: ждём «Read 16 files from .../public»
+npx wrangler deploy --dry-run   # проверка сборки без токенов: ждём «Read 25 files from .../public»
 npm run deploy                  # боевой деплой (нужен CLOUDFLARE_API_TOKEN или интерактивный логин)
 ```
 
 В настройках сборки на Cloudflare используются две команды: превью ветки — `npx wrangler preview`, прод — `npx wrangler deploy`. Команда `preview` в wrangler ≥ 4.150 **требует блок `previews`** в `wrangler.jsonc` — он добавлен и намеренно пуст: `assets`, `compatibility_date` и `observability` остаются на верхнем уровне и наследуются превью. Без блока сборка падает с `Your Wrangler configuration is missing a previews block`.
 
-Wrangler закреплён в `devDependencies` точной версией (`4.150.0`), чтобы `npx wrangler` не тянул свежий релиз и сборка не ломалась от изменений в апстриме. Перед обновлением версии прогоните `npx wrangler deploy --dry-run` (должно собрать 16 файлов из `public/`) и `npx wrangler preview --ignore-base-config` (проверка конфига должна пройти).
+Wrangler закреплён в `devDependencies` точной версией (`4.150.0`), чтобы `npx wrangler` не тянул свежий релиз и сборка не ломалась от изменений в апстриме. Перед обновлением версии прогоните `npx wrangler deploy --dry-run` (должно собрать 25 файлов из `public/`) и `npx wrangler preview --ignore-base-config` (проверка конфига должна пройти).
 
 ## Полезные ссылки
 

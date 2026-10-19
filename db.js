@@ -452,6 +452,677 @@ function atomicClaimChannel(userId, bonus) {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   НОВЫЕ РЕЖИМЫ: атомарные операции с балансом и инвентарём.
+
+   Все функции ниже выполняют проверку, списание, выдачу предмета и запись
+   журнала В ОДНОЙ транзакции BEGIN IMMEDIATE. Клиент не может ни задать
+   цену, ни повторно применить операцию: request_id — PRIMARY KEY, а баланс
+   читается внутри той же транзакции, что и UPDATE.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const __q = (sql) => db.prepare(sql);
+
+function __ledger(userId, amount, type, reason, refId, before, after, at) {
+  return stmts.insertLedger.run(userId, amount, type, reason, String(refId || ''), before, after, at);
+}
+function __round(roundId, userId, game, bet, mult, win, status, at, itemCode, itemPrice) {
+  __q(`INSERT OR IGNORE INTO game_rounds
+      (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(String(roundId), userId, String(game), Math.floor(bet || 0), Number(mult || 1),
+      Math.floor(win || 0), status, at, status === 'active' ? null : at, itemCode || null,
+      itemPrice != null ? Math.floor(itemPrice) : null);
+}
+function __queueBalance(userId, balanceAfter, ledId, amount, type, reason, refId, before, after, at) {
+  turso.queueBatch([
+    { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balanceAfter, userId] },
+    { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [Number(ledId), userId, amount, type, reason, String(refId || ''), before, after, at] }
+  ]);
+}
+function __mapCaseOpen(row) {
+  if (!row) return null;
+  return {
+    requestId: row.request_id, userId: row.user_id, modeId: row.mode_id, price: row.price,
+    item: { code: row.item_code, name: row.item_name, icon: row.item_icon,
+      price: row.item_price, tier: row.item_tier, id: row.inventory_id },
+    inventoryId: row.inventory_id, createdAt: row.created_at
+  };
+}
+function __mapUpgradeRow(row) {
+  if (!row) return null;
+  return {
+    requestId: row.request_id, userId: row.user_id, mode: row.mode,
+    sourceType: row.source_type, sourceValue: row.source_value, sourceItemId: row.source_item_id,
+    targets: JSON.parse(row.targets_json || '[]'), won: Boolean(row.won),
+    target: row.target_code ? { code: row.target_code, name: row.target_name, icon: row.target_icon,
+      price: row.target_value, tier: row.target_tier } : null,
+    chance: row.chance, aggregateChance: row.aggregate_chance,
+    inventoryId: row.inventory_id, createdAt: row.created_at
+  };
+}
+function __mapSession(row) {
+  if (!row) return null;
+  return {
+    id: row.id, userId: row.user_id, mode: row.mode, stepsTotal: row.steps_total,
+    stepIndex: row.step_index, sourceValue: row.source_value, currentValue: row.current_value,
+    sourceType: row.source_type, sourceItemId: row.source_item_id, status: row.status,
+    ladder: JSON.parse(row.ladder_json || '[]'), createdAt: row.created_at,
+    updatedAt: row.updated_at, settledAt: row.settled_at
+  };
+}
+
+/**
+ * Открытие кейса нового режима. price и item приходят ТОЛЬКО из серверного
+ * каталога (case-modes.js) — не из тела запроса.
+ */
+function atomicOpenCase(args) {
+  const { requestId, userId, modeId, modeName, price, item, roundId } = args;
+  if (!Number.isFinite(Number(price)) || Number(price) <= 0) return { ok: false, error: 'Некорректная цена кейса' };
+  if (!item || !item.code || !Number.isFinite(Number(item.price)) || Number(item.price) < 0) {
+    return { ok: false, error: 'Некорректный предмет кейса' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prev = __q('SELECT * FROM case_opens WHERE request_id = ?').get(String(requestId));
+    if (prev) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      return { ok: true, duplicate: true, open: __mapCaseOpen(prev), balanceAfter: bal ? bal.tokens : 0 };
+    }
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+    if (Number(row.tokens) < Number(price)) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: 'Недостаточно токенов' };
+    }
+    const at = Date.now();
+    const balBefore = Number(row.tokens);
+    const balAfter = balBefore - Number(price);
+    __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
+    const led = __ledger(userId, -price, 'case_open', `Кейс «${modeName}» · ${item.name}`, roundId, balBefore, balAfter, at);
+    __round(roundId, userId, 'Кейс: ' + modeName, price, 1, 0, 'settled', at, item.code, item.price);
+    const inv = stmts.insertInventoryItem.run(
+      userId, String(item.code), String(item.name), String(item.icon || ''),
+      Math.floor(item.price), String(item.tier || ''), String(modeId), String(modeName),
+      String(roundId), at, 0
+    );
+    const inventoryId = Number(inv.lastInsertRowid);
+    __q(`INSERT INTO case_opens
+        (request_id, user_id, mode_id, price, item_code, item_name, item_icon, item_price, item_tier, inventory_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(String(requestId), userId, String(modeId), Math.floor(price), String(item.code),
+        String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''),
+        inventoryId, at);
+    db.exec('COMMIT');
+
+    __queueBalance(userId, balAfter, led.lastInsertRowid, -price, 'case_open',
+      `Кейс «${modeName}» · ${item.name}`, roundId, balBefore, balAfter, at);
+    turso.queueBatch([
+      { sql: 'INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [String(roundId), userId, 'Кейс: ' + modeName, Math.floor(price), 1, 0, 'settled', at, at, String(item.code), Math.floor(item.price)] },
+      { sql: 'INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [inventoryId, userId, String(item.code), String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''), String(modeId), String(modeName), String(roundId), at, null, null, 0] },
+      { sql: `INSERT OR IGNORE INTO case_opens (request_id, user_id, mode_id, price, item_code, item_name, item_icon, item_price, item_tier, inventory_id, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [String(requestId), userId, String(modeId), Math.floor(price), String(item.code), String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''), inventoryId, at] }
+    ]);
+    return {
+      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId,
+      open: { requestId, userId, modeId, price, item: { ...item, id: inventoryId }, inventoryId, createdAt: at }
+    };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/**
+ * Одиночный/мульти-апгрейд. Источник — токены или предмет инвентаря.
+ * won и target выбирает сервер до вызова; клиент их не присылает.
+ */
+function atomicUpgradeRun(args) {
+  const { requestId, userId, mode, sourceType, sourceAmount, sourceItemId,
+    target, won, chance, aggregateChance, targets } = args;
+  if (won && (!target || !target.code || !Number.isFinite(Number(target.price)))) {
+    return { ok: false, error: 'Некорректная цель апгрейда' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prev = __q('SELECT * FROM upgrade_runs WHERE request_id = ?').get(String(requestId));
+    if (prev) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      return { ok: true, duplicate: true, run: __mapUpgradeRow(prev), balanceAfter: bal ? bal.tokens : 0 };
+    }
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+
+    let sourceValue = 0;
+    let balBefore = Number(row.tokens);
+    let balAfter = balBefore;
+    let consumedItem = null;
+    let at = Date.now();
+    let led = null;
+
+    if (sourceType === 'tokens') {
+      const amount = Math.floor(Number(sourceAmount) || 0);
+      if (!Number.isFinite(amount) || amount < 10) {
+        db.exec('ROLLBACK'); return { ok: false, error: 'Минимальная сумма апгрейда — 10 ⬦' };
+      }
+      if (amount > 100000) {
+        db.exec('ROLLBACK'); return { ok: false, error: 'Максимальная сумма апгрейда — 100 000 ⬦' };
+      }
+      if (balBefore < amount) {
+        db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' };
+      }
+      sourceValue = amount;
+      balAfter = balBefore - amount;
+      __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
+      led = __ledger(userId, -amount, 'upgrade_stake', `Апгрейд (${mode}) · ставка ${amount} ⬦`, requestId, balBefore, balAfter, at);
+    } else {
+      const it = __q('SELECT * FROM user_inventory WHERE id = ? AND user_id = ? AND sold_at IS NULL')
+        .get(Math.floor(Number(sourceItemId) || 0), userId);
+      if (!it) { db.exec('ROLLBACK'); return { ok: false, error: 'Предмет не найден в вашем инвентаре' }; }
+      sourceValue = Number(it.price);
+      consumedItem = it;
+      const sold = __q('UPDATE user_inventory SET sold_at = ?, sold_for = 0 WHERE id = ? AND user_id = ? AND sold_at IS NULL')
+        .run(at, it.id, userId);
+      if (!sold.changes) { db.exec('ROLLBACK'); return { ok: false, error: 'Предмет уже использован' }; }
+    }
+
+    let inventoryId = null;
+    if (won) {
+      const inv = stmts.insertInventoryItem.run(
+        userId, String(target.code), String(target.name), String(target.icon || ''),
+        Math.floor(target.price), String(target.tier || ''), 'upgrade', 'Апгрейд',
+        String(requestId), at, 0
+      );
+      inventoryId = Number(inv.lastInsertRowid);
+    }
+
+    __q(`INSERT INTO upgrade_runs
+        (request_id, user_id, mode, source_type, source_value, source_item_id, targets_json,
+         won, target_code, target_name, target_icon, target_value, target_tier, chance,
+         aggregate_chance, inventory_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(String(requestId), userId, String(mode), String(sourceType), Math.floor(sourceValue),
+        sourceType === 'item' ? Math.floor(sourceItemId) : null,
+        JSON.stringify(targets || []), won ? 1 : 0,
+        won ? String(target.code) : null, won ? String(target.name) : null,
+        won ? String(target.icon || '') : null, won ? Math.floor(target.price) : null,
+        won ? String(target.tier || '') : null, Number(chance || 0), Number(aggregateChance || 0),
+        inventoryId, at);
+    __round(requestId, userId, 'Апгрейд · ' + mode, sourceValue, won ? (target.price / sourceValue) : 0,
+      won ? target.price : 0, 'settled', at, won ? target.code : (consumedItem ? consumedItem.item_code : null),
+      won ? target.price : null);
+
+    db.exec('COMMIT');
+
+    if (led) {
+      __queueBalance(userId, balAfter, led.lastInsertRowid, -Math.floor(sourceValue), 'upgrade_stake',
+        `Апгрейд (${mode}) · ставка ${sourceValue} ⬦`, requestId, balBefore, balAfter, at);
+    }
+    const queue = [
+      { sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [String(requestId), userId, 'Апгрейд · ' + mode, Math.floor(sourceValue),
+          won ? Number(target.price / sourceValue) : 0, won ? Math.floor(target.price) : 0, 'settled', at, at,
+          won ? String(target.code) : (consumedItem ? consumedItem.item_code : null),
+          won ? Math.floor(target.price) : null] },
+      { sql: `INSERT OR IGNORE INTO upgrade_runs
+              (request_id, user_id, mode, source_type, source_value, source_item_id, targets_json, won,
+               target_code, target_name, target_icon, target_value, target_tier, chance, aggregate_chance, inventory_id, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [String(requestId), userId, String(mode), String(sourceType), Math.floor(sourceValue),
+          sourceType === 'item' ? Math.floor(sourceItemId) : null, JSON.stringify(targets || []), won ? 1 : 0,
+          won ? String(target.code) : null, won ? String(target.name) : null, won ? String(target.icon || '') : null,
+          won ? Math.floor(target.price) : null, won ? String(target.tier || '') : null,
+          Number(chance || 0), Number(aggregateChance || 0), inventoryId, at] }
+    ];
+    if (sourceType === 'item') {
+      queue.push({ sql: 'UPDATE user_inventory SET sold_at = ?, sold_for = 0 WHERE id = ? AND user_id = ?', args: [at, Math.floor(sourceItemId), userId] });
+    }
+    if (won) {
+      queue.push({ sql: 'INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [inventoryId, userId, String(target.code), String(target.name), String(target.icon || ''), Math.floor(target.price), String(target.tier || ''), 'upgrade', 'Апгрейд', String(requestId), at, null, null, 0] });
+    }
+    turso.queueBatch(queue);
+
+    return {
+      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId,
+      run: {
+        requestId, userId, mode, sourceType, sourceValue,
+        sourceItemId: sourceType === 'item' ? sourceItemId : null,
+        targets: targets || [], won: Boolean(won), target: won ? { ...target, id: inventoryId } : null,
+        chance, aggregateChance, createdAt: at
+      }
+    };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/** Старт «Лесенки»: списание источника и создание серверной сессии. */
+function atomicLadderStart(args) {
+  const { sessionId, requestId, userId, mode, stepsTotal, sourceType, sourceAmount, sourceItemId, ladder } = args;
+  if (![3, 5, 10].includes(Number(stepsTotal))) return { ok: false, error: 'Лесенка бывает на 3, 5 или 10 шагов' };
+  if (sourceType !== 'tokens' && sourceType !== 'item') return { ok: false, error: 'Некорректный источник' };
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prev = __q('SELECT * FROM upgrade_sessions WHERE request_id = ?').get(String(requestId));
+    if (prev) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      return { ok: true, duplicate: true, session: __mapSession(prev), balanceAfter: bal ? bal.tokens : 0 };
+    }
+    // Одна активная лесенка на игрока: иначе можно запутаться в нескольких
+    // сессиях и случайно списать источник дважды.
+    const active = __q(`SELECT id FROM upgrade_sessions WHERE user_id = ? AND status = 'active' LIMIT 1`).get(userId);
+    if (active) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: 'У вас уже есть активная лесенка. Завершите её или заберите выигрыш.' };
+    }
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+    let sourceValue = 0;
+    let balBefore = Number(row.tokens);
+    let balAfter = balBefore;
+    let led = null;
+    const at = Date.now();
+    if (sourceType === 'tokens') {
+      const amount = Math.floor(Number(sourceAmount) || 0);
+      if (!Number.isFinite(amount) || amount < 10) { db.exec('ROLLBACK'); return { ok: false, error: 'Минимальная сумма — 10 ⬦' }; }
+      if (amount > 100000) { db.exec('ROLLBACK'); return { ok: false, error: 'Максимальная сумма — 100 000 ⬦' }; }
+      if (balBefore < amount) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' }; }
+      sourceValue = amount;
+      balAfter = balBefore - amount;
+      __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
+      led = __ledger(userId, -amount, 'ladder_stake', `Лесенка ${stepsTotal} шагов · ставка ${amount} ⬦`, sessionId, balBefore, balAfter, at);
+    } else {
+      const it = __q('SELECT * FROM user_inventory WHERE id = ? AND user_id = ? AND sold_at IS NULL')
+        .get(Math.floor(Number(sourceItemId) || 0), userId);
+      if (!it) { db.exec('ROLLBACK'); return { ok: false, error: 'Предмет не найден в вашем инвентаре' }; }
+      sourceValue = Number(it.price);
+      const sold = __q('UPDATE user_inventory SET sold_at = ?, sold_for = 0 WHERE id = ? AND user_id = ? AND sold_at IS NULL')
+        .run(at, it.id, userId);
+      if (!sold.changes) { db.exec('ROLLBACK'); return { ok: false, error: 'Предмет уже использован' }; }
+    }
+    __q(`INSERT INTO upgrade_sessions
+        (id, request_id, user_id, mode, steps_total, step_index, source_value, current_value,
+         source_type, source_item_id, status, ladder_json, created_at, updated_at, settled_at)
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'active', ?, ?, ?, NULL)`)
+      .run(String(sessionId), String(requestId), userId, String(mode), Math.floor(stepsTotal),
+        Math.floor(sourceValue), Math.floor(sourceValue), String(sourceType),
+        sourceType === 'item' ? Math.floor(sourceItemId) : null,
+        JSON.stringify(ladder || []), at, at);
+    __round(sessionId, userId, `Апгрейд · Лесенка ${stepsTotal}`, sourceValue, 1, 0, 'active', at, null, null);
+    db.exec('COMMIT');
+
+    if (led) {
+      __queueBalance(userId, balAfter, led.lastInsertRowid, -Math.floor(sourceValue), 'ladder_stake',
+        `Лесенка ${stepsTotal} шагов · ставка ${sourceValue} ⬦`, sessionId, balBefore, balAfter, at);
+    }
+    const queue = [
+      { sql: `INSERT OR IGNORE INTO upgrade_sessions
+              (id, request_id, user_id, mode, steps_total, step_index, source_value, current_value, source_type, source_item_id, status, ladder_json, created_at, updated_at, settled_at)
+              VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'active', ?, ?, ?, NULL)`,
+        args: [String(sessionId), String(requestId), userId, String(mode), Math.floor(stepsTotal),
+          Math.floor(sourceValue), Math.floor(sourceValue), String(sourceType),
+          sourceType === 'item' ? Math.floor(sourceItemId) : null, JSON.stringify(ladder || []), at, at] },
+      { sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [String(sessionId), userId, `Апгрейд · Лесенка ${stepsTotal}`, Math.floor(sourceValue), 1, 0, 'active', at, null, null, null] }
+    ];
+    if (sourceType === 'item') {
+      queue.push({ sql: 'UPDATE user_inventory SET sold_at = ?, sold_for = 0 WHERE id = ? AND user_id = ?', args: [at, Math.floor(sourceItemId), userId] });
+    }
+    turso.queueBatch(queue);
+    const session = __mapSession(__q('SELECT * FROM upgrade_sessions WHERE id = ?').get(String(sessionId)));
+    return { ok: true, duplicate: false, session, balanceAfter: balAfter };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/**
+ * Шаг «Лесенки». Порядок шага проверяется внутри транзакции: уже завершённый
+ * шаг нельзя выполнить повторно даже двумя параллельными запросами.
+ */
+function atomicLadderStep(args) {
+  const { requestId, sessionId, userId, expectedStep, won, mult } = args;
+  if (!Number.isFinite(Number(mult)) || Number(mult) <= 1) {
+    return { ok: false, error: 'Некорректный множитель шага' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prevAct = __q('SELECT * FROM upgrade_actions WHERE request_id = ?').get(String(requestId));
+    if (prevAct) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      const result = JSON.parse(prevAct.result_json || '{}');
+      return { ok: true, duplicate: true, result, balanceAfter: bal ? bal.tokens : result.balanceAfter };
+    }
+    const s = __q('SELECT * FROM upgrade_sessions WHERE id = ? AND user_id = ?').get(String(sessionId), userId);
+    if (!s) { db.exec('ROLLBACK'); return { ok: false, error: 'Сессия не найдена' }; }
+    if (s.status !== 'active') { db.exec('ROLLBACK'); return { ok: false, error: 'Сессия уже завершена' }; }
+    const nextStep = Number(s.step_index) + 1;
+    if (nextStep !== Number(expectedStep)) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: 'Этот шаг уже выполнен или пропущен' };
+    }
+    const at = Date.now();
+    const cur = Number(s.current_value);
+    const nextValue = Math.floor(cur * Number(mult));
+    let status = s.status;
+    let currentValue = cur;
+    let balanceAfter = Number(stmts.getUser.get(userId).tokens);
+    let led = null;
+
+    if (!won) {
+      status = 'lost';
+      currentValue = 0;
+    } else if (nextStep >= Number(s.steps_total)) {
+      status = 'completed';
+      currentValue = nextValue;
+      const balBefore = balanceAfter;
+      balanceAfter = balBefore + nextValue;
+      __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
+      led = __ledger(userId, nextValue, 'ladder_win', `Лесенка пройдена: ${s.steps_total} шагов (+${nextValue} ⬦)`, sessionId, balBefore, balanceAfter, at);
+    } else {
+      currentValue = nextValue;
+    }
+
+    __q(`UPDATE upgrade_sessions
+        SET step_index = ?, current_value = ?, status = ?, updated_at = ?, settled_at = ?
+        WHERE id = ? AND user_id = ?`)
+      .run(nextStep, Math.floor(currentValue), status, at, status === 'active' ? null : at, String(sessionId), userId);
+    __q(`UPDATE game_rounds SET win_tokens = ?, mult = ?, status = ?, settled_at = ?
+        WHERE round_id = ? AND user_id = ?`)
+      .run(Math.floor(currentValue), cur > 0 ? Number(mult) : 0, status === 'active' ? 'active' : status,
+        status === 'active' ? null : at, String(sessionId), userId);
+
+    const result = {
+      sessionId: String(sessionId), step: nextStep, stepsTotal: Number(s.steps_total),
+      won: Boolean(won), mult: Number(mult), value: Math.floor(currentValue),
+      status, balanceAfter, finished: status !== 'active', paid: status === 'completed' ? nextValue : 0
+    };
+    __q(`INSERT INTO upgrade_actions (request_id, session_id, user_id, step_index, action, result_json, created_at)
+        VALUES (?, ?, ?, ?, 'step', ?, ?)`)
+      .run(String(requestId), String(sessionId), userId, nextStep, JSON.stringify(result), at);
+    db.exec('COMMIT');
+
+    if (led) {
+      __queueBalance(userId, balanceAfter, led.lastInsertRowid, nextValue, 'ladder_win',
+        `Лесенка пройдена: ${s.steps_total} шагов (+${nextValue} ⬦)`, sessionId, balanceAfter - nextValue, balanceAfter, at);
+    }
+    turso.queueBatch([
+      { sql: `UPDATE upgrade_sessions SET step_index = ?, current_value = ?, status = ?, updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`,
+        args: [nextStep, Math.floor(currentValue), status, at, status === 'active' ? null : at, String(sessionId), userId] },
+      { sql: `INSERT OR IGNORE INTO upgrade_actions (request_id, session_id, user_id, step_index, action, result_json, created_at) VALUES (?, ?, ?, ?, 'step', ?, ?)`,
+        args: [String(requestId), String(sessionId), userId, nextStep, JSON.stringify(result), at] },
+      { sql: `UPDATE game_rounds SET win_tokens = ?, mult = ?, status = ?, settled_at = ? WHERE round_id = ? AND user_id = ?`,
+        args: [Math.floor(currentValue), cur > 0 ? Number(mult) : 0, status === 'active' ? 'active' : status,
+          status === 'active' ? null : at, String(sessionId), userId] }
+    ]);
+    return { ok: true, duplicate: false, result, balanceAfter };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/** Кэшаут «Лесенки»: забирает текущую стоимость и закрывает сессию. */
+function atomicLadderCashout(args) {
+  const { requestId, sessionId, userId } = args;
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prevAct = __q('SELECT * FROM upgrade_actions WHERE request_id = ?').get(String(requestId));
+    if (prevAct) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      const result = JSON.parse(prevAct.result_json || '{}');
+      return { ok: true, duplicate: true, result, balanceAfter: bal ? bal.tokens : result.balanceAfter };
+    }
+    const s = __q('SELECT * FROM upgrade_sessions WHERE id = ? AND user_id = ?').get(String(sessionId), userId);
+    if (!s) { db.exec('ROLLBACK'); return { ok: false, error: 'Сессия не найдена' }; }
+    if (s.status !== 'active') { db.exec('ROLLBACK'); return { ok: false, error: 'Сессия уже завершена' }; }
+    if (Number(s.step_index) < 1) { db.exec('ROLLBACK'); return { ok: false, error: 'Сначала пройдите хотя бы один шаг' }; }
+    const at = Date.now();
+    const win = Math.floor(Number(s.current_value));
+    const row = stmts.getUser.get(userId);
+    const balBefore = Number(row.tokens);
+    const balAfter = balBefore + win;
+    __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
+    const led = __ledger(userId, win, 'ladder_cashout', `Лесенка: кэшаут на шаге ${s.step_index} (+${win} ⬦)`, sessionId, balBefore, balAfter, at);
+    __q(`UPDATE upgrade_sessions SET status = 'cashed', updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`)
+      .run(at, at, String(sessionId), userId);
+    __q(`UPDATE game_rounds SET win_tokens = ?, mult = ?, status = 'settled', settled_at = ? WHERE round_id = ? AND user_id = ?`)
+      .run(win, Number(s.step_index), at, String(sessionId), userId);
+    const result = {
+      sessionId: String(sessionId), step: Number(s.step_index), stepsTotal: Number(s.steps_total),
+      won: true, value: win, status: 'cashed', balanceAfter: balAfter, finished: true, paid: win
+    };
+    __q(`INSERT INTO upgrade_actions (request_id, session_id, user_id, step_index, action, result_json, created_at)
+        VALUES (?, ?, ?, ?, 'cashout', ?, ?)`)
+      .run(String(requestId), String(sessionId), userId, Number(s.step_index), JSON.stringify(result), at);
+    db.exec('COMMIT');
+
+    __queueBalance(userId, balAfter, led.lastInsertRowid, win, 'ladder_cashout',
+      `Лесенка: кэшаут на шаге ${s.step_index} (+${win} ⬦)`, sessionId, balBefore, balAfter, at);
+    turso.queueBatch([
+      { sql: `UPDATE upgrade_sessions SET status = 'cashed', updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`,
+        args: [at, at, String(sessionId), userId] },
+      { sql: `INSERT OR IGNORE INTO upgrade_actions (request_id, session_id, user_id, step_index, action, result_json, created_at) VALUES (?, ?, ?, ?, 'cashout', ?, ?)`,
+        args: [String(requestId), String(sessionId), userId, Number(s.step_index), JSON.stringify(result), at] },
+      { sql: `UPDATE game_rounds SET win_tokens = ?, mult = ?, status = 'settled', settled_at = ? WHERE round_id = ? AND user_id = ?`,
+        args: [win, Number(s.step_index), at, String(sessionId), userId] }
+    ]);
+    return { ok: true, duplicate: false, result, balanceAfter: balAfter };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/** Чтение сохранённого результата идемпотентной операции. */
+function getIdempotentResult(requestId, userId) {
+  try {
+    const row = db.prepare('SELECT * FROM idempotent_results WHERE request_id = ? AND user_id = ?')
+      .get(String(requestId), userId);
+    if (!row) return null;
+    return JSON.parse(row.result_json || 'null');
+  } catch (_) { return null; }
+}
+
+/**
+ * Скретч-карта: списание билета, выигрыш и страховка — одной транзакцией.
+ * Раньше списание и начисление шли двумя отдельными вызовами applyBalance,
+ * поэтому сбой между ними оставлял игрока без билета или без выигрыша.
+ */
+function atomicScratchPlay(args) {
+  const { requestId, userId, roundId, bet, cost, winTokens, winMult, insuredReturn, grid, won, winSymbol } = args;
+  if (!Number.isFinite(Number(cost)) || Number(cost) <= 0 ||
+      !Number.isFinite(Number(winTokens)) || Number(winTokens) < 0 ||
+      !Number.isFinite(Number(insuredReturn)) || Number(insuredReturn) < 0) {
+    return { ok: false, error: 'Некорректные параметры розыгрыша' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prev = __q('SELECT * FROM idempotent_results WHERE request_id = ? AND user_id = ?')
+      .get(String(requestId), userId);
+    if (prev) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      return { ok: true, duplicate: true, result: JSON.parse(prev.result_json || '{}'), balanceAfter: bal ? bal.tokens : 0 };
+    }
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+    const at = Date.now();
+    const balBefore = Number(row.tokens);
+    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' }; }
+    const afterDebit = balBefore - Number(cost);
+    __q('UPDATE users SET tokens = ? WHERE id = ?').run(afterDebit, userId);
+    const led1 = __ledger(userId, -Number(cost), 'scratch_buy',
+      `Скретч-билет (${bet} ⬦${cost > bet ? ' + страховка 15%' : ''})`, roundId, balBefore, afterDebit, at);
+
+    let balanceAfter = afterDebit;
+    let led2 = null;
+    if (winTokens > 0) {
+      const before = balanceAfter;
+      balanceAfter += Math.floor(winTokens);
+      __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
+      led2 = __ledger(userId, Math.floor(winTokens), 'scratch_win',
+        `Скретч-карты: 3x ${winSymbol || ''} (+${winTokens} ⬦)`, roundId, before, balanceAfter, at);
+    }
+    let led3 = null;
+    if (insuredReturn > 0) {
+      const before = balanceAfter;
+      balanceAfter += Math.floor(insuredReturn);
+      __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
+      led3 = __ledger(userId, Math.floor(insuredReturn), 'insurance_refund',
+        `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, roundId, before, balanceAfter, at);
+    }
+    __round(roundId, userId, 'Скретч-карты', bet, winMult || 0, winTokens || 0, 'settled', at, null, null);
+    const result = {
+      ok: true, grid, won: Boolean(won), winSymbol: winSymbol || null,
+      winMult: Number(winMult || 0), winTokens: Math.floor(winTokens || 0),
+      insuredReturn: Math.floor(insuredReturn || 0), tokens: balanceAfter
+    };
+    __q(`INSERT INTO idempotent_results (request_id, user_id, kind, result_json, created_at)
+        VALUES (?, ?, 'scratch', ?, ?)`)
+      .run(String(requestId), userId, JSON.stringify(result), at);
+    db.exec('COMMIT');
+
+    const queue = [
+      { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balanceAfter, userId] },
+      { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [Number(led1.lastInsertRowid), userId, -Number(cost), 'scratch_buy',
+          `Скретч-билет (${bet} ⬦${cost > bet ? ' + страховка 15%' : ''})`, String(roundId), balBefore, afterDebit, at] }
+    ];
+    if (led2) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [Number(led2.lastInsertRowid), userId, Math.floor(winTokens), 'scratch_win',
+        `Скретч-карты: 3x ${winSymbol || ''} (+${winTokens} ⬦)`, String(roundId), afterDebit, afterDebit + Math.floor(winTokens), at] });
+    if (led3) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [Number(led3.lastInsertRowid), userId, Math.floor(insuredReturn), 'insurance_refund',
+        `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, String(roundId), balanceAfter - Math.floor(insuredReturn), balanceAfter, at] });
+    queue.push({ sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [String(roundId), userId, 'Скретч-карты', Math.floor(bet), Number(winMult || 0), Math.floor(winTokens || 0), 'settled', at, at, null, null] });
+    queue.push({ sql: `INSERT OR IGNORE INTO idempotent_results (request_id, user_id, kind, result_json, created_at) VALUES (?, ?, 'scratch', ?, ?)`,
+      args: [String(requestId), userId, JSON.stringify(result), at] });
+    turso.queueBatch(queue);
+    return { ok: true, duplicate: false, result, balanceAfter };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
+/**
+ * Взлом сейфа: списание попытки, запись истории, обновление пула и выплата
+ * джекпота — одной транзакцией. Раньше джекпот обнулялся до начисления,
+ * и сбой applyBalance мог «съесть» выигрыш.
+ */
+function atomicSafeGuess(userId, code, cost, requestId) {
+  if (!/^\d{4}$/.test(String(code)) || !Number.isFinite(Number(cost)) || Number(cost) <= 0) {
+    return { ok: false, error: 'Некорректные параметры попытки' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const prev = requestId
+      ? __q('SELECT * FROM idempotent_results WHERE request_id = ? AND user_id = ?').get(String(requestId), userId)
+      : null;
+    if (prev) {
+      const bal = stmts.getUser.get(userId);
+      db.exec('ROLLBACK');
+      return { ok: true, duplicate: true, result: JSON.parse(prev.result_json || '{}'), balanceAfter: bal ? bal.tokens : 0 };
+    }
+    const safe = __q('SELECT secret_code, jackpot_tokens, guesses_count FROM vault_safe WHERE id = 1').get();
+    if (!safe) { db.exec('ROLLBACK'); return { ok: false, error: 'Сейф недоступен' }; }
+    const row = stmts.getUser.get(userId);
+    if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
+    const balBefore = Number(row.tokens);
+    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: 'Для попытки требуется 25 ⬦' }; }
+
+    const secret = String(safe.secret_code);
+    const guess = String(code);
+    let bulls = 0, cows = 0;
+    const secretUsed = [false, false, false, false];
+    const guessUsed = [false, false, false, false];
+    for (let i = 0; i < 4; i++) {
+      if (guess[i] === secret[i]) { bulls++; secretUsed[i] = true; guessUsed[i] = true; }
+    }
+    for (let i = 0; i < 4; i++) {
+      if (!guessUsed[i]) {
+        for (let j = 0; j < 4; j++) {
+          if (!secretUsed[j] && guess[i] === secret[j]) { cows++; secretUsed[j] = true; break; }
+        }
+      }
+    }
+    const won = bulls === 4;
+    const at = Date.now();
+    const afterDebit = balBefore - Number(cost);
+    __q('UPDATE users SET tokens = ? WHERE id = ?').run(afterDebit, userId);
+    const led1 = __ledger(userId, -Number(cost), 'safe_guess', `Попытка взлома сейфа [${guess}]`, 'safe' + at, balBefore, afterDebit, at);
+    __q('INSERT INTO safe_attempts (user_id, code, bulls, cows, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(userId, guess, bulls, cows, at);
+
+    let winTokens = 0;
+    let balanceAfter = afterDebit;
+    let led2 = null;
+    if (won) {
+      winTokens = Number(safe.jackpot_tokens || 0);
+      const newCode = String(1000 + crypto.randomInt(0, 9000));
+      __q(`UPDATE vault_safe SET jackpot_tokens = 0, secret_code = ?, guesses_count = 0, last_won_at = ?, last_winner_id = ? WHERE id = 1`)
+        .run(newCode, at, userId);
+      if (winTokens > 0) {
+        balanceAfter = afterDebit + winTokens;
+        __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
+        led2 = __ledger(userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${winTokens} ⬦!`, 'safe' + at, afterDebit, balanceAfter, at);
+      }
+    } else {
+      __q('UPDATE vault_safe SET jackpot_tokens = jackpot_tokens + 15, guesses_count = guesses_count + 1 WHERE id = 1').run();
+    }
+    const updatedSafe = __q('SELECT jackpot_tokens, guesses_count FROM vault_safe WHERE id = 1').get();
+    const result = {
+      ok: true, code: guess, won, bulls, cows, winTokens,
+      jackpot: updatedSafe ? updatedSafe.jackpot_tokens : 0,
+      guessesCount: updatedSafe ? updatedSafe.guesses_count : 0,
+      balance: balanceAfter
+    };
+    if (requestId) {
+      __q(`INSERT INTO idempotent_results (request_id, user_id, kind, result_json, created_at)
+          VALUES (?, ?, 'safe', ?, ?)`)
+        .run(String(requestId), userId, JSON.stringify(result), at);
+    }
+    const safeRoundId = requestId || ('SAFE_' + at + '_' + userId);
+    __round(safeRoundId, userId, 'Взлом Сейфа',
+      cost, won ? winTokens / cost : 0, winTokens, 'settled', at, null, null);
+    db.exec('COMMIT');
+
+    const queue = [
+      { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balanceAfter, userId] },
+      { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [Number(led1.lastInsertRowid), userId, -Number(cost), 'safe_guess', `Попытка взлома сейфа [${guess}]`, 'safe' + at, balBefore, afterDebit, at] }
+    ];
+    if (led2) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [Number(led2.lastInsertRowid), userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${winTokens} ⬦!`, 'safe' + at, afterDebit, balanceAfter, at] });
+    queue.push({ sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [String(safeRoundId), userId, 'Взлом Сейфа', Math.floor(cost), won ? winTokens / cost : 0,
+        Math.floor(winTokens), 'settled', at, at, null, null] });
+    if (requestId) queue.push({ sql: `INSERT OR IGNORE INTO idempotent_results (request_id, user_id, kind, result_json, created_at) VALUES (?, ?, 'safe', ?, ?)`,
+      args: [String(requestId), userId, JSON.stringify(result), at] });
+    turso.queueBatch(queue);
+    return { ok: true, duplicate: false, result, balanceAfter };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
 module.exports = {
   db,
   DB_PATH,
@@ -536,6 +1207,143 @@ module.exports = {
     return { ok: true, roundId: String(r.roundId) };
   },
   getRound: (roundId) => stmts.getRound.get(String(roundId)),
+
+  /* Атомарный claim раунда: INSERT OR IGNORE по PRIMARY KEY round_id.
+     Возвращает true только победителю гонки; второй параллельный запрос
+     с тем же roundId получит false и не спишет деньги. */
+  claimRound: (r) => {
+    const res = db.prepare(`
+      INSERT OR IGNORE INTO game_rounds
+      (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
+      VALUES (?, ?, ?, ?, 1, 0, 'pending', ?, NULL, NULL, NULL)
+    `).run(String(r.roundId), r.userId, String(r.game), Math.floor(r.bet || 0), r.createdAt || Date.now());
+    return res.changes > 0;
+  },
+  releaseRoundClaim: (roundId, userId) => {
+    try { db.prepare('DELETE FROM game_rounds WHERE round_id = ? AND user_id = ? AND status = ?').run(String(roundId), userId, 'pending'); } catch (_) {}
+  },
+  settleRound: (r) => {
+    const at = r.settledAt || Date.now();
+    db.prepare(`
+      UPDATE game_rounds
+      SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?,
+          item_code = ?, item_price = ?
+      WHERE round_id = ? AND user_id = ?
+    `).run(String(r.game), Math.floor(r.bet || 0), Number(r.mult || 1), Math.floor(r.win || 0),
+      r.status || 'settled', at, r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId);
+    turso.queueQuery(`
+      UPDATE game_rounds SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?, item_code = ?, item_price = ?
+      WHERE round_id = ? AND user_id = ?
+    `, [String(r.game), Math.floor(r.bet || 0), Number(r.mult || 1), Math.floor(r.win || 0),
+      r.status || 'settled', at, r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId]);
+    return { ok: true, roundId: String(r.roundId) };
+  },
+
+  /* ── Новые кейсы / апгрейдер ─────────────────────────────────────────── */
+  atomicOpenCase,
+  atomicUpgradeRun,
+  atomicLadderStart,
+  atomicLadderStep,
+  atomicLadderCashout,
+  atomicScratchPlay,
+  atomicSafeGuess,
+  getIdempotentResult,
+  getCaseHistory: (userId, limit = 20) => {
+    try {
+      return db.prepare(`SELECT * FROM case_opens WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`)
+        .all(userId, Math.max(1, Math.min(50, Number(limit) || 20))).map(__mapCaseOpen);
+    } catch (e) { console.error('[DB] getCaseHistory:', e.message); return []; }
+  },
+  getUpgradeRun: (requestId, userId) => {
+    try {
+      const row = db.prepare('SELECT * FROM upgrade_runs WHERE request_id = ? AND user_id = ?')
+        .get(String(requestId), userId);
+      return __mapUpgradeRow(row);
+    } catch (e) { console.error('[DB] getUpgradeRun:', e.message); return null; }
+  },
+  getLadderByRequest: (requestId, userId) => {
+    try {
+      const row = db.prepare('SELECT * FROM upgrade_sessions WHERE request_id = ? AND user_id = ?')
+        .get(String(requestId), userId);
+      return __mapSession(row);
+    } catch (e) { console.error('[DB] getLadderByRequest:', e.message); return null; }
+  },
+  getUpgradeHistory: (userId, limit = 20) => {
+    try {
+      return db.prepare(`SELECT * FROM upgrade_runs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`)
+        .all(userId, Math.max(1, Math.min(50, Number(limit) || 20))).map(__mapUpgradeRow);
+    } catch (e) { console.error('[DB] getUpgradeHistory:', e.message); return []; }
+  },
+  getLadderSession: (sessionId, userId) => {
+    try {
+      const row = db.prepare('SELECT * FROM upgrade_sessions WHERE id = ? AND user_id = ?').get(String(sessionId), userId);
+      return __mapSession(row);
+    } catch (e) { console.error('[DB] getLadderSession:', e.message); return null; }
+  },
+  getUpgradeAction: (requestId, userId) => {
+    try {
+      const row = db.prepare('SELECT * FROM upgrade_actions WHERE request_id = ? AND user_id = ?')
+        .get(String(requestId), userId);
+      return row ? { action: row.action, stepIndex: row.step_index, result: JSON.parse(row.result_json || '{}') } : null;
+    } catch (e) { console.error('[DB] getUpgradeAction:', e.message); return null; }
+  },
+  getActiveLadder: (userId) => {
+    try {
+      const row = db.prepare(`SELECT * FROM upgrade_sessions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1`).get(userId);
+      return __mapSession(row);
+    } catch (e) { console.error('[DB] getActiveLadder:', e.message); return null; }
+  },
+
+  /* Атомарный захват права на +25% к первому депозиту. Флаг ставится
+     условным UPDATE ... WHERE first_deposit_bonus_claimed = 0: два
+     параллельных первых депозита не могут получить бонус дважды. */
+  /* Атомарное списание бесплатного кейса: два параллельных запроса не могут
+     оба увидеть free_cases=1 и получить два предмета. */
+  claimFreeCase: (userId) => {
+    const res = db.prepare('UPDATE users SET free_cases = free_cases - 1 WHERE id = ? AND COALESCE(free_cases, 0) > 0').run(userId);
+    if (res.changes > 0) {
+      turso.queueQuery('UPDATE users SET free_cases = free_cases - 1 WHERE id = ? AND COALESCE(free_cases, 0) > 0', [userId]);
+      return true;
+    }
+    return false;
+  },
+  refundFreeCase: (userId) => {
+    try {
+      db.prepare('UPDATE users SET free_cases = COALESCE(free_cases, 0) + 1 WHERE id = ?').run(userId);
+      turso.queueQuery('UPDATE users SET free_cases = COALESCE(free_cases, 0) + 1 WHERE id = ?', [userId]);
+    } catch (_) {}
+  },
+  claim5RefCase: (userId) => {
+    const res = db.prepare('UPDATE users SET free_case_5ref_claimed = 1 WHERE id = ? AND COALESCE(free_case_5ref_claimed, 0) = 0').run(userId);
+    if (res.changes > 0) {
+      turso.queueQuery('UPDATE users SET free_case_5ref_claimed = 1 WHERE id = ?', [userId]);
+      return true;
+    }
+    return false;
+  },
+  release5RefCase: (userId) => {
+    try {
+      db.prepare('UPDATE users SET free_case_5ref_claimed = 0 WHERE id = ?').run(userId);
+      turso.queueQuery('UPDATE users SET free_case_5ref_claimed = 0 WHERE id = ?', [userId]);
+    } catch (_) {}
+  },
+
+  claimFirstDepositBonus: (userId) => {
+    const res = db.prepare('UPDATE users SET first_deposit_bonus_claimed = 1 WHERE id = ? AND COALESCE(first_deposit_bonus_claimed, 0) = 0').run(userId);
+    if (res.changes > 0) {
+      turso.queueQuery('UPDATE users SET first_deposit_bonus_claimed = 1 WHERE id = ?', [userId]);
+      return true;
+    }
+    return false;
+  },
+  releaseFirstDepositBonusClaim: (userId) => {
+    try {
+      db.prepare('UPDATE users SET first_deposit_bonus_claimed = 0 WHERE id = ?').run(userId);
+      turso.queueQuery('UPDATE users SET first_deposit_bonus_claimed = 0 WHERE id = ?', [userId]);
+    } catch (_) {}
+  },
 
   /* ── Инвентарь ──────────────────────────────────────────────────────────
      Цена и название берутся из СЕРВЕРНОГО каталога items.js, а не из запроса

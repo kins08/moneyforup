@@ -47,6 +47,23 @@ if (!__nodeOk) {
 
 const db            = require('./db');
 const items         = require('./items');   // серверный каталог кейсов и предметов
+const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
+/* Каталог пяти новых режимов кейсов — единый UMD-файл: его же грузит браузер
+   как статику. Поэтому цены/предметы не дублируются между фронтом и бэком. */
+const caseModes     = require('./assets/case-modes.js');
+// Цена режима и цены предметов лежат в одном конфиге. Если после правки
+// цены RTP вышел из безопасного коридора — громко предупреждаем на старте,
+// чтобы кейс не начал печатать токены.
+for (const __cm of Object.values(caseModes.MODES || {})) {
+  try {
+    const __rtp = caseModes.caseRtp(__cm.id);
+    if (!__rtp || !Number.isFinite(__rtp.rtp) || __rtp.rtp < 0.78 || __rtp.rtp > 0.90) {
+      console.warn(`[CaseModes] ${__cm.name}: RTP ${__rtp ? (__rtp.rtp * 100).toFixed(2) + '%' : '?'} вне коридора 78–90% — проверьте цены в assets/case-modes.js`);
+    }
+  } catch (e) {
+    console.warn(`[CaseModes] ${__cm && __cm.id}: не удалось посчитать RTP: ${e.message}`);
+  }
+}
 
 function isAdmin(u) {
   if (!u || !ADMIN_ID) return false;
@@ -447,6 +464,15 @@ setInterval(() => {
   }
 }, 60000).unref();
 
+/* Клиентский roundId превращаем в пространство имён пользователя. Иначе
+   игрок мог занять чужой ключ идемпотентности и заблокировать чужой раунд. */
+function scopedRoundId(userId, raw) {
+  const s = String(raw || '').trim();
+  if (!s) return { ok: true, roundId: '' };
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(s)) return { ok: false, error: 'Некорректный идентификатор раунда' };
+  return { ok: true, roundId: `U${userId}_${s}` };
+}
+
 function gameConfig(rawName) {
   const key = String(rawName || '').trim().toLowerCase()
     .replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -487,21 +513,36 @@ function playCaseRound(u, c, rawBet, rawRoundId) {
   }
   if (bet > Math.floor(u.tokens || 0)) return { ok: false, error: 'Недостаточно токенов' };
 
-  const roundId = String(rawRoundId || '').trim() ||
+  const scoped = scopedRoundId(u.id, rawRoundId);
+  if (!scoped.ok) return { ok: false, error: scoped.error };
+  const roundId = scoped.roundId ||
     ('C' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex'));
-  if (!/^[A-Za-z0-9_-]{6,64}$/.test(roundId)) return { ok: false, error: 'Некорректный идентификатор раунда' };
+
+  // Атомарный claim: PRIMARY KEY round_id. Два параллельных запроса с одним
+  // roundId не могут оба пройти проверку и списать цену дважды.
+  let claimed = false;
   try {
-    if (db.getRound(roundId)) return { ok: false, error: 'Раунд уже проведён' };
-  } catch (_) { /* таблицы нет — не блокируем игру */ }
+    claimed = db.claimRound({ roundId, userId: u.id, game: 'Кейс: ' + c.name, bet });
+  } catch (e) {
+    console.error('[Round] claim failed:', e.message);
+    return { ok: false, error: 'Не удалось начать раунд, повторите позже' };
+  }
+  if (!claimed) return { ok: false, error: 'Раунд уже проведён' };
 
   // Жребий предмета — серверный CSPRNG, веса из серверного каталога
   const drop = items.rollItem(c.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
-  if (!drop) return { ok: false, error: 'Кейс недоступен' };
+  if (!drop) {
+    db.releaseRoundClaim(roundId, u.id);
+    return { ok: false, error: 'Кейс недоступен' };
+  }
 
   // Деньги: списываем ровно цену кейса. Выигрыш придёт ПРОДАЖЕЙ предмета.
   const r = applyBalance(u, -bet, 'game_round',
     `Кейс «${c.name}» · раунд ${roundId} (ставка ${bet}, выпало: ${drop.name})`, roundId);
-  if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+  if (!r.ok) {
+    db.releaseRoundClaim(roundId, u.id);
+    return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+  }
 
   // Предмет кладём ПОСЛЕ успешного списания: иначе предмет был бы, а оплаты нет
   let itemId = null;
@@ -512,12 +553,17 @@ function playCaseRound(u, c, rawBet, rawRoundId) {
     });
     itemId = saved.id;
   } catch (e) {
+    // Предмет не сохранился — возвращаем деньги и освобождаем claim, чтобы
+    // игрок не остался без предмета и без токенов.
     console.error(`[Inventory] предмет не сохранён игроку ${u.id}: ${e.message}`);
+    applyBalance(u, bet, 'game_round', `Возврат за кейс «${c.name}»: предмет не сохранён`, roundId);
+    db.releaseRoundClaim(roundId, u.id);
+    return { ok: false, error: 'Не удалось выдать предмет, токены возвращены' };
   }
 
   const verdict = drop.price >= bet ? 'win' : 'lose';   // для анимации: отбился или нет
   try {
-    db.saveRound({ roundId, userId: u.id, game: 'Кейс: ' + c.name, bet, mult: 1, win: 0,
+    db.settleRound({ roundId, userId: u.id, game: 'Кейс: ' + c.name, bet, mult: 1, win: 0,
       status: 'settled', itemCode: drop.code, itemPrice: drop.price });
   } catch (e) { console.error('[Round] не сохранён:', e.message); }
 
@@ -575,17 +621,25 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
   mult = Math.min(cfg.maxMult, Math.max(cfg.minMult, mult));
   mult = Math.round(mult * 100) / 100;
 
-  // Идемпотентность: повторный roundId не создаёт второй раунд
-  const roundId = String(rawRoundId || '').trim() ||
+  // Идемпотентность: PRIMARY KEY round_id. Claim ставится ДО списания,
+  // поэтому два параллельных запроса с одним roundId не спишут ставку дважды.
+  const scoped = scopedRoundId(u.id, rawRoundId);
+  if (!scoped.ok) return { ok: false, error: scoped.error };
+  const roundId = scoped.roundId ||
     ('R' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex'));
-  if (!/^[A-Za-z0-9_-]{6,64}$/.test(roundId)) return { ok: false, error: 'Некорректный идентификатор раунда' };
+  let claimed = false;
   try {
-    if (db.getRound(roundId)) return { ok: false, error: 'Раунд уже проведён' };
-  } catch (_) { /* таблицы нет — не блокируем игру */ }
+    claimed = db.claimRound({ roundId, userId: u.id, game: cfg.label, bet });
+  } catch (e) {
+    console.error('[Round] claim failed:', e.message);
+    return { ok: false, error: 'Не удалось начать раунд, повторите позже' };
+  }
+  if (!claimed) return { ok: false, error: 'Раунд уже проведён' };
 
   if (invItem) {
     // Атомарно помечаем предмет сгоревшим/использованным (0 токенов возврата)
     if (!db.markInventorySold(invItem.id, u.id, 0)) {
+      db.releaseRoundClaim(roundId, u.id);
       return { ok: false, error: 'Не удалось использовать предмет' };
     }
   }
@@ -629,17 +683,21 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
         `${cfg.label} · Апгрейд предмета ${invItem.name} (выигрыш +${win} ⬦)`, roundId);
       if (!r.ok) {
         try { db.db.prepare('UPDATE user_inventory SET sold_at = NULL, sold_for = NULL WHERE id = ?').run(invItem.id); } catch (_) {}
+        db.releaseRoundClaim(roundId, u.id);
         return { ok: false, error: 'Не удалось начислить токены' };
       }
     }
   } else {
     const r = applyBalance(u, win - bet, 'game_round',
       `${cfg.label} · раунд ${roundId} (ставка ${bet}, ×${mult}, выигрыш ${win})`, roundId);
-    if (!r.ok) return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+    if (!r.ok) {
+      db.releaseRoundClaim(roundId, u.id);
+      return { ok: false, error: 'Не удалось провести раунд, повторите позже' };
+    }
   }
 
   try {
-    db.saveRound({
+    db.settleRound({
       roundId, userId: u.id, game: cfg.label, bet, mult, win, status: 'settled',
       itemCode: invItem ? invItem.item_code : null,
       itemPrice: invItem ? invItem.price : null
@@ -714,21 +772,19 @@ async function creditDeposit(userId, tokens, source, opts = {}) {
   let baseTokens = Math.floor(opts.baseTokens || (rubAmt * TOKENS_PER_RUB));
   let bonusTokens = 0;
   let bonusApplied = false;
+  let bonusClaimedNow = false;
 
-  if (opts.bonus === '25' || opts.bonusTag === '25') {
-    if (isFirstDeposit) {
+  // Право на +25% захватывается АТОМАРНО в БД. Раньше проверка была
+  // «прочитали флаг в памяти → начислили → записали флаг», поэтому два
+  // параллельных первых депозита могли получить бонус дважды.
+  const explicitBonus = opts.bonus === '25' || opts.bonusTag === '25';
+  const impliedBonus = !explicitBonus && Number(tokens) > baseTokens &&
+    (Number(tokens) - baseTokens) === Math.floor(baseTokens * 0.25);
+  if (isFirstDeposit && (explicitBonus || impliedBonus)) {
+    if (db.claimFirstDepositBonus(u.id)) {
       bonusTokens = Math.floor(baseTokens * 0.25);
       bonusApplied = true;
-      u.firstDepositBonusClaimed = 1;
-    } else {
-      bonusTokens = 0;
-      bonusApplied = false;
-    }
-  } else if (Number(tokens) > baseTokens && isFirstDeposit) {
-    const diff = Number(tokens) - baseTokens;
-    if (diff === Math.floor(baseTokens * 0.25)) {
-      bonusTokens = diff;
-      bonusApplied = true;
+      bonusClaimedNow = true;
       u.firstDepositBonusClaimed = 1;
     }
   }
@@ -740,8 +796,16 @@ async function creditDeposit(userId, tokens, source, opts = {}) {
 
   const credit = applyBalance(u, finalTokens, 'deposit', reason, String(opts.orderId || ''));
   if (!credit.ok) {
+    // Зачисление не прошло — возвращаем право на бонус, чтобы игрок
+    // не потерял его из-за сбоя БД.
+    if (bonusClaimedNow) {
+      try { db.releaseFirstDepositBonusClaim(u.id); } catch (_) {}
+      u.firstDepositBonusClaimed = 0;
+      bonusTokens = 0;
+      bonusApplied = false;
+    }
     console.error(`[Deposit] НЕ зачислено ${finalTokens} ⬦ игроку ${userId}: ${credit.error}`);
-    return { tokens: finalTokens, baseTokens, bonusTokens, refPaid: 0, refErr: credit.error, credited: false, bonusApplied: false };
+    return { tokens: baseTokens, baseTokens, bonusTokens: 0, refPaid: 0, refErr: credit.error, credited: false, bonusApplied: false };
   }
 
   if (isFirstDeposit && rubAmt >= 150) {
@@ -2051,15 +2115,19 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`freecase:${u.id}`, 10, 60000)) {
         return send(429, { error: 'Слишком много запросов. Подождите немного.' });
       }
-      const freeCases = Math.floor(Number(u.freeCases || 0));
-      if (freeCases <= 0) {
+      // Атомарно списываем бесплатный кейс в БД: два параллельных клика не
+      // могут оба увидеть free_cases=1 и получить два предмета.
+      if (!db.claimFreeCase(u.id)) {
         return send(400, { error: 'У вас нет доступных бесплатных кейсов' });
       }
-      u.freeCases = freeCases - 1;
+      const freshFree = db.getUser(u.id);
+      u.freeCases = freshFree ? Number(freshFree.freeCases || 0) : 0;
 
       const drop = items.rollItem('case_500', crypto.randomInt(0, 1_000_000) / 1_000_000);
       if (!drop) {
-        u.freeCases = freeCases;
+        db.refundFreeCase(u.id);
+        const back = db.getUser(u.id);
+        u.freeCases = back ? Number(back.freeCases || 0) : 0;
         return send(500, { error: 'Не удалось открыть кейс, попробуйте позже' });
       }
 
@@ -2080,6 +2148,11 @@ const server = http.createServer(async (req, res) => {
         itemId = saved.id;
       } catch (e) {
         console.error(`[Inventory] бесплатный предмет не сохранён игроку ${u.id}: ${e.message}`);
+        db.refundFreeCase(u.id);
+        const back = db.getUser(u.id);
+        u.freeCases = back ? Number(back.freeCases || 0) : 0;
+        try { db.saveUser(u); } catch (_) {}
+        return send(500, { error: 'Не удалось выдать предмет, бесплатный кейс не списан' });
       }
 
       try {
@@ -2152,6 +2225,11 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: `Необходимо пригласить 5 активных друзей (сейчас ${qualified}/5). Друг должен зайти по ссылке и сделать хотя бы 1 прокрут/ставку.` });
       }
 
+      // Атомарный claim: два параллельных запроса не выдадут скин дважды.
+      if (!db.claim5RefCase(u.id)) {
+        u.freeCase5RefClaimed = 1;
+        return send(400, { error: 'Вы уже открыли и забрали кейс за 5 друзей!' });
+      }
       u.freeCase5RefClaimed = 1;
       try { db.saveUser(u); } catch (_) {}
 
@@ -2182,6 +2260,10 @@ const server = http.createServer(async (req, res) => {
         itemId = saved.id;
       } catch (e) {
         console.error(`[Inventory] предмет за 5 друзей не сохранён игроку ${u.id}: ${e.message}`);
+        db.release5RefCase(u.id);
+        u.freeCase5RefClaimed = 0;
+        try { db.saveUser(u); } catch (_) {}
+        return send(500, { error: 'Не удалось выдать скин, право на кейс сохранено' });
       }
 
       try {
@@ -2419,6 +2501,411 @@ const server = http.createServer(async (req, res) => {
       return send(200, { ok: true, count: sold.length, total, sold, tokens: u.tokens });
     }
 
+    /* ══════════════════════════════════════════════════════════════════════
+       CASE HUB — пять новых режимов кейсов.
+       Цена, состав и вероятности берутся из public/assets/case-modes.js.
+       Клиент не присылает ни цену, ни предмет, ни результат.
+       ══════════════════════════════════════════════════════════════════════ */
+    if (url.pathname === '/api/cases/catalog' && req.method === 'POST') {
+      const modes = Object.values(caseModes.MODES).map(m => {
+        const totalW = m.items.reduce((s, it) => s + it.w, 0);
+        const rtp = caseModes.caseRtp(m.id);
+        return {
+          id: m.id, name: m.name, tagline: m.tagline, desc: m.desc, icon: m.icon,
+          price: m.price, priceMin: m.priceMin, priceMax: m.priceMax, theme: m.theme,
+          rtp: rtp ? Number(rtp.rtp.toFixed(4)) : null,
+          items: m.items.map(it => ({
+            code: it.code, name: it.name, icon: it.icon, price: it.price, tier: it.tier,
+            chance: Number(((it.w / totalW) * 100).toFixed(3))
+          }))
+        };
+      });
+      return send(200, {
+        ok: true, modes,
+        history: db.getCaseHistory(u.id, 12),
+        tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/cases/open' && req.method === 'POST') {
+      if (!checkRateLimit(`case-open:${u.id}`, 30, 60000)) {
+        return send(429, { error: 'Слишком часто открываете кейсы. Подождите минуту.' });
+      }
+      const mode = caseModes.getMode(body.modeId);
+      if (!mode) return send(400, { error: 'Неизвестный режим кейса' });
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const requestId = `CASE_${u.id}_${clientKey}`;
+      const roundId = `CM_${u.id}_${clientKey}`;
+      // Баланс проверяется внутри транзакции atomicOpenCase. Здесь нарочно
+      // нет предварительной проверки: повтор уже успешного запроса должен
+      // вернуть сохранённый результат даже если баланс с тех пор изменился.
+      const drop = caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+      if (!drop) return send(500, { error: 'Кейс временно недоступен' });
+
+      let res;
+      try {
+        res = db.atomicOpenCase({
+          requestId, userId: u.id, modeId: mode.id, modeName: mode.name,
+          price: mode.price, item: drop, roundId
+        });
+      } catch (e) {
+        console.error('[CaseHub] open failed:', e.message);
+        return send(500, { error: 'Не удалось открыть кейс, повторите позже' });
+      }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось открыть кейс' });
+
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      if (!res.duplicate) {
+        u.rakeback = Math.round(((u.rakeback || 0) + (mode.price * 0.005)) * 100) / 100;
+      }
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (case hub):', e.message); }
+      if (!res.duplicate) {
+        betsMonitor.recordBet({
+          userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+          game: 'Кейс: ' + mode.name, betTokens: mode.price, winTokens: 0,
+          balanceAfter: u.tokens, totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
+        });
+      }
+      const open = res.open || {};
+      // При повторе возвращаем СОХРАНЁННЫЙ предмет, а не результат нового
+      // броска: иначе клиент увидит один id и другое имя.
+      const out = (res.duplicate && open.item) ? open.item : drop;
+      return send(200, {
+        ok: true,
+        duplicate: Boolean(res.duplicate),
+        requestId: clientKey,
+        modeId: mode.id,
+        modeName: mode.name,
+        price: res.duplicate && open.price ? open.price : mode.price,
+        drop: {
+          id: open.inventoryId || res.inventoryId || null,
+          code: out.code, name: out.name, icon: out.icon,
+          price: out.price, tier: out.tier, caseName: mode.name
+        },
+        tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/cases/history' && req.method === 'POST') {
+      return send(200, {
+        ok: true,
+        history: db.getCaseHistory(u.id, Math.min(50, Math.max(1, Number(body.limit) || 20))),
+        tokens: u.tokens
+      });
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       UPGRADE ARENA — серверная модель апгрейда.
+       ══════════════════════════════════════════════════════════════════════ */
+    if (url.pathname === '/api/upgrade/catalog' && req.method === 'POST') {
+      return send(200, {
+        ok: true,
+        modes: Object.values(upgrade.MODES).map(m => ({
+          id: m.id, label: m.label, title: m.title, desc: m.desc,
+          edge: m.edge, chanceCap: m.chanceCap, maxMult: m.maxMult,
+          minTargetRatio: m.minTargetRatio, color: m.color
+        })),
+        targets: upgrade.TARGETS,
+        maxTargets: upgrade.MAX_TARGETS,
+        limits: { minTokens: 10, maxTokens: 100000, maxTargets: upgrade.MAX_TARGETS },
+        ladder: {
+          3: upgrade.ladderPreview(upgrade.MODES.balanced, 3, 1000),
+          5: upgrade.ladderPreview(upgrade.MODES.balanced, 5, 1000),
+          10: upgrade.ladderPreview(upgrade.MODES.balanced, 10, 1000)
+        },
+        ladderTables: upgrade.LADDER_MULTS,
+        inventory: db.listInventory(u.id).map(it => ({
+          id: it.id, code: it.item_code, name: it.name, icon: it.icon,
+          price: it.price, tier: it.tier, caseName: it.case_name,
+          upgrade_only: Boolean(it.upgrade_only)
+        })),
+        history: db.getUpgradeHistory(u.id, 12),
+        tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/upgrade/run' && req.method === 'POST') {
+      if (!checkRateLimit(`upgrade:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком много апгрейдов. Подождите минуту.' });
+      }
+      const mode = upgrade.getMode(body.mode);
+      if (!mode) return send(400, { error: 'Неизвестный режим риска' });
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const requestId = `UPG_${u.id}_${clientKey}`;
+      // Повтор уже выполненного апгрейда (ответ потерялся) возвращаем ДО
+      // проверки источника: предмет-источник к этому моменту уже списан.
+      const prevRun = db.getUpgradeRun(requestId, u.id);
+      if (prevRun) {
+        const prevTargets = Array.isArray(prevRun.targets) && prevRun.targets.length
+          ? prevRun.targets : [];
+        return send(200, {
+          ok: true, duplicate: true, requestId: clientKey, mode: prevRun.mode,
+          sourceType: prevRun.sourceType, sourceValue: prevRun.sourceValue,
+          won: prevRun.won,
+          chance: prevRun.chance,
+          aggregateChance: prevRun.aggregateChance,
+          distribution: prevTargets.map(t => ({
+            code: t.code, chance: Number(t.chance || 0) / prevTargets.length
+          })),
+          target: prevRun.target,
+          drop: prevRun.target ? { ...prevRun.target, id: prevRun.inventoryId, caseName: 'Апгрейд' } : null,
+          tokens: u.tokens
+        });
+      }
+
+      let sourceType = body.sourceType === 'item' ? 'item' : 'tokens';
+      let sourceValue = 0;
+      let sourceItemId = null;
+      if (sourceType === 'item') {
+        sourceItemId = Math.floor(Number(body.itemId) || 0);
+        const it = db.getInventoryItem(sourceItemId);
+        if (!it || Number(it.user_id) !== Number(u.id) || it.sold_at) {
+          return send(400, { error: 'Предмет не найден в вашем инвентаре' });
+        }
+        sourceValue = Math.floor(Number(it.price) || 0);
+      } else {
+        sourceValue = Math.floor(Number(body.amount) || 0);
+        if (!Number.isFinite(sourceValue) || sourceValue < 10) {
+          return send(400, { error: 'Минимальная сумма апгрейда — 10 ⬦' });
+        }
+        if (sourceValue > 100000) {
+          return send(400, { error: 'Максимальная сумма апгрейда — 100 000 ⬦' });
+        }
+      }
+
+      const valid = upgrade.validateTargets(mode, sourceValue, body.targets);
+      if (!valid.ok) return send(400, { error: valid.error });
+      const roll = upgrade.rollUpgrade(mode, sourceValue, valid.targets, rnd01(), rnd01());
+      if (!roll.ok) return send(400, { error: roll.error });
+
+      let res;
+      try {
+        res = db.atomicUpgradeRun({
+          requestId, userId: u.id, mode: mode.id,
+          sourceType, sourceAmount: sourceValue, sourceItemId,
+          target: roll.target, won: roll.won,
+          chance: roll.chance, aggregateChance: roll.aggregateChance,
+          targets: valid.targets.map(t => ({ code: t.code, name: t.name, value: t.value, tier: t.tier, chance: t.chance }))
+        });
+      } catch (e) {
+        console.error('[Upgrade] run failed:', e.message);
+        return send(500, { error: 'Не удалось выполнить апгрейд, повторите позже' });
+      }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось выполнить апгрейд' });
+
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      if (!res.duplicate) {
+        u.rakeback = Math.round(((u.rakeback || 0) + (sourceValue * 0.005)) * 100) / 100;
+      }
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (upgrade):', e.message); }
+      if (!res.duplicate) {
+        betsMonitor.recordBet({
+          userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
+          game: 'Апгрейд · ' + mode.label, betTokens: sourceValue,
+          winTokens: roll.won ? roll.target.value : 0,
+          balanceAfter: u.tokens, totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
+        });
+      }
+      const storedRun = res.run || {};
+      const storedTargets = Array.isArray(storedRun.targets) && storedRun.targets.length
+        ? storedRun.targets : valid.targets;
+      const dist = storedTargets.map(t => ({
+        code: t.code,
+        chance: Number(t.chance || 0) / storedTargets.length
+      }));
+      return send(200, {
+        ok: true,
+        duplicate: Boolean(res.duplicate),
+        requestId: clientKey,
+        mode: mode.id,
+        sourceType, sourceValue,
+        won: Boolean(storedRun.won),
+        chance: res.duplicate && storedRun.chance != null ? storedRun.chance : roll.chance,
+        aggregateChance: res.duplicate && storedRun.aggregateChance != null ? storedRun.aggregateChance : roll.aggregateChance,
+        distribution: res.duplicate ? dist : roll.distribution,
+        target: storedRun && storedRun.target ? storedRun.target : (roll.won ? { ...roll.target, id: res.inventoryId } : null),
+        drop: storedRun && storedRun.target ? { ...storedRun.target, id: res.inventoryId, caseName: 'Апгрейд' } : null,
+        tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/upgrade/ladder/start' && req.method === 'POST') {
+      if (!checkRateLimit(`ladder:${u.id}`, 30, 60000)) {
+        return send(429, { error: 'Слишком много запусков. Подождите минуту.' });
+      }
+      const mode = upgrade.getMode(body.mode);
+      if (!mode) return send(400, { error: 'Неизвестный режим риска' });
+      const steps = Math.floor(Number(body.steps) || 0);
+      if (![3, 5, 10].includes(steps)) return send(400, { error: 'Лесенка бывает на 3, 5 или 10 шагов' });
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const requestId = `LAD_${u.id}_${clientKey}`;
+      // Повтор старта после потери ответа: сессия уже создана, предмет-источник
+      // мог быть списан — возвращаем её, не проверяя источник заново.
+      const prevLadder = db.getLadderByRequest(requestId, u.id);
+      if (prevLadder) {
+        const prevMode = upgrade.getMode(prevLadder.mode) || mode;
+        return send(200, {
+          ok: true, duplicate: true, session: prevLadder,
+          preview: upgrade.ladderPreview(prevMode, prevLadder.stepsTotal, prevLadder.sourceValue),
+          tokens: u.tokens
+        });
+      }
+      const sourceType = body.sourceType === 'item' ? 'item' : 'tokens';
+      let sourceValue = 0;
+      let sourceItemId = null;
+      if (sourceType === 'item') {
+        sourceItemId = Math.floor(Number(body.itemId) || 0);
+        const it = db.getInventoryItem(sourceItemId);
+        if (!it || Number(it.user_id) !== Number(u.id) || it.sold_at) {
+          return send(400, { error: 'Предмет не найден в вашем инвентаре' });
+        }
+        sourceValue = Math.floor(Number(it.price) || 0);
+      } else {
+        sourceValue = Math.floor(Number(body.amount) || 0);
+        if (!Number.isFinite(sourceValue) || sourceValue < 10) {
+          return send(400, { error: 'Минимальная сумма — 10 ⬦' });
+        }
+        if (sourceValue > 100000) return send(400, { error: 'Максимальная сумма — 100 000 ⬦' });
+      }
+      const preview = upgrade.ladderPreview(mode, steps, sourceValue);
+      if (!preview) return send(400, { error: 'Не удалось рассчитать лесенку' });
+      const sessionId = 'LAD_' + crypto.randomBytes(10).toString('hex');
+      let res;
+      try {
+        res = db.atomicLadderStart({
+          sessionId, requestId, userId: u.id, mode: mode.id, stepsTotal: steps,
+          sourceType, sourceAmount: sourceValue, sourceItemId, ladder: preview.stepsData
+        });
+      } catch (e) {
+        console.error('[Ladder] start failed:', e.message);
+        return send(500, { error: 'Не удалось начать лесенку, повторите позже' });
+      }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось начать лесенку' });
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      if (!res.duplicate) {
+        u.rakeback = Math.round(((u.rakeback || 0) + (sourceValue * 0.005)) * 100) / 100;
+      }
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (ladder start):', e.message); }
+      // При повторе берём параметры СОХРАНЁННОЙ сессии, а не нового запроса.
+      const outPreview = res.duplicate && res.session
+        ? upgrade.ladderPreview(mode, res.session.stepsTotal, res.session.sourceValue)
+        : preview;
+      return send(200, {
+        ok: true, duplicate: Boolean(res.duplicate), session: res.session,
+        preview: outPreview, tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/upgrade/ladder/step' && req.method === 'POST') {
+      if (!checkRateLimit(`ladder-step:${u.id}`, 90, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      }
+      const sessionId = String(body.sessionId || '').trim();
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const requestId = `LADSTEP_${u.id}_${clientKey}`;
+      // Повтор уже выполненного шага (ответ потерялся в сети) обязан вернуть
+      // ТОТ ЖЕ результат, а не 400 «шаг уже выполнен».
+      const prevAction = db.getUpgradeAction(requestId, u.id);
+      if (prevAction) {
+        const prevSession = db.getLadderSession(sessionId, u.id);
+        return send(200, {
+          ok: true, duplicate: true, result: prevAction.result,
+          session: prevSession, tokens: u.tokens
+        });
+      }
+      const session = db.getLadderSession(sessionId, u.id);
+      if (!session) return send(404, { error: 'Сессия лесенки не найдена' });
+      if (session.status !== 'active') return send(400, { error: 'Сессия лесенки уже завершена' });
+      const mode = upgrade.getMode(session.mode);
+      if (!mode) return send(500, { error: 'Режим сессии недоступен' });
+      const expectedStep = Math.floor(Number(body.expectedStep) || (session.stepIndex + 1));
+      if (expectedStep !== session.stepIndex + 1) {
+        return send(400, { error: 'Этот шаг уже выполнен или пропущен' });
+      }
+      const mults = upgrade.ladderSteps(session.stepsTotal, mode);
+      if (!mults || expectedStep < 1 || expectedStep > mults.length) {
+        return send(400, { error: 'Некорректный номер шага' });
+      }
+      const mult = mults[expectedStep - 1];
+      const chance = upgrade.ladderChance(mode, mult);
+      const won = rnd01() < chance;
+      let res;
+      try {
+        res = db.atomicLadderStep({
+          requestId, sessionId, userId: u.id, expectedStep, won, mult
+        });
+      } catch (e) {
+        console.error('[Ladder] step failed:', e.message);
+        return send(500, { error: 'Не удалось выполнить шаг, повторите позже' });
+      }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось выполнить шаг' });
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (ladder step):', e.message); }
+      const updated = db.getLadderSession(sessionId, u.id);
+      return send(200, {
+        ok: true, duplicate: Boolean(res.duplicate), result: res.result,
+        session: updated, chance, mult, tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/upgrade/ladder/cashout' && req.method === 'POST') {
+      if (!checkRateLimit(`ladder-cash:${u.id}`, 30, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      }
+      const sessionId = String(body.sessionId || '').trim();
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const requestId = `LADCASH_${u.id}_${clientKey}`;
+      let res;
+      try {
+        res = db.atomicLadderCashout({ requestId, sessionId, userId: u.id });
+      } catch (e) {
+        console.error('[Ladder] cashout failed:', e.message);
+        return send(500, { error: 'Не удалось забрать выигрыш, повторите позже' });
+      }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось забрать выигрыш' });
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (ladder cashout):', e.message); }
+      const updated = db.getLadderSession(sessionId, u.id);
+      return send(200, {
+        ok: true, duplicate: Boolean(res.duplicate), result: res.result,
+        session: updated, tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/upgrade/ladder/state' && req.method === 'POST') {
+      const sessionId = String(body.sessionId || '').trim();
+      const session = sessionId
+        ? db.getLadderSession(sessionId, u.id)
+        : db.getActiveLadder(u.id);
+      if (!session) return send(200, { ok: true, session: null, tokens: u.tokens });
+      const mode = upgrade.getMode(session.mode);
+      const preview = mode ? upgrade.ladderPreview(mode, session.stepsTotal, session.sourceValue) : null;
+      return send(200, { ok: true, session, preview, tokens: u.tokens });
+    }
+
+    if (url.pathname === '/api/upgrade/history' && req.method === 'POST') {
+      return send(200, {
+        ok: true,
+        history: db.getUpgradeHistory(u.id, Math.min(50, Math.max(1, Number(body.limit) || 20))),
+        tokens: u.tokens
+      });
+    }
+
     /* Синхронизация баланса (строго READ-ONLY: клиент не может устанавливать баланс напрямую) */
     if (url.pathname === '/api/sync-balance') {
       return send(200, { ok: true, tokens: u.tokens });
@@ -2430,14 +2917,14 @@ const server = http.createServer(async (req, res) => {
       const bet = Math.max(10, Math.floor(Number(body.bet) || 20));
       const withInsurance = Boolean(body.insurance);
       const cost = withInsurance ? Math.floor(bet * 1.15) : bet;
-      if (Math.floor(u.tokens || 0) < cost) return send(400, { error: `Недостаточно токенов (требуется ${cost} ⬦)` });
+      // Баланс проверяет atomicScratchPlay внутри транзакции: повтор с тем же
+      // requestId должен вернуть кэш даже при изменившемся балансе.
 
-      const roundId = 'SC_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -cost, 'scratch_buy', `Скретч-билет (${bet} ⬦${withInsurance ? ' + страховка 15%' : ''})`, roundId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
-
-      // Рейкбек
-      u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+      const clientKey = String(body.requestId || '').trim();
+      const requestId = /^[A-Za-z0-9_-]{8,64}$/.test(clientKey)
+        ? `SCR_${u.id}_${clientKey}`
+        : `SCR_${u.id}_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+      const roundId = requestId;
 
       const SYMBOLS = [
         { id: 'knife', name: 'Керамбит', mult: 50, weight: 1 },
@@ -2489,8 +2976,6 @@ const server = http.createServer(async (req, res) => {
           counts[pick.id] = (counts[pick.id] || 0) + 1;
         }
 
-        applyBalance(u, winTokens, 'scratch_win', `Скретч-карты: 3x ${wonSymbol.name} (+${winTokens} ⬦)`, roundId);
-        try { db.saveRound({ roundId, userId: u.id, game: 'Скретч-карты', bet, mult: winMult, win: winTokens, status: 'settled' }); } catch (_) {}
       } else {
         // Проигрышная сетка: максимум 2 одинаковых символа (Near-miss!)
         const counts = {};
@@ -2500,7 +2985,6 @@ const server = http.createServer(async (req, res) => {
           grid[i] = pick.id;
           counts[pick.id] = (counts[pick.id] || 0) + 1;
         }
-        try { db.saveRound({ roundId, userId: u.id, game: 'Скретч-карты', bet, mult: 0, win: 0, status: 'settled' }); } catch (_) {}
       }
 
       let insuredReturn = 0;
@@ -2508,18 +2992,38 @@ const server = http.createServer(async (req, res) => {
         // Возврат 20%, а не 35%: при winChance 0.25 и доплате +15% страховка с 35 %
         // давала игроку EV ≈ +5% за каждый билет (печатный станок). 0.20 держит EV ≈ −6.25%.
         insuredReturn = Math.floor(bet * 0.20);
-        applyBalance(u, insuredReturn, 'insurance_refund', `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, roundId);
       }
 
+      // Списание билета, выигрыш, страховка и запись журнала — одной
+      // транзакцией. Повтор с тем же requestId вернёт сохранённый результат.
+      let played;
+      try {
+        played = db.atomicScratchPlay({
+          requestId, userId: u.id, roundId, bet, cost, winTokens, winMult,
+          insuredReturn, grid, won: willWin, winSymbol: wonSymbol ? wonSymbol.id : null
+        });
+      } catch (e) {
+        console.error('[Scratch] play failed:', e.message);
+        return send(500, { error: 'Не удалось провести розыгрыш, повторите позже' });
+      }
+      if (!played.ok) return send(400, { error: played.error || 'Не удалось купить билет' });
+
+      u.tokens = Number(played.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      // Рейкбек начисляем только за реальный билет, не за повтор запроса.
+      if (!played.duplicate) {
+        u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+      }
       try { db.saveUser(u); } catch (_) {}
+      const data = played.result || {};
       return send(200, {
         ok: true,
-        grid,
-        won: willWin,
-        winSymbol: wonSymbol ? wonSymbol.id : null,
-        winMult,
-        winTokens,
-        insuredReturn,
+        duplicate: Boolean(played.duplicate),
+        grid: data.grid || grid,
+        won: Boolean(data.won),
+        winSymbol: data.winSymbol || null,
+        winMult: Number(data.winMult || 0),
+        winTokens: Number(data.winTokens || 0),
+        insuredReturn: Number(data.insuredReturn || 0),
         tokens: u.tokens
       });
     }
@@ -2527,27 +3031,71 @@ const server = http.createServer(async (req, res) => {
     /* ── Револьвер: Русская рулетка ─────────────────────────────────────────── */
     const REVOLVER_MULTS = { 1: 1.18, 2: 1.45, 3: 1.95, 4: 2.90, 5: 5.80, 6: 29.00 };
 
+    function revolverState(rev) {
+      if (!rev) return null;
+      const mult = rev.step > 0 ? (REVOLVER_MULTS[rev.step] || 1.18) : 1;
+      return {
+        roundId: rev.roundId, step: rev.step, bet: rev.bet,
+        mult, potWin: Math.floor(rev.bet * mult),
+        insurance: Boolean(rev.insurance), balance: u.tokens
+      };
+    }
+
+    if (url.pathname === '/api/revolver/state' && req.method === 'POST') {
+      const rev = activeRevolvers.get(u.id);
+      return send(200, { ok: true, active: Boolean(rev), state: revolverState(rev), balance: u.tokens });
+    }
+
     if (url.pathname === '/api/revolver/start' && req.method === 'POST') {
+      if (!checkRateLimit(`revolver:${u.id}`, 30, 60000)) return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      const clientKey = String(body.requestId || '').trim();
+      const existing = activeRevolvers.get(u.id);
+      if (existing) {
+        // Повтор того же старта после тайм-аута — отдаём тот же раунд.
+        if (clientKey && existing.startReq === clientKey) {
+          return send(200, { ok: true, duplicate: true, ...revolverState(existing) });
+        }
+        return send(409, {
+          error: 'У вас уже есть активный раунд. Завершите его или сделайте кэшаут.',
+          state: revolverState(existing)
+        });
+      }
+
       const bet = Math.max(10, Math.floor(Number(body.bet) || 20));
+      if (bet > 50000) return send(400, { error: 'Максимальная ставка — 50 000 ⬦' });
       const withInsurance = Boolean(body.insurance);
       const cost = withInsurance ? Math.floor(bet * 1.15) : bet;
       if (Math.floor(u.tokens || 0) < cost) return send(400, { error: `Недостаточно токенов (нужно ${cost} ⬦)` });
 
-      const roundId = 'REV_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
+      const roundId = 'REV_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+      // Claim до списания: два параллельных старта не создадут два раунда.
+      if (!db.claimRound({ roundId, userId: u.id, game: 'Револьвер', bet })) {
+        return send(400, { error: 'Не удалось начать раунд, попробуйте ещё раз' });
+      }
       const debit = applyBalance(u, -cost, 'revolver_start', `Револьвер · Ставка (${bet} ⬦${withInsurance ? ' + страховка 15%' : ''})`, roundId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать ставку' });
+      if (!debit.ok) {
+        db.releaseRoundClaim(roundId, u.id);
+        return send(400, { error: 'Не удалось списать ставку' });
+      }
 
       // Заряжаем револьвер: 1 случайная камора из 6 боевая
       const bullet = crypto.randomInt(1, 7);
-      activeRevolvers.set(u.id, { roundId, bet, bullet, step: 0, insurance: withInsurance, createdAt: Date.now() });
-      try { db.saveRound({ roundId, userId: u.id, game: 'Револьвер', bet, mult: 1, win: 0, status: 'active' }); } catch (_) {}
-
-      return send(200, { ok: true, roundId, step: 0, bet, balance: u.tokens });
+      const rev = {
+        roundId, bet, bullet, step: 0, insurance: withInsurance, createdAt: Date.now(),
+        startReq: clientKey || null, processed: new Map()
+      };
+      activeRevolvers.set(u.id, rev);
+      return send(200, { ok: true, ...revolverState(rev) });
     }
 
     if (url.pathname === '/api/revolver/trigger' && req.method === 'POST') {
+      if (!checkRateLimit(`revolver-act:${u.id}`, 90, 60000)) return send(429, { error: 'Слишком часто. Подождите минуту.' });
       const rev = activeRevolvers.get(u.id);
       if (!rev) return send(400, { error: 'Нет активного раунда в Револьвере' });
+      const clientKey = String(body.requestId || '').trim();
+      if (clientKey && rev.processed.has('t:' + clientKey)) {
+        return send(200, { ok: true, duplicate: true, ...rev.processed.get('t:' + clientKey) });
+      }
 
       rev.step++;
       const isFired = (rev.step === rev.bullet);
@@ -2560,28 +3108,45 @@ const server = http.createServer(async (req, res) => {
           insuredReturn = Math.floor(rev.bet * 0.35);
           applyBalance(u, insuredReturn, 'insurance_refund', `🛡️ Страховка ставки: возврат 35% (+${insuredReturn} ⬦)`, rev.roundId);
         }
-        try { db.saveRound({ roundId: rev.roundId, userId: u.id, game: 'Револьвер', bet: rev.bet, mult: 0, win: 0, status: 'settled' }); } catch (_) {}
-        return send(200, { ok: true, fired: true, step: rev.step, bullet: rev.bullet, win: 0, insuredReturn, balance: u.tokens });
+        db.settleRound({ roundId: rev.roundId, userId: u.id, game: 'Револьвер', bet: rev.bet, mult: 0, win: 0, status: 'settled' });
+        const out = { ok: true, fired: true, step: rev.step, bullet: rev.bullet, win: 0, insuredReturn, balance: u.tokens };
+        if (clientKey) rev.processed.set('t:' + clientKey, out);
+        return send(200, out);
       }
 
       // ХОЛОСТОЙ: осечка, игра продолжается
       const mult = REVOLVER_MULTS[rev.step] || 1.18;
       const potWin = Math.floor(rev.bet * mult);
-      return send(200, { ok: true, fired: false, step: rev.step, mult, potWin, balance: u.tokens });
+      const out = { ok: true, fired: false, step: rev.step, mult, potWin, balance: u.tokens };
+      if (clientKey) rev.processed.set('t:' + clientKey, out);
+      return send(200, out);
     }
 
     if (url.pathname === '/api/revolver/cashout' && req.method === 'POST') {
+      if (!checkRateLimit(`revolver-act:${u.id}`, 90, 60000)) return send(429, { error: 'Слишком часто. Подождите минуту.' });
       const rev = activeRevolvers.get(u.id);
       if (!rev) return send(400, { error: 'Нет активного раунда в Револьвере' });
       if (rev.step === 0) return send(400, { error: 'Сделайте хотя бы один спуск курка перед кэшаутом' });
+      const clientKey = String(body.requestId || '').trim();
+      if (clientKey && rev.processed.has('c:' + clientKey)) {
+        return send(200, { ok: true, duplicate: true, ...rev.processed.get('c:' + clientKey) });
+      }
 
       const mult = REVOLVER_MULTS[rev.step] || 1.18;
       const win = Math.floor(rev.bet * mult);
       activeRevolvers.delete(u.id);
 
-      applyBalance(u, win, 'revolver_cashout', `Револьвер: кэшаут ×${mult} (+${win} ⬦)`, rev.roundId);
-      try { db.saveRound({ roundId: rev.roundId, userId: u.id, game: 'Револьвер', bet: rev.bet, mult, win, status: 'settled' }); } catch (_) {}
-      return send(200, { ok: true, win, mult, balance: u.tokens });
+      const paid = applyBalance(u, win, 'revolver_cashout', `Револьвер: кэшаут ×${mult} (+${win} ⬦)`, rev.roundId);
+      if (!paid.ok) {
+        // Возвращаем состояние раунда: кэшаут не состоялся, игрок не теряет раунд.
+        rev.processed.delete('c:' + clientKey);
+        activeRevolvers.set(u.id, rev);
+        return send(500, { error: 'Не удалось начислить выигрыш, повторите кэшаут' });
+      }
+      db.settleRound({ roundId: rev.roundId, userId: u.id, game: 'Револьвер', bet: rev.bet, mult, win, status: 'settled' });
+      const out = { ok: true, win, mult, balance: u.tokens };
+      if (clientKey) rev.processed.set('c:' + clientKey, out);
+      return send(200, out);
     }
 
     /* ── Взлом Сейфа: Crack the Safe ────────────────────────────────────────── */
@@ -2596,32 +3161,41 @@ const server = http.createServer(async (req, res) => {
       if (!/^\d{4}$/.test(code)) return send(400, { error: 'Код должен состоять ровно из 4 цифр' });
 
       const cost = 25;
-      if (Math.floor(u.tokens || 0) < cost) return send(400, { error: 'Для попытки требуется 25 ⬦' });
+      // Баланс проверяется в atomicSafeGuess: повтор уже выполненной попытки
+      // возвращает кэш, даже если баланс успел измениться.
 
-      const roundId = 'SAFE_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex');
-      const debit = applyBalance(u, -cost, 'safe_guess', `Попытка взлома сейфа [${code}]`, roundId);
-      if (!debit.ok) return send(400, { error: 'Не удалось списать токены' });
+      // requestId от клиента: повтор после тайм-аута вернёт тот же результат
+      // и не спишет вторые 25 ⬦. Без него сервер генерирует свой ключ.
+      const clientKey = String(body.requestId || '').trim();
+      const requestId = /^[A-Za-z0-9_-]{8,64}$/.test(clientKey)
+        ? `SAFE_${u.id}_${clientKey}`
+        : `SAFE_${u.id}_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
 
-      const res = db.attemptSafeGuess(u.id, code);
-      if (res.won) {
-        applyBalance(u, res.winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${res.winTokens} ⬦!`, roundId);
-        try { db.saveRound({ roundId, userId: u.id, game: 'Взлом Сейфа', bet: cost, mult: res.winTokens / cost, win: res.winTokens, status: 'settled' }); } catch (_) {}
-        if (ADMIN_ID) {
-          bot.api.sendMessage(ADMIN_ID, `🔓 <b>ИГРОК ВЗЛОМАЛ СЕЙФ!</b>\nПользователь ID: ${u.id}\nКод: ${code}\nКуш: <b>${res.winTokens} ⬦</b>!`, { parse_mode: 'HTML' }).catch(() => {});
-        }
-      } else {
-        try { db.saveRound({ roundId, userId: u.id, game: 'Взлом Сейфа', bet: cost, mult: 0, win: 0, status: 'settled' }); } catch (_) {}
+      let res;
+      try {
+        res = db.atomicSafeGuess(u.id, code, cost, requestId);
+      } catch (e) {
+        console.error('[Safe] guess failed:', e.message);
+        return send(500, { error: 'Не удалось выполнить попытку, повторите позже' });
       }
+      if (!res.ok) return send(400, { error: res.error || 'Не удалось выполнить попытку' });
 
+      u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (safe):', e.message); }
+      const data = res.result || {};
+      if (!res.duplicate && data.won && ADMIN_ID) {
+        bot.api.sendMessage(ADMIN_ID, `🔓 <b>ИГРОК ВЗЛОМАЛ СЕЙФ!</b>\nПользователь ID: ${u.id}\nКод: ${code}\nКуш: <b>${data.winTokens} ⬦</b>!`, { parse_mode: 'HTML' }).catch(() => {});
+      }
       return send(200, {
         ok: true,
+        duplicate: Boolean(res.duplicate),
         code,
-        won: res.won,
-        bulls: res.bulls,
-        cows: res.cows,
-        winTokens: res.winTokens || 0,
-        jackpot: res.jackpot,
-        guessesCount: res.guessesCount,
+        won: Boolean(data.won),
+        bulls: Number(data.bulls || 0),
+        cows: Number(data.cows || 0),
+        winTokens: Number(data.winTokens || 0),
+        jackpot: Number(data.jackpot || 0),
+        guessesCount: Number(data.guessesCount || 0),
         balance: u.tokens
       });
     }

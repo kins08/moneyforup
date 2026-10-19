@@ -10,6 +10,56 @@
 - Turso имеет очередь batch-записи и pull-обработку основных таблиц.
 - Двойной claim платежа и реферальной выплаты отклоняется уникальным ключом на тестовой временной SQLite-БД.
 
+## Волна 2026-10-19/20 — Case Hub, Upgrade Arena, идемпотентность
+
+Базовая линия: `5a86c3e` (`main`), ветка `feat/case-modes-upgrade`.
+
+### Новые механики
+
+- **Case Hub**: 5 режимов (`STARTER DROP`, `CYBER RUSH`, `GOLDEN VAULT`,
+  `GLITCH MODE`, `OMEGA CORE`) в `assets/case-modes.js`; RTP 0.838–0.855.
+  Открытие: `POST /api/cases/open`, цена/дроп/шансы — серверные, запись в
+  `case_opens` и `game_rounds`, предмет — в `user_inventory`.
+- **Upgrade Arena**: `POST /api/upgrade/run` (одиночный/мульти),
+  `POST /api/upgrade/ladder/{start,step,cashout,state}` (3/5/10 шагов),
+  `POST /api/upgrade/catalog`, `POST /api/upgrade/history`.
+  Шанс: `min(cap, (1 − edge) × S / T)`; мульти: среднее шансов, без двойного
+  учёта; режимы SAFE/BALANCED/EXTREME различаются edge/потолком/cap.
+- Серия на клиенте — последовательность серверных раундов, каждый со своим
+  `requestId`; при ошибке серия останавливается и баланс сверяется.
+
+### Исправленные дефекты
+
+| # | Дефект | Как воспроизведён | Фикс |
+|---|---|---|---|
+| N1 | Старый кейс обещал «+35% к шансам» после демо-прокрута, сервер об этом не знал | `testBoosts` только в клиенте | обещание удалено, демо помечено как не влияющее на шансы |
+| N2 | Скретч: повтор/тайм-аут мог списать второй билет | два POST с одним ключом | `requestId` + `idempotent_results`, атомарная транзакция |
+| N3 | Сейф: история не показывала быков/коров, джекпот мог обнулиться до начисления | UI/порядок `attemptSafeGuess` | история с 🐂/🐄, `atomicSafeGuess` одной транзакцией |
+| N4 | Револьвер: повторный старт списывал второй раунд, состояние терялось после перезагрузки | два start подряд | 409 + `/api/revolver/state`, `requestId`-дедуп |
+| N5 | +25% к первому депозиту: проверка флага в памяти → два параллельных первых депозита могли получить бонус дважды | два claim | `db.claimFirstDepositBonus()` — условный UPDATE в БД |
+| N6 | Идемпотентность игр: проверка `getRound` → `saveRound` не атомарна | два параллельных `/api/play` с одним roundId | `db.claimRound()` (PRIMARY KEY) до списания |
+| N7 | Ошибка сохранения предмета в кейсе оставляла игрока без предмета и без токенов | сбой `addInventoryItem` | возврат средств + release claim |
+| N8 | Бесплатный кейс: два параллельных клика могли списать один `free_cases` дважды | две параллельные заявки | `db.claimFreeCase()` / `db.claim5RefCase()` — условный UPDATE |
+
+### Проверки
+
+- `node test-upgrade-math.js` — 236 проверок математики/RTP.
+- `node test-new-features-e2e.js` — 90+ проверок на живом `bot.js`.
+- `node test-frontend-smoke.js` — 35 проверок jsdom.
+- `npm test`, `npm run test:new`, `npm run test:ui`,
+  `npm run test:security`, `npm run check:frontend`,
+  `node test-new-modes.js`, `node test-rubup-mechanics.js`,
+  `node test-tz-fixes.js`, `node test-deposit-bonus.js`.
+
+### Ограничения
+
+- Сессии «Револьвера» остаются in-memory (как и раньше): после рестарта
+  сервера активный раунд теряется. Лесенка и кейсы — в SQLite/Turso.
+- Оффлайн-демо (`IS_TG=false`) использует локальный RNG; это явно демо-режим,
+  реальный баланс недоступен.
+- `ui-test.js`/`tg-test.js` по-прежнему написаны под старую вёрстку; вместо них
+  добавлен актуальный `test-frontend-smoke.js`.
+
 ## Осталось до merge
 
 - Финансовый flow `депозит -> баланс -> реферальная выплата` не объединён в одну общую БД-транзакцию; сейчас используются отдельные атомарные операции и persistent claims.

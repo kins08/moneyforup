@@ -90,10 +90,15 @@ async function startServer(opts = {}) {
 
   // ── Изолированная копия проекта ──────────────────────────────────────────
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
-  for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'turso.js']) {
+  for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'upgrade.js', 'turso.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }
+  // case-modes.js — общий UMD-каталог: bot.js require'ит его из assets/.
+  const assetsDir = path.join(tmp, 'assets');
+  fs.mkdirSync(assetsDir, { recursive: true });
+  const caseModesSrc = path.join(ROOT, 'assets', 'case-modes.js');
+  if (fs.existsSync(caseModesSrc)) fs.copyFileSync(caseModesSrc, path.join(assetsDir, 'case-modes.js'));
   const nm = path.join(ROOT, 'node_modules');
   if (fs.existsSync(nm)) {
     try {

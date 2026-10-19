@@ -113,21 +113,27 @@ async function run() {
     check(Array.isArray(scRes.body.grid) && scRes.body.grid.length === 9, 'Скретч-карты: сгенерировано 9 ячеек');
     check(typeof scRes.body.won === 'boolean', 'Скретч-карты: результат выигрыша получен');
     if (!scRes.body.won) {
-      check(scRes.body.insuredReturn === 7, 'Скретч-карты: при проигрыше страховка вернула 35% ставки (20 * 0.35 = 7 ⬦)');
+      // Актуальная модель (security changelog): возврат 20%, а не 35%.
+      check(scRes.body.insuredReturn === 4, 'Скретч-карты: при проигрыше страховка вернула 20% ставки (20 * 0.20 = 4 ⬦)');
     } else {
       check(scRes.body.winTokens > 0, 'Скретч-карты: выигрыш начислен корректно');
     }
 
     // 2. Тест Взлома Сейфа (/api/safe/status и /api/safe/guess)
     const safeStat = await request('/api/safe/status?initData=' + encodeURIComponent(uAInit));
-    check(safeStat.status === 200 && safeStat.body.jackpot >= 25000, 'Сейф: статус джекпота получен (базовый >= 25 000 ⬦)');
+    check(safeStat.status === 200 && Number.isFinite(safeStat.body.jackpot), 'Сейф: статус прогрессивного джекпота получен');
+    const jackpotBefore = Number(safeStat.body.jackpot || 0);
 
     const guessRes = await request('/api/safe/guess', {
-      body: { initData: uAInit, code: '1234' }
+      body: { initData: uAInit, code: '1234', requestId: 'test-safe-guess-0001' }
     });
     check(guessRes.status === 200 && guessRes.body.ok, 'Сейф: попытка ввода кода принята');
     check(typeof guessRes.body.bulls === 'number' && typeof guessRes.body.cows === 'number', 'Сейф: возвращены быки и коровы');
-    check(guessRes.body.jackpot >= 25015, 'Сейф: джекпот пополнен взносом за попытку (+15 ⬦)');
+    if (guessRes.body.won) {
+      check(guessRes.body.jackpot === 0, 'Сейф: джекпот обнулён после взлома');
+    } else {
+      check(guessRes.body.jackpot === jackpotBefore + 15, 'Сейф: джекпот пополнен взносом за попытку (+15 ⬦)');
+    }
 
     // 3. Тест Револьвера с 15% страховкой (/api/revolver/start, /api/revolver/trigger, /api/revolver/cashout)
     // Пользователь B

@@ -157,6 +157,90 @@ CREATE TABLE IF NOT EXISTS pvp_duels (
   settled_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_pvp_duels_status ON pvp_duels(status, created_at DESC);
+
+-- ── Новые режимы кейсов (Case Hub) ──────────────────────────────────────
+-- request_id — идемпотентность открытия: повторный запрос отдаёт сохранённый
+-- результат и НЕ списывает цену кейса второй раз.
+CREATE TABLE IF NOT EXISTS case_opens (
+  request_id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  mode_id TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  item_code TEXT,
+  item_name TEXT,
+  item_icon TEXT,
+  item_price INTEGER,
+  item_tier TEXT,
+  inventory_id INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_case_opens_user ON case_opens(user_id, created_at DESC);
+
+-- ── Апгрейдер: журнал одиночных/мульти-апгрейдов ─────────────────────────
+CREATE TABLE IF NOT EXISTS upgrade_runs (
+  request_id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  mode TEXT NOT NULL,
+  source_type TEXT NOT NULL,
+  source_value INTEGER NOT NULL,
+  source_item_id INTEGER,
+  targets_json TEXT NOT NULL,
+  won INTEGER NOT NULL,
+  target_code TEXT,
+  target_name TEXT,
+  target_icon TEXT,
+  target_value INTEGER,
+  target_tier TEXT,
+  chance REAL,
+  aggregate_chance REAL,
+  inventory_id INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_upgrade_runs_user ON upgrade_runs(user_id, created_at DESC);
+
+-- ── Апгрейдер: серверные сессии «Лесенки» ────────────────────────────────
+-- Состояние переживает перезапуск приложения и сервера: раунд нельзя
+-- «переиграть» после обновления страницы.
+CREATE TABLE IF NOT EXISTS upgrade_sessions (
+  id TEXT PRIMARY KEY,
+  request_id TEXT UNIQUE,
+  user_id INTEGER NOT NULL,
+  mode TEXT NOT NULL,
+  steps_total INTEGER NOT NULL,
+  step_index INTEGER NOT NULL DEFAULT 0,
+  source_value INTEGER NOT NULL,
+  current_value INTEGER NOT NULL,
+  source_type TEXT NOT NULL,
+  source_item_id INTEGER,
+  status TEXT NOT NULL DEFAULT 'active',   -- active | completed | lost | cashed
+  ladder_json TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  settled_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_upgrade_sessions_user ON upgrade_sessions(user_id, status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS upgrade_actions (
+  request_id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  step_index INTEGER NOT NULL,
+  action TEXT NOT NULL,                    -- step | cashout
+  result_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_upgrade_action_step
+  ON upgrade_actions(session_id, step_index, action);
+
+-- Идемпотентные результаты быстрых игр (скретч, сейф): повтор запроса с тем
+-- же requestId возвращает уже посчитанный результат, а не списывает второй раз.
+CREATE TABLE IF NOT EXISTS idempotent_results (
+  request_id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  result_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
 `;
 
 /* Колонки, которые добавляются к уже существующим (старым) таблицам.

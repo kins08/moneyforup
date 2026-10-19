@@ -55,7 +55,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#dc2626);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#ffffff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.profileHead{display:flex;gap:13px;align-items:center}
 .pill{padding:6px 9px;border-radius:9px;background:rgba(239,68,68,.16);color:#fca5a5;font-size:11px;font-weight:700}
-.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(22,17,20,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(4,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(22,17,20,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(5,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
 .nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit;transition:all .2s}
 .nav button .ni{font-size:20px;display:block;margin-bottom:3px}
 .nav button.active{background:#352026;color:#ffffff;box-shadow:inset 0 0 12px rgba(239,68,68,.25)}
@@ -738,7 +738,123 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   background: #25334c;
 }
 
+/* ═══════════ CASE HUB (пять новых режимов) ═══════════ */
+.casehub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.casehub-card{position:relative;overflow:hidden;border-radius:20px;padding:15px;text-align:left;cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(150deg,var(--cm-panel,#181215),#100c10);border:1px solid var(--cm-border,rgba(255,255,255,.14));min-height:142px;transition:transform .18s,border-color .18s}
+.casehub-card:hover{transform:translateY(-2px);border-color:var(--cm-accent,#ef4444)}
+.casehub-card:before{content:'';position:absolute;inset:-40% -20% auto auto;width:150px;height:150px;background:radial-gradient(circle,var(--cm-glow,rgba(239,68,68,.3)),transparent 70%);pointer-events:none}
+.casehub-card .ch-icon{font-size:30px;line-height:1;margin-bottom:9px;filter:drop-shadow(0 4px 10px var(--cm-glow,rgba(239,68,68,.35)))}
+.casehub-card .ch-name{font-size:13.5px;font-weight:950;letter-spacing:.04em;color:#fff}
+.casehub-card .ch-tag{font-size:10px;color:var(--cm-accent,#ffcf6b);font-weight:800;margin-top:2px;letter-spacing:.02em}
+.casehub-card .ch-price{margin-top:9px;font-size:12px;font-weight:900;color:#fff}
+.casehub-card .ch-price small{display:block;font-size:9.5px;color:#9aa3b8;font-weight:600;margin-top:1px}
+.casehub-hero{border-radius:22px;padding:17px;border:1px solid var(--cm-border,rgba(255,255,255,.15));background:linear-gradient(145deg,var(--cm-panel,#1a1216),#0e0b10);position:relative;overflow:hidden;margin-bottom:12px}
+.casehub-hero:before{content:'';position:absolute;right:-40px;top:-50px;width:170px;height:170px;background:radial-gradient(circle,var(--cm-glow,rgba(239,68,68,.3)),transparent 70%);pointer-events:none}
+.casehub-hero .chh-top{display:flex;align-items:center;gap:10px}
+.casehub-hero .chh-icon{font-size:42px;line-height:1;filter:drop-shadow(0 8px 18px var(--cm-glow,rgba(239,68,68,.4)))}
+.casehub-hero .chh-name{font-size:20px;font-weight:950;letter-spacing:.05em}
+.casehub-hero .chh-sub{font-size:11px;color:var(--cm-accent,#ffcf6b);font-weight:800;margin-top:2px}
+.casehub-hero p{font-size:11.5px;color:#9aa3b8;line-height:1.5;margin:9px 0 0}
+.casehub-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.casehub-meta span{font-size:10px;font-weight:800;border-radius:9px;padding:5px 8px;background:rgba(255,255,255,.06);border:1px solid var(--cm-border,rgba(255,255,255,.12));color:#dbe2f0}
+.casehub-meta b{color:var(--cm-accent,#ffcf6b)}
+.casehub-roulette{position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:#0c0a0e;padding:12px 0;margin-top:11px}
+.casehub-pointer{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid var(--cm-accent,#ffcf6b);z-index:3;filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))}
+.casehub-strip{display:flex;gap:8px;will-change:transform;padding:8px 0}
+.casehub-itemcard{flex:0 0 96px;border-radius:13px;padding:9px 6px;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid var(--tier-col,#39415a);box-shadow:inset 0 -2px 0 var(--tier-col,#39415a)}
+.casehub-itemcard.win-picked{box-shadow:0 0 0 2px var(--tier-col,#fff),0 0 26px var(--tier-col,#fff)}
+.casehub-itemcard .ci-i{font-size:24px;line-height:1.1}
+.casehub-itemcard .ci-n{font-size:9.5px;font-weight:800;color:#fff;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.casehub-itemcard .ci-p{font-size:9.5px;color:var(--tier-col,#ffcf6b);font-weight:900;margin-top:2px}
+.casehub-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.casehub-list .cli{display:flex;align-items:center;gap:7px;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);min-width:0}
+.casehub-list .cli b{display:block;font-size:10.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.casehub-list .cli small{font-size:9px;color:#9aa3b8}
+.casehub-list .cli .pct{font-size:9px;color:var(--cm-accent,#ffcf6b);font-weight:800}
+.casehub-history{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.casehub-history .chr{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);font-size:11px}
+.casehub-history .chr b{color:#fff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.casehub-history .chr span{color:var(--cm-accent,#ffcf6b);font-weight:800}
+.casehub-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.casehub-actions .control{flex:1;margin:0;min-width:130px}
+.casehub-note{font-size:10.5px;color:#7f8aa3;line-height:1.45;margin-top:9px}
 
+/* ═══════════ UPGRADE ARENA ═══════════ */
+.upg-shell{padding-bottom:6px}
+.upg-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.upg-mode{flex:1;min-width:92px;border-radius:14px;padding:10px 8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#9aa3b8;cursor:pointer;font-family:inherit;text-align:center;transition:all .18s}
+.upg-mode b{display:block;font-size:12px;font-weight:950;letter-spacing:.05em;color:#fff}
+.upg-mode small{display:block;font-size:9px;margin-top:2px}
+.upg-mode.on{border-color:var(--upg-col,#ffcf6b);background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));box-shadow:0 0 0 1px var(--upg-col,#ffcf6b) inset}
+.upg-mode.on b{color:var(--upg-col,#ffcf6b)}
+.upg-panel{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(155deg,#151019,#0f0c13);padding:14px;margin-bottom:11px}
+.upg-label{font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#8d97ad;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.upg-label span{color:#ffcf6b;text-transform:none;letter-spacing:0}
+.upg-source-row{display:flex;gap:7px;margin-bottom:9px}
+.upg-source-btn{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#b9c2d6;font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
+.upg-source-btn.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
+.upg-input{width:100%;box-sizing:border-box;background:#0d0a10;border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;padding:12px;font-size:17px;font-weight:900;font-family:inherit;text-align:right}
+.upg-input:focus{outline:none;border-color:#ffcf6b}
+.upg-quick{display:flex;gap:6px;margin-top:7px}
+.upg-quick button{flex:1;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#cfd6e6;font-family:inherit;font-size:10.5px;font-weight:800;padding:8px 4px;cursor:pointer}
+.upg-quick button:hover{border-color:#ffcf6b;color:#ffcf6b}
+.upg-range{width:100%;margin-top:10px;accent-color:#ffcf6b;height:24px}
+.upg-target-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.upg-target-tools button{border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aeb8ce;font-family:inherit;font-size:10px;font-weight:700;padding:6px 8px;cursor:pointer}
+.upg-target-tools button.on{border-color:#8b92ff;color:#cfd3ff;background:rgba(139,146,255,.12)}
+.upg-target-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:300px;overflow-y:auto;padding-right:2px}
+.upg-target{position:relative;display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-width:0;font-family:inherit;text-align:left;color:#fff}
+.upg-target.on{border-color:#ffcf6b;background:rgba(255,207,107,.09)}
+.upg-target .ut-i{font-size:20px;flex-shrink:0}
+.upg-target .ut-b{min-width:0;flex:1}
+.upg-target .ut-n{font-size:10.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.upg-target .ut-v{font-size:9.5px;color:#9aa3b8;display:block;margin-top:1px}
+.upg-target .ut-p{font-size:9.5px;font-weight:900;color:#ffcf6b;display:block;margin-top:1px}
+.upg-target .ut-check{position:absolute;top:4px;right:5px;font-size:10px;color:#ffcf6b}
+.upg-target.disabled{opacity:.38;cursor:not-allowed}
+.upg-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.upg-stat{border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);padding:9px 10px}
+.upg-stat small{display:block;font-size:9px;color:#8d97ad;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.upg-stat b{display:block;font-size:15px;color:#fff;margin-top:3px;font-weight:950}
+.upg-stat b.good{color:#3ddc96}.upg-stat b.warn{color:#ffcf6b}.upg-stat b.bad{color:#ff7386}
+.upg-dist{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.upg-dist .udr{display:flex;align-items:center;gap:7px;font-size:10px}
+.upg-dist .udr span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c6cee0}
+.upg-dist .udr b{color:#fff;font-variant-numeric:tabular-nums}
+.upg-dist .udbar{height:5px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;flex:1;max-width:90px}
+.upg-dist .udbar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#ef4444)}
+.upg-run{margin-top:11px!important;background:linear-gradient(135deg,#f59e0b,#d97706)!important;color:#111!important;font-weight:950!important;font-size:15px!important}
+.upg-ladder-steps{display:flex;gap:4px;margin:9px 0;flex-wrap:wrap}
+.upg-ladder-steps .uls{flex:1;min-width:38px;border-radius:9px;padding:8px 4px;text-align:center;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03)}
+.upg-ladder-steps .uls.done{border-color:#3ddc96;background:rgba(61,220,150,.12)}
+.upg-ladder-steps .uls.now{border-color:#ffcf6b;background:rgba(255,207,107,.12);box-shadow:0 0 0 1px #ffcf6b inset}
+.upg-ladder-steps .uls small{display:block;font-size:8.5px;color:#8d97ad}
+.upg-ladder-steps .uls b{display:block;font-size:11px;color:#fff;margin-top:1px}
+.upg-ladder-actions{display:flex;gap:8px;margin-top:10px}
+.upg-ladder-actions .control{margin:0;flex:1}
+.upg-serial{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.upg-serial input{width:56px;background:#0d0a10;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff;padding:6px;text-align:center;font-family:inherit;font-size:12px}
+.upg-inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:250px;overflow-y:auto;margin-top:7px}
+.upg-inv{display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);cursor:pointer;font-family:inherit;text-align:left;color:#fff;min-width:0}
+.upg-inv.on{border-color:#f59e0b;background:rgba(245,158,11,.1)}
+.upg-inv .ui{font-size:20px}.upg-inv .ub{min-width:0;flex:1}
+.upg-inv b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upg-inv small{font-size:9px;color:#ffcf6b}
+.upg-empty{font-size:11px;color:#7f8aa3;text-align:center;padding:12px}
+.upg-history{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-height:190px;overflow-y:auto}
+.upg-history .uhr{display:flex;gap:7px;align-items:center;font-size:10.5px;padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.upg-history .uhr b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.upg-history .uhr .win{color:#3ddc96;font-weight:900}.upg-history .uhr .lose{color:#ff7386;font-weight:900}
+.upg-tabs{display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap}
+.upg-tabs button{flex:1;min-width:70px;padding:8px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#9aa3b8;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer}
+.upg-tabs button.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
+@media (max-width:390px){
+  .casehub-list{grid-template-columns:1fr}
+  .upg-target-grid{grid-template-columns:1fr}
+  .upg-inv-grid{grid-template-columns:1fr}
+  .nav button{font-size:9px;min-height:52px}
+  .nav button .ni{font-size:18px}
+}
 </style>
 </head>
 <body>
@@ -877,6 +993,15 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     </div>
   </div>
 </div>
+
+<button class="casehub-card" data-nav="casehub" style="--cm-accent:#ffcf6b;--cm-border:rgba(255,207,107,.45);--cm-glow:rgba(255,207,107,.28);width:100%;margin-bottom:12px;min-height:0;display:flex;align-items:center;gap:12px;text-align:left">
+  <div style="font-size:32px;line-height:1">📦</div>
+  <div style="flex:1;min-width:0">
+    <div class="ch-name" style="font-size:14px">НОВЫЙ РАЗДЕЛ КЕЙСОВ</div>
+    <div class="ch-tag" style="font-size:10.5px">5 режимов · от 250 до 35 000 ⬦ · STARTER DROP → OMEGA CORE</div>
+  </div>
+  <div style="font-size:18px;color:#ffcf6b">→</div>
+</button>
 
 <div class="section"><b>Игры</b><span class="muted small">14 режимов</span></div>
 <div class="cards">
@@ -1188,13 +1313,21 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div id="challengeArea"></div>
 </section>
 
+<!-- ======== CASE HUB: пять новых режимов ======== -->
+<section class="screen" id="casehub">
+<div class="gameTop"><button class="back" id="caseHubBack">‹</button><div><div class="eyebrow" style="color:#ffcf6b">ОТДЕЛЬНЫЙ РАЗДЕЛ</div><div class="gameTitle">Кейсы</div></div><span class="mode-online" data-mode-online="cases"><span class="online-dot"></span><span class="mode-online-val">онлайн</span></span></div>
+<div id="caseHubArea"></div>
+</section>
+
 <div class="nav">
 <button data-nav="profile"><span class="ni">○</span>Профиль</button>
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
+<button data-nav="casehub"><span class="ni">📦</span>Кейсы</button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 <button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
 </div>
 
+<script src="assets/case-modes.js"></script>
 <script>
 (()=>{
 const root=document.getElementById('app');
@@ -2515,11 +2648,15 @@ function screen(id){
   if(id==='challenge'){
     cleanup=gameChallenge('#challengeArea');
   }
+  if(id==='casehub'){
+    cleanup=gameCaseHub('#caseHubArea');
+  }
   if(id==='profile'&&typeof tgLoadRequisites==='function')tgLoadRequisites();
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
 const chBackBtn=q('#chBack');if(chBackBtn)chBackBtn.addEventListener('click',()=>screen('games'));
+const caseHubBackBtn=q('#caseHubBack');if(caseHubBackBtn)caseHubBackBtn.addEventListener('click',()=>screen('games'));
 qa('[data-faucet]').forEach(b=>b.addEventListener('click',()=>faucet(+b.dataset.faucet)));
 /* ---------- пополнение (профиль) ---------- */
 const SBP_DATA = {
@@ -6337,7 +6474,8 @@ function gameCases(){
   let busy = false;
   let timer = 0;
   let caseTimeouts = [];
-  const testBoosts = {};
+  // Демо-прокрут больше НЕ обещает «+35% к шансам»: сервер о таком бонусе
+  // не знал, и игрок видел выдуманное преимущество. Это честный предпросмотр.
 
   function clearCaseTimers(){
     caseTimeouts.forEach(t => clearTimeout(t));
@@ -6349,8 +6487,6 @@ function gameCases(){
 
   function render(){
     const curCase = CASES_DATA[curCaseId];
-    const isBoosted = !!testBoosts[curCaseId];
-
     a.innerHTML = `
       ${!S.freeCase5RefClaimed ? `
         <div class="ref5-case-banner" id="ref5CaseBanner" style="background:linear-gradient(135deg,rgba(255,207,107,.15),rgba(245,158,11,.08));border:1px solid rgba(255,207,107,.4);border-radius:14px;padding:12px;margin-bottom:12px">
@@ -6396,7 +6532,7 @@ function gameCases(){
       <b style="font-size:18px;color:#fff">${curCase.name}</b>
       <div class="muted small" style="margin-top:2px">${curCase.desc}</div>
       <div class="small" style="margin-top:4px;color:#ffcf6b">Стоимость открытия: <b>${fmt(curCase.cost)} ⬦</b></div>
-      ${isBoosted ? '<div style="margin-top:6px"><span class="case-boost-badge">🔥 ШАНСЫ РАЗОГНАНЫ: +35% К УДАЧЕ НА СЛЕДУЮЩИЙ КЕЙС!</span></div>' : ''}
+
     </div>
 
     <div class="case-roulette" id="caseRoulette">
@@ -6418,9 +6554,9 @@ function gameCases(){
         <button class="control" id="caseOpenFree" style="margin:0;width:100%;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;font-weight:900;border:none;font-size:14px;padding:12px;box-shadow:0 4px 16px rgba(255,207,107,.35)" ${busy?'disabled':''}>🎁 ОТКРЫТЬ БЕСПЛАТНЫЙ КЕЙС (${S.freeCases} шт.)</button>
       ` : ''}
       <button class="control" id="caseOpen" style="margin:0;flex:2">${busy?'КРУТИТСЯ…':'ОТКРЫТЬ КЕЙС · '+fmt(curCase.cost)+' ⬦'}</button>
-      <button class="control ghost" id="caseTestSpin" style="margin:0;flex:1;min-width:135px;background:rgba(255,207,107,.12);border-color:#ffcf6b;color:#ffcf6b;font-weight:700" ${busy?'disabled':''}>${isBoosted ? '⚡ ПРОГРЕТ (+35%)' : '🧪 ТЕСТ-ПРОКРУТ'}</button>
+      <button class="control ghost" id="caseTestSpin" style="margin:0;flex:1;min-width:135px;background:rgba(255,207,107,.12);border-color:#ffcf6b;color:#ffcf6b;font-weight:700" ${busy?'disabled':''}>🧪 ДЕМО-ПРОКРУТ</button>
     </div>
-    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС» или запустите бесплатный «ТЕСТ-ПРОКРУТ» для разгона шансов.</div>
+    <div class="result" id="caseRes">Нажмите «ОТКРЫТЬ КЕЙС». Демо-прокрут показывает анимацию и НЕ влияет на реальные шансы.</div>
 
     <div style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -6502,7 +6638,7 @@ function gameCases(){
         const targetX = Math.round(cardLeft + (cardW / 2) - (rW / 2));
 
         res.className = 'result';
-        res.textContent = '🧪 Идёт калибровочный тест-прокрут… Прогрев шансов кейса…';
+        res.textContent = '🧪 Демо-прокрут: реальная ставка не списывается, шансы не меняются…';
 
         void strip.offsetWidth;
 
@@ -6522,7 +6658,7 @@ function gameCases(){
         timer = setTimeout(() => {
           clearCaseTimers();
           busy = false;
-          testBoosts[curCaseId] = true;
+
 
           const targetCard = strip.children[testTargetIdx];
           if(targetCard) targetCard.classList.add('win-picked');
@@ -6531,13 +6667,13 @@ function gameCases(){
           res.className = 'result good';
           res.innerHTML = `
           <div style="text-align:center">
-            🧪 <b>Тест-прокрут завершён!</b> Демо-дроп: <b style="color:${TIER_COLS[testItem.tier]}">${testItem.name} (${fmt(testItem.price)} ⬦)</b>.<br>
-            <span style="color:#ffcf6b;font-weight:700">🔥 Алгоритм прогрет! Шанс топового дропа для «${curCase.name}» увеличен на +35% на следующий раунд!</span>
+            🧪 <b>Демо-прокрут завершён!</b> Пример дропа: <b style="color:${TIER_COLS[testItem.tier]}">${testItem.name} (${fmt(testItem.price)} ⬦)</b>.<br>
+            <span style="color:#9aa3b8;font-weight:600">Это только анимация: баланс не менялся, реальные шансы кейса не изменены.</span>
           </div>`;
 
           if(openBtn){ openBtn.disabled = false; openBtn.textContent = 'ОТКРЫТЬ КЕЙС · ' + fmt(curCase.cost) + ' ⬦'; }
           testSpinBtn.disabled = false;
-          testSpinBtn.textContent = '⚡ ПРОГРЕТ (+35%)';
+          testSpinBtn.textContent = '🧪 ДЕМО-ПРОКРУТ';
           render();
         }, 4000);
       });
@@ -6553,8 +6689,6 @@ function gameCases(){
           return;
         }
 
-        const wasBoosted = !!testBoosts[curCaseId];
-        testBoosts[curCaseId] = false;
         const __rnd = place(curCase.cost, 'Кейс: ' + curCase.name);
         busy = true;
         clearCaseTimers();
@@ -6671,7 +6805,7 @@ function gameCases(){
             <div style="font-size:44px;margin-bottom:6px">${winItem.icon}</div>
             <b style="font-size:16.5px;color:#fff">${winItem.name}</b>
             <div style="margin:4px 0;font-size:14px;color:${TIER_COLS[winItem.tier]}"><b>${fmt(winItem.price)} ⬦</b> · <span class="badge" style="background:${TIER_COLS[winItem.tier]};color:#000;padding:2px 6px;border-radius:6px;font-size:9.5px">${TIER_NAMES[winItem.tier]}</span></div>
-            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Ценность <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`} ${wasBoosted ? '· <span style="color:#ffcf6b;font-weight:600">⚡ (прогрев учтён)</span>' : ''}</div>
+            <div class="muted small">${isProfit ? `🎉 <b>ОКУП!</b> Ценность <b>+${diff} ⬦</b> (≈ ${fmtRub(diff)})` : `Дроп: ${winItem.name} (${fmt(winItem.price)} ⬦)`}</div>
             <div class="small" style="margin-top:6px;color:#3ddc96">✓ Предмет добавлен в инвентарь профиля!</div>
             <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
               <button class="control" id="btnCaseUpgrade" style="flex:1;min-width:140px;margin:0;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:12.5px;padding:10px 12px;box-shadow:0 4px 14px rgba(245,158,11,.4)">⚡ В АПГРЕЙДЕР</button>
@@ -6888,8 +7022,17 @@ function gameCases(){
   };
 }
 
-/* «Апгрейд» (Upgrade) выпавшего предмета */
+/* «Апгрейд» (Upgrade) выпавшего предмета.
+   Раньше здесь жил отдельный клиентский раунд с Math.random и локальным
+   начислением — он не был связан с сервером. Теперь кнопка открывает
+   серверную Upgrade Arena и preselected предмет. */
 function openUpgradeModal(dropItem){
+  play('upgrader');
+  if(typeof window.__upgraderSelectItem==='function') window.__upgraderSelectItem(dropItem);
+}
+
+/* Историческая реализация модалки; не вызывается из UI. */
+function openUpgradeModalLegacy(dropItem){
   const existing = q('.upgrade-modal');
   if(existing) existing.remove();
 
@@ -8021,7 +8164,10 @@ window.__upgraderSelectItem = function(item, targetMult){
   selectedUpgraderMult = targetMult ? Number(targetMult) : 100;
 };
 
-function gameUpgrader(){
+/* Старая версия оставлена как исторический фолбэк и не подключена к роутингу.
+   Активная реализация — gameUpgradeArena() ниже: она работает с серверными
+   целями, режимами риска, мульти-апгрейдом, лесенкой и серией. */
+function gameUpgraderLegacy(){
   const a = q('#gameArea');
   if(!a) return ()=>{};
 
@@ -8802,16 +8948,27 @@ function gameScratch(){
       btn.textContent = 'Покупка билета...';
     }
 
+    const requestId = 'sc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     let r = null;
+    async function buyOnce(){
+      const res = await fetch(API_BASE + '/api/scratch/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance, requestId })
+      });
+      return res.json();
+    }
     try {
       if(IS_TG && API_BASE){
-        r = await fetch(API_BASE + '/api/scratch/play', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
-        }).then(x => x.json()).catch(() => null);
+        r = await buyOnce();
       }
-    } catch(_) {}
+    } catch(_) { r = null; }
+
+    // Повтор с ТЕМ ЖЕ requestId: сервер вернёт уже посчитанный результат,
+    // а не спишет второй билет. Это и есть обработка «ответ потерялся».
+    if((!r || !r.ok) && IS_TG && API_BASE){
+      try { await sleep(500); r = await buyOnce(); } catch(_) { r = null; }
+    }
 
     // Фолбэк для оффлайн/демо
     if(!r || !r.ok){
@@ -8844,12 +9001,23 @@ function gameScratch(){
         }
       } else {
         isPlaying = false;
-        // Возврат токенов при сбое запроса
-        setTokens(S.balance + totalCost);
-        showAppNotification(r && r.error ? r.error : 'Не удалось купить билет');
+        // Не «возвращаем» токены локально: операция могла успеть пройти на
+        // сервере. Спрашиваем серверный баланс — он единственный источник истины.
+        try { await tgLoadBalance(); } catch(_) {}
+        showAppNotification((r && r.error) ? r.error : 'Ответ сервера не получен. Баланс синхронизирован — проверьте историю.');
+        scratchGrid = null; pendingResult = null; isCardFinished = false;
         render();
         return;
       }
+    }
+
+    // Защита от частичного/некорректного ответа: не рисуем «пустую» карту
+    if(!Array.isArray(r.grid) || r.grid.length !== 9){
+      isPlaying = false;
+      try { await tgLoadBalance(); } catch(_) {}
+      showAppNotification('Некорректный ответ сервера. Баланс синхронизирован.');
+      render();
+      return;
     }
 
     isPlaying = false;
@@ -9139,13 +9307,14 @@ function gameRevolver(){
       btn.textContent = 'Зарядка барабана...';
     }
 
+    const requestId = 'rs' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     let r = null;
     try {
       if(IS_TG && API_BASE){
         r = await fetch(API_BASE + '/api/revolver/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance })
+          body: JSON.stringify({ initData: tgInitData(), bet: curBet, insurance, requestId })
         }).then(x => x.json()).catch(() => null);
       }
     } catch(_) {}
@@ -9157,6 +9326,20 @@ function gameRevolver(){
         save(); syncUI();
         offlineBullet = Math.floor(1 + Math.random() * 6);
         r = { ok: true, step: 0, bet: curBet, balance: S.balance };
+      } else if(r && r.state){
+        // Сервер уже держит активный раунд (например, ответ на старт потерялся).
+        // Не списываем второй раз — продолжаем существующий.
+        isSpinning = false;
+        inRound = true;
+        step = Number(r.state.step) || 0;
+        curMult = Number(r.state.mult) || 1;
+        potWin = Number(r.state.potWin) || curBet;
+        curBet = Number(r.state.bet) || curBet;
+        insurance = Boolean(r.state.insurance);
+        if(r.state.balance != null) setTokens(r.state.balance);
+        showAppNotification('Активный раунд восстановлен — продолжайте.');
+        render();
+        return;
       } else {
         isSpinning = false;
         showAppNotification(r && r.error ? r.error : 'Не удалось начать раунд');
@@ -9176,6 +9359,32 @@ function gameRevolver(){
     render();
   }
 
+  async function syncServerState(){
+    if(!(IS_TG && API_BASE)) return false;
+    try{
+      const d = await fetch(API_BASE + '/api/revolver/state', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tgInitData() })
+      }).then(x => x.json()).catch(() => null);
+      if(!d || !d.ok) return false;
+      if(d.balance != null) setTokens(d.balance);
+      if(!d.active){
+        if(inRound){ inRound = false; roundOutcome = null; render(); }
+        return true;
+      }
+      const st = d.state || {};
+      inRound = true;
+      step = Number(st.step) || 0;
+      curBet = Number(st.bet) || curBet;
+      curMult = Number(st.mult) || 1;
+      potWin = Number(st.potWin) || curBet;
+      insurance = Boolean(st.insurance);
+      if(d.balance != null) setTokens(d.balance);
+      render();
+      return true;
+    }catch(_){ return false; }
+  }
+
   async function pullTrigger(){
     if(!inRound || isSpinning) return;
     isSpinning = true;
@@ -9186,13 +9395,14 @@ function gameRevolver(){
     if(drum) drum.style.transform = `rotate(${currentRotation}deg)`;
     tgHaptic('light');
 
+    const requestId = 'rt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     let r = null;
     try {
       if(IS_TG && API_BASE){
         r = await fetch(API_BASE + '/api/revolver/trigger', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tgInitData() })
+          body: JSON.stringify({ initData: tgInitData(), requestId })
         }).then(x => x.json()).catch(() => null);
       }
     } catch(_) {}
@@ -9217,7 +9427,10 @@ function gameRevolver(){
         }
       } else {
         isSpinning = false;
-        showAppNotification(r && r.error ? r.error : 'Ошибка выстрела');
+        // Ответ мог потеряться: сверяем состояние раунда с сервером,
+        // чтобы не выстрелить второй раз тем же кликом.
+        await syncServerState();
+        showAppNotification(r && r.error ? r.error : 'Ответ не получен — состояние раунда синхронизировано');
         render();
         return;
       }
@@ -9253,13 +9466,14 @@ function gameRevolver(){
 
   async function doCashout(){
     if(!inRound || isSpinning || step === 0) return;
+    const requestId = 'rc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     let r = null;
     try {
       if(IS_TG && API_BASE){
         r = await fetch(API_BASE + '/api/revolver/cashout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tgInitData() })
+          body: JSON.stringify({ initData: tgInitData(), requestId })
         }).then(x => x.json()).catch(() => null);
       }
     } catch(_) {}
@@ -9271,7 +9485,9 @@ function gameRevolver(){
         save(); syncUI();
         r = { ok: true, win: potWin, mult: curMult, balance: S.balance };
       } else {
-        showAppNotification(r && r.error ? r.error : 'Ошибка выхода');
+        await syncServerState();
+        showAppNotification(r && r.error ? r.error : 'Ответ не получен — состояние раунда синхронизировано');
+        render();
         return;
       }
     }
@@ -9288,6 +9504,9 @@ function gameRevolver(){
   }
 
   render();
+  // Если приложение закрыли/обновили посреди раунда — сервер знает шаг,
+  // и мы восстанавливаем его, а не начинаем новый со вторым списанием.
+  syncServerState();
   return () => {};
 }
 
@@ -9311,7 +9530,10 @@ function gameSafe(){
         if(r && r.ok){
           jackpot = r.jackpot;
           guessesCount = r.guessesCount;
-          attempts = (r.recentAttempts || []).map(att => ({ code: att.code, won: att.won || (att.bulls === 4) }));
+          attempts = (r.recentAttempts || []).map(att => ({
+            code: att.code, won: att.won || (att.bulls === 4),
+            bulls: Number(att.bulls || 0), cows: Number(att.cows || 0)
+          }));
           if(r.balance != null) setTokens(r.balance);
           render();
         }
@@ -9367,8 +9589,9 @@ function gameSafe(){
               ${attempts.map(att => `
                 <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px;border:1px solid ${att.won?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.04)'}">
                   <b style="font-family:monospace;letter-spacing:.15em;font-size:14px;color:#fff">${att.code}</b>
-                  <div>
-                    ${att.won ? '<span style="color:#10b981;font-weight:800">🔓 ВЗЛОМАН</span>' : '<span style="color:#ef4444;font-weight:700">❌ Неверный код</span>'}
+                  <div style="display:flex;align-items:center;gap:8px">
+                    ${att.won ? '<span style="color:#10b981;font-weight:800">🔓 ВЗЛОМАН</span>' : '<span style="color:#ef4444;font-weight:700">❌ Неверный</span>'}
+                    ${att.won ? '' : `<span style="font-size:10.5px;color:#94a3b8">🐂 ${att.bulls||0} · 🐄 ${att.cows||0}</span>`}
                   </div>
                 </div>
               `).join('')}
@@ -9418,13 +9641,14 @@ function gameSafe(){
       btn.textContent = 'Подбор кода...';
     }
 
+    const requestId = 'sf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     let r = null;
     try {
       if(IS_TG && API_BASE){
         r = await fetch(API_BASE + '/api/safe/guess', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tgInitData(), code: guessCode })
+          body: JSON.stringify({ initData: tgInitData(), code: guessCode, requestId })
         }).then(x => x.json()).catch(() => null);
       }
     } catch(_) {}
@@ -9449,10 +9673,20 @@ function gameSafe(){
           jackpot = 25000;
           offlineCode = String(Math.floor(1000 + Math.random()*9000));
         }
-        r = { ok: true, code: guessCode, won, winTokens, jackpot, guessesCount, balance: S.balance };
+        const cowsOffline = (() => {
+          let c = 0;
+          const used = [false,false,false,false];
+          for(let i=0;i<4;i++){
+            if(guessCode[i]===offlineCode[i]){ used[i]=true; continue; }
+            for(let j=0;j<4;j++){ if(!used[j] && guessCode[i]===offlineCode[j]){ used[j]=true; c++; break; } }
+          }
+          return c;
+        })();
+        r = { ok: true, code: guessCode, won, bulls: b, cows: cowsOffline, winTokens, jackpot, guessesCount, balance: S.balance };
       } else {
         isGuessing = false;
-        showAppNotification(r && r.error ? r.error : 'Ошибка отправки кода');
+        showAppNotification(r && r.error ? r.error : 'Ответ не получен — проверяем историю попыток');
+        await loadStatus();
         render();
         return;
       }
@@ -9463,8 +9697,8 @@ function gameSafe(){
     jackpot = r.jackpot;
     guessesCount = r.guessesCount;
 
-    // Добавляем попытку в начало списка (без подсказок цифр)
-    attempts.unshift({ code: guessCode, won: r.won });
+    // Каждая попытка показывает свой результат: быки/коровы и статус.
+    attempts.unshift({ code: guessCode, won: r.won, bulls: Number(r.bulls||0), cows: Number(r.cows||0) });
     if(attempts.length > 8) attempts.pop();
 
     enteredCode = '';
@@ -9491,6 +9725,973 @@ function gameSafe(){
   loadStatus();
   return () => {};
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CASE HUB — пять новых режимов кейсов.
+   Источник цен/состава — assets/case-modes.js (тот же файл, что require'ит
+   сервер) и /api/cases/catalog. Клиент не назначает цену и не решает дроп.
+   ══════════════════════════════════════════════════════════════════════════ */
+function gameCaseHub(sel){
+  const a = q(sel || '#caseHubArea');
+  if(!a) return ()=>{};
+  const UMD = window.MONEYFORUP_CASE_MODES;
+  const LOCAL = (UMD && UMD.MODES) ? UMD.MODES : {};
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const r2 = n => Math.round(n*10000)/100;
+
+  function normalizeLocal(modes){
+    return Object.values(modes).map(m => {
+      const totalW = m.items.reduce((s,i)=>s+i.w,0) || 1;
+      const ev = m.items.reduce((s,i)=>s + i.price*(i.w/totalW),0);
+      return Object.assign({}, m, {
+        rtp: ev/m.price,
+        items: m.items.map((it,i)=>Object.assign({}, it, {
+          code: it.code || (m.id+'#'+i),
+          chance: (it.w/totalW)*100
+        }))
+      });
+    });
+  }
+
+  let catalog = normalizeLocal(LOCAL);
+  let currentId = catalog[0] ? catalog[0].id : 'starter_drop';
+  let history = [];
+  let busy = false, dead = false, timer = 0;
+  let timeouts = [];
+  let statusText = '';
+  let lastDrop = null;
+  let catalogError = '';
+
+  function clearTimers(){
+    timeouts.forEach(t=>clearTimeout(t));
+    timeouts = [];
+    if(timer){ clearTimeout(timer); timer = 0; }
+  }
+  function current(){ return catalog.find(x=>x.id===currentId) || catalog[0] || null; }
+  function themeVars(m){
+    const th = (m && m.theme) || {};
+    return `--cm-accent:${th.accent||'#ffcf6b'};--cm-accent2:${th.accent2||'#ef4444'};--cm-panel:${th.panel||'#181215'};--cm-border:${th.border||'rgba(255,255,255,.14)'};--cm-glow:${th.glow||'rgba(255,207,107,.25)'}`;
+  }
+  function itemCard(it){
+    const col = (typeof TIER_COLS!=='undefined' && TIER_COLS[it.tier]) || '#8f97ff';
+    return `<div class="casehub-itemcard" style="--tier-col:${col}">
+      <div class="ci-i">${it.icon||'📦'}</div>
+      <div class="ci-n">${esc(it.name)}</div>
+      <div class="ci-p">${fmt(it.price)} ⬦</div>
+    </div>`;
+  }
+
+  function render(){
+    if(dead) return;
+    const m = current();
+    if(!m){
+      a.innerHTML = '<div class="result">Каталог кейсов не загрузился. Обновите приложение.</div>';
+      return;
+    }
+    const hist = history.slice(0,10);
+    a.innerHTML = `
+    <div class="casehub-grid">
+      ${catalog.map(c=>`
+        <button class="casehub-card" data-chm="${esc(c.id)}" style="${themeVars(c)}">
+          <div class="ch-icon">${c.icon||'📦'}</div>
+          <div class="ch-name">${esc(c.name)}</div>
+          <div class="ch-tag">${esc(c.tagline||'')}</div>
+          <div class="ch-price">${fmt(c.price)} ⬦<small>${Math.round((c.rtp||0)*1000)/10}% RTP · ${c.items.length} предметов</small></div>
+        </button>`).join('')}
+    </div>
+    ${catalogError?`<div class="result bad" style="margin-top:10px">${esc(catalogError)}</div>`:''}
+    <div class="casehub-hero" style="${themeVars(m)}">
+      <div class="chh-top">
+        <div class="chh-icon">${m.icon||'📦'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="chh-name">${esc(m.name)}</div>
+          <div class="chh-sub">${esc(m.tagline||'')}</div>
+        </div>
+      </div>
+      <p>${esc(m.desc||'')}</p>
+      <div class="casehub-meta">
+        <span>Цена: <b>${fmt(m.price)} ⬦</b></span>
+        <span>Диапазон: <b>${fmt(m.priceMin||m.price)}–${fmt(m.priceMax||m.price)} ⬦</b></span>
+        <span>RTP: <b>${Math.round((m.rtp||0)*1000)/10}%</b></span>
+        <span>Предметов: <b>${m.items.length}</b></span>
+      </div>
+      <div class="casehub-roulette">
+        <div class="casehub-pointer"></div>
+        <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
+      </div>
+      <div class="casehub-actions">
+        <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
+        <button class="control ghost" id="chRepeat" ${busy?'disabled':''}>↻ ПОВТОРИТЬ</button>
+      </div>
+      <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его. Все предметы — виртуальные токены внутри платформы.'}</div>
+      ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ⬦</span></div>`:''}
+    </div>
+    <div class="section"><b>Содержимое «${esc(m.name)}»</b><span class="muted small">${m.items.length} предметов</span></div>
+    <div class="casehub-list">
+      ${m.items.map(it=>`
+        <div class="cli">
+          <div style="font-size:19px">${it.icon||'📦'}</div>
+          <div style="min-width:0;flex:1">
+            <b>${esc(it.name)}</b>
+            <small>${fmt(it.price)} ⬦ · ${esc(it.tier||'')}</small>
+          </div>
+          <div class="pct">${r2(it.chance||0)}%</div>
+        </div>`).join('')}
+    </div>
+    <div class="section"><b>История открытий</b><span class="muted small">${hist.length?hist.length+' последних':'пока пусто'}</span></div>
+    <div class="casehub-history">
+      ${hist.length ? hist.map(h=>`
+        <div class="chr">
+          <span style="font-size:16px">${h.item&&h.item.icon?h.item.icon:'📦'}</span>
+          <b>${esc(h.item?h.item.name:(h.name||'Предмет'))}</b>
+          <span>${fmt((h.item&&h.item.price)||h.price||0)} ⬦</span>
+        </div>`).join('') : '<div class="result">История появится после первого открытия.</div>'}
+    </div>
+    <div class="casehub-note">Все цены и предметы — виртуальные токены MoneyForUp. Это не деньги и не вывод средств. Шансы зафиксированы в конфигурации режима и проверяются на сервере.</div>`;
+
+    a.querySelectorAll('[data-chm]').forEach(b=>{
+      b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; render(); };
+    });
+    const openBtn=q('#chOpen',a), repeatBtn=q('#chRepeat',a);
+    if(openBtn) openBtn.onclick=()=>openCase();
+    if(repeatBtn) repeatBtn.onclick=()=>openCase();
+  }
+
+  function setStatus(text, cls){
+    statusText=text;
+    const el=q('#chRes',a);
+    if(el){ el.className='result'+(cls?' '+cls:''); el.innerHTML=text; }
+  }
+
+  function localRoll(m){
+    const total=m.items.reduce((s,i)=>s+(i.w||1),0);
+    let r=Math.random()*total, cum=0;
+    for(const it of m.items){ cum+=(it.w||1); if(r<=cum) return it; }
+    return m.items[m.items.length-1];
+  }
+
+  async function openCase(){
+    if(busy) return;
+    const m=current();
+    if(!m) return;
+    if((S.balance||0) < m.price){
+      setStatus('Недостаточно токенов — пополните баланс.', 'bad');
+      tgHaptic('error');
+      return;
+    }
+    busy=true; clearTimers(); render();
+    setStatus('Открываем кейс…', '');
+    const clientKey='ch'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+    let res=null, err=null;
+    if(IS_TG && API_BASE){
+      try{ res=await tgCall('/api/cases/open',{ modeId:m.id, requestId:clientKey }); }
+      catch(e){ err=e; }
+      // Неизвестный исход сети: повторяем ТОТ ЖЕ requestId — сервер либо
+      // вернёт сохранённый результат, либо не спишет второй раз.
+      if(!res && err && (!err.status || err.status>=500)){
+        try{ res=await tgCall('/api/cases/open',{ modeId:m.id, requestId:clientKey }); err=null; }
+        catch(e2){ err=e2; }
+      }
+    } else {
+      const it=localRoll(m);
+      const tokens=Math.max(0,(S.balance||0)-m.price);
+      S.balance=tokens; S.tgBalance=tokens;
+      S.inventory=S.inventory||[];
+      const drop=Object.assign({},it,{id:'inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),caseName:m.name});
+      S.inventory.unshift(drop);
+      if(S.inventory.length>80) S.inventory=S.inventory.slice(0,80);
+      save(); syncUI();
+      res={ok:true,drop,tokens};
+    }
+    if(!res || !res.ok){
+      busy=false;
+      if(err){
+        setStatus('Ответ сервера не получен. Проверяем баланс — операция могла пройти.', 'bad');
+        try{ await tgLoadBalance(); }catch(_){}
+      } else {
+        setStatus((res&&res.error)||'Не удалось открыть кейс.', 'bad');
+      }
+      render();
+      return;
+    }
+    if(typeof res.tokens==='number') setTokens(res.tokens);
+    const drop=res.drop||{};
+    lastDrop=drop;
+    history.unshift({ item:drop, createdAt:Date.now() });
+    if(history.length>50) history=history.slice(0,50);
+    animate(m,drop);
+  }
+
+  function animate(m,drop){
+    const strip=q('#chStrip',a);
+    if(!strip){ busy=false; render(); return; }
+    const targetIndex=45;
+    const cards=[];
+    for(let i=0;i<62;i++){
+      if(i===targetIndex) cards.push(drop);
+      else cards.push(m.items[Math.floor(Math.random()*m.items.length)]);
+    }
+    strip.style.transition='none';
+    strip.style.transform='translateX(0px)';
+    strip.innerHTML=cards.map(itemCard).join('');
+    const targetCard=strip.children[targetIndex];
+    const cardLeft=targetCard?targetCard.offsetLeft:targetIndex*104;
+    const cardW=targetCard?(targetCard.offsetWidth||96):96;
+    const box=q('.casehub-roulette',a);
+    const boxW=box?box.clientWidth:320;
+    const targetX=Math.round(cardLeft+(cardW/2)-(boxW/2));
+    void strip.offsetWidth;
+    requestAnimationFrame(()=>{
+      if(dead) return;
+      strip.style.transition='transform 4.2s cubic-bezier(0.10,0.90,0.15,1)';
+      strip.style.transform=`translateX(-${targetX}px)`;
+    });
+    [180,380,620,900,1240,1640,2120,2680,3260,3820].forEach(t=>{
+      timeouts.push(setTimeout(()=>{ if(!dead && busy) tgHaptic('light'); },t));
+    });
+    timer=setTimeout(()=>{
+      if(dead) return;
+      clearTimers();
+      busy=false;
+      if(targetCard) targetCard.classList.add('win-picked');
+      const profit=(drop.price||0)>=m.price;
+      tgHaptic(profit?'win':'light');
+      setStatus(`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
+        <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
+        <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ⬦</span>
+        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`, profit?'good':'');
+      if(typeof loadInventory==='function') loadInventory();
+      render();
+    },4400);
+  }
+
+  async function load(){
+    if(IS_TG && API_BASE){
+      try{
+        const d=await tgCall('/api/cases/catalog',{});
+        if(d && Array.isArray(d.modes) && d.modes.length){
+          catalog=d.modes.map(m=>({...m, items:m.items.map(it=>({...it}))}));
+          history=Array.isArray(d.history)?d.history:[];
+          if(!catalog.find(x=>x.id===currentId)) currentId=catalog[0].id;
+          if(typeof d.tokens==='number') setTokens(d.tokens);
+          catalogError='';
+        }
+      }catch(e){ catalogError='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.'; }
+    }
+    render();
+  }
+
+  render();
+  load();
+  return ()=>{
+    dead=true; busy=false; clearTimers();
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPGRADE ARENA — серверный апгрейд: режимы риска, цели, мульти, лесенка,
+   серия. Клиент только показывает и отправляет ВЫБОР; шанс и исход считает
+   сервер (/api/upgrade/*), клиентские значения не влияют на баланс.
+   ══════════════════════════════════════════════════════════════════════════ */
+const UPG_FALLBACK_MODES = [
+  {id:'safe',label:'SAFE',title:'Безопасный',desc:'Низкая комиссия и недорогие цели. Меньше риск — меньше потолок.',edge:0.04,chanceCap:0.90,maxMult:3,minTargetRatio:1.05,color:'#3ddc96'},
+  {id:'balanced',label:'BALANCED',title:'Сбалансированный',desc:'Средняя комиссия, цели до ×12. Базовый режим платформы.',edge:0.06,chanceCap:0.75,maxMult:12,minTargetRatio:1.05,color:'#8b92ff'},
+  {id:'extreme',label:'EXTREME',title:'Экстремальный',desc:'Высокая волатильность и цели до ×100. Шанс маленький, приз большой.',edge:0.09,chanceCap:0.40,maxMult:100,minTargetRatio:1.05,color:'#ff7386'}
+];
+/* Оффлайн-демо: те же множители лесенки, что отдаёт сервер в ladderTables.
+   В онлайн-режиме используется серверная таблица, эта — только фолбэк. */
+const UPG_FALLBACK_LADDER = {
+  safe:{3:[1.6,1.45,1.3],5:[1.5,1.4,1.3,1.22,1.15],10:[1.4,1.3,1.22,1.16,1.12,1.1,1.08,1.06,1.05,1.04]},
+  balanced:{3:[2.0,1.7,1.45],5:[1.8,1.6,1.45,1.35,1.25],10:[1.6,1.5,1.4,1.35,1.3,1.25,1.2,1.18,1.15,1.12]},
+  extreme:{3:[3.0,2.6,2.2],5:[2.8,2.5,2.2,2.0,1.8],10:[2.6,2.4,2.2,2.05,1.95,1.85,1.75,1.65,1.55,1.45]}
+};
+
+function upgBuildFallbackCatalog(){
+  const tiers={cheap:[],low:[],profit:[],high:[],jackpot:[]};
+  const seen=new Set();
+  for(const c of Object.values(CASES_DATA||{})){
+    (c.items||[]).forEach((it,i)=>{
+      const code=(c.id||'case')+'#'+i;
+      if(seen.has(code)||!it||!it.price)return;
+      seen.add(code);
+      const t=(it.tier&&tiers[it.tier])?it.tier:'low';
+      tiers[t].push({code,name:it.name,icon:it.icon,value:it.price,tier:it.tier||'low',caseName:c.name});
+    });
+  }
+  for(const k of Object.keys(tiers)) tiers[k].sort((a,b)=>a.value-b.value);
+  const take=(arr,n)=>{
+    if(arr.length<=n)return arr.slice();
+    const out=[];
+    for(let i=0;i<n;i++)out.push(arr[Math.round(i*(arr.length-1)/(n-1))]);
+    return out;
+  };
+  const targets=[...take(tiers.cheap,4),...take(tiers.low,6),...take(tiers.profit,8),...take(tiers.high,5),...take(tiers.jackpot,4)]
+    .sort((a,b)=>a.value-b.value);
+  const inv=(S.inventory||[]).filter(x=>x&&x.price).map(x=>({
+    id:x.id,code:x.code||('inv#'+x.id),name:x.name,icon:x.icon||'📦',
+    price:x.price,tier:x.tier||'low',caseName:x.caseName||'Инвентарь',
+    upgrade_only:Boolean(x.upgrade_only||x.upgradeOnly)
+  }));
+  return { modes:UPG_FALLBACK_MODES, targets, maxTargets:5, limits:{minTokens:10,maxTokens:100000,maxTargets:5}, inventory:inv, history:[] };
+}
+
+function gameUpgradeArena(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sleepLocal=ms=>new Promise(r=>setTimeout(r,ms));
+  const rid=()=>{
+    try{ if(window.crypto&&typeof window.crypto.randomUUID==='function') return 'u'+window.crypto.randomUUID().replace(/-/g,''); }catch(_){}
+    return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+  };
+
+  let cat=upgBuildFallbackCatalog();
+  let modeId='balanced';
+  let tab='single';
+  let sourceType='tokens';
+  let amount=100;
+  let selectedItemId=null;
+  let selectedTargets=new Set();
+  let filterTier='all';
+  let costBand='all';
+  let sortMode='price';
+  let busy=false, dead=false, notice='', result=null;
+  let history=[];
+  let ladderSession=null, ladderPreview=null, ladderChoice=3, ladderBusy=false, ladderMsg='';
+  let serialCount=3, serialSelected=[], serialRunning=false, serialDone=0, serialLog=[];
+  let timers=[];
+
+  const mode=()=>cat.modes.find(m=>m.id===modeId)||cat.modes[1]||cat.modes[0];
+  const inv=()=>cat.inventory||[];
+  const sourceItem=()=>inv().find(x=>String(x.id)===String(selectedItemId))||null;
+  const sourceValue=()=>sourceType==='item'?(sourceItem()?Number(sourceItem().price):0):Math.floor(Number(amount)||0);
+  const maxAmount=()=>Math.max(10,Math.min(100000,Math.floor(S.balance||0)));
+  const clampAmount=v=>Math.max(10,Math.min(100000,Math.floor(Number(v)||0)));
+  function chanceFor(t){
+    const m=mode(), s=sourceValue();
+    if(!m||!t||s<=0)return 0;
+    return Math.min(Number(m.chanceCap)||0.75,(1-(Number(m.edge)||0.06))*s/Number(t.value));
+  }
+  function validTarget(t){
+    const m=mode(), s=sourceValue();
+    if(!m||s<=0)return false;
+    return t.value > s*(Number(m.minTargetRatio)||1.05) && t.value <= s*(Number(m.maxMult)||12);
+  }
+  function visibleTargets(){
+    let list=cat.targets.filter(t=>{
+      if(filterTier!=='all'&&t.tier!==filterTier)return false;
+      if(costBand==='low'&&t.value>=1000)return false;
+      if(costBand==='mid'&&(t.value<1000||t.value>=5000))return false;
+      if(costBand==='high'&&(t.value<5000||t.value>=20000))return false;
+      if(costBand==='top'&&t.value<20000)return false;
+      return true;
+    });
+    if(sortMode==='mult') list=list.slice().sort((x,y)=>chanceFor(y)-chanceFor(x));
+    else if(sortMode==='value') list=list.slice().sort((x,y)=>x.value-y.value);
+    else list=list.slice().sort((x,y)=>Math.abs(x.value-sourceValue())-Math.abs(y.value-sourceValue()));
+    return list;
+  }
+  function selectedList(){
+    return cat.targets.filter(t=>selectedTargets.has(t.code));
+  }
+  function aggregateChance(){
+    const list=selectedList();
+    if(!list.length)return 0;
+    return list.reduce((s,t)=>s+chanceFor(t),0)/list.length;
+  }
+  function setSelected(code){
+    if(tab==='single'){
+      selectedTargets.clear();
+      selectedTargets.add(code);
+    } else {
+      if(selectedTargets.has(code)) selectedTargets.delete(code);
+      else if(selectedTargets.size < (cat.maxTargets||5)) selectedTargets.add(code);
+    }
+  }
+  function clearInvalid(){
+    for(const code of [...selectedTargets]){
+      const t=cat.targets.find(x=>x.code===code);
+      if(!t||!validTarget(t)) selectedTargets.delete(code);
+    }
+  }
+
+  function markBusy(text){
+    busy=true;
+    const b=q('#upgRun',a); if(b){ b.disabled=true; b.textContent=text||'АПГРЕЙДИМ…'; }
+    const ch=q('#upgChance',a); if(ch) ch.style.animation='pulseTease .55s infinite alternate';
+  }
+
+  function setNotice(text, cls){
+    notice=text||'';
+    const el=q('#upgNotice',a);
+    if(el){ el.className='result'+(cls?' '+cls:''); el.innerHTML=text||''; }
+  }
+
+  function money(n){ return fmt(Math.max(0,Math.floor(Number(n)||0))); }
+
+  async function loadCatalog(){
+    if(IS_TG && API_BASE){
+      try{
+        const d=await tgCall('/api/upgrade/catalog',{});
+        if(d&&d.ok){
+          cat={modes:d.modes||cat.modes,targets:d.targets||cat.targets,maxTargets:d.maxTargets||5,limits:d.limits||cat.limits,ladderTables:d.ladderTables||cat.ladderTables,ladder:d.ladder||cat.ladder,inventory:d.inventory||[],history:d.history||[]};
+          history=cat.history||[];
+          if(typeof d.tokens==='number') setTokens(d.tokens);
+        }
+      }catch(e){
+        notice='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.';
+      }
+      await loadLadderState(true);
+      if(ladderSession) tab='ladder';
+      if(S.balance>=10) amount=clampAmount(Math.min(amount, Math.floor(S.balance)));
+    }
+    render();
+  }
+
+  async function loadLadderState(silent){
+    if(!(IS_TG&&API_BASE))return;
+    try{
+      const d=await tgCall('/api/upgrade/ladder/state',{});
+      if(d&&d.ok&&d.session){
+        ladderSession=d.session; ladderPreview=d.preview||null;
+        if(!silent){ tab='ladder'; render(); }
+      }
+    }catch(_){}
+  }
+
+  function targetCard(t){
+    const on=selectedTargets.has(t.code);
+    const ok=validTarget(t);
+    const ch=chanceFor(t);
+    const col=(typeof TIER_COLS!=='undefined'&&TIER_COLS[t.tier])||'#8f97ff';
+    return `<button class="upg-target ${on?'on':''} ${ok?'':'disabled'}" data-ut="${esc(t.code)}" ${(!ok||busy)?'disabled':''}>
+      <span class="ut-i">${t.icon||'📦'}</span>
+      <span class="ut-b">
+        <span class="ut-n">${esc(t.name)}</span>
+        <span class="ut-v">${fmt(t.value)} ⬦ · ${esc(t.tier||'')}</span>
+        <span class="ut-p" style="color:${col}">${ok?(Math.round(ch*10000)/100+'%'):'недоступно'}</span>
+      </span>
+      ${on?'<span class="ut-check">✓</span>':''}
+    </button>`;
+  }
+
+  function renderTargets(){
+    const list=visibleTargets();
+    const s=sourceValue();
+    return `
+    <div class="upg-panel">
+      <div class="upg-label">${tab==='multi'?'Цели мульти-апгрейда':'Целевой предмет'} <span>${selectedTargets.size}/${tab==='multi'?(cat.maxTargets||5):1}</span></div>
+      <div class="upg-target-tools">
+        ${[['all','Все'],['cheap','Cheap'],['low','Low'],['profit','Profit'],['high','High'],['jackpot','Jackpot']].map(([k,n])=>`<button data-utf="${k}" class="${filterTier===k?'on':''}">${n}</button>`).join('')}
+        <button data-utc="low" class="${costBand==='low'?'on':''}">&lt;1k</button>
+        <button data-utc="mid" class="${costBand==='mid'?'on':''}">1–5k</button>
+        <button data-utc="high" class="${costBand==='high'?'on':''}">5–20k</button>
+        <button data-utc="top" class="${costBand==='top'?'on':''}">20k+</button>
+        <button data-uts="price" class="${sortMode==='price'?'on':''}">≈ цена</button>
+        <button data-uts="mult" class="${sortMode==='mult'?'on':''}">шанс</button>
+        <button data-uts="value" class="${sortMode==='value'?'on':''}">цена ↑</button>
+      </div>
+      <div class="upg-target-grid">
+        ${list.length?list.map(targetCard).join(''):'<div class="upg-empty">Нет целей в этом фильтре</div>'}
+      </div>
+      <div class="upg-summary">
+        <div class="upg-stat"><small>Источник</small><b>${fmt(s)} ⬦</b></div>
+        <div class="upg-stat"><small>${tab==='multi'?'Средний шанс':'Шанс успеха'}</small><b id="upgChance" class="${aggregateChance()>0?'warn':''}">${(Math.round(aggregateChance()*10000)/100).toFixed(2)}%</b></div>
+        <div class="upg-stat"><small>Возможный результат</small><b id="upgPot" class="good">${selectedList().length?(tab==='multi'?'до '+fmt(Math.max(...selectedList().map(t=>t.value)))+' ⬦':fmt(selectedList()[0].value)+' ⬦'):'—'}</b></div>
+        <div class="upg-stat"><small>Потолок режима</small><b>×${mode().maxMult}</b></div>
+      </div>
+      <div class="upg-dist" id="upgDist">${selectedList().length>1?selectedList().map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/selectedList().length*10000)/100).toFixed(2)}%</b></div>`).join(''):''}</div>
+      <button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ⬦'}</button>
+      <div class="result" id="upgNotice">${notice||(selectedList().length?`Шанс рассчитан серверной формулой: (1 − edge) × источник / цель.`:'Выберите цель из списка.')}</div>
+    </div>`;
+  }
+
+  function renderSource(){
+    if(sourceType==='tokens'){
+      const mx=Math.min(100000,Math.max(10,maxAmount()));
+      const val=Math.min(amount,mx);
+      return `<div class="upg-panel">
+        <div class="upg-label">Сумма апгрейда <span>баланс: ${fmt(S.balance||0)} ⬦</span></div>
+        <input class="upg-input" id="upgAmount" type="number" min="10" max="100000" step="10" value="${val}">
+        <input class="upg-range" id="upgRange" type="range" min="10" max="${mx}" step="10" value="${val}">
+        <div class="upg-quick">
+          <button data-uq="half">½</button>
+          <button data-uq="double">×2</button>
+          <button data-uq="max">MAX</button>
+          <button data-uq="min">MIN</button>
+        </div>
+        <div class="muted small" style="margin-top:6px;font-size:10px">Лимиты: 10–100 000 ⬦. Сервер повторно проверяет сумму и баланс.</div>
+      </div>`;
+    }
+    const list=inv();
+    return `<div class="upg-panel">
+      <div class="upg-label">Предмет-источник <span>${list.length} в инвентаре</span></div>
+      <div class="upg-inv-grid">
+        ${list.length?list.map(it=>`<button class="upg-inv ${String(selectedItemId)===String(it.id)?'on':''}" data-uinv="${it.id}">
+          <span class="ui">${it.icon||'📦'}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ⬦${it.upgrade_only?' · только апгрейд':''}</small></span>
+        </button>`).join(''):'<div class="upg-empty">Инвентарь пуст — откройте кейс.</div>'}
+      </div>
+      <div class="muted small" style="margin-top:6px;font-size:10px">Предмет списывается при запуске. При успехе цель попадёт в инвентарь.</div>
+    </div>`;
+  }
+
+  function ladderTable(){
+    const fromServer=cat.ladderTables&&cat.ladderTables[modeId];
+    return (fromServer&&fromServer[ladderChoice])||(UPG_FALLBACK_LADDER[modeId]&&UPG_FALLBACK_LADDER[modeId][ladderChoice])||[];
+  }
+  function localLadderPreview(){
+    const m=mode(), s=sourceValue();
+    let v=s;
+    const mults=ladderTable();
+    return {
+      steps:ladderChoice, stepsTotal:ladderChoice, sourceValue:s,
+      stepsData:mults.map((mult,i)=>({step:i+1,mult,chance:Math.min(Number(m.chanceCap),(1-m.edge)/mult),valueAfter:(v=Math.floor(v*mult))})),
+      finalValue:v
+    };
+  }
+  function renderLadder(){
+    const m=mode();
+    const s=sourceValue();
+    const session=ladderSession;
+    const preview=ladderPreview||localLadderPreview();
+    const cur=session||null;
+    const stepsTotal=cur?cur.stepsTotal:ladderChoice;
+    const stepIndex=cur?cur.stepIndex:0;
+    const value=cur?cur.currentValue:s;
+    const nextStep=stepIndex+1;
+    const nextData=preview.stepsData&&preview.stepsData[nextStep-1];
+    const canCash=cur&&cur.status==='active'&&stepIndex>0;
+    return `<div class="upg-panel">
+      <div class="upg-label">Лесенка <span>${stepsTotal} шагов</span></div>
+      <div class="small" style="color:#9aa3b8;line-height:1.5">Каждый шаг — отдельный серверный раунд. После шага можно забрать текущую стоимость или рискнуть дальше. Прогресс хранится на сервере и переживает перезагрузку.</div>
+      <div class="upg-quick" style="margin-top:8px">
+        ${[3,5,10].map(n=>`<button data-ulsteps="${n}" class="${stepsTotal===n?'on':''}" ${cur?'disabled':''}>${n} шагов</button>`).join('')}
+      </div>
+      <div class="upg-ladder-steps">
+        ${(preview.stepsData||[]).map(x=>`<div class="uls ${x.step<=stepIndex?'done':''} ${x.step===nextStep&&cur&&cur.status==='active'?'now':''}">
+          <small>#${x.step}</small><b>×${x.mult}</b><small>${Math.round(x.chance*1000)/10}%</small>
+        </div>`).join('')}
+      </div>
+      <div class="upg-summary">
+        <div class="upg-stat"><small>Текущая стоимость</small><b class="good">${fmt(value)} ⬦</b></div>
+        <div class="upg-stat"><small>Шаг</small><b>${stepIndex} / ${stepsTotal}</b></div>
+        <div class="upg-stat"><small>Следующий множитель</small><b>${nextData?'×'+nextData.mult:'—'}</b></div>
+        <div class="upg-stat"><small>Шанс шага</small><b class="warn">${nextData?(Math.round(nextData.chance*10000)/100).toFixed(2)+'%':'—'}</b></div>
+      </div>
+      ${!cur?`
+        <button class="control upg-run" id="upgLadderStart" ${(busy||ladderBusy||s<10)?'disabled':''}>${(busy||ladderBusy)?'ЗАПУСК…':'🎲 НАЧАТЬ ЛЕСЕНКУ · '+fmt(s)+' ⬦'}</button>
+      `:cur.status==='active'?`
+        <div class="upg-ladder-actions">
+          <button class="control" id="upgLadderStep" ${(ladderBusy||busy)?'disabled':''}>${ladderBusy?'ШАГ…':'СЛЕДУЮЩИЙ ШАГ'}</button>
+          <button class="control ghost" id="upgLadderCash" ${(!canCash||ladderBusy||busy)?'disabled':''}>💰 ЗАБРАТЬ ${fmt(value)} ⬦</button>
+        </div>
+      `:`
+        <div class="result ${cur.status==='lost'?'bad':'good'}" style="margin-top:10px">
+          ${cur.status==='lost'
+            ? '❌ Лесенка оборвалась на шаге '+cur.stepIndex+'. Источник сгорел.'
+            : cur.status==='cashed'
+              ? '💰 Вы забрали '+fmt(cur.currentValue)+' ⬦ — сессия закрыта.'
+              : '✅ Лесенка пройдена: '+fmt(cur.currentValue)+' ⬦ зачислено.'}
+        </div>
+        <button class="control ghost" id="upgLadderReset" style="margin-top:8px">НОВАЯ ЛЕСЕНКА</button>
+      `}
+      <div class="result" id="upgLadderMsg">${ladderMsg||''}</div>
+    </div>`;
+  }
+
+  function renderSerial(){
+    const list=inv();
+    const nosource=sourceType==='item'&&serialSelected.filter(id=>list.some(x=>String(x.id)===String(id))).length<serialCount;
+    return `<div class="upg-panel">
+      <div class="upg-label">Серийный апгрейд <span>${serialRunning?serialDone+' / '+serialCount:'до 10 попыток'}</span></div>
+      <div class="small" style="color:#9aa3b8;line-height:1.5">Каждая попытка — отдельный серверный раунд с собственным idempotency-ключом. При сетевой ошибке серия останавливается, баланс сверяется с сервером.</div>
+      <div class="upg-serial">
+        <span class="muted small">Попыток:</span>
+        <input id="upgSerialCount" type="number" min="2" max="10" step="1" value="${serialCount}" ${serialRunning?'disabled':''}>
+        <span class="muted small">${sourceType==='item'?'Выбрано предметов: '+(serialSelected.length)+' / '+serialCount:''}</span>
+      </div>
+      ${sourceType==='item'?`
+        <div class="upg-inv-grid">
+          ${list.length?list.map(it=>`<button class="upg-inv ${serialSelected.includes(it.id)?'on':''}" data-userial="${it.id}" ${serialRunning?'disabled':''}>
+            <span class="ui">${it.icon||'📦'}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ⬦</small></span>
+          </button>`).join(''):'<div class="upg-empty">Инвентарь пуст</div>'}
+        </div>
+      `:`<div class="upg-summary"><div class="upg-stat"><small>Ставка за попытку</small><b>${fmt(sourceValue())} ⬦</b></div><div class="upg-stat"><small>Всего попыток</small><b>${serialCount}</b></div></div>`}
+      <div class="upg-serial" style="margin-top:10px">
+        <button class="control upg-run" id="upgSerialStart" style="margin:0;flex:1" ${(serialRunning||busy||!selectedList().length||(sourceType==='item'&&nosource))?'disabled':''}>${serialRunning?'СЕРИЯ ИДЁТ…':'▶ ЗАПУСТИТЬ СЕРИЮ'}</button>
+      </div>
+      <div class="upg-history">
+        ${serialLog.length?serialLog.map(l=>`<div class="uhr"><b>${esc(l.text)}</b><span class="${l.ok?'win':'lose'}">${l.ok?'OK':'—'}</span></div>`).join(''):'<div class="upg-empty">Журнал серии пуст</div>'}
+      </div>
+    </div>`;
+  }
+
+  function renderHistory(){
+    return `<div class="upg-panel">
+      <div class="upg-label">История апгрейдов <span>${history.length}</span></div>
+      <div class="upg-history">
+        ${history.length?history.map(h=>`<div class="uhr"><span>${h.won?(h.target&&h.target.icon||'🏆'):'💥'}</span><b>${esc(h.won&&h.target?h.target.name:'Источник сгорел')} · ${esc(h.mode||'')}</b><span class="${h.won?'win':'lose'}">${h.won?'+'+money(h.target&&(h.target.price!=null?h.target.price:h.target.value)):'−'+money(h.sourceValue)} ⬦</span></div>`).join(''):'<div class="upg-empty">Пока нет апгрейдов</div>'}
+      </div>
+    </div>`;
+  }
+
+  function render(){
+    if(dead)return;
+    if(sourceType==='tokens') amount=clampAmount(Math.min(amount,Math.max(10,maxAmount())));
+    const m=mode();
+    const s=sourceValue();
+    a.innerHTML = `<div class="upg-shell">
+      <div class="upg-head">
+        ${cat.modes.map(x=>`<button class="upg-mode ${x.id===modeId?'on':''}" data-umode="${esc(x.id)}" style="--upg-col:${x.color||'#ffcf6b'}">
+          <b>${esc(x.label)}</b><small>edge ${Math.round((x.edge||0)*100)}% · до ×${x.maxMult}</small>
+        </button>`).join('')}
+      </div>
+      <div class="upg-panel" style="border-color:${m.color||'#ffcf6b'}44">
+        <div class="upg-label">Режим риска <span style="color:${m.color||'#ffcf6b'}">${esc(m.title)}</span></div>
+        <div class="small" style="color:#b8c1d4;line-height:1.5">${esc(m.desc)}</div>
+        <div class="upg-summary">
+          <div class="upg-stat"><small>Комиссия (edge)</small><b>${Math.round((m.edge||0)*100)}%</b></div>
+          <div class="upg-stat"><small>Потолок цели</small><b>×${m.maxMult}</b></div>
+          <div class="upg-stat"><small>Макс. шанс</small><b>${Math.round((m.chanceCap||0)*100)}%</b></div>
+          <div class="upg-stat"><small>Мин. цель</small><b>+${Math.round(((m.minTargetRatio||1.05)-1)*100)}%</b></div>
+        </div>
+      </div>
+      <div class="upg-panel">
+        <div class="upg-label">Источник апгрейда</div>
+        <div class="upg-source-row">
+          <button class="upg-source-btn ${sourceType==='tokens'?'on':''}" data-usrc="tokens" ${busy||ladderBusy?'disabled':''}>🪙 Токены</button>
+          <button class="upg-source-btn ${sourceType==='item'?'on':''}" data-usrc="item" ${busy||ladderBusy?'disabled':''}>📦 Предмет</button>
+        </div>
+      </div>
+      ${renderSource()}
+      <div class="upg-tabs">
+        <button data-utab="single" class="${tab==='single'?'on':''}">Одиночный</button>
+        <button data-utab="multi" class="${tab==='multi'?'on':''}">Мульти</button>
+        <button data-utab="ladder" class="${tab==='ladder'?'on':''}">Лесенка</button>
+        <button data-utab="serial" class="${tab==='serial'?'on':''}">Серия</button>
+      </div>
+      ${tab==='ladder'?renderLadder():tab==='serial'?renderSerial():renderTargets()}
+      ${renderHistory()}
+      ${notice&&tab!=='ladder'&&tab!=='serial'?'':''}
+      <div class="casehub-note" style="padding:0 2px 6px">Апгрейд — виртуальная механика на токены. Все вероятности и лимиты повторно проверяются сервером; результат нельзя выбрать или ускорить из интерфейса.</div>
+    </div>`;
+    attach();
+  }
+
+  function refreshPreview(){
+    const list=selectedList();
+    const ch=q('#upgChance',a), pot=q('#upgPot',a), run=q('#upgRun',a);
+    const pct=(Math.round(aggregateChance()*10000)/100).toFixed(2)+'%';
+    if(ch) ch.textContent=pct;
+    if(pot) pot.textContent=list.length?(tab==='multi'?'до '+fmt(Math.max(...list.map(t=>t.value)))+' ⬦':fmt(list[0].value)+' ⬦'):'—';
+    if(run){ run.disabled=busy||!list.length; run.textContent=busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(sourceValue())+' ⬦'; }
+    a.querySelectorAll('[data-ut]').forEach(b=>{
+      const t=cat.targets.find(x=>x.code===b.dataset.ut);
+      if(!t)return;
+      const ok=validTarget(t), on=selectedTargets.has(t.code);
+      b.classList.toggle('on',on);
+      b.classList.toggle('disabled',!ok);
+      b.disabled=!ok||busy;
+      const p=b.querySelector('.ut-p');
+      if(p) p.textContent=ok?(Math.round(chanceFor(t)*10000)/100+'%'):'недоступно';
+    });
+    const dist=q('#upgDist',a);
+    if(dist){
+      dist.innerHTML=list.length>1
+        ? list.map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/list.length*10000)/100).toFixed(2)}%</b></div>`).join('')
+        : '';
+    }
+  }
+
+  async function callUpgrade(path, body){
+    // Один и тот же requestId при повторе: сервер либо вернёт сохранённый
+    // результат, либо не спишет деньги второй раз.
+    const payload=Object.assign({},body);
+    try{ return await tgCall(path,payload); }
+    catch(e){
+      if(!e.status||e.status>=500){ await sleepLocal(350); return await tgCall(path,payload); }
+      throw e;
+    }
+  }
+
+  async function runOnce(opts){
+    opts=opts||{};
+    const m=mode();
+    const isItem=opts.sourceType?opts.sourceType==='item':sourceType==='item';
+    const itemId=opts.itemId!=null?opts.itemId:selectedItemId;
+    const amt=opts.amount!=null?opts.amount:amount;
+    const targets=(opts.targets||[...selectedTargets]);
+    const visible=targets.map(code=>cat.targets.find(t=>t.code===code)).filter(Boolean);
+    if(!visible.length) throw new Error('Выберите цель');
+    if(!(IS_TG&&API_BASE)){
+      // Демо-режим: локальная симуляция, деньги ненастоящие.
+      const src=isItem?(inv().find(x=>String(x.id)===String(itemId))||{}).price:Math.floor(Number(amt)||0);
+      if(!src||src<10) throw new Error('Некорректная сумма');
+      if(!isItem&&(S.balance||0)<src) throw new Error('Недостаточно токенов');
+      const vals=visible.map(t=>Math.min(Number(m.chanceCap),(1-m.edge)*src/t.value));
+      const agg=vals.reduce((s,x)=>s+x,0)/vals.length;
+      const pick=visible[Math.floor(Math.random()*visible.length)];
+      const won=Math.random()<Math.min(Number(m.chanceCap),(1-m.edge)*src/pick.value);
+      if(!isItem){ S.balance-=src; }
+      else { S.inventory=(S.inventory||[]).filter(x=>String(x.id)!==String(itemId)); }
+      if(won){
+        S.inventory=S.inventory||[];
+        S.inventory.unshift({id:'inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),code:pick.code,name:pick.name,icon:pick.icon,price:pick.value,tier:pick.tier,caseName:'Апгрейд'});
+      }
+      save(); syncUI();
+      const outTarget=won?Object.assign({},pick,{price:pick.value}):null;
+      return {ok:true,won,target:outTarget,sourceValue:src,chance:Math.min(Number(m.chanceCap),(1-m.edge)*src/pick.value),aggregateChance:agg,tokens:S.balance};
+    }
+    const body={
+      mode:m.id,
+      sourceType:isItem?'item':'tokens',
+      amount:isItem?undefined:Math.floor(Number(amt)||0),
+      itemId:isItem?Number(itemId):undefined,
+      targets:visible.map(t=>t.code),
+      requestId:rid()
+    };
+    return callUpgrade('/api/upgrade/run',body);
+  }
+
+  async function runUpgrade(){
+    if(busy)return;
+    if(!selectedList().length){ setNotice('Выберите хотя бы одну цель.','bad'); return; }
+    const s=sourceValue();
+    if(s<10){ setNotice('Минимальная сумма — 10 ⬦.','bad'); return; }
+    if(sourceType==='tokens'&&s>(S.balance||0)){ setNotice('Сумма больше баланса.','bad'); return; }
+    if(sourceType==='item'&&!sourceItem()){ setNotice('Выберите предмет.','bad'); return; }
+    busy=true; result=null; markBusy('АПГРЕЙДИМ…');
+    let res=null, err=null;
+    try{ res=await runOnce(); }catch(e){ err=e; }
+    await sleepLocal(850);
+    busy=false;
+    if(!res||!res.ok){
+      setNotice((err&&err.message)||(res&&res.error)||'Не удалось выполнить апгрейд.','bad');
+      try{ await tgLoadBalance(); }catch(_){}
+      render(); return;
+    }
+    if(typeof res.tokens==='number')setTokens(res.tokens);
+    if(sourceType==='item'&&!res.duplicate){
+      cat.inventory=(cat.inventory||[]).filter(x=>String(x.id)!==String(selectedItemId));
+      selectedItemId=null;
+    }
+    result=res;
+    history.unshift({mode:mode().label,sourceValue:res.sourceValue||s,won:Boolean(res.won),target:res.target||null,chance:res.chance,createdAt:Date.now()});
+    if(history.length>30)history=history.slice(0,30);
+    if(res.won){
+      tgHaptic('win');
+      showAppNotification('🎉 Апгрейд успешен: '+((res.target&&res.target.name)||'цель')+' ('+fmt((res.target&&res.target.price)||0)+' ⬦)');
+    } else {
+      tgHaptic('lose');
+    }
+    if(typeof loadInventory==='function')loadInventory();
+    render();
+    setNotice(res.won
+      ? `🎉 <b>УСПЕХ!</b> Получено: <b>${esc((res.target&&res.target.name)||'цель')}</b> · ${fmt((res.target&&res.target.price)||0)} ⬦. Шанс был ${(Math.round((res.chance||0)*10000)/100).toFixed(2)}%.`
+      : `❌ <b>АПГРЕЙД НЕ УДАЛСЯ.</b> Источник списан. Шанс был ${(Math.round((res.chance||0)*10000)/100).toFixed(2)}%.`,
+      res.won?'good':'bad');
+  }
+
+  async function startLadder(){
+    if(ladderBusy||busy)return;
+    const s=sourceValue();
+    if(s<10){ ladderMsg='Минимальная сумма — 10 ⬦.'; render(); return; }
+    if(sourceType==='tokens'&&s>(S.balance||0)){ ladderMsg='Сумма больше баланса.'; render(); return; }
+    ladderBusy=true; ladderMsg='Запускаем лесенку…'; render();
+    try{
+      if(IS_TG&&API_BASE){
+        const res=await callUpgrade('/api/upgrade/ladder/start',{
+          mode:mode().id,steps:ladderChoice,
+          sourceType:sourceType==='item'?'item':'tokens',
+          amount:sourceType==='tokens'?s:undefined,
+          itemId:sourceType==='item'?Number(selectedItemId):undefined,
+          requestId:rid()
+        });
+        if(!res||!res.ok)throw new Error((res&&res.error)||'Ошибка старта');
+        ladderSession=res.session; ladderPreview=res.preview||null;
+        if(typeof res.tokens==='number')setTokens(res.tokens);
+        if(sourceType==='item'&&!res.duplicate){
+          cat.inventory=(cat.inventory||[]).filter(x=>String(x.id)!==String(selectedItemId));
+          selectedItemId=null;
+        }
+      } else {
+        const steps=[1.6,1.5,1.4,1.35,1.3,1.25,1.2,1.18,1.15,1.12].slice(0, ladderChoice);
+        let v=s;
+        const stepsData=steps.map((mult,i)=>({step:i+1,mult,chance:Math.min(Number(mode().chanceCap),(1-mode().edge)/mult),valueAfter:(v=Math.floor(v*mult))}));
+        if(sourceType==='tokens')S.balance-=s; else S.inventory=(S.inventory||[]).filter(x=>String(x.id)!==String(selectedItemId));
+        save();syncUI();
+        ladderSession={id:'demo_'+Date.now(),mode:mode().id,stepsTotal:ladderChoice,stepIndex:0,sourceValue:s,currentValue:s,status:'active'};
+        ladderPreview={steps:ladderChoice,stepsTotal:ladderChoice,sourceValue:s,stepsData,finalValue:v};
+      }
+      ladderMsg='Лесенка началась. Первый шаг — ваш выбор.';
+    }catch(e){ ladderMsg=(e&&e.message)||'Не удалось начать лесенку'; }
+    ladderBusy=false; render();
+  }
+
+  async function stepLadder(){
+    if(ladderBusy||busy||!ladderSession||ladderSession.status!=='active')return;
+    ladderBusy=true; ladderMsg='Выполняем шаг…'; render();
+    const expected=ladderSession.stepIndex+1;
+    try{
+      if(IS_TG&&API_BASE){
+        const res=await callUpgrade('/api/upgrade/ladder/step',{sessionId:ladderSession.id,expectedStep:expected,requestId:rid()});
+        if(!res||!res.ok)throw new Error((res&&res.error)||'Ошибка шага');
+        ladderSession=res.session; if(!ladderPreview&&res.preview)ladderPreview=res.preview;
+        if(typeof res.tokens==='number')setTokens(res.tokens);
+        const rr=res.result||{};
+        ladderMsg=rr.won?`✅ Шаг ${rr.step} пройден. Текущая стоимость: ${fmt(rr.value)} ⬦.`:`❌ Шаг ${rr.step}: лесенка оборвалась.`;
+      } else {
+        const data=(ladderPreview.stepsData||[])[expected-1];
+        const won=Math.random()<data.chance;
+        const next=won?{stepIndex:expected,currentValue:data.valueAfter,status:expected>=ladderSession.stepsTotal?'completed':'active'}:{stepIndex:expected,currentValue:0,status:'lost'};
+        ladderSession=Object.assign({},ladderSession,next);
+        if(ladderSession.status==='completed'){ S.balance+=ladderSession.currentValue; }
+        save();syncUI();
+        ladderMsg=won?`✅ Шаг ${expected} пройден. Текущая стоимость: ${fmt(ladderSession.currentValue)} ⬦.`:`❌ Шаг ${expected}: лесенка оборвалась.`;
+      }
+    }catch(e){ ladderMsg=(e&&e.message)||'Не удалось выполнить шаг'; }
+    ladderBusy=false; render();
+  }
+
+  async function cashoutLadder(){
+    if(ladderBusy||busy||!ladderSession||ladderSession.status!=='active')return;
+    ladderBusy=true; ladderMsg='Забираем выигрыш…'; render();
+    try{
+      if(IS_TG&&API_BASE){
+        const res=await callUpgrade('/api/upgrade/ladder/cashout',{sessionId:ladderSession.id,requestId:rid()});
+        if(!res||!res.ok)throw new Error((res&&res.error)||'Ошибка кэшаута');
+        ladderSession=res.session; if(typeof res.tokens==='number')setTokens(res.tokens);
+        ladderMsg=`💰 Кэшаут: +${fmt((res.result&&res.result.paid)||0)} ⬦.`;
+      } else {
+        S.balance+=ladderSession.currentValue; save();syncUI();
+        ladderMsg=`💰 Кэшаут: +${fmt(ladderSession.currentValue)} ⬦.`;
+        ladderSession=Object.assign({},ladderSession,{status:'cashed'});
+      }
+      tgHaptic('win');
+    }catch(e){ ladderMsg=(e&&e.message)||'Не удалось забрать выигрыш'; }
+    ladderBusy=false; render();
+  }
+
+  async function startSerial(){
+    if(serialRunning||busy)return;
+    if(!selectedList().length){ setNotice('Выберите цель для серии.','bad'); return; }
+    let queue=[];
+    if(sourceType==='item'){
+      const ids=serialSelected.filter(id=>inv().some(x=>String(x.id)===String(id)));
+      if(ids.length<serialCount){ setNotice('Выберите '+serialCount+' предметов для серии.','bad'); return; }
+      queue=ids.slice(0,serialCount).map(id=>({itemId:id,sourceType:'item'}));
+    } else {
+      const s=sourceValue();
+      if(s*(serialCount)> (S.balance||0)){ setNotice('Недостаточно баланса на всю серию.','bad'); return; }
+      queue=Array.from({length:serialCount},()=>({amount:s,sourceType:'tokens'}));
+    }
+    serialRunning=true; serialDone=0; serialLog=[]; render();
+    for(const qitem of queue){
+      if(dead){ serialRunning=false; return; }
+      try{
+        const res=await runOnce(Object.assign({targets:[...selectedTargets]},qitem));
+        serialDone++;
+        if(!res||!res.ok)throw new Error((res&&res.error)||'Раунд не состоялся');
+        if(typeof res.tokens==='number')setTokens(res.tokens);
+        if(qitem.sourceType==='item'){
+          cat.inventory=(cat.inventory||[]).filter(x=>String(x.id)!==String(qitem.itemId));
+          serialSelected=serialSelected.filter(id=>String(id)!==String(qitem.itemId));
+        }
+        serialLog.unshift({ok:Boolean(res.won),text:`#${serialDone}: ${res.won?('✅ '+((res.target&&res.target.name)||'успех')+' · +'+fmt((res.target&&res.target.price)||0)+' ⬦'):'💥 источник сгорел'}`});
+        history.unshift({mode:'SERIAL · '+mode().label,sourceValue:res.sourceValue||sourceValue(),won:Boolean(res.won),target:res.target||null,chance:res.chance,createdAt:Date.now()});
+      }catch(e){
+        serialLog.unshift({ok:false,text:`#${serialDone+1}: остановлено — ${(e&&e.message)||'ошибка сети'}`});
+        try{ await tgLoadBalance(); }catch(_){}
+        break;
+      }
+      render();
+    }
+    serialRunning=false;
+    if(typeof loadInventory==='function')loadInventory();
+    render();
+  }
+
+  function attach(){
+    a.querySelectorAll('[data-umode]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; modeId=b.dataset.umode; selectedTargets.clear(); clearInvalid(); ladderPreview=null; notice=''; render(); });
+    a.querySelectorAll('[data-usrc]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; sourceType=b.dataset.usrc; selectedTargets.clear(); render(); });
+    a.querySelectorAll('[data-utab]').forEach(b=>b.onclick=()=>{
+      if(busy||ladderBusy||serialRunning)return;
+      tab=b.dataset.utab;
+      if(tab==='single'&&selectedTargets.size>1){
+        const first=[...selectedTargets][0];
+        selectedTargets.clear(); selectedTargets.add(first);
+      }
+      notice='';
+      render();
+    });
+    const amountEl=q('#upgAmount',a), rangeEl=q('#upgRange',a);
+    if(amountEl){
+      amountEl.oninput=()=>{ const v=clampAmount(amountEl.value); amount=v; if(rangeEl)rangeEl.value=Math.min(v,Number(rangeEl.max)); clearInvalid(); refreshPreview(); };
+      amountEl.onblur=()=>{ amount=clampAmount(amountEl.value); clearInvalid(); render(); };
+    }
+    if(rangeEl){
+      rangeEl.oninput=()=>{ amount=clampAmount(rangeEl.value); if(amountEl)amountEl.value=amount; clearInvalid(); refreshPreview(); };
+    }
+    a.querySelectorAll('[data-uq]').forEach(b=>b.onclick=()=>{
+      const cur=Math.floor(Number(amount)||0);
+      if(b.dataset.uq==='half')amount=Math.max(10,Math.floor(cur/2));
+      else if(b.dataset.uq==='double')amount=Math.min(maxAmount(),cur*2);
+      else if(b.dataset.uq==='max')amount=maxAmount();
+      else amount=10;
+      amount=clampAmount(amount); clearInvalid(); render();
+    });
+    a.querySelectorAll('[data-uinv]').forEach(b=>b.onclick=()=>{ if(busy)return; selectedItemId=b.dataset.uinv; clearInvalid(); render(); });
+    a.querySelectorAll('[data-userial]').forEach(b=>b.onclick=()=>{
+      if(serialRunning)return;
+      const id=Number(b.dataset.userial);
+      const idx=serialSelected.findIndex(x=>String(x)===String(id));
+      if(idx>=0)serialSelected.splice(idx,1);
+      else if(serialSelected.length<serialCount)serialSelected.push(id);
+      render();
+    });
+    const sc=q('#upgSerialCount',a);
+    if(sc) sc.onchange=()=>{ serialCount=Math.max(2,Math.min(10,Math.floor(Number(sc.value)||3))); if(serialSelected.length>serialCount)serialSelected=serialSelected.slice(0,serialCount); render(); };
+    a.querySelectorAll('[data-ut]').forEach(b=>b.onclick=()=>{
+      if(busy||b.disabled)return;
+      const code=b.dataset.ut;
+      setSelected(code); refreshPreview();
+    });
+    a.querySelectorAll('[data-utf]').forEach(b=>b.onclick=()=>{ filterTier=b.dataset.utf; render(); });
+    a.querySelectorAll('[data-utc]').forEach(b=>b.onclick=()=>{ costBand=b.dataset.utc; render(); });
+    a.querySelectorAll('[data-uts]').forEach(b=>b.onclick=()=>{ sortMode=b.dataset.uts; render(); });
+    const run=q('#upgRun',a); if(run)run.onclick=runUpgrade;
+    a.querySelectorAll('[data-ulsteps]').forEach(b=>b.onclick=()=>{ if(ladderSession)return; ladderChoice=Number(b.dataset.ulsteps); ladderPreview=null; ladderMsg=''; render(); });
+    const ls=q('#upgLadderStart',a); if(ls)ls.onclick=startLadder;
+    const lstep=q('#upgLadderStep',a); if(lstep)lstep.onclick=stepLadder;
+    const lcash=q('#upgLadderCash',a); if(lcash)lcash.onclick=cashoutLadder;
+    const lreset=q('#upgLadderReset',a); if(lreset)lreset.onclick=()=>{ ladderSession=null; ladderPreview=null; ladderMsg=''; render(); };
+    const ss=q('#upgSerialStart',a); if(ss)ss.onclick=startSerial;
+  }
+
+  // Публичный мост из инвентаря/кейсов: выбрать предмет и открыть арену.
+  window.__upgraderSelectItem=function(item){
+    if(!item)return;
+    if(item.id!=null){
+      sourceType='item';
+      selectedItemId=item.id;
+      if(!cat.inventory.some(x=>String(x.id)===String(item.id))){
+        cat.inventory.unshift({id:item.id,code:item.code||('inv#'+item.id),name:item.name,icon:item.icon,price:item.price,tier:item.tier||'low',caseName:item.caseName||'Инвентарь',upgrade_only:Boolean(item.upgrade_only)});
+      }
+      tab='single';
+      render();
+    }
+  };
+
+  render();
+  loadCatalog();
+  return ()=>{
+    dead=true; busy=false; ladderBusy=false; serialRunning=false;
+    timers.forEach(t=>clearTimeout(t)); timers=[];
+  };
+}
+
+/* Совместимость со старыми вызовами: инвентарь и кейсы зовут play('upgrader'). */
+function gameUpgrader(){ return gameUpgradeArena(); }
 
 /* ---------- роутинг ---------- */
 const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
@@ -9555,6 +10756,8 @@ if(effectiveRoute === 'boost' || startParam === 'boost' || searchParams.get('boo
   const parsedAmt = +(hashParams.get('amt') || searchParams.get('amt') || 0);
   const targetAmt = parsedAmt > 0 ? parsedAmt : (bonus === '25' ? 500 : (bonus === 'goldcase' ? 300 : 150));
   applyQuickDeposit(targetAmt, bonus, 0);
+} else if(effectiveRoute==='casehub'||effectiveRoute==='cases'){
+  screen('casehub');
 } else if(BUILD[hashRoute]){
   play(hashRoute);
 } else {
