@@ -69,6 +69,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     for (const n of ['STARTER DROP', 'CYBER RUSH', 'GOLDEN VAULT', 'GLITCH MODE', 'OMEGA CORE']) {
       ok(names.includes(n), `режим ${n} отрисован`);
     }
+    eq(d.querySelectorAll('#caseHubArea .ch-online .online-dot').length, 5, 'у каждого кейса зелёный кружок слева от «онлайн»');
+    const dotStyle = w.getComputedStyle(d.querySelector('#caseHubArea .ch-online .online-dot'));
+    ok(dotStyle.borderRadius === '50%', 'кружок «онлайн» круглый');
+    ok(/rgb\(61,\s*220,\s*150\)/.test(dotStyle.backgroundColor), 'кружок «онлайн» зелёный');
 
     // Переключение режима меняет hero.
     const cards = [...d.querySelectorAll('[data-chm]')];

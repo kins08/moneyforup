@@ -236,11 +236,13 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 /* Онлайн бейдж на карточках игр */
 .game{position:relative}
 .game-online-badge{position:absolute;top:9px;right:9px;background:rgba(15,23,42,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:3px 7px;font-size:10px;font-weight:750;display:flex;align-items:center;gap:4px;color:#f1f5f9;z-index:4;box-shadow:0 3px 10px rgba(0,0,0,.5)}
-.online-dot{width:6px;height:6px;border-radius:50%;background:#3ddc96;box-shadow:0 0 8px #3ddc96;animation:onlinePulse 1.8s infinite ease-in-out}
+.online-dot{display:inline-block;flex:0 0 auto;width:8px;height:8px;min-width:8px;min-height:8px;border-radius:50%;background:#3ddc96;box-shadow:0 0 9px #3ddc96;animation:onlinePulse 1.8s infinite ease-in-out;vertical-align:middle}
 @keyframes onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.85)}}
 /* Зелёный кружок «онлайн» в шапке самого режима (не только в карточке лобби). */
 .mode-online{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(15,23,42,.88);border:1px solid rgba(61,220,150,.38);border-radius:11px;padding:4px 10px;font-size:11px;font-weight:750;color:#c7f9e4;white-space:nowrap}
-.mode-online .online-dot{width:7px;height:7px}
+.mode-online .online-dot{width:8px;height:8px}
+.ch-online{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#86efac;margin-top:7px}
+.ch-online .online-dot{width:7px;height:7px;min-width:7px;min-height:7px}
 .mode-online.off{color:#94a3b8;border-color:rgba(148,163,184,.32)}
 .mode-online.off .online-dot{background:#94a3b8;box-shadow:none;animation:none}
 
@@ -9797,6 +9799,7 @@ function gameCaseHub(sel){
           <div class="ch-name">${esc(c.name)}</div>
           <div class="ch-tag">${esc(c.tagline||'')}</div>
           <div class="ch-price">${fmt(c.price)} ⬦<small>${Math.round((c.rtp||0)*1000)/10}% RTP · ${c.items.length} предметов</small></div>
+          <div class="ch-online"><span class="online-dot"></span>онлайн</div>
         </button>`).join('')}
     </div>
     ${catalogError?`<div class="result bad" style="margin-top:10px">${esc(catalogError)}</div>`:''}
