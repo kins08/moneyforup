@@ -66,9 +66,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 20, '20 кейсов: 15 классических + 5 новых');
     ok(Boolean(d.querySelector('.casehub-hero')), 'есть экран содержимого кейса');
     ok(Boolean(d.querySelector('#chOpen')), 'есть кнопка открытия');
-    ok(Boolean(d.querySelector('.casehub-warmup')), 'есть блок тест-прокрута');
-    ok(Boolean(d.querySelector('#chWarmup')), 'есть кнопка тест-прокрута');
-    ok(/ТЕСТ-ПРОКРУТ/i.test(d.querySelector('#chWarmup').textContent), 'кнопка тест-прокрута подписана');
+    ok(Boolean(d.querySelector('.casehub-warmup')), 'есть блок демо-прокрута');
+    ok(Boolean(d.querySelector('#chWarmup')), 'есть кнопка демо-прокрута');
+    ok(/ДЕМО/i.test(d.querySelector('#chWarmup').textContent), 'кнопка демо-прокрута подписана');
+    eq(d.querySelectorAll('.casehub-list .pct').length, 0, 'шансы предметов не показываются');
     const names = [...d.querySelectorAll('#caseHubArea .casehub-card .ch-name')].map(x => x.textContent.trim());
     for (const n of ['Первый шаг', 'Флагман', 'Старт', 'Неон-рывок', 'Золотое хранилище', 'Сбой системы', 'Омега-ядро']) {
       ok(names.includes(n), `кейс «${n}» отрисован`);
@@ -107,8 +108,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(80);
     ok(d.querySelector('.chh-name').textContent.includes('Омега-ядро'), 'клик по карточке меняет детали режима');
     ok(d.querySelectorAll('.casehub-list .cli').length === 14, 'в содержимом 14 предметов');
-    const pcts = [...d.querySelectorAll('.casehub-list .pct')].map(x => parseFloat(x.textContent));
-    ok(pcts.length === 14 && pcts.every(p => p > 0 && p <= 100), 'шансы предметов в процентах 0–100, без ×100');
+    eq(d.querySelectorAll('.casehub-list .pct').length, 0, 'шансы не показываются и в новом режиме');
 
     console.log('\n1b) Рефералы внутри профиля');
     d.querySelector('.nav button[data-nav="profile"]').click();
@@ -193,7 +193,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     eq(d.querySelectorAll('[data-pdir]').length, 3, 'три направления: вверх / вниз / боковик');
     eq(d.querySelectorAll('[data-plev]').length, 2, 'два плеча: ×1 и ×2');
     eq(d.querySelectorAll('[data-pdur]').length, 3, 'три длительности: 5 / 10 / 20 с');
-    ok(/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'дисклеймер на экране');
+    ok(!/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'на экране нет учебного дисклеймера');
+    ok(Boolean(d.querySelector('#gameArea .mfu-chart')), 'на экране Pulse есть свечной график');
+    ok(d.querySelectorAll('#gameArea .mfu-chart rect[rx="0.6"]').length > 20, 'график Pulse состоит из свечей');
     ok(d.querySelector('[data-plev="2"]') && d.querySelector('[data-plev="2"]').textContent.includes('без боковика'), 'на плече ×2 написано, что боковика нет');
     // На плече ×2 боковик недоступен.
     d.querySelector('[data-plev="2"]').click();
@@ -209,7 +211,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(300);
     ok(/TREND HUNTER/.test(d.querySelector('#gameArea').textContent), 'экран Trend Hunter открыт');
     eq(d.querySelectorAll('[data-tlev]').length, 3, 'три уровня сложности');
-    ok(/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'дисклеймер Trend на экране');
+    ok(!/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'на экране Trend нет учебного дисклеймера');
+    ok(Boolean(d.querySelector('#gameArea .mfu-chart')), 'на экране Trend есть свечной график');
+    ok(d.querySelectorAll('#gameArea .mfu-chart rect[rx="0.6"]').length > 20, 'график Trend состоит из свечей');
     ok(d.querySelectorAll('[data-tans]').length === 0, 'до старта кнопок ответа нет (ответ не виден заранее)');
 
     console.log('\n4d) Прогресс в профиле');

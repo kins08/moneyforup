@@ -30,8 +30,7 @@ const PULSE = {
   maxBet: 5000,
   // Порог «боковика»: |move| < 1/3 даёт RANGE. При равномерном move на [-1, 1]
   // три исхода получают равные вероятности 1/3 (проверено test-pulse.js).
-  rangeThreshold: 1 / 3,
-  disclaimer: 'Учебная симуляция. Не прогнозирует реальный рынок. Игра на виртуальные токены.'
+  rangeThreshold: 1 / 3
 };
 
 const OUTCOMES = ['up', 'down', 'range'];
@@ -112,8 +111,7 @@ function publicConfig() {
       winChance: winProbability(l)
     })),
     minBet: PULSE.minBet,
-    maxBet: PULSE.maxBet,
-    disclaimer: PULSE.disclaimer
+    maxBet: PULSE.maxBet
   };
 }
 

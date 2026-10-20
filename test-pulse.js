@@ -79,7 +79,7 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
   try {
     const c = await post('/api/pulse/config', {});
     eq(c.status, 200, 'конфиг Pulse Market доступен');
-    ok(c.body.config.disclaimer.includes('Учебная симуляция'), 'дисклеймер показан');
+    ok(!('disclaimer' in c.body.config), 'в конфиге нет учебного дисклеймера');
     ok(!/seed/i.test(JSON.stringify(c.body)), 'в конфиге нет seed');
 
     const start = await post('/api/pulse/bet', {

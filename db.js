@@ -517,59 +517,8 @@ function __mapSession(row) {
  * Открытие кейса нового режима. price и item приходят ТОЛЬКО из серверного
  * каталога (case-modes.js) — не из тела запроса.
  */
-/** Все прогревы игрока: { caseId: points }. */
-function getWarmups(userId) {
-  try {
-    const rows = db.prepare('SELECT case_id, points FROM case_warmups WHERE user_id = ?').all(userId);
-    const out = {};
-    for (const r of rows) out[r.case_id] = Number(r.points || 0);
-    return out;
-  } catch (e) {
-    console.error('[DB] getWarmups:', e.message);
-    return {};
-  }
-}
-
-/**
- * Бесплатный тест-прокрут. Атомарно выдаёт один балл прогрева не чаще
- * cooldownMs; балл потом сам сгорает при платном открытии. Предмет за
- * тест-прокрут в инвентарь НЕ попадает.
- */
-function claimWarmup(userId, caseId, cooldownMs = 60000, maxPoints = 1) {
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    const now = Date.now();
-    const row = __q('SELECT * FROM case_warmups WHERE user_id = ? AND case_id = ?').get(userId, String(caseId));
-    if (row && Number(row.points) >= maxPoints) {
-      db.exec('ROLLBACK');
-      return { ok: false, error: 'Прогрев уже готов — откройте кейс платно', points: Number(row.points) };
-    }
-    if (row && now - Number(row.last_roll_at) < cooldownMs) {
-      db.exec('ROLLBACK');
-      return {
-        ok: false, error: 'Тест-прокрут перезаряжается',
-        retryAfter: Math.ceil((cooldownMs - (now - Number(row.last_roll_at))) / 1000)
-      };
-    }
-    const points = Math.min(maxPoints, Number(row ? row.points : 0) + 1);
-    __q(`INSERT INTO case_warmups (user_id, case_id, points, last_roll_at)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(user_id, case_id) DO UPDATE SET points = excluded.points, last_roll_at = excluded.last_roll_at`)
-      .run(userId, String(caseId), points, now);
-    db.exec('COMMIT');
-    turso.queueQuery(`INSERT INTO case_warmups (user_id, case_id, points, last_roll_at)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(user_id, case_id) DO UPDATE SET points = excluded.points, last_roll_at = excluded.last_roll_at`,
-      [userId, String(caseId), points, now]);
-    return { ok: true, points };
-  } catch (e) {
-    try { db.exec('ROLLBACK'); } catch (_) {}
-    throw e;
-  }
-}
-
 function atomicOpenCase(args) {
-  const { requestId, userId, modeId, modeName, price, item, bonusItem, roundId } = args;
+  const { requestId, userId, modeId, modeName, price, item, roundId } = args;
   if (!Number.isFinite(Number(price)) || Number(price) <= 0) return { ok: false, error: 'Некорректная цена кейса' };
   if (!item || !item.code || !Number.isFinite(Number(item.price)) || Number(item.price) < 0) {
     return { ok: false, error: 'Некорректный предмет кейса' };
@@ -589,20 +538,7 @@ function atomicOpenCase(args) {
       return { ok: false, error: 'Недостаточно токенов' };
     }
     const at = Date.now();
-    // «Тест-прокрут» заранее даёт один прогревающий балл. Если он есть,
-    // сервер берёт лучший из двух дропов и атомарно списывает балл.
-    // Демо-предмет из тест-прокрута сюда не попадает и в инвентарь не идёт.
-    let chosen = item;
-    let warmupUsed = false;
-    if (bonusItem && bonusItem.code && Number.isFinite(Number(bonusItem.price))) {
-      const w = __q('SELECT points FROM case_warmups WHERE user_id = ? AND case_id = ?').get(userId, String(modeId));
-      if (w && Number(w.points) > 0) {
-        __q('UPDATE case_warmups SET points = points - 1 WHERE user_id = ? AND case_id = ? AND points > 0')
-          .run(userId, String(modeId));
-        warmupUsed = true;
-        if (Number(bonusItem.price) > Number(item.price)) chosen = bonusItem;
-      }
-    }
+    const chosen = item;
     const balBefore = Number(row.tokens);
     const balAfter = balBefore - Number(price);
     __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
@@ -633,14 +569,10 @@ function atomicOpenCase(args) {
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [String(requestId), userId, String(modeId), Math.floor(price), String(chosen.code), String(chosen.name), String(chosen.icon || ''), Math.floor(chosen.price), String(chosen.tier || ''), inventoryId, at] }
     ];
-    if (warmupUsed) {
-      queue.push({ sql: 'UPDATE case_warmups SET points = points - 1 WHERE user_id = ? AND case_id = ? AND points > 0',
-        args: [userId, String(modeId)] });
-    }
     turso.queueBatch(queue);
     return {
-      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId, warmupUsed,
-      open: { requestId, userId, modeId, price, item: { ...chosen, id: inventoryId }, inventoryId, createdAt: at, warmupUsed }
+      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId,
+      open: { requestId, userId, modeId, price, item: { ...chosen, id: inventoryId }, inventoryId, createdAt: at }
     };
   } catch (e) {
     try { db.exec('ROLLBACK'); } catch (_) {}
@@ -1445,8 +1377,6 @@ module.exports = {
   },
 
   /* ── Новые кейсы / апгрейдер ─────────────────────────────────────────── */
-  getWarmups,
-  claimWarmup,
   atomicOpenCase,
   atomicUpgradeRun,
   atomicLadderStart,
@@ -1748,6 +1678,23 @@ module.exports = {
       const grossGamingRevenueRub = grossGamingRevenueTk / 10;
       const rtpPct = wagered > 0 ? Number(((payouts / wagered) * 100).toFixed(1)) : 0;
 
+      const activePlayersCount = Number((db.prepare(`
+        SELECT COUNT(DISTINCT user_id) AS count FROM game_rounds WHERE created_at >= ?
+      `).get(since) || {}).count || 0);
+
+      const maxWinTk = Number((db.prepare(`
+        SELECT COALESCE(MAX(win_tokens), 0) AS maxWin FROM game_rounds WHERE created_at >= ?
+      `).get(since) || {}).maxWin || 0);
+
+      const balanceLiabilityTk = Number((db.prepare(`
+        SELECT COALESCE(SUM(tokens), 0) AS total FROM users
+      `).get() || {}).total || 0);
+
+      const depPending = db.prepare(`
+        SELECT COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub
+        FROM orders WHERE type = 'deposit' AND status = 'pending'
+      `).get() || { count: 0, totalRub: 0 };
+
       // 5. По режимам игры
       const byGame = db.prepare(`
         SELECT game,
@@ -1834,7 +1781,19 @@ module.exports = {
           ggrTk: grossGamingRevenueTk,
           ggrRub: grossGamingRevenueRub,
           rtpPct,
-          cashflowNetRub: depStats.totalRub - wdPaid.totalRub
+          cashflowNetRub: depStats.totalRub - wdPaid.totalRub,
+          activePlayers: activePlayersCount,
+          avgBetTk: roundsSummary.count > 0 ? Number((wagered / roundsSummary.count).toFixed(0)) : 0,
+          betsPerPlayer: activePlayersCount > 0 ? Number((roundsSummary.count / activePlayersCount).toFixed(1)) : 0,
+          winRatePct: roundsSummary.count > 0
+            ? Number((byGame.reduce((s, g) => s + Number(g.wins || 0), 0) / roundsSummary.count * 100).toFixed(1))
+            : 0,
+          maxWinTk,
+          balanceLiabilityTk,
+          avgDepositRub: depStats.count > 0 ? Number((Number(depStats.totalRub) / depStats.count).toFixed(0)) : 0,
+          arpuRub: totalUsersCount > 0 ? Number((Number(depStats.totalRub) / totalUsersCount).toFixed(0)) : 0,
+          pendingDepositsCount: Number(depPending.count) || 0,
+          pendingDepositsRub: Number(depPending.totalRub) || 0
         },
         byGame,
         byProvider,

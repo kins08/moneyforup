@@ -794,14 +794,12 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-list .cli{display:flex;align-items:center;gap:7px;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);min-width:0}
 .casehub-list .cli b{display:block;font-size:10.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .casehub-list .cli small{font-size:9px;color:#9aa3b8}
-.casehub-list .cli .pct{font-size:9px;color:var(--cm-accent,#ffcf6b);font-weight:800}
 .casehub-history{margin-top:14px;display:flex;flex-direction:column;gap:6px}
 .casehub-history .chr{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);font-size:11px}
 .casehub-history .chr b{color:#fff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .casehub-history .chr span{color:var(--cm-accent,#ffcf6b);font-weight:800}
 .casehub-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 .casehub-actions .control{flex:1;margin:0;min-width:130px}
-.casehub-note{font-size:10.5px;color:#7f8aa3;line-height:1.45;margin-top:9px}
 
 /* Карточки с полноценными обложками вместо эмодзи */
 .casehub-case{padding:0!important;display:flex;flex-direction:column;overflow:hidden;min-height:0!important}
@@ -850,15 +848,11 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
 .casehub-warmup{border:1px solid rgba(61,220,150,.32);background:linear-gradient(135deg,rgba(61,220,150,.10),rgba(255,255,255,.02));border-radius:14px;padding:10px 11px;margin-top:10px}
-.casehub-warmup.ready{border-color:rgba(255,207,107,.5);background:linear-gradient(135deg,rgba(255,207,107,.12),rgba(245,158,11,.03))}
 .casehub-warmup .cw-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .casehub-warmup .cw-top b{font-size:11.5px;color:#86efac}
-.casehub-warmup.ready .cw-top b{color:#ffcf6b}
 .casehub-warmup .cw-top span{font-size:9px;font-weight:900;letter-spacing:.05em;color:#86efac}
-.casehub-warmup.ready .cw-top span{color:#ffcf6b}
 .casehub-warmup .cw-desc{font-size:9.8px;color:#9aa3b8;line-height:1.4;margin-top:3px}
 .casehub-warmup button{width:100%;margin-top:8px;border:1px solid rgba(61,220,150,.35);background:rgba(61,220,150,.12);color:#86efac;font-family:inherit;font-size:10.5px;font-weight:900;padding:8px;border-radius:9px;cursor:pointer}
-.casehub-warmup.ready button{border-color:rgba(255,207,107,.4);background:rgba(255,207,107,.10);color:#ffcf6b}
 .casehub-warmup button:disabled{opacity:.55;cursor:default}
 .casehub-empty{grid-column:1/-1;text-align:center;padding:22px 10px;color:#7f8aa3;font-size:11.5px}
 
@@ -891,8 +885,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   --mfu-motion:var(--mfu-t-base) var(--mfu-ease-out);
 }
 @media (prefers-reduced-motion: reduce){
-  .pm-bar i,.tr-chart path,.upg-strip,.upg-strip.spin-wait{transition:none!important;animation:none!important}
-  .tr-chart path{stroke-dashoffset:0!important}
+  .pm-bar i,.upg-strip,.upg-strip.spin-wait{transition:none!important;animation:none!important}
 }
 /* Motion-система редизайна: вход со stagger, reveal результата, отклик. */
 .mfu-enter>*{animation:mfuRise var(--mfu-t-enter) var(--mfu-ease-out) both}
@@ -956,7 +949,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .pm-shell,.tr-shell{display:flex;flex-direction:column;gap:10px;padding-bottom:6px;max-width:100%;overflow-x:hidden}
 .pm-head{display:flex;flex-direction:column;gap:2px}
 .pm-title{font-size:13px;font-weight:900;letter-spacing:.12em;color:var(--mfu-cyan)}
-.pm-disclaimer{font-size:11px;color:var(--mfu-muted);line-height:1.4;padding:8px 10px;border:1px solid var(--mfu-line);border-radius:10px;background:var(--mfu-graphite-2)}
 .pm-panel{background:var(--mfu-graphite-1);border:1px solid var(--mfu-line);border-radius:var(--mfu-radius);padding:12px}
 .pm-label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .pm-row{display:flex;gap:6px;flex-wrap:wrap}
@@ -981,8 +973,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .pm-result.lose .pm-res-title{color:var(--mfu-red)}
 .pm-stage.won{border-color:rgba(34,197,94,.45)}
 .pm-stage.lost{border-color:rgba(239,68,68,.4)}
-.tr-chart{width:100%;height:110px;display:block;margin:6px 0 2px;background:var(--mfu-graphite-2);border-radius:10px}
-.tr-chart path{stroke-dasharray:1;stroke-dashoffset:1;animation:mfuDraw 520ms var(--mfu-ease-out) both}
+.mfu-chart-wrap{position:relative;margin:8px 0 2px;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.32);border:1px solid rgba(148,163,184,.10)}
+.mfu-chart{width:100%;height:200px;display:block}
 /* Лента прокрутки апгрейда: одна полоса, указатель по центру, цвет = результат сервера. */
 .upg-frame{position:relative;overflow:hidden;height:118px;border-radius:15px;background:var(--panel2);border:1px solid var(--line);margin:6px 0 10px;transition:border-color var(--mfu-t-base) ease,box-shadow var(--mfu-t-base) ease}
 .upg-frame.spin-win{border-color:rgba(61,220,150,.7);box-shadow:0 0 0 1px rgba(61,220,150,.25) inset}
@@ -1226,8 +1218,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Выбери цель и рискни токенами: шанс до 70%, результат виден сразу</span><i class="arrow">→</i></button>
-<button class="game" data-game="trend"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="trend">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Trend Hunter"></div><div class="gi">🔎</div><strong>Trend Hunter</strong><span>Угадай паттерн графика: рост, падение или боковик. Три уровня сложности</span><i class="arrow">→</i></button>
-<button class="game" data-game="pulse"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="pulse">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Pulse Market"></div><div class="gi">📈</div><strong>Pulse Market</strong><span>Рынок вверх, вниз или боковик: ставка на направление за 5–20 секунд</span><i class="arrow">→</i></button>
+<button class="game" data-game="trend"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="trend">онлайн</span></span><div class="game-card-cover"><img src="assets/game_trend.jpg" alt="Trend Hunter"></div><div class="gi">🔎</div><strong>Trend Hunter</strong><span>Угадай паттерн графика: рост, падение или боковик. Три уровня сложности</span><i class="arrow">→</i></button>
+<button class="game" data-game="pulse"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="pulse">онлайн</span></span><div class="game-card-cover"><img src="assets/game_pulse.jpg" alt="Pulse Market"></div><div class="gi">📈</div><strong>Pulse Market</strong><span>Рынок вверх, вниз или боковик: ставка на направление за 5–20 секунд</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -3363,6 +3355,26 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
           <div>Заказов с бонусом: <b>${m.firstBonusOrdersCount || 0}</b></div>
           <div>Выдано бонусов: <b style="color:#ffcf6b">+${fmt(m.firstBonusTokens || 0)} ⬦</b></div>
           <div>Объём депозитов: <b>${fmt(m.firstBonusRubVolume || 0)} ₽</b></div>
+        </div>
+      </div>
+
+      <!-- Сводка 2b: Активность, ставки и обязательства -->
+      <div style="background:rgba(255,255,255,.03);padding:8px;border-radius:8px;font-size:11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:#93c5fd">🎯 Активность и ставки</b>
+          <span class="muted small">за период</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+          <div>Активных игроков: <b>${m.activePlayers || 0}</b></div>
+          <div>Ставок на игрока: <b>${m.betsPerPlayer || 0}</b></div>
+          <div>Средняя ставка: <b>${fmt(m.avgBetTk || 0)} ⬦</b></div>
+          <div>Win rate: <b style="color:#3ddc96">${m.winRatePct || 0}%</b></div>
+          <div>Крупнейший выигрыш: <b style="color:#ffcf6b">${fmt(m.maxWinTk || 0)} ⬦</b></div>
+          <div>Средний депозит: <b>${fmt(m.avgDepositRub || 0)} ₽</b></div>
+          <div>ARPU: <b>${fmt(m.arpuRub || 0)} ₽</b></div>
+          <div>Балансы игроков: <b>${fmt(m.balanceLiabilityTk || 0)} ⬦</b></div>
+          <div>Ждут пополнения: <b>${m.pendingDepositsCount || 0}</b></div>
+          <div>Сумма в ожидании: <b>${fmt(m.pendingDepositsRub || 0)} ₽</b></div>
         </div>
       </div>
 
@@ -9533,7 +9545,6 @@ function gameCaseHubUnified(sel){
   let fiveRef = null;
   let freeBusy = false;
   let warmupBusy = false;
-  let warmups = {};
 
   function clearTimers(){
     timeouts.forEach(t=>clearTimeout(t));
@@ -9573,7 +9584,6 @@ function gameCaseHubUnified(sel){
     }
     const hist = history.slice(0,10);
     const freeCount = Math.max(0, Number(S.freeCases || 0));
-    const wp = Math.max(0, Number(warmups[m.id] || 0));
     const fr = fiveRef || {
       claimed: Boolean(S.freeCase5RefClaimed),
       qualified: Number(S.refQualified || 0),
@@ -9641,18 +9651,15 @@ function gameCaseHubUnified(sel){
           <div class="casehub-pointer"></div>
           <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
         </div>
-                <div class="casehub-warmup ${wp?'ready':''}">
-          <div class="cw-top"><b>🧪 Тест-прокрут</b><span>${wp?'ПРОГРЕВ ГОТОВ':'БЕСПЛАТНО'}</span></div>
-          <div class="cw-desc">${wp
-            ? 'Следующее платное открытие возьмёт лучший из двух дропов. Предмет за тест не выдаётся.'
-            : 'Демо-дроп без списания: предмет не выдаётся, но прогревает следующий платный кейс (лучший из двух дропов).'}</div>
-          <button id="chWarmup" ${(busy||warmupBusy||wp)?'disabled':''}>${warmupBusy?'ПРОКРУТ…':(wp?'⚡ ПРОГРЕВ ГОТОВ':'ЗАПУСТИТЬ ТЕСТ-ПРОКРУТ')}</button>
+                <div class="casehub-warmup">
+          <div class="cw-top"><b>🧪 Демо-прокрут</b><span>БЕСПЛАТНО</span></div>
+          <button id="chWarmup" ${(busy||warmupBusy)?'disabled':''}>${warmupBusy?'ПРОКРУТ…':'ЗАПУСТИТЬ ДЕМО'}</button>
         </div>
         <div class="casehub-actions">
           <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
           <button class="control ghost" id="chRepeat" ${busy?'disabled':''}>↻ ПОВТОРИТЬ</button>
         </div>
-        <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его. Все предметы — виртуальные токены внутри платформы.'}</div>
+        <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его.'}</div>
         ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ⬦</span></div>
           <div class="casehub-case-actions">
             <button class="control" id="chUpgrade">⚡ В АПГРЕЙДЕР</button>
@@ -9669,7 +9676,6 @@ function gameCaseHubUnified(sel){
             <b>${esc(it.name)}</b>
             <small>${fmt(it.price)} ⬦ · ${esc(it.tier||'')}</small>
           </div>
-          <div class="pct">${r2(it.chance||0)}%</div>
         </div>`).join('')}
     </div>
     <div class="section"><b>История открытий</b><span class="muted small">${hist.length?hist.length+' последних':'пока пусто'}</span></div>
@@ -9680,8 +9686,7 @@ function gameCaseHubUnified(sel){
           <b>${esc(h.item?h.item.name:(h.name||'Предмет'))}</b>
           <span>${fmt((h.item&&h.item.price)||h.price||0)} ⬦</span>
         </div>`).join('') : '<div class="result">История появится после первого открытия.</div>'}
-    </div>
-    <div class="casehub-note">Все цены и предметы — виртуальные токены MoneyForUp. Это не деньги и не вывод средств. Шансы заданы в конфигурации кейса и проверяются на сервере.</div>`;
+    </div>`;
 
     a.querySelectorAll('[data-chm]').forEach(b=>{
       b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; gridMotion=false; heroMotion=true; render(); };
@@ -9729,24 +9734,22 @@ function gameCaseHubUnified(sel){
   async function openWarmup(){
     if(warmupBusy||busy)return;
     const m=current();
-    if(!m || Number(warmups[m.id]||0)>=1)return;
+    if(!m)return;
     warmupBusy=true; clearTimers(); render();
-    setStatus('Тест-прокрут: предмет не выдаётся, прогреваем следующий платный кейс…','');
+    setStatus('Демо-прокрут: показываем хороший дроп…','');
     let res=null, err=null;
     try{
       if(IS_TG&&API_BASE){
         res=await tgCall('/api/cases/warmup',{caseId:m.id});
       }else{
-        const demo=localRoll(m);
-        res={ok:true,demo:true,item:demo,warmupPoints:1};
+        res={ok:true,demo:true,item:demoRoll(m)};
       }
     }catch(e){err=e;}
     warmupBusy=false;
     if(!res||!res.ok){
-      setStatus((err&&err.message)||(res&&res.error)||'Не удалось выполнить тест-прокрут.','bad');
+      setStatus((err&&err.message)||(res&&res.error)||'Не удалось выполнить демо-прокрут.','bad');
       render(); return;
     }
-    warmups[m.id]=Number(res.warmupPoints||1);
     busy=true; render();
     animate(m,res.item||{}, {demo:true, caseId:m.id});
   }
@@ -9756,6 +9759,12 @@ function gameCaseHubUnified(sel){
     let r=Math.random()*total, cum=0;
     for(const it of (m.items||[])){ cum+=Number(it.w||it.chance||1); if(r<=cum) return it; }
     return (m.items||[])[m.items.length-1] || null;
+  }
+
+  function demoRoll(m){
+    const items=[...(m.items||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0));
+    const top=items.slice(0,Math.max(1,Math.ceil(items.length*0.25)));
+    return top[Math.floor(Math.random()*top.length)] || items[0] || null;
   }
 
   async function openCase(){
@@ -9805,11 +9814,10 @@ function gameCaseHubUnified(sel){
     }
     if(typeof res.tokens==='number') setTokens(res.tokens);
     const drop=res.drop||{};
-    if(res.warmupUsed) warmups[m.id]=0;
     lastDrop=drop;
     history.unshift({ item:drop, createdAt:Date.now() });
     if(history.length>50) history=history.slice(0,50);
-    animate(m,drop,{warmupUsed:Boolean(res.warmupUsed)});
+    animate(m,drop);
   }
 
   async function openFreeCase(){
@@ -9911,8 +9919,7 @@ function gameCaseHubUnified(sel){
         lastDrop=null;
         statusText=`<div style="text-align:center"><div style="font-size:28px">🧪</div>
           <b style="color:#fff;font-size:14px">Демо-дроп: ${esc(drop.name||'предмет')}</b><br>
-          <span style="color:#ffcf6b;font-weight:900">${fmt(drop.price||0)} ⬦</span>
-          <div class="muted small" style="margin-top:4px">Предмет НЕ выдан. Прогрев готов: следующее платное открытие возьмёт лучший из двух дропов.</div></div>`;
+          <span style="color:#ffcf6b;font-weight:900">${fmt(drop.price||0)} ⬦</span></div>`;
         render();
         return;
       }
@@ -9922,7 +9929,7 @@ function gameCaseHubUnified(sel){
       statusText=`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
         <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
         <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ⬦</span>
-        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}${opts.warmupUsed?' · ⚡ прогрев учтён':''}</div></div>`;
+        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`;
       if(typeof loadInventory==='function') loadInventory();
       render();
     },4400);
@@ -9943,7 +9950,6 @@ function gameCaseHubUnified(sel){
         const list = Array.isArray(d.cases) ? d.cases : (Array.isArray(d.modes) ? d.modes : null);
         if(list && list.length){
           catalog=list.map(normalizeCase);
-          warmups=(d.warmups && typeof d.warmups==='object') ? d.warmups : {};
           history=Array.isArray(d.history)?d.history:[];
           if(!catalog.find(x=>x.id===currentId)) currentId=catalog[0].id;
           if(typeof d.tokens==='number') setTokens(d.tokens);
@@ -10203,7 +10209,7 @@ function gameUpgradeArena(){
           <button data-uq="max">MAX</button>
           <button data-uq="min">MIN</button>
         </div>
-        <div class="muted small" style="margin-top:6px;font-size:10px">Лимиты: 10–100 000 ⬦. Сервер повторно проверяет сумму и баланс.</div>
+        <div class="muted small" style="margin-top:6px;font-size:10px">Лимиты: 10–100 000 ⬦</div>
       </div>`;
     }
     const list=inv();
@@ -10346,7 +10352,6 @@ function gameUpgradeArena(){
       ${tab==='ladder'?renderLadder():tab==='serial'?renderSerial():renderTargets()}
       ${renderHistory()}
       ${notice&&tab!=='ladder'&&tab!=='serial'?'':''}
-      <div class="casehub-note" style="padding:0 2px 6px">Апгрейд — виртуальная механика на токены. Все вероятности и лимиты повторно проверяются сервером; результат нельзя выбрать или ускорить из интерфейса.</div>
     </div>`;
     if(!entered&&!enterScheduled){ enterScheduled=true; requestAnimationFrame(()=>{ entered=true; }); }
     attach();
@@ -10713,6 +10718,161 @@ function gameUpgrader(){ return gameUpgradeArena(); }
 /* ── Trend Hunter (DECISIONS.md D6) ────────────────────────────────────────
    Паттерн и правильный ответ — только на сервере. Клиент рисует график,
    отправляет ответ и показывает результат, который вернул сервер. */
+/* Свечной график в стиле торгового терминала. Данные синтетические:
+   это модель рынка MFU / USD, а не котировки реальных активов. */
+let __mfuChartSeq = 0;
+function mfuChartRng(seedStr){
+  let h=2166136261>>>0;
+  const s=String(seedStr);
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); }
+  let t=h>>>0;
+  return function(){
+    t+=0x6D2B79F5;
+    let r=t;
+    r=Math.imul(r^r>>>15,r|1);
+    r^=r+Math.imul(r^r>>>7,r|61);
+    return ((r^r>>>14)>>>0)/4294967296;
+  };
+}
+function mfuChartSeries(seedStr,n,opt){
+  opt=opt||{};
+  const rnd=mfuChartRng(seedStr);
+  let p=opt.start||(58000+rnd()*12000);
+  const vol=opt.vol||0.0045;
+  const drift=opt.drift||0;
+  const out=[];
+  for(let i=0;i<n;i++){
+    p=Math.max(1,p*(1+(rnd()*2-1)*vol+drift));
+    out.push(p);
+  }
+  return out;
+}
+function mfuChartDense(points,factor,seedStr){
+  if(!Array.isArray(points)||points.length<2) return points||[];
+  const rnd=mfuChartRng(seedStr||'dense');
+  const range=(Math.max(...points)-Math.min(...points))||1;
+  const out=[points[0]];
+  for(let i=1;i<points.length;i++){
+    const from=points[i-1], to=points[i];
+    for(let k=1;k<=factor;k++){
+      const f=k/factor;
+      const base=from+(to-from)*f;
+      const jitter=(k===factor)?0:(rnd()*2-1)*range*0.035*Math.sin(f*Math.PI);
+      out.push(base+jitter);
+    }
+  }
+  return out;
+}
+function mfuChart(points,opt){
+  opt=opt||{};
+  const series=(Array.isArray(points)?points:[]).filter(v=>Number.isFinite(v));
+  if(series.length<2) return '';
+  const rnd=mfuChartRng(opt.seed||((opt.interval||'mfu')+series.length+series[0]));
+  const w=360,h=200,padL=8,padR=46,padT=22,padB=18,volH=26,gap=6;
+  const priceH=h-padT-padB-volH-gap;
+  const n=series.length;
+  const candles=[];
+  let prev=series[0], maxV=0;
+  for(let i=0;i<n;i++){
+    const close=series[i];
+    const open=i===0?prev*(1+(rnd()*2-1)*0.001):prev;
+    const wick=Math.max(open,close)*(0.0015+rnd()*0.0035);
+    const high=Math.max(open,close)+wick;
+    const low=Math.min(open,close)-wick;
+    const v=0.25+rnd()*0.75;
+    candles.push({open,close,high,low,v});
+    if(v>maxV) maxV=v;
+    prev=close;
+  }
+  const lows=candles.map(c=>c.low), highs=candles.map(c=>c.high);
+  const min=Math.min(...lows), max=Math.max(...highs), span=(max-min)||1;
+  const step=(w-padL-padR)/n;
+  const X=i=>padL+step*(i+0.5);
+  const Y=v=>padT+priceH*(1-(v-min)/span);
+  const fmtP=v=>v>=10000?Math.round(v).toLocaleString('en-US').replace(/,/g,' '):v>=1000?v.toFixed(0):v.toFixed(2);
+  const gid='mfuCh'+(++__mfuChartSeq);
+  const first=series[0], last=series[n-1];
+  const col=last>=first?'#3ddc96':'#f87171';
+  const change=((last-first)/first*100);
+  let grid='', priceLabels='', volBars='', body='';
+  for(let g=0;g<=4;g++){
+    const yy=padT+priceH*g/4;
+    const val=max-span*g/4;
+    grid+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${w-padR}" y2="${yy.toFixed(1)}" stroke="rgba(148,163,184,.10)" stroke-width="1"/>`;
+    priceLabels+=`<text x="${w-padR+5}" y="${(yy+3).toFixed(1)}" fill="#64748b" font-size="6.4" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">${fmtP(val)}</text>`;
+  }
+  for(let g=0;g<=3;g++){
+    const xx=padL+(w-padL-padR)*g/3;
+    grid+=`<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${padT+priceH+volH+gap}" stroke="rgba(148,163,184,.07)" stroke-width="1"/>`;
+  }
+  const now=Date.now();
+  let times='';
+  for(let g=0;g<=3;g++){
+    const f=g/3;
+    const d=new Date(now-(1-f)*n*60000*5);
+    const label=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    times+=`<text x="${(padL+(w-padL-padR)*f).toFixed(1)}" y="${h-5}" fill="#556074" font-size="6.2" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" text-anchor="${g===0?'start':g===3?'end':'middle'}">${label}</text>`;
+  }
+  const bodyW=Math.max(1.6,Math.min(5.5,step*0.62));
+  candles.forEach((c,i)=>{
+    const x=X(i);
+    const cUp=c.close>=c.open;
+    const cc=cUp?'#3ddc96':'#f87171';
+    const yO=Y(c.open), yC=Y(c.close);
+    const bh=Math.max(1,Math.abs(yC-yO));
+    body+=`<line x1="${x.toFixed(1)}" y1="${Y(c.high).toFixed(1)}" x2="${x.toFixed(1)}" y2="${Y(c.low).toFixed(1)}" stroke="${cc}" stroke-width="1" opacity=".9"/>`
+      +`<rect x="${(x-bodyW/2).toFixed(1)}" y="${Math.min(yO,yC).toFixed(1)}" width="${bodyW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${cc}" opacity="${cUp?.92:.88}" rx="0.6"/>`;
+    const vh=Math.max(1,(c.v/maxV)*volH);
+    volBars+=`<rect x="${(x-bodyW/2).toFixed(1)}" y="${(padT+priceH+gap+volH-vh).toFixed(1)}" width="${bodyW.toFixed(1)}" height="${vh.toFixed(1)}" fill="${cc}" opacity=".22" rx="0.5"/>`;
+  });
+  let areaD=`M ${X(0).toFixed(1)} ${Y(series[0]).toFixed(1)} `;
+  for(let i=1;i<n;i++) areaD+=`L ${X(i).toFixed(1)} ${Y(series[i]).toFixed(1)} `;
+  areaD+=`L ${X(n-1).toFixed(1)} ${(padT+priceH).toFixed(1)} L ${X(0).toFixed(1)} ${(padT+priceH).toFixed(1)} Z`;
+  const lineD=`M ${X(0).toFixed(1)} ${Y(series[0]).toFixed(1)} `+series.slice(1).map((v,i)=>`L ${X(i+1).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  const lastY=Y(last);
+  const tagW=40, tagX=w-padR+1;
+  const marker=opt.marker?`<circle cx="${X(n-1).toFixed(1)}" cy="${lastY.toFixed(1)}" r="2.6" fill="${col}" stroke="#0b0f14" stroke-width="1.2"/>`:'';
+  return `<div class="mfu-chart-wrap"><svg class="mfu-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="график рынка MFU / USD">
+  <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+  <rect x="0" y="0" width="${w}" height="${h}" fill="#0a0e13" rx="12"/>
+  ${grid}
+  <path d="${areaD}" fill="url(#${gid})"/>
+  <path d="${lineD}" fill="none" stroke="${col}" stroke-width=".8" opacity=".35"/>
+  ${volBars}
+  ${body}
+  <line x1="${padL}" y1="${lastY.toFixed(1)}" x2="${w-padR}" y2="${lastY.toFixed(1)}" stroke="${col}" stroke-width=".7" stroke-dasharray="2 3" opacity=".55"/>
+  <rect x="${tagX}" y="${(lastY-7).toFixed(1)}" width="${tagW}" height="14" rx="3" fill="${col}"/>
+  <text x="${tagX+tagW/2}" y="${(lastY+2.6).toFixed(1)}" text-anchor="middle" fill="#06120c" font-size="7.2" font-weight="700" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">${fmtP(last)}</text>
+  ${priceLabels}${times}
+  <text x="${padL}" y="12" fill="#cbd5e1" font-size="8" font-weight="700" letter-spacing=".6" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">MFU / USD</text>
+  <text x="${padL+62}" y="12" fill="#556074" font-size="6.2" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">${opt.interval||'5М'}</text>
+  <text x="${w-padR}" y="12" text-anchor="end" fill="${col}" font-size="10" font-weight="700" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">${fmtP(last)}</text>
+  <text x="${w-padR}" y="19" text-anchor="end" fill="${col}" font-size="6.2" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">${change>=0?'+':''}${change.toFixed(2)}%</text>
+  ${marker}
+</svg></div>`;
+}
+function mfuPulseSeries(roundId,n,move){
+  const rnd=mfuChartRng('pulse:'+String(roundId||'market'));
+  let p=58000+rnd()*12000;
+  const out=[];
+  for(let i=0;i<n;i++){ p=Math.max(1,p*(1+(rnd()*2-1)*0.0038)); out.push(p); }
+  if(move!=null&&Number.isFinite(Number(move))){
+    const tail=Math.min(14,Math.floor(n/3));
+    const start=out[n-tail-1]||p;
+    const target=start*(1+Number(move)*0.045);
+    for(let k=0;k<tail;k++){
+      const f=(k+1)/tail;
+      out[n-tail+k]=start+(target-start)*f+(rnd()*2-1)*p*0.0007*Math.sin(f*Math.PI);
+    }
+  }
+  return out;
+}
+function mfuPulseChart(roundId,duration,progress,move){
+  const shown=move!=null?60:Math.max(34,34+Math.round(Math.max(0,Math.min(1,progress))*22));
+  const s=mfuPulseSeries(roundId,shown,move);
+  return mfuChart(s,{interval:(Number(duration)||5)+'С',marker:true,seed:'pulse:'+String(roundId||'market')});
+}
+
 function gameTrend(){
   const a=q('#gameArea');
   if(!a) return ()=>{};
@@ -10727,12 +10887,12 @@ function gameTrend(){
 
   function chart(points){
     if(!points||points.length<2) return '';
-    const w=300,h=110,pad=8;
-    const min=Math.min(...points), max=Math.max(...points), span=(max-min)||1;
-    const X=i=>pad+(w-2*pad)*i/(points.length-1);
-    const Y=v=>pad+(h-2*pad)*(1-(v-min)/span);
-    const d=points.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
-    return `<svg class="tr-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="график"><path d="${d}" pathLength="1" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
+    const seed='trend:'+points.length+':'+points[0]+':'+points[points.length-1];
+    return mfuChart(mfuChartDense(points,3,seed),{interval:'15М',marker:true,seed});
+  }
+  function idleChart(){
+    const bucket=Math.floor(Date.now()/300000);
+    return mfuChart(mfuChartSeries('trend-idle:'+bucket,44),{interval:'15М',marker:true});
   }
 
   function render(){
@@ -10745,9 +10905,8 @@ function gameTrend(){
     a.innerHTML=`<div class="tr-shell${entered?'':' mfu-enter'}">
       <div class="pm-head">
         <div class="pm-title">TREND HUNTER</div>
-        <div class="muted small">Определи паттерн графика: рост, падение или боковик</div>
+        <div class="muted small">Определи паттерн графика</div>
       </div>
-      <div class="pm-disclaimer">${esc(c.disclaimer||'Учебная симуляция. Не прогнозирует реальный рынок.')}</div>
 
       <div class="pm-panel">
         <div class="pm-label">Сложность <span>комбо: ${combo}</span></div>
@@ -10767,12 +10926,13 @@ function gameTrend(){
             <button class="pm-dir range" data-tans="flat" aria-label="Ответ: боковик" ${busy?'disabled':''}>БОКОВИК ◆</button>
           </div>
         `:last?`
+          ${last.points?chart(last.points):''}
           <div class="pm-result ${last.correct?'win':'lose'}">
             <div class="pm-res-title">${last.correct?'✅ ВЕРНО':last.late?'⏱ ВРЕМЯ ВЫШЛО':'❌ НЕВЕРНО'}</div>
             <div>Паттерн: <b>${PAT[last.pattern]||'—'}</b></div>
             <div>${last.correct?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
           </div>
-        `:`<div class="muted small">Выберите сложность и ставку. График появится после старта. Ответ принимается до конца таймера.</div>`}
+        `:`${idleChart()}<div class="muted small" style="margin-top:8px">Выберите сложность и ставку. Отвечать можно до конца таймера.</div>`}
       </div>
 
       ${!round?`
@@ -10857,7 +11017,7 @@ function gameTrend(){
       }
       if(!res||!res.ok) throw new Error((res&&res.error)||'Ответ не принят');
       const r=res.result||{};
-      last={correct:Boolean(r.correct),late:Boolean(r.late),pattern:r.pattern,payout:r.payout||0,mult:r.mult};
+      last={correct:Boolean(r.correct),late:Boolean(r.late),pattern:r.pattern,payout:r.payout||0,mult:r.mult,points:roundNow.points};
       combo=Number(res.combo)||0;
       if(typeof res.tokens==='number') setTokens(res.tokens);
       round=null; busy=false;
@@ -10877,7 +11037,7 @@ function gameTrend(){
 
 /* ── Pulse Market (DECISIONS.md D5) ─────────────────────────────────────────
    Ставка и исход — только на сервере. Клиент показывает таймер раунда и
-   запрашивает результат после его окончания. Учебная симуляция, токены. */
+   запрашивает результат после его окончания. */
 function gamePulse(){
   const a=q('#gameArea');
   if(!a) return ()=>{};
@@ -10906,9 +11066,8 @@ function gamePulse(){
     a.innerHTML=`<div class="pm-shell${entered?'':' mfu-enter'}">
       <div class="pm-head">
         <div class="pm-title">PULSE MARKET</div>
-        <div class="muted small">Микрораунды рынка · ставка из баланса</div>
+        <div class="muted small">Микрораунды рынка</div>
       </div>
-      <div class="pm-disclaimer">${esc(c.disclaimer||'Учебная симуляция. Не прогнозирует реальный рынок.')}</div>
 
       <div class="pm-panel">
         <div class="pm-label">Направление</div>
@@ -10947,15 +11106,17 @@ function gamePulse(){
         ${round?`
           <div class="pm-live-head"><b>Раунд идёт</b><span id="pmLeft">${fmtT(left)}</span></div>
           <div class="pm-bar"><i id="pmBar" style="transform:scaleX(${progress/100})"></i></div>
-          <div class="muted small">${dirLabel(round.direction)} · ×${round.leverage} · ставка ${fmt(round.bet)} ⬦</div>
+          <div id="pmChartSlot">${mfuPulseChart(round.roundId,round.duration,progress)}</div>
+          <div class="muted small" style="margin-top:6px">${dirLabel(round.direction)} · ×${round.leverage} · ставка ${fmt(round.bet)} ⬦</div>
           ${waiting?'<div class="pm-wait">Считаем результат…</div>':''}
         `:last?`
+          ${mfuPulseChart(last.roundId||('pulse:'+last.outcome+':'+last.move),last.duration||5,1,last.move)}
           <div class="pm-result ${last.won?'win':'lose'}" role="status">
             <div class="pm-res-title">${last.won?'✅ ВЫИГРЫШ':'❌ ПРОИГРЫШ'}</div>
             <div>Рынок: <b>${dirLabel(last.outcome)}</b>${last.move!=null?` · отклонение ${last.move>0?'+':''}${last.move}`:''}</div>
             <div>${last.won?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
           </div>
-        `:`<div class="muted small">Выберите направление и сделайте ставку. Исход считает сервер, после таймера.</div>`}
+        `:`${mfuPulseChart('idle:'+Math.floor(Date.now()/300000),5,1)}<div class="muted small" style="margin-top:8px">Выберите направление и сделайте ставку. Исход считается после таймера.</div>`}
       </div>
 
       <button class="control upg-run" id="pmGo" ${(busy||round||!dir||bet<c.minBet)?'disabled':''}>${round?'РАУНД ИДЁТ…':busy?'СТАВКА…':'⚡ СДЕЛАТЬ СТАВКУ · '+fmt(bet)+' ⬦'}</button>
@@ -11010,7 +11171,7 @@ function gamePulse(){
         }));
         if(history.length>30) history=history.slice(0,30);
         const x=list[0];
-        last={won:!!x.won,outcome:x.outcome,move:x.move,payout:Number(x.payout)||0,mult:Number(x.mult)||0};
+        last={won:!!x.won,outcome:x.outcome,move:x.move,payout:Number(x.payout)||0,mult:Number(x.mult)||0,roundId:x.roundId,duration:Number(x.duration)||5};
       }
 
       if(d.active){
@@ -11068,12 +11229,19 @@ function gamePulse(){
 
   function startTimer(){
     clearInterval(timer);
+    let chartPaintedAt=0;
     timer=setInterval(async ()=>{
       if(dead||!round){ clearInterval(timer); return; }
       const left=round.dueAt-Date.now();
+      const progress=Math.min(1,(1-Math.max(0,left)/(round.duration*1000)));
       const el=a.querySelector('#pmLeft'), bar=a.querySelector('#pmBar');
       if(el){ el.textContent=fmtT(left); el.classList.toggle('is-urgent', left>0&&left<=3000); }
-      if(bar) bar.style.transform='scaleX('+Math.min(1,(1-Math.max(0,left)/(round.duration*1000)))+')';
+      if(bar) bar.style.transform='scaleX('+progress+')';
+      if(left>0&&Date.now()-chartPaintedAt>650){
+        chartPaintedAt=Date.now();
+        const slot=a.querySelector('#pmChartSlot');
+        if(slot) slot.innerHTML=mfuPulseChart(round.roundId,round.duration,progress);
+      }
       if(left<=0){
         clearInterval(timer);
         await fetchResult();
@@ -11100,7 +11268,7 @@ function gamePulse(){
     }
     if(!res||!res.ok){ notice('Результат ещё не готов, попробуйте позже.','bad'); return; }
     const r=res.result||{};
-    last={won:Boolean(r.won),outcome:r.outcome,move:r.move,payout:r.payout||0,mult:r.mult};
+    last={won:Boolean(r.won),outcome:r.outcome,move:r.move,payout:r.payout||0,mult:r.mult,roundId:roundNow.roundId,duration:roundNow.duration};
     history.unshift({dir:roundNow.direction,lev:roundNow.leverage,bet:roundNow.bet,won:last.won,payout:last.payout});
     if(history.length>30) history=history.slice(0,30);
     if(typeof res.tokens==='number') setTokens(res.tokens);

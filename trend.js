@@ -30,8 +30,7 @@ const TREND = {
     3: { label: 'Сложный',  points: 24, noise: 0.35, seconds: 10, mult: 2.76 }
   },
   minBet: 10,
-  maxBet: 5000,
-  disclaimer: 'Учебная симуляция. Не прогнозирует реальный рынок. Игра на виртуальные токены.'
+  maxBet: 5000
 };
 
 /** Выплата для уровня: при уровне 3 множитель выше, но RTP одинаковый (см. ниже). */
@@ -99,8 +98,7 @@ function publicConfig() {
       level: Number(k), label: v.label, points: v.points, seconds: v.seconds, multiplier: v.mult
     })),
     minBet: TREND.minBet,
-    maxBet: TREND.maxBet,
-    disclaimer: TREND.disclaimer
+    maxBet: TREND.maxBet
   };
 }
 

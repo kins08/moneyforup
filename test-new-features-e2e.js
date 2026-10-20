@@ -61,24 +61,25 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
     }
     eq(bal(), expected, 'баланс после пяти кейсов сходится');
 
-    // Бесплатный тест-прокрут: демо-дроп без предмета, но с реальным прогревом.
+    // Демо-прокрут: хороший дроп без предмета и без влияния на платные открытия.
     const warmBefore = bal();
     const warmInv = await post('/api/inventory', {});
     const warm = await post('/api/cases/warmup', { caseId: 'case_500' });
-    eq(warm.status, 200, 'тест-прокрут выполнен');
-    ok(warm.body.demo === true && warm.body.item && warm.body.item.price > 0, 'тест-прокрут вернул демо-дроп');
-    eq(bal(), warmBefore, 'тест-прокрут не списал токены');
+    eq(warm.status, 200, 'демо-прокрут выполнен');
+    ok(warm.body.demo === true && warm.body.item && warm.body.item.price > 0, 'демо-прокрут вернул дроп');
+    ok(!('warmupPoints' in warm.body), 'демо-прокрут не начисляет баллы прогрева');
+    eq(bal(), warmBefore, 'демо-прокрут не списал токены');
     const warmInvAfter = await post('/api/inventory', {});
-    eq(warmInvAfter.body.count, warmInv.body.count, 'тест-прокрут не выдал предмет');
+    eq(warmInvAfter.body.count, warmInv.body.count, 'демо-прокрут не выдал предмет');
     const warmDup = await post('/api/cases/warmup', { caseId: 'case_500' });
-    eq(warmDup.status, 429, 'повторный тест-прокрут отклонён до платного открытия');
+    eq(warmDup.status, 200, 'демо-прокрут можно повторять');
 
     // Классический кейс открывается через тот же единый эндпоинт.
     const cl = cat.body.classic.find(c => c.id === 'case_500');
     const classicOpen = await post('/api/cases/open', { caseId: 'case_500', requestId: 'classic-case-000001' });
     eq(classicOpen.status, 200, 'классический кейс открыт через Case Hub');
     eq(classicOpen.body.kind, 'classic', 'ответ помечен как classic');
-    ok(classicOpen.body.warmupUsed === true, 'прогрев учтён при платном открытии');
+    ok(!('warmupUsed' in classicOpen.body), 'демо-прокрут не влияет на платное открытие');
     expected -= cl.price;
     eq(classicOpen.body.tokens, expected, 'списана цена классического кейса');
     const inv = await post('/api/inventory', {});
