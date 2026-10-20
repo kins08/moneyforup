@@ -833,17 +833,17 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
    Trend Hunter, прогресс, лента апгрейда) используют ТОЛЬКО эти токены.
    Старые экраны не трогаем, чтобы не сломать их вёрстку. */
 :root{
-  --mfu-graphite-0:#0c0e12;   /* фон страницы */
-  --mfu-graphite-1:#14171d;   /* панели */
-  --mfu-graphite-2:#1d2129;   /* вложенные блоки */
-  --mfu-line:rgba(255,255,255,.08);
-  --mfu-text:#ffffff;
-  --mfu-muted:#9aa3b2;
-  --mfu-cyan:#35d6ff;
-  --mfu-lime:#a3e635;
-  --mfu-orange:#fb923c;       /* только предупреждения */
-  --mfu-red:#f87171;          /* только минус и отказ */
-  --mfu-radius:14px;
+  --mfu-graphite-0:var(--bg);
+  --mfu-graphite-1:var(--panel);
+  --mfu-graphite-2:var(--panel2);
+  --mfu-line:var(--line);
+  --mfu-text:var(--text);
+  --mfu-muted:var(--muted);
+  --mfu-cyan:var(--accent);
+  --mfu-lime:var(--good);
+  --mfu-orange:var(--gold);       /* только предупреждения */
+  --mfu-red:var(--bad);          /* только минус и отказ */
+  --mfu-radius:17px;
   --mfu-motion:.2s ease;
 }
 @media (prefers-reduced-motion: reduce){
@@ -872,7 +872,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .pm-title{font-size:13px;font-weight:900;letter-spacing:.12em;color:var(--mfu-cyan)}
 .pm-disclaimer{font-size:11px;color:var(--mfu-muted);line-height:1.4;padding:8px 10px;border:1px solid var(--mfu-line);border-radius:10px;background:var(--mfu-graphite-2)}
 .pm-panel{background:var(--mfu-graphite-1);border:1px solid var(--mfu-line);border-radius:var(--mfu-radius);padding:12px}
-.pm-label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#8d97ad;margin-bottom:8px}
+.pm-label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .pm-row{display:flex;gap:6px;flex-wrap:wrap}
 .pm-dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .pm-chip{padding:8px 10px;border-radius:10px;border:1px solid var(--mfu-line);background:var(--mfu-graphite-2);color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
@@ -893,11 +893,11 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .pm-res-title{font-size:15px;font-weight:900}
 .pm-result.win .pm-res-title{color:var(--mfu-lime)}
 .pm-result.lose .pm-res-title{color:var(--mfu-red)}
-.pm-stage.won{border-color:rgba(163,230,53,.45)}
-.pm-stage.lost{border-color:rgba(248,113,113,.4)}
+.pm-stage.won{border-color:rgba(34,197,94,.45)}
+.pm-stage.lost{border-color:rgba(239,68,68,.4)}
 .tr-chart{width:100%;height:110px;display:block;margin:6px 0 2px;background:var(--mfu-graphite-2);border-radius:10px}
 /* Лента прокрутки апгрейда: одна полоса, указатель по центру, цвет = результат сервера. */
-.upg-frame{position:relative;overflow:hidden;height:118px;border-radius:14px;background:#0c0f16;border:1px solid rgba(255,255,255,.08);margin:6px 0 10px}
+.upg-frame{position:relative;overflow:hidden;height:118px;border-radius:15px;background:var(--panel2);border:1px solid var(--line);margin:6px 0 10px}
 .upg-frame.spin-win{border-color:rgba(61,220,150,.7);box-shadow:0 0 0 1px rgba(61,220,150,.25) inset}
 .upg-frame.spin-lose{border-color:rgba(255,115,134,.7);box-shadow:0 0 0 1px rgba(255,115,134,.25) inset}
 .upg-pointer-line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffcf6b;z-index:2;pointer-events:none}
@@ -906,7 +906,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 @keyframes upgWait{from{transform:translateX(0)}to{transform:translateX(-92px)}}
 .upg-cell{flex:0 0 92px;width:92px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;text-align:center}
 .upg-cell span{font-size:26px;line-height:1}
-.upg-cell small{font-size:10px;color:#b8c1d4;line-height:1.2;max-height:24px;overflow:hidden}
+.upg-cell small{font-size:11px;color:var(--muted);line-height:1.2;max-height:24px;overflow:hidden}
 .upg-cell.win{background:rgba(61,220,150,.12)}
 .upg-cell.win small{color:#8ff0c4;font-weight:800}
 .upg-cell.lose{background:rgba(255,115,134,.12)}
@@ -920,13 +920,13 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-mode.on{border-color:var(--upg-col,#ffcf6b);background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));box-shadow:0 0 0 1px var(--upg-col,#ffcf6b) inset}
 .upg-mode.on b{color:var(--upg-col,#ffcf6b)}
 .upg-panel{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(155deg,#151019,#0f0c13);padding:14px;margin-bottom:11px}
-.upg-label{font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#8d97ad;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.upg-label{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .upg-label span{color:#ffcf6b;text-transform:none;letter-spacing:0}
 .upg-source-row{display:flex;gap:7px;margin-bottom:9px}
 .upg-source-btn{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#b9c2d6;font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
 .upg-source-btn.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
 .upg-input{width:100%;box-sizing:border-box;background:#0d0a10;border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;padding:12px;font-size:17px;font-weight:900;font-family:inherit;text-align:right}
-.upg-input:focus{outline:none;border-color:#ffcf6b}
+.upg-input:focus{outline:none;border-color:var(--accent)}.upg-input:focus-visible,.pm-chip:focus-visible,.pm-dir:focus-visible,.tr-answers button:focus-visible,[data-tlev]:focus-visible,[data-pdir]:focus-visible,[data-plev]:focus-visible,[data-pdur]:focus-visible,[data-pbet]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .upg-quick{display:flex;gap:6px;margin-top:7px}
 .upg-quick button{flex:1;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#cfd6e6;font-family:inherit;font-size:10.5px;font-weight:800;padding:8px 4px;cursor:pointer}
 .upg-quick button:hover{border-color:#ffcf6b;color:#ffcf6b}
@@ -946,7 +946,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-target.disabled{opacity:.38;cursor:not-allowed}
 .upg-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .upg-stat{border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);padding:9px 10px}
-.upg-stat small{display:block;font-size:9px;color:#8d97ad;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.upg-stat small{display:block;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .upg-stat b{display:block;font-size:15px;color:#fff;margin-top:3px;font-weight:950}
 .upg-stat b.good{color:#3ddc96}.upg-stat b.warn{color:#ffcf6b}.upg-stat b.bad{color:#ff7386}
 .upg-dist{margin-top:9px;display:flex;flex-direction:column;gap:5px}
@@ -10029,7 +10029,7 @@ function gameUpgradeArena(){
       </div>
       <div class="upg-dist" id="upgDist">${selectedList().length>1?selectedList().map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/selectedList().length*10000)/100).toFixed(2)}%</b></div>`).join(''):''}</div>
       <button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ⬦'}</button>
-      <div class="result" id="upgNotice">${notice||(selectedList().length?`Шанс рассчитан серверной формулой: (1 − edge) × источник / цель.`:'Выберите цель из списка.')}</div>
+      <div class="result" id="upgNotice" aria-live="polite">${notice||(selectedList().length?`Шанс рассчитан серверной формулой: (1 − edge) × источник / цель.`:'Выберите цель из списка.')}</div>
     </div>`;
   }
 
@@ -10122,7 +10122,7 @@ function gameUpgradeArena(){
         </div>
         <button class="control ghost" id="upgLadderReset" style="margin-top:8px">НОВАЯ ЛЕСЕНКА</button>
       `}
-      <div class="result" id="upgLadderMsg">${ladderMsg||''}</div>
+      <div class="result" id="upgLadderMsg" aria-live="polite">${ladderMsg||''}</div>
     </div>`;
   }
 
@@ -10575,7 +10575,7 @@ function gameTrend(){
     const X=i=>pad+(w-2*pad)*i/(points.length-1);
     const Y=v=>pad+(h-2*pad)*(1-(v-min)/span);
     const d=points.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
-    return `<svg class="tr-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="график"><path d="${d}" fill="none" stroke="#35d6ff" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
+    return `<svg class="tr-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="график"><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
   }
 
   function render(){
@@ -10605,9 +10605,9 @@ function gameTrend(){
           <div class="pm-bar"><i id="trBar" style="width:${progress}%"></i></div>
           ${chart(round.points)}
           <div class="tr-answers">
-            <button class="pm-dir up" data-tans="rise" ${busy?'disabled':''}>РОСТ ▲</button>
-            <button class="pm-dir down" data-tans="fall" ${busy?'disabled':''}>ПАДЕНИЕ ▼</button>
-            <button class="pm-dir range" data-tans="flat" ${busy?'disabled':''}>БОКОВИК ◆</button>
+            <button class="pm-dir up" data-tans="rise" aria-label="Ответ: рост" ${busy?'disabled':''}>РОСТ ▲</button>
+            <button class="pm-dir down" data-tans="fall" aria-label="Ответ: падение" ${busy?'disabled':''}>ПАДЕНИЕ ▼</button>
+            <button class="pm-dir range" data-tans="flat" aria-label="Ответ: боковик" ${busy?'disabled':''}>БОКОВИК ◆</button>
           </div>
         `:last?`
           <div class="pm-result ${last.correct?'win':'lose'}">
@@ -10626,7 +10626,7 @@ function gameTrend(){
         </div>
         <button class="control upg-run" id="trGo" ${(busy||bet<c.minBet)?'disabled':''}>${busy?'СТАРТ…':'▶ СТАРТ · '+fmt(bet)+' ⬦'}</button>
       `:''}
-      <div class="result" id="trMsg"></div>
+      <div class="result" id="trMsg" aria-live="polite"></div>
     </div>`;
     bind();
   }
@@ -10755,7 +10755,7 @@ function gamePulse(){
       <div class="pm-panel">
         <div class="pm-label">Направление</div>
         <div class="pm-dirs">
-          ${['up','down','range'].map(d=>`<button class="pm-dir ${dir===d?'on':''} ${d}" data-pdir="${d}" ${(busy||round)?'disabled':''} ${!levAllowed(lev,d)?'disabled':''}>${dirLabel(d)}</button>`).join('')}
+          ${['up','down','range'].map(d=>`<button class="pm-dir ${dir===d?'on':''} ${d}" data-pdir="${d}" aria-label="Направление: ${dirLabel(d)}" ${(busy||round)?'disabled':''} ${!levAllowed(lev,d)?'disabled':''}>${dirLabel(d)}</button>`).join('')}
         </div>
       </div>
 
@@ -10792,7 +10792,7 @@ function gamePulse(){
           <div class="muted small">${dirLabel(round.direction)} · ×${round.leverage} · ставка ${fmt(round.bet)} ⬦</div>
           ${waiting?'<div class="pm-wait">Считаем результат…</div>':''}
         `:last?`
-          <div class="pm-result ${last.won?'win':'lose'}">
+          <div class="pm-result ${last.won?'win':'lose'}" role="status">
             <div class="pm-res-title">${last.won?'✅ ВЫИГРЫШ':'❌ ПРОИГРЫШ'}</div>
             <div>Рынок: <b>${dirLabel(last.outcome)}</b>${last.move!=null?` · отклонение ${last.move>0?'+':''}${last.move}`:''}</div>
             <div>${last.won?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
@@ -10801,7 +10801,7 @@ function gamePulse(){
       </div>
 
       <button class="control upg-run" id="pmGo" ${(busy||round||!dir||bet<c.minBet)?'disabled':''}>${round?'РАУНД ИДЁТ…':busy?'СТАВКА…':'⚡ СДЕЛАТЬ СТАВКУ · '+fmt(bet)+' ⬦'}</button>
-      <div class="result" id="pmMsg"></div>
+      <div class="result" id="pmMsg" aria-live="polite"></div>
       ${history.length?`<div class="pm-panel"><div class="pm-label">Сессия <span>${history.length}</span></div>${history.slice(0,10).map(h=>`<div class="uhr"><span>${h.won?'🟢':'🔴'}</span><b>${esc(dirLabel(h.dir))} ×${h.lev}</b><span class="${h.won?'win':'lose'}">${h.won?'+'+fmt(h.payout):'−'+fmt(h.bet)} ⬦</span></div>`).join('')}</div>`:''}
     </div>`;
     bind();
