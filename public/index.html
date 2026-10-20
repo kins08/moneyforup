@@ -5112,7 +5112,7 @@ function gameRacket(){
     }
     if(applied){
       rr.className='result';
-      rr.innerHTML=`Ставка${applied>1?'и':''} восстановлен${applied>1?'ы':''} после перезагрузки: ${forRound.slice(0,applied).map(x=>fmt(x.bet)+' ⬦').join(' + ')}. Раунд продолжается — кэшаут доступен.`;
+      rr.innerHTML=`Ставка${applied>1?'и':''} восстановлен${applied>1?'ы':'а'} после перезагрузки: ${forRound.slice(0,applied).map(x=>fmt(x.bet)+' ⬦').join(' + ')}. Раунд продолжается — кэшаут доступен.`;
       render(Date.now()%ROUND_MS);
     }
   }
