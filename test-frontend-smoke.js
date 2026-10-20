@@ -177,6 +177,24 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#upgSerialStart')), 'кнопка серии есть');
     ok(Boolean(d.querySelector('#upgSerialCount')), 'настройка количества попыток есть');
 
+    console.log('\n4b) Pulse Market');
+    d.querySelector('.nav button[data-nav="games"]').click();
+    await wait(100);
+    const pulseCard = d.querySelector('[data-game="pulse"]');
+    ok(Boolean(pulseCard), 'карточка Pulse Market есть в играх');
+    pulseCard.click();
+    await wait(300);
+    ok(/PULSE MARKET/.test(d.querySelector('#gameArea').textContent), 'экран Pulse Market открыт');
+    eq(d.querySelectorAll('[data-pdir]').length, 3, 'три направления: вверх / вниз / боковик');
+    eq(d.querySelectorAll('[data-plev]').length, 2, 'два плеча: ×1 и ×2');
+    eq(d.querySelectorAll('[data-pdur]').length, 3, 'три длительности: 5 / 10 / 20 с');
+    ok(/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'дисклеймер на экране');
+    ok(d.querySelector('[data-plev="2"]') && d.querySelector('[data-plev="2"]').textContent.includes('без боковика'), 'на плече ×2 написано, что боковика нет');
+    // На плече ×2 боковик недоступен.
+    d.querySelector('[data-plev="2"]').click();
+    await wait(60);
+    ok(d.querySelector('[data-pdir="range"]').disabled === true, 'при плече ×2 кнопка «Боковик» отключена');
+
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();
     await wait(100);

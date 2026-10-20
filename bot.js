@@ -48,6 +48,7 @@ if (!__nodeOk) {
 const db            = require('./db');
 const items         = require('./items');   // серверный каталог кейсов и предметов
 const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
+const pulse         = require('./pulse');   // Pulse Market: исход и выплаты (DECISIONS D5)
 /* Каталог пяти новых режимов кейсов — единый UMD-файл: его же грузит браузер
    как статику. Поэтому цены/предметы не дублируются между фронтом и бэком. */
 const caseModes     = require('./assets/case-modes.js');
@@ -448,6 +449,8 @@ function racketBustMs(crash) {
 }
 
 const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
+// Pulse Market: серверный seed и параметры открытых раундов (до раскрытия результата).
+const pulseRounds = new Map();     // roundId -> { userId, seed, startedAt, dueAt, direction, leverage, duration, bet, settled }
 const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance, createdAt }
 
 setInterval(() => {
@@ -2298,6 +2301,105 @@ const server = http.createServer(async (req, res) => {
           upgradeOnly: 1
         }
       });
+    }
+
+    /* ── Pulse Market: микрораунды крипто-рынка (DECISIONS.md D5) ──────────────
+       Ставка списывается сервером; исход — из серверного seed; результат
+       раскрывается только после окончания таймера раунда. */
+    if (url.pathname === '/api/pulse/config' && req.method === 'POST') {
+      return send(200, { ok: true, config: pulse.publicConfig(), tokens: u.tokens });
+    }
+
+    if (url.pathname === '/api/pulse/bet' && req.method === 'POST') {
+      if (!checkRateLimit(`pulse-bet:${u.id}`, 30, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      }
+      const check = pulse.validateBet({
+        direction: body.direction, leverage: body.leverage, duration: body.duration, bet: body.bet
+      });
+      if (!check.ok) return send(400, { error: check.error });
+      if (check.bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно токенов' });
+
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const roundId = `PM_${u.id}_${clientKey}`;
+      const seed = crypto.randomBytes(32).toString('hex');
+      const startedAt = Date.now();
+
+      // Идемпотентность и защита от двойного списания: claim ДО списания.
+      let claimed = false;
+      try {
+        claimed = db.claimRound({ roundId, userId: u.id, game: pulse.PULSE.label, bet: check.bet });
+      } catch (e) {
+        console.error('[Pulse] claim failed:', e.message);
+        return send(500, { error: 'Не удалось начать раунд, повторите позже' });
+      }
+      if (!claimed) {
+        // Повтор того же запроса: вернуть уже существующий раунд, без нового списания.
+        const prev = db.getRound(roundId);
+        return send(200, { ok: true, duplicate: true, roundId, status: prev ? prev.status : 'pending', tokens: u.tokens });
+      }
+
+      const r = applyBalance(u, -check.bet, 'pulse_bet',
+        `Pulse Market · ${check.bet} ⬦ · ${body.direction} ×${check.leverage} · ${check.duration} с`, roundId);
+      if (!r.ok) {
+        db.releaseRoundClaim(roundId, u.id);
+        return send(400, { error: 'Не удалось списать ставку' });
+      }
+      u.rakeback = Math.round(((u.rakeback || 0) + (check.bet * 0.005)) * 100) / 100;
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse bet):', e.message); }
+
+      pulseRounds.set(roundId, {
+        userId: u.id, seed, startedAt, dueAt: startedAt + check.duration * 1000,
+        direction: body.direction, leverage: check.leverage, duration: check.duration,
+        bet: check.bet, settled: false
+      });
+      return send(200, {
+        ok: true, duplicate: false, roundId, startedAt, dueAt: startedAt + check.duration * 1000,
+        duration: check.duration, direction: body.direction, leverage: check.leverage,
+        bet: check.bet, tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/pulse/result' && req.method === 'POST') {
+      const roundId = String(body.roundId || '');
+      const rd = pulseRounds.get(roundId);
+      if (!rd || rd.userId !== u.id) return send(404, { error: 'Раунд не найден' });
+      // Чистка завершённых раундов старше 10 минут (память не растёт бесконечно).
+      for (const [k, v] of pulseRounds) {
+        if (v.settled && v.settledAt && Date.now() - v.settledAt > 10 * 60 * 1000) pulseRounds.delete(k);
+      }
+      // Результат раскрывается только по окончании таймера — не раньше.
+      if (Date.now() < rd.dueAt) {
+        return send(425, { error: 'Раунд ещё идёт', dueAt: rd.dueAt });
+      }
+      if (rd.settled) {
+        // Повтор: отдаём уже записанный результат, деньги второй раз не начисляем.
+        return send(200, { ok: true, duplicate: true, result: rd.result, tokens: u.tokens });
+      }
+      const res = pulse.settle({
+        seedHex: rd.seed, roundId, direction: rd.direction, leverage: rd.leverage, bet: rd.bet
+      });
+      if (res.payout > 0) {
+        const pr = applyBalance(u, res.payout, 'pulse_win',
+          `Pulse Market · выигрыш +${res.payout} ⬦ (×${res.mult})`, roundId);
+        if (!pr.ok) return send(500, { error: 'Не удалось начислить выигрыш, повторите' });
+      }
+      rd.settled = true;
+      rd.result = { outcome: res.outcome, move: res.move, won: res.won, mult: res.mult, payout: res.payout };
+      try {
+        db.settleRound({
+          roundId, userId: u.id, game: pulse.PULSE.label, bet: rd.bet,
+          mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
+        });
+      } catch (e) { console.error('[Pulse] settle not saved:', e.message); }
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse result):', e.message); }
+      // Seed клиенту не отдаём. Раунд держим в памяти, чтобы повтор запроса
+      // (потерянный ответ) вернул тот же результат, а не 404. Чистка — ниже.
+      rd.settledAt = Date.now();
+      return send(200, { ok: true, duplicate: false, result: rd.result, tokens: u.tokens });
     }
 
     /* ── Ракетка: приём ставки до старта полёта ────────────────────────────── */
