@@ -4735,155 +4735,388 @@ function gameRacket(){
 
   function drawRocket(g,cx,cy,ang,bc,sp){
     const t = performance.now() * 0.0025;
-    // Спокойная плавная аэродинамическая пульсация пламени без резких дёрганий
-    const flameBase = 16 + Math.min(36, sp * 14);
+    const flameBase = 17 + Math.min(34, sp * 13);
     const flame = flameBase * (0.92 + Math.sin(t * 5) * 0.08);
+    const wave = Math.sin(t * 4.2);
 
     g.save();
     g.translate(cx, cy);
     g.rotate(ang);
-    // Увеличенная крупная и запоминающаяся модель Льва (масштаб 2.2x)
-    g.scale(2.2, 2.2);
+    g.scale(2.0, 2.0);
+    g.shadowBlur = 0;
+    g.shadowColor = 'transparent';
 
-    // 1. Плавный аэродинамический реактивный шлейф
-    const fg = g.createRadialGradient(-20, 1, 2, -20 - flame, 1, flame);
-    fg.addColorStop(0, 'rgba(255, 250, 200, 0.98)');
-    fg.addColorStop(0.25, 'rgba(251, 146, 60, 0.88)');
-    fg.addColorStop(0.65, 'rgba(239, 68, 68, 0.55)');
-    fg.addColorStop(1, 'rgba(185, 28, 28, 0)');
-    g.fillStyle = fg;
+    // Тёплое свечение вокруг маскота, чтобы он не сливался со звёздным фоном.
+    const halo = g.createRadialGradient(2, -6, 3, 2, -6, 27);
+    halo.addColorStop(0, 'rgba(251,191,36,.16)');
+    halo.addColorStop(0.55, 'rgba(239,68,68,.07)');
+    halo.addColorStop(1, 'rgba(239,68,68,0)');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(2, -6, 27, 0, Math.PI * 2); g.fill();
+
+    // Пламя: три слоя + искры.
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const flameOuter = g.createLinearGradient(-18, 4.2, -18 - flame, 4.2);
+    flameOuter.addColorStop(0, 'rgba(255,214,110,.85)');
+    flameOuter.addColorStop(0.28, 'rgba(251,146,60,.62)');
+    flameOuter.addColorStop(0.7, 'rgba(239,68,68,.3)');
+    flameOuter.addColorStop(1, 'rgba(185,28,28,0)');
+    g.fillStyle = flameOuter;
     g.beginPath();
-    g.ellipse(-20 - flame * 0.45, 1, flame * 0.55, 4.2 + flame * 0.08, 0, 0, Math.PI * 2);
-    g.fill();
+    g.moveTo(-18, 0.8);
+    g.quadraticCurveTo(-19 - flame * 0.22, 1.4 - wave * 0.7, -18 - flame * 0.55, 2.7 + wave * 0.8);
+    g.quadraticCurveTo(-18 - flame * 0.8, 3.4, -18 - flame, 4.2 + wave * 0.6);
+    g.quadraticCurveTo(-18 - flame * 0.8, 5.0, -18 - flame * 0.55, 5.7 - wave * 0.8);
+    g.quadraticCurveTo(-19 - flame * 0.22, 7.0 + wave * 0.7, -18, 7.6);
+    g.closePath(); g.fill();
 
-    // Мягкие летящие золотые искры
-    for(let i = 0; i < 4; i++){
-      const sparkX = -18 - ((t * 28 + i * 9) % (flame * 0.95));
-      const sparkY = Math.sin(t * 4 + i * 1.8) * 3;
-      g.fillStyle = 'rgba(254, 240, 138, 0.75)';
-      g.beginPath();
-      g.arc(sparkX, sparkY, 1.1, 0, Math.PI * 2);
-      g.fill();
+    const tongue = g.createLinearGradient(-18, 4.2, -18 - flame * 0.62, 4.2);
+    tongue.addColorStop(0, 'rgba(255,196,84,.72)'); tongue.addColorStop(1, 'rgba(239,68,68,0)');
+    g.fillStyle = tongue;
+    g.beginPath();
+    g.moveTo(-19, 2.2);
+    g.quadraticCurveTo(-22 - flame * 0.3, -1.2 + wave * 1.4, -18 - flame * 0.58, 1.5 + wave * 1.2);
+    g.quadraticCurveTo(-23 - flame * 0.12, 2.7, -19, 4.2);
+    g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(-19, 6.2);
+    g.quadraticCurveTo(-22 - flame * 0.3, 9.6 - wave * 1.4, -18 - flame * 0.52, 6.8 - wave * 1.2);
+    g.quadraticCurveTo(-23 - flame * 0.12, 5.7, -19, 4.2);
+    g.closePath(); g.fill();
+
+    const core = g.createLinearGradient(-18, 4.2, -18 - flame * 0.9, 4.2);
+    core.addColorStop(0, 'rgba(255,255,235,.98)');
+    core.addColorStop(0.45, 'rgba(253,224,71,.95)');
+    core.addColorStop(0.8, 'rgba(251,146,60,.55)');
+    core.addColorStop(1, 'rgba(251,146,60,0)');
+    g.fillStyle = core;
+    g.beginPath();
+    g.moveTo(-18, 2.0);
+    g.quadraticCurveTo(-19 - flame * 0.34, 2.5 + wave * 0.7, -18 - flame * 0.58, 3.4 + wave * 0.6);
+    g.quadraticCurveTo(-18 - flame * 0.82, 3.9, -18 - flame * 0.9, 4.4 + wave * 0.4);
+    g.quadraticCurveTo(-18 - flame * 0.55, 5.2 - wave * 0.6, -18, 6.4);
+    g.closePath(); g.fill();
+
+    const hotspot = g.createRadialGradient(-18.8, 4.2, 0.3, -18.8, 4.2, 3.2);
+    hotspot.addColorStop(0, 'rgba(255,255,250,1)'); hotspot.addColorStop(1, 'rgba(255,248,190,0)');
+    g.fillStyle = hotspot;
+    g.beginPath(); g.ellipse(-18.8, 4.2, 2.2, 3.1, 0, 0, Math.PI * 2); g.fill();
+
+    for(let i = 0; i < 6; i++){
+      const phase = (t * 32 + i * 11) % (flame * 0.9);
+      const sx = -18 - phase;
+      const sy = 4.2 + Math.sin(t * 6 + i * 1.7) * (2.2 + i * 0.15);
+      g.fillStyle = 'rgba(254,240,138,' + (0.8 - phase / (flame * 1.15)).toFixed(2) + ')';
+      g.beginPath(); g.arc(sx, sy, i % 2 ? 0.8 : 1.15, 0, Math.PI * 2); g.fill();
     }
+    g.restore();
 
-    // 2. Металлическая ретро-капсула ракеты под Львом
-    g.fillStyle = '#b45309';
+    // Сопло.
+    const nozzle = g.createLinearGradient(-27, 0, -18, 0);
+    nozzle.addColorStop(0, '#111827');
+    nozzle.addColorStop(0.5, '#475569');
+    nozzle.addColorStop(1, '#1f2937');
+    g.fillStyle = nozzle;
     g.beginPath();
-    g.roundRect ? g.roundRect(-16, -1, 30, 8, [0, 4, 4, 0]) : g.rect(-16, -1, 30, 8);
-    g.fill();
-    g.strokeStyle = '#522304'; g.lineWidth = 1.3; g.stroke();
+    g.moveTo(-18, 1.4); g.lineTo(-25, 2.5); g.lineTo(-25, 6.1); g.lineTo(-18, 7.2);
+    g.closePath(); g.fill();
+    g.strokeStyle = '#0b1120'; g.lineWidth = 0.8; g.stroke();
+    g.strokeStyle = 'rgba(148,163,184,.55)'; g.lineWidth = 0.55;
+    [-22.2, -20.4].forEach(x => { g.beginPath(); g.moveTo(x, 2.2); g.lineTo(x, 6.4); g.stroke(); });
 
-    // Сопло двигателя
-    g.fillStyle = '#374151';
+    // Задние плавники.
+    const fin = g.createLinearGradient(-20, -5, -8, 0);
+    fin.addColorStop(0, '#7f1d1d'); fin.addColorStop(1, '#dc2626');
+    g.fillStyle = fin;
     g.beginPath();
-    g.moveTo(-16, -2); g.lineTo(-20, -3.5); g.lineTo(-20, 5.5); g.lineTo(-16, 4);
-    g.closePath();
-    g.fill();
-    g.strokeStyle = '#1f2937'; g.lineWidth = 1.2; g.stroke();
+    g.moveTo(-13, 1.2); g.quadraticCurveTo(-20, -5.4, -23.5, -5.8);
+    g.quadraticCurveTo(-19, -1.4, -15.5, 2.2); g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(-13, 6.8); g.quadraticCurveTo(-20, 12.4, -23.5, 12.8);
+    g.quadraticCurveTo(-19, 8.6, -15.5, 5.8); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(253,230,138,.55)'; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(-13.5, 1.2); g.quadraticCurveTo(-20, -5.1, -23.2, -5.6); g.stroke();
+    g.beginPath(); g.moveTo(-13.5, 6.8); g.quadraticCurveTo(-20, 12.1, -23.2, 12.6); g.stroke();
 
-    // Заклёпки на ракете
+    // Корпус ракеты.
+    const hull = g.createLinearGradient(0, -1, 0, 9);
+    hull.addColorStop(0, '#f87171'); hull.addColorStop(0.35, '#dc2626');
+    hull.addColorStop(0.72, '#991b1b'); hull.addColorStop(1, '#5b0f12');
+    g.fillStyle = hull;
+    g.beginPath();
+    if(g.roundRect) g.roundRect(-17.5, -1, 35, 10, 4.6); else g.rect(-17.5, -1, 35, 10);
+    g.fill();
+    g.strokeStyle = '#450a0a'; g.lineWidth = 0.9; g.stroke();
+
+    // Носовой обтекатель.
+    const nose = g.createLinearGradient(15, -1, 27, 8);
+    nose.addColorStop(0, '#fff7d6'); nose.addColorStop(0.45, '#fde68a'); nose.addColorStop(1, '#b45309');
+    g.fillStyle = nose;
+    g.beginPath();
+    g.moveTo(15.5, -1); g.quadraticCurveTo(25, 1.4, 27.5, 4);
+    g.quadraticCurveTo(25, 7.4, 15.5, 9); g.closePath(); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 0.8; g.stroke();
+
+    // Световая полоса и заклёпки.
+    g.strokeStyle = 'rgba(255,255,255,.34)'; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(-13, 0.2); g.quadraticCurveTo(2, -1.4, 15, 0.5); g.stroke();
+    g.strokeStyle = 'rgba(253,230,138,.55)'; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(-14, 7.5); g.lineTo(13, 7.8); g.stroke();
     g.fillStyle = '#fde68a';
-    [-11, -4, 3, 9].forEach(rx => {
-      g.beginPath(); g.arc(rx, 4.2, 0.8, 0, Math.PI * 2); g.fill();
+    [-11, -5, 1, 7, 12].forEach(x => { g.beginPath(); g.arc(x, 7.8, 0.5, 0, Math.PI * 2); g.fill(); });
+
+    // Шильдик MUP на борту.
+    const plate = g.createLinearGradient(2, 1.2, 2, 7.6);
+    plate.addColorStop(0, '#7f1d1d'); plate.addColorStop(1, '#3f0a0d');
+    g.fillStyle = plate;
+    g.beginPath();
+    if(g.roundRect) g.roundRect(0, 1.1, 14.6, 6.3, 1.7); else g.rect(0, 1.1, 14.6, 6.3);
+    g.fill();
+    g.strokeStyle = '#fde68a'; g.lineWidth = 0.75; g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 0.4;
+    g.beginPath();
+    if(g.roundRect) g.roundRect(0.7, 1.7, 13.2, 4.5, 1.2); else g.rect(0.7, 1.7, 13.2, 4.5);
+    g.stroke();
+    g.fillStyle = '#fff7d6';
+    g.font = '900 5.4px Inter,system-ui,sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('MUP', 7.3, 4.35);
+    g.fillStyle = 'rgba(253,230,138,.9)';
+    g.beginPath(); g.arc(2.4, 4.3, 0.55, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(12.4, 4.3, 0.55, 0, Math.PI * 2); g.fill();
+
+    // Хвост.
+    g.strokeStyle = '#b45309'; g.lineWidth = 2.1; g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(-7, 0.8);
+    g.quadraticCurveTo(-14, -2.8 + wave * 1.2, -20.5, -0.6 + wave * 1.6);
+    g.stroke();
+    const tuft = g.createRadialGradient(-21.5, -0.4 + wave * 1.6, 0.5, -21.5, -0.4 + wave * 1.6, 4.2);
+    tuft.addColorStop(0, '#fbbf24'); tuft.addColorStop(1, '#b45309');
+    g.fillStyle = tuft;
+    g.beginPath(); g.arc(-21.8, -0.4 + wave * 1.6, 3.5, 0, Math.PI * 2); g.fill();
+
+    // Шарф за спиной.
+    // Контактная тень на корпусе под пилотом.
+    const contact = g.createRadialGradient(-4, 2.9, 0.5, -4, 2.9, 7);
+    contact.addColorStop(0, 'rgba(0,0,0,.36)'); contact.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = contact;
+    g.beginPath(); g.ellipse(-4, 2.9, 7, 2.5, 0.08, 0, Math.PI * 2); g.fill();
+
+    // Куртка пилота.
+    const jacket = g.createLinearGradient(-8, -9, 13, 3);
+    jacket.addColorStop(0, '#7f1d1d'); jacket.addColorStop(0.55, '#991b1b'); jacket.addColorStop(1, '#450a0a');
+    g.fillStyle = jacket;
+    g.beginPath();
+    g.moveTo(-6.5, -8.5);
+    g.quadraticCurveTo(2, -11, 8.5, -7.6);
+    g.quadraticCurveTo(12.5, -5.2, 12, -1);
+    g.quadraticCurveTo(11.4, 2.2, 8.6, 3.1);
+    g.quadraticCurveTo(1, 4.2, -4.2, 2.6);
+    g.quadraticCurveTo(-8.4, 0.6, -8.6, -4.1);
+    g.closePath(); g.fill();
+    g.strokeStyle = '#2b0607'; g.lineWidth = 1; g.stroke();
+
+    // Молния и воротник.
+    g.strokeStyle = 'rgba(253,230,138,.85)'; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(6.8, -8); g.quadraticCurveTo(8.6, -4.2, 9.1, 0.6); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(-5.8, -7.4); g.quadraticCurveTo(0, -9.2, 5.6, -7.6); g.stroke();
+
+    g.strokeStyle = '#e7d3ad'; g.lineWidth = 2.7; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-5.4, -7.3); g.quadraticCurveTo(1.4, -9.4, 8.2, -6.9); g.stroke();
+    [
+      [-5.0, -7.6, 1.55], [-2.3, -8.4, 1.6], [0.7, -8.7, 1.65], [3.6, -8.4, 1.6], [6.4, -7.6, 1.5]
+    ].forEach(([x, y, r], i) => {
+      const fluff = g.createRadialGradient(x - r * 0.4, y - r * 0.5, 0.4, x, y, r);
+      fluff.addColorStop(0, '#fff9e8'); fluff.addColorStop(1, i % 2 ? '#e7d3ad' : '#f3e3c2');
+      g.fillStyle = fluff;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(120,53,15,.3)'; g.lineWidth = 0.4; g.stroke();
     });
 
-    // 3. Развевающийся алый шарф пилота (плавная аэродинамическая волна)
-    const scarfWave = Math.sin(t * 6) * 1.8;
-    g.strokeStyle = '#dc2626';
-    g.lineWidth = 3.2;
+    // Шарф пилота: широкое полотно поверх плеча.
+    const scarf = g.createLinearGradient(-1, -8, -18, -6);
+    scarf.addColorStop(0, '#f87171'); scarf.addColorStop(0.45, '#ef4444'); scarf.addColorStop(1, '#991b1b');
+    g.fillStyle = scarf; g.strokeStyle = '#450a0a'; g.lineWidth = 0.6;
     g.beginPath();
-    g.moveTo(4, 0);
-    g.quadraticCurveTo(-6, -4 + scarfWave, -18, -3 - scarfWave * 0.8);
+    g.moveTo(-1.2, -7.6);
+    g.quadraticCurveTo(-7.0, -10.4 + wave * 1.4, -12.0, -7.2 - wave * 1.2);
+    g.quadraticCurveTo(-14.5, -6.0, -18.0, -8.2 + wave * 1.8);
+    g.quadraticCurveTo(-13.6, -4.2 - wave * 1.0, -8.0, -5.6 + wave * 0.8);
+    g.quadraticCurveTo(-4.0, -6.4, -1.0, -5.0);
+    g.closePath(); g.fill(); g.stroke();
+    const scarfTail = g.createLinearGradient(-2, -5, -13, -4);
+    scarfTail.addColorStop(0, '#ef4444'); scarfTail.addColorStop(1, '#7f1d1d');
+    g.fillStyle = scarfTail;
+    g.beginPath();
+    g.moveTo(-1.2, -5.1);
+    g.quadraticCurveTo(-5.6, -3.3 - wave * 0.7, -9.6, -3.5 + wave * 0.9);
+    g.quadraticCurveTo(-11.4, -3.6, -12.8, -4.8 - wave * 1.1);
+    g.quadraticCurveTo(-9.0, -5.9 + wave * 0.6, -5.8, -5.9);
+    g.quadraticCurveTo(-3.2, -5.9, -1.1, -5.5);
+    g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 0.45;
+    g.beginPath();
+    g.moveTo(-2.0, -7.9);
+    g.quadraticCurveTo(-7.0, -10.2 + wave * 1.2, -11.8, -7.5 - wave * 1.0);
     g.stroke();
-    // Кончики шарфа
-    g.strokeStyle = '#b91c1c';
-    g.lineWidth = 2.4;
+
+    // Лапа на борту ракеты.
+    const sleeve = g.createLinearGradient(9, -4, 17, 2);
+    sleeve.addColorStop(0, '#9f1239'); sleeve.addColorStop(1, '#450a0a');
+    g.strokeStyle = '#2b0607'; g.lineWidth = 5.0; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(9.2, -3.4); g.quadraticCurveTo(13.2, -1.2, 15.2, 1.4); g.stroke();
+    g.strokeStyle = sleeve; g.lineWidth = 3.7;
+    g.beginPath(); g.moveTo(9.2, -3.4); g.quadraticCurveTo(13.2, -1.2, 15.2, 1.4); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 0.75;
+    g.beginPath(); g.moveTo(9.5, -4); g.quadraticCurveTo(13, -2.1, 14.9, 0.5); g.stroke();
+    g.strokeStyle = '#e7d3ad'; g.lineWidth = 2.3;
+    g.beginPath(); g.moveTo(13.9, 0.1); g.lineTo(15.5, 1.25); g.stroke();
+    const paw = g.createRadialGradient(17.4, 0.6, 0.5, 17.4, 1.2, 3.4);
+    paw.addColorStop(0, '#fcd34d'); paw.addColorStop(1, '#b45309');
+    g.fillStyle = paw;
+    g.beginPath(); g.ellipse(17.4, 1.7, 3.2, 2.3, 0.4, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#78350f'; g.lineWidth = 0.7; g.stroke();
+    g.strokeStyle = 'rgba(69,26,3,.8)'; g.lineWidth = 0.5;
+    [[16.4, 1], [17.3, 0.8], [18.1, 1]].forEach(([x, y]) => {
+      g.beginPath(); g.moveTo(x, y + 0.7); g.lineTo(x + 0.35, y + 1.7); g.stroke();
+    });
+
+    // Голова: грива из языков пламени.
+    g.save();
+    g.translate(11.2, -14.2 + Math.sin(t * 2.4) * 0.18);
+    g.rotate(-0.08);
+
+    const maneLock = (a, inner, outer, spread, bend, colorA, colorB, outline) => {
+      const gx = Math.cos(a - spread) * inner, gy = Math.sin(a - spread) * inner;
+      const tx = Math.cos(a) * outer + bend, ty = Math.sin(a) * outer;
+      const ex = Math.cos(a + spread) * inner, ey = Math.sin(a + spread) * inner;
+      const lock = g.createLinearGradient(gx, gy, tx, ty);
+      lock.addColorStop(0, colorA); lock.addColorStop(1, colorB);
+      g.fillStyle = lock;
+      g.beginPath();
+      g.moveTo(gx, gy);
+      g.quadraticCurveTo(
+        Math.cos(a - spread * 2.5) * (inner + outer) * 0.5,
+        Math.sin(a - spread * 2.5) * (inner + outer) * 0.5,
+        tx, ty
+      );
+      g.quadraticCurveTo(
+        Math.cos(a + spread * 2.5) * (inner + outer) * 0.5,
+        Math.sin(a + spread * 2.5) * (inner + outer) * 0.5,
+        ex, ey
+      );
+      g.closePath(); g.fill();
+      g.strokeStyle = outline; g.lineWidth = 0.38; g.stroke();
+    };
+    // Задний слой гривы — короче и темнее, чтобы языки не сливались в «солнце».
+    for(let i = 0; i < 11; i++){
+      const a = (i / 11) * Math.PI * 2 + 0.22;
+      const flick = Math.sin(t * 2.2 + i * 2.1) * 0.55;
+      maneLock(a, 6.4, 8.7 + flick, 0.24, -1.1, '#b45309', '#5b230c', 'rgba(69,26,3,.45)');
+    }
+    const maneLocks = 17;
+    for(let i = 0; i < maneLocks; i++){
+      const a = (i / maneLocks) * Math.PI * 2;
+      const flick = Math.sin(t * 2.8 + i * 1.7) * 0.75;
+      const length = i % 2 ? 3.0 : 1.35;
+      maneLock(
+        a, 6.7, 9.2 + length + flick, 0.2,
+        -1.5 - Math.abs(Math.cos(a)) * 0.6,
+        i % 3 ? '#fbbf24' : '#f59e0b',
+        i % 3 ? '#b45309' : '#7c2d12',
+        'rgba(69,26,3,.5)'
+      );
+    }
+    const maneBase = g.createRadialGradient(-3, -4, 1, 0, 0, 8);
+    maneBase.addColorStop(0, '#fbbf24'); maneBase.addColorStop(0.65, '#d97706'); maneBase.addColorStop(1, '#92400e');
+    g.fillStyle = maneBase;
+    g.beginPath(); g.arc(0, 0, 7.4, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(69,26,3,.45)'; g.lineWidth = 0.6;
+    g.beginPath(); g.arc(0, 0, 7.4, 0, Math.PI * 2); g.stroke();
+
+    // Уши.
+    const ear = (x, y, rot) => {
+      g.save(); g.translate(x, y); g.rotate(rot); g.scale(1.16, 1.16);
+      const eg = g.createLinearGradient(0, -4, 0, 1);
+      eg.addColorStop(0, '#f59e0b'); eg.addColorStop(1, '#b45309');
+      g.fillStyle = eg;
+      g.beginPath(); g.moveTo(-2.6, 2.2); g.quadraticCurveTo(-2.2, -3.8, 0.6, -4.2); g.quadraticCurveTo(2.7, -2.2, 2.4, 1.8); g.closePath(); g.fill();
+      g.strokeStyle = '#78350f'; g.lineWidth = 0.6; g.stroke();
+      g.fillStyle = '#fca5a5';
+      g.beginPath(); g.ellipse(0.2, -1.1, 1.1, 1.9, 0, 0, Math.PI * 2); g.fill();
+      g.restore();
+    };
+    ear(-5.7, -7.0, -0.45);
+    ear(6.8, -6.5, 0.5);
+
+    // Морда.
+    const face = g.createLinearGradient(-3, -7, 7, 5);
+    face.addColorStop(0, '#fff8e7'); face.addColorStop(0.6, '#ffe8bf'); face.addColorStop(1, '#e8c089');
+    g.fillStyle = face;
     g.beginPath();
-    g.moveTo(2, 1);
-    g.quadraticCurveTo(-8, -1 + scarfWave * 1.2, -21, 0 - scarfWave);
-    g.stroke();
+    g.moveTo(-4.6, -4.6);
+    g.quadraticCurveTo(-1.2, -7.2, 4.4, -6.1);
+    g.quadraticCurveTo(8.6, -4.4, 8.2, -0.6);
+    g.quadraticCurveTo(7.7, 3.6, 3.2, 4.5);
+    g.quadraticCurveTo(-1.8, 4.9, -4.6, 1.2);
+    g.quadraticCurveTo(-6.1, -1.8, -4.6, -4.6);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(91,44,13,.75)'; g.lineWidth = 0.85; g.stroke();
 
-    // 4. Тело сказочного Льва Лео
-    g.fillStyle = '#f59e0b';
+    // Очки пилота на глазах: так силуэт читается одним взглядом.
+    g.strokeStyle = '#3f2410'; g.lineWidth = 1.1;
+    g.beginPath(); g.moveTo(-4.9, -3.15); g.lineTo(-2.3, -2.9); g.stroke();
+    g.beginPath(); g.moveTo(6.8, -3.0); g.lineTo(8.3, -3.2); g.stroke();
+    const lens = (x, y, r) => {
+      g.fillStyle = '#fbbf24';
+      g.beginPath(); g.arc(x, y, r + 0.55, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#5b2c0d'; g.lineWidth = 0.75; g.stroke();
+      const glass = g.createLinearGradient(x - r, y - r, x + r, y + r);
+      glass.addColorStop(0, '#d9fbff'); glass.addColorStop(0.4, '#5ee0f2'); glass.addColorStop(1, '#075985');
+      g.fillStyle = glass;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 0.4; g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.9)';
+      g.beginPath(); g.arc(x - r * 0.36, y - r * 0.4, r * 0.24, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.45)';
+      g.beginPath(); g.arc(x + r * 0.25, y + r * 0.3, r * 0.12, 0, Math.PI * 2); g.fill();
+    };
+    lens(0.1, -2.8, 1.7); lens(4.6, -2.9, 1.55);
+    g.strokeStyle = '#fde68a'; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(2.05, -2.9); g.quadraticCurveTo(2.6, -3.25, 3.0, -2.95); g.stroke();
+
+    // Брови поверх очков — уверенный прищур.
+    g.strokeStyle = '#4a2208'; g.lineWidth = 1.0; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-2.0, -4.95); g.quadraticCurveTo(0.0, -4.8, 2.0, -4.45); g.stroke();
+    g.beginPath(); g.moveTo(3.2, -4.45); g.quadraticCurveTo(4.9, -4.85, 6.6, -5.0); g.stroke();
+
+    // Морда, нос, ухмылка и румянец.
+    const muzzle = g.createRadialGradient(5.7, 1.5, 0.5, 5.7, 1.7, 3.1);
+    muzzle.addColorStop(0, '#fffdf2'); muzzle.addColorStop(1, 'rgba(255,248,231,0)');
+    g.fillStyle = muzzle;
+    g.beginPath(); g.ellipse(5.8, 1.8, 2.9, 2.1, -0.1, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#5b2c0d';
     g.beginPath();
-    g.moveTo(-11, -2);
-    g.quadraticCurveTo(-6, -9, 4, -9);
-    g.quadraticCurveTo(14, -8, 19, -2);
-    g.quadraticCurveTo(23, 2, 18, 5);
-    g.quadraticCurveTo(8, 7, -5, 6);
-    g.closePath();
-    g.fill();
-    g.strokeStyle = '#78350f'; g.lineWidth = 1.4; g.stroke();
+    g.moveTo(4.9, 0.3); g.quadraticCurveTo(6.4, -0.7, 7.4, 0.4); g.quadraticCurveTo(7.0, 1.6, 5.3, 1.5); g.closePath(); g.fill();
+    g.strokeStyle = '#5b2c0d'; g.lineWidth = 0.6; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(6.25, 1.45); g.lineTo(6.3, 2.25); g.stroke();
+    g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(5.6, 1.7); g.quadraticCurveTo(6.2, 2.9, 7.6, 2.5); g.stroke();
+    g.beginPath(); g.moveTo(7.6, 2.5); g.quadraticCurveTo(8.1, 2.2, 8.3, 1.6); g.stroke();
+    g.fillStyle = '#fffdf5';
+    g.beginPath(); g.moveTo(6.55, 2.75); g.lineTo(6.85, 3.5); g.lineTo(7.15, 2.85); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(244,114,182,.24)';
+    g.beginPath(); g.arc(3.9, 1.9, 1.6, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(91,44,13,.55)';
+    [[5.9, 2.9], [6.7, 3.1], [7.4, 3]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 0.25, 0, Math.PI * 2); g.fill(); });
 
-    // Пышная золотисто-карамельная грива
-    g.fillStyle = '#d97706';
-    const maneBreathe = Math.sin(t * 3) * 0.8;
-    g.beginPath(); g.arc(1, -4 + maneBreathe * 0.2, 7.5, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(8, -5 - maneBreathe * 0.2, 7.2, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(-4, 0, 6.5, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(6, 3, 6, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#78350f'; g.lineWidth = 1.2; g.stroke();
-
-    // Ушко льва
-    g.fillStyle = '#f59e0b'; g.beginPath(); g.arc(10, -10.5, 3.2, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#78350f'; g.lineWidth = 1.1; g.stroke();
-    g.fillStyle = '#fca5a5'; g.beginPath(); g.arc(10, -10.5, 1.6, 0, Math.PI * 2); g.fill();
-
-    // Очки пилота-авиатора на лбу
-    g.fillStyle = '#78350f'; // ремешок очков
-    g.beginPath(); g.moveTo(2, -6.5); g.lineTo(14, -6.5); g.stroke();
-    // Оправы
-    g.fillStyle = '#d97706';
-    g.beginPath(); g.arc(8, -7.5, 2.8, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(13, -7.5, 2.8, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#451a03'; g.lineWidth = 1; g.stroke();
-    // Стёкла очков с небесным бликом
-    g.fillStyle = '#67e8f9';
-    g.beginPath(); g.arc(8, -7.5, 1.9, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(13, -7.5, 1.9, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#ffffff';
-    g.beginPath(); g.arc(8.5, -8, 0.8, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(13.5, -8, 0.8, 0, Math.PI * 2); g.fill();
-
-    // Мордочка и носик
-    g.fillStyle = '#fef3c7';
-    g.beginPath(); g.ellipse(19, 0.5, 4.2, 3.8, 0, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#78350f'; g.lineWidth = 1; g.stroke();
-    g.fillStyle = '#78350f';
-    g.beginPath(); g.arc(22.2, -0.2, 1.4, 0, Math.PI * 2); g.fill();
-
-    // Выразительный большой живой глаз льва
-    g.fillStyle = '#1e1b4b';
-    g.beginPath(); g.arc(16, -2.5, 2.1, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#ffffff';
-    g.beginPath(); g.arc(16.7, -3.2, 0.9, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(15.4, -1.8, 0.45, 0, Math.PI * 2); g.fill();
-
-    // Розовый румянец на щёчке
-    g.fillStyle = 'rgba(251, 113, 133, 0.45)';
-    g.beginPath(); g.arc(17, 1.8, 2.2, 0, Math.PI * 2); g.fill();
-
-    // Лапка, держащая штурвал
-    g.fillStyle = '#f59e0b';
-    g.beginPath(); g.ellipse(14, 4.8, 4.2, 2.6, 0.25, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#78350f'; g.lineWidth = 1.1; g.stroke();
-
-    // Пушистый хвостик
-    g.strokeStyle = '#d97706'; g.lineWidth = 2.2;
-    g.beginPath(); g.moveTo(-11, 2); g.quadraticCurveTo(-17, -1 + maneBreathe * 0.5, -21, 2.5); g.stroke();
-    g.fillStyle = '#b45309'; g.beginPath(); g.arc(-21, 2.5, 3.2, 0, Math.PI * 2); g.fill();
-
-    // 5. Табличка с брендом MUP
-    g.fillStyle = '#991b1b';
-    g.beginPath();
-    g.roundRect ? g.roundRect(-4, 0.5, 14, 8, 2.2) : g.rect(-4, 0.5, 14, 8);
-    g.fill();
-    g.strokeStyle = '#fef08a'; g.lineWidth = 1.2; g.stroke();
-
-    g.font = '900 6.5px Inter,system-ui,sans-serif';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = '#ffffff';
-    g.fillText('MUP', 3, 4.8);
+    // Холодный контровой свет по силуэту.
+    g.strokeStyle = 'rgba(125,211,252,.38)'; g.lineWidth = 0.7;
+    g.beginPath(); g.arc(0, 0, 9.7, -2.55, -1.2); g.stroke();
+    g.restore();
 
     g.restore();
   }
@@ -4924,7 +5157,7 @@ function gameRacket(){
 
   function draw(roundTime){
     const {g,W,H}=fitCanvas(cvs);
-    const pad={l:48,r:14,t:16,b:26},kk=RK.k;
+    const pad={l:72,r:14,t:16,b:40},kk=RK.k;
     const tc=curT(roundTime);
     const xMax=Math.max(3.2,tStop?tStop*1.15:tc*1.15+0.6);
     const yMax=Math.max(1.8,Math.exp(kk*xMax));
