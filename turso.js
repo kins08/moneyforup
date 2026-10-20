@@ -210,13 +210,15 @@ async function pullFromTurso(dbSync) {
     const grRes = await client.execute('SELECT * FROM game_rounds ORDER BY created_at DESC LIMIT 500');
     if (grRes.rows.length > 0) {
       const insGr = dbSync.prepare(`
-        INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price, seed, params)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       for (const r of grRes.rows) {
+        // seed/params появились позже: в старых строках Turso их нет — пишем null.
         insGr.run(
           r.round_id, r.user_id, r.game, r.bet_tokens, r.mult, r.win_tokens,
-          r.status, r.created_at, r.settled_at, r.item_code, r.item_price
+          r.status, r.created_at, r.settled_at, r.item_code, r.item_price,
+          r.seed ?? null, r.params ?? null
         );
       }
     }

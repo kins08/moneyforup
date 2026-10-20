@@ -2359,8 +2359,14 @@ const server = http.createServer(async (req, res) => {
       u.rakeback = Math.round(((u.rakeback || 0) + (check.bet * 0.005)) * 100) / 100;
       try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse bet):', e.message); }
 
+      const pulseParams = {
+        direction: body.direction, leverage: check.leverage, duration: check.duration,
+        startedAt, dueAt: startedAt + check.duration * 1000
+      };
+      // Seed и параметры — в game_rounds: раунд переживает перезапуск сервера.
+      db.setRoundParams(roundId, u.id, seed, pulseParams);
       pulseRounds.set(roundId, {
-        userId: u.id, seed, startedAt, dueAt: startedAt + check.duration * 1000,
+        userId: u.id, seed, startedAt, dueAt: pulseParams.dueAt,
         direction: body.direction, leverage: check.leverage, duration: check.duration,
         bet: check.bet, settled: false
       });
@@ -2373,7 +2379,21 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/pulse/result' && req.method === 'POST') {
       const roundId = String(body.roundId || '');
-      const rd = pulseRounds.get(roundId);
+      let rd = pulseRounds.get(roundId);
+      if (!rd) {
+        // Раунда нет в памяти (перезапуск сервера): восстанавливаем из game_rounds.
+        const dbRow = db.getRoundParams(roundId, u.id);
+        if (dbRow && dbRow.seed && dbRow.game === pulse.PULSE.label) {
+          const p = dbRow.params || {};
+          rd = {
+            userId: u.id, seed: dbRow.seed, startedAt: p.startedAt, dueAt: p.dueAt,
+            direction: p.direction, leverage: p.leverage, duration: p.duration,
+            bet: Number(dbRow.bet_tokens) || 0, settled: dbRow.status === 'settled'
+          };
+          if (rd.settled) rd.result = { outcome: null, move: null, won: Number(dbRow.win_tokens) > 0, mult: dbRow.mult, payout: Number(dbRow.win_tokens) || 0 };
+          pulseRounds.set(roundId, rd);
+        }
+      }
       if (!rd || rd.userId !== u.id) return send(404, { error: 'Раунд не найден' });
       // Чистка завершённых раундов старше 10 минут (память не растёт бесконечно).
       for (const [k, v] of pulseRounds) {
@@ -2401,6 +2421,11 @@ const server = http.createServer(async (req, res) => {
         db.settleRound({
           roundId, userId: u.id, game: pulse.PULSE.label, bet: rd.bet,
           mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
+        });
+        // Исход сохраняем в params, чтобы повторный запрос после перезапуска отдал тот же результат.
+        db.setRoundParams(roundId, u.id, rd.seed, {
+          direction: rd.direction, leverage: rd.leverage, duration: rd.duration,
+          startedAt: rd.startedAt, dueAt: rd.dueAt, outcome: res.outcome, move: res.move
         });
       } catch (e) { console.error('[Pulse] settle not saved:', e.message); }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse result):', e.message); }
@@ -2467,6 +2492,11 @@ const server = http.createServer(async (req, res) => {
 
       const seed = crypto.randomBytes(32).toString('hex');
       const scenario = trend.generateScenario({ seedHex: seed, level, scenarioId: roundId });
+      // Seed и сценарий (с правильным ответом) — в game_rounds: переживают перезапуск.
+      db.setRoundParams(roundId, u.id, seed, {
+        level, scenarioId: roundId, pattern: scenario.pattern, points: scenario.points,
+        seconds: scenario.seconds, mult: scenario.mult, startedAt: Date.now()
+      });
       trendRounds.set(roundId, {
         userId: u.id, bet, level, scenario, answered: false, answer: null, correct: null, payout: 0,
         startedAt: Date.now(), deadline: Date.now() + scenario.seconds * 1000
@@ -2481,7 +2511,21 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/trend/answer' && req.method === 'POST') {
       const roundId = String(body.roundId || '');
-      const rd = trendRounds.get(roundId);
+      let rd = trendRounds.get(roundId);
+      if (!rd) {
+        // Перезапуск сервера: восстанавливаем сценарий из game_rounds.
+        const dbRow = db.getRoundParams(roundId, u.id);
+        if (dbRow && dbRow.seed && dbRow.game === trend.TREND.label) {
+          const p = dbRow.params || {};
+          rd = {
+            userId: u.id, bet: Number(dbRow.bet_tokens) || 0, level: p.level,
+            scenario: { pattern: p.pattern, points: p.points, seconds: p.seconds, mult: p.mult },
+            answered: Boolean(p.result), result: p.result || null,
+            deadline: (p.startedAt || 0) + (p.seconds || 0) * 1000
+          };
+          trendRounds.set(roundId, rd);
+        }
+      }
       if (!rd || rd.userId !== u.id) return send(404, { error: 'Раунд не найден' });
       const answer = String(body.answer || '');
       if (!trend.TREND.patterns.includes(answer)) return send(400, { error: 'Выберите: рост, падение или боковик' });
@@ -2508,6 +2552,9 @@ const server = http.createServer(async (req, res) => {
           roundId, userId: u.id, game: trend.TREND.label, bet: rd.bet,
           mult: correct ? rd.scenario.mult : 0, win: payout, status: 'settled'
         });
+        const stored = db.getRoundParams(roundId, u.id);
+        const prevParams = (stored && stored.params) || {};
+        db.setRoundParams(roundId, u.id, stored ? stored.seed : null, { ...prevParams, result: rd.result });
       } catch (e) { console.error('[Trend] settle not saved:', e.message); }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (trend answer):', e.message); }
       rd.settledAt = Date.now();
@@ -4153,6 +4200,47 @@ async function initPersistence() {
     } catch (e) {
       console.error('[Turso] Ошибка восстановления данных при старте:', e.message);
     }
+  }
+  recoverPendingGameRounds();
+}
+
+/* Восстановление Pulse/Trend после перезапуска сервера.
+   Pulse: раунды с истёкшим таймером досчитываются тем же расчётом, что и в /api/pulse/result.
+   Trend: сценарий в params; если ответа не было, ставка сгорает (раунд закрывается без выплаты). */
+function recoverPendingGameRounds() {
+  try {
+    const pending = db.listPendingGameRounds([pulse.PULSE.label, trend.TREND.label]);
+    let fixed = 0;
+    for (const row of pending) {
+      const p = row.params || {};
+      if (row.game === pulse.PULSE.label) {
+        if (Date.now() < (p.dueAt || 0)) continue;   // таймер ещё идёт: расчёт при запросе
+        const res = pulse.settle({
+          seedHex: row.seed, roundId: row.round_id, direction: p.direction, leverage: p.leverage, bet: row.bet_tokens
+        });
+        const uid = Number(row.user_id);
+        const usr = users.get(uid) || user(uid, null, null);
+        if (res.payout > 0) applyBalance(usr, res.payout, 'pulse_win', `Pulse Market · выигрыш +${res.payout} ⬦ (восстановлен после перезапуска)`, row.round_id);
+        db.settleRound({
+          roundId: row.round_id, userId: uid, game: row.game, bet: row.bet_tokens,
+          mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
+        });
+        db.setRoundParams(row.round_id, uid, row.seed, { ...p, outcome: res.outcome, move: res.move });
+        fixed++;
+      } else if (row.game === trend.TREND.label) {
+        // Закрываем только после дедлайна: до него игрок ещё может ответить.
+        const deadline = (p.startedAt || 0) + (p.seconds || 0) * 1000;
+        if (Date.now() <= deadline + 2000) continue;
+        db.settleRound({
+          roundId: row.round_id, userId: Number(row.user_id), game: row.game, bet: row.bet_tokens,
+          mult: 0, win: 0, status: 'settled'
+        });
+        fixed++;
+      }
+    }
+    if (fixed) console.log(`[Recovery] закрыто зависших раундов Pulse/Trend: ${fixed}`);
+  } catch (e) {
+    console.error('[Recovery] не удалось восстановить раунды:', e.message);
   }
 }
 // ВАЖНО: сначала восстановление из Turso, и только потом приём запросов.

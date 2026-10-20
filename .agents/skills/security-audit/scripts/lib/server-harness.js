@@ -89,7 +89,10 @@ async function startServer(opts = {}) {
   const defaultUser = users.length ? users[0].id : 1;
 
   // ── Изолированная копия проекта ──────────────────────────────────────────
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
+  // reuseTmp: повторный запуск на той же БД (тест перезапуска). Папку не создаём и не удаляем.
+  const reuse = !!opts.reuseTmp;
+  const tmp = reuse ? opts.reuseTmp : fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
+  fs.mkdirSync(tmp, { recursive: true });
   for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'upgrade.js', 'pulse.js', 'trend.js', 'progress.js', 'turso.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
@@ -107,6 +110,11 @@ async function startServer(opts = {}) {
   }
 
   // ── Тестовые игроки (пишем напрямую в копию базы) ────────────────────────
+  // При повторном запуске на той же БД сбрасываем кеш модуля: иначе вернётся
+  // уже закрытое подключение предыдущего сервера (см. stop()).
+  for (const m of ['db.js', 'turso.js', 'schema.js']) {
+    try { delete require.cache[require.resolve(path.join(tmp, m))]; } catch (_) {}
+  }
   const db = require(path.join(tmp, 'db.js'));
   for (const u of users) {
     db.saveUser({
@@ -199,7 +207,7 @@ async function startServer(opts = {}) {
     await sleep(250);
     try { child.kill('SIGKILL'); } catch (_) {}
     try { db.db.close(); } catch (_) {}
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {}
+    if (!reuse) { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {} }
   }
 
   return {

@@ -266,7 +266,7 @@ const EXTRA_COLUMNS = {
     ['last_streak_at', 'INTEGER DEFAULT 0']
   ],
   orders: [['bonus', "TEXT DEFAULT ''"]],
-  game_rounds: [['item_code', 'TEXT'], ['item_price', 'INTEGER']],
+  game_rounds: [['item_code', 'TEXT'], ['item_price', 'INTEGER'], ['seed', 'TEXT'], ['params', 'TEXT']],
   user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0']]
 };
 

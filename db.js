@@ -1288,6 +1288,39 @@ module.exports = {
     } catch (e) { console.error('[DB] getUserRounds:', e.message); return []; }
   },
 
+  /* Pulse/Trend (DECISIONS D5/D6): серверный seed и параметры раунда хранятся
+     в той же строке game_rounds, чтобы раунд переживал перезапуск сервера.
+     Игроки видят seed после расчёта; этим решением пользователь подтвердил открытое хранение. */
+  setRoundParams: (roundId, userId, seed, params) => {
+    try {
+      db.prepare('UPDATE game_rounds SET seed = ?, params = ? WHERE round_id = ? AND user_id = ?')
+        .run(String(seed), JSON.stringify(params || {}), String(roundId), userId);
+      return true;
+    } catch (e) { console.error('[DB] setRoundParams:', e.message); return false; }
+  },
+  getRoundParams: (roundId, userId) => {
+    try {
+      const row = db.prepare('SELECT * FROM game_rounds WHERE round_id = ? AND user_id = ?').get(String(roundId), userId);
+      if (!row) return null;
+      let params = {};
+      try { params = row.params ? JSON.parse(row.params) : {}; } catch (_) {}
+      return { ...row, params, seed: row.seed || null };
+    } catch (e) { console.error('[DB] getRoundParams:', e.message); return null; }
+  },
+  /* Зависшие раунды Pulse/Trend: статус pending с сохранённым seed. Нужны для восстановления после перезапуска. */
+  listPendingGameRounds: (games) => {
+    try {
+      const list = Array.isArray(games) ? games : [games];
+      const marks = list.map(() => '?').join(',');
+      return db.prepare(`SELECT * FROM game_rounds WHERE status = 'pending' AND seed IS NOT NULL AND game IN (${marks})`)
+        .all(...list).map(row => {
+          let params = {};
+          try { params = row.params ? JSON.parse(row.params) : {}; } catch (_) {}
+          return { ...row, params };
+        });
+    } catch (e) { console.error('[DB] listPendingGameRounds:', e.message); return []; }
+  },
+
   /* Атомарный claim раунда: INSERT OR IGNORE по PRIMARY KEY round_id.
      Возвращает true только победителю гонки; второй параллельный запрос
      с тем же roundId получит false и не спишет деньги. */
