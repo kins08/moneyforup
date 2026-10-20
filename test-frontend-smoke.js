@@ -46,6 +46,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       w.HTMLCanvasElement.prototype.getContext = () => null;
       w.fetch = () => Promise.reject(new Error('offline test'));
       w.scrollTo = () => {};
+      w.HTMLElement.prototype.scrollIntoView = function(opts){ w.__mfuScroll = { el: this, opts: opts || {} }; };
       w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
     }
   });
@@ -107,6 +108,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     omega.click();
     await wait(80);
     ok(d.querySelector('.chh-name').textContent.includes('Омега-ядро'), 'клик по карточке меняет детали режима');
+    ok(w.__mfuScroll && w.__mfuScroll.el.classList.contains('casehub-hero'), 'клик по карточке перекидывает к деталям кейса');
+    eq(w.__mfuScroll && w.__mfuScroll.opts.behavior, 'smooth', 'переход к деталям выполняется плавно');
+    ok(d.querySelector('#chRes') && d.querySelector('#chRes').hidden === true, 'пустой статус кейса не занимает место');
     ok(d.querySelectorAll('.casehub-list .cli').length === 14, 'в содержимом 14 предметов');
     eq(d.querySelectorAll('.casehub-list .pct').length, 0, 'шансы не показываются и в новом режиме');
 

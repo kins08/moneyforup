@@ -495,6 +495,10 @@ button, .control, .chip, .game, .inv-card {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
+:where(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline: 2px solid rgba(255,207,107,.8);
+  outline-offset: 2px;
+}
 button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:disabled) {
   transform: scale(0.965) translateY(1px);
   filter: brightness(0.92);
@@ -772,7 +776,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-card .ch-tag{font-size:10px;color:var(--cm-accent,#ffcf6b);font-weight:800;margin-top:2px;letter-spacing:.02em}
 .casehub-card .ch-price{margin-top:9px;font-size:12px;font-weight:900;color:#fff}
 .casehub-card .ch-price small{display:block;font-size:9.5px;color:#9aa3b8;font-weight:600;margin-top:1px}
-.casehub-hero{border-radius:22px;padding:17px;border:1px solid var(--cm-border,rgba(255,255,255,.15));background:linear-gradient(145deg,var(--cm-panel,#1a1216),#0e0b10);position:relative;overflow:hidden;margin-bottom:12px}
+.casehub-hero{border-radius:22px;padding:17px;border:1px solid var(--cm-border,rgba(255,255,255,.15));background:linear-gradient(145deg,var(--cm-panel,#1a1216),#0e0b10);position:relative;overflow:hidden;margin-bottom:12px;scroll-margin-top:14px}
 .casehub-hero:before{content:'';position:absolute;right:-40px;top:-50px;width:170px;height:170px;background:radial-gradient(circle,var(--cm-glow,rgba(239,68,68,.3)),transparent 70%);pointer-events:none}
 .casehub-hero .chh-top{display:flex;align-items:center;gap:10px}
 .casehub-hero .chh-icon{font-size:42px;line-height:1;filter:drop-shadow(0 8px 18px var(--cm-glow,rgba(239,68,68,.4)))}
@@ -847,12 +851,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-promo button:disabled{opacity:.5;cursor:default}
 .casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
-.casehub-warmup{border:1px solid rgba(61,220,150,.32);background:linear-gradient(135deg,rgba(61,220,150,.10),rgba(255,255,255,.02));border-radius:14px;padding:10px 11px;margin-top:10px}
-.casehub-warmup .cw-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.casehub-warmup .cw-top b{font-size:11.5px;color:#86efac}
-.casehub-warmup .cw-top span{font-size:9px;font-weight:900;letter-spacing:.05em;color:#86efac}
-.casehub-warmup .cw-desc{font-size:9.8px;color:#9aa3b8;line-height:1.4;margin-top:3px}
-.casehub-warmup button{width:100%;margin-top:8px;border:1px solid rgba(61,220,150,.35);background:rgba(61,220,150,.12);color:#86efac;font-family:inherit;font-size:10.5px;font-weight:900;padding:8px;border-radius:9px;cursor:pointer}
+.casehub-warmup{margin-top:10px}
+.casehub-warmup button{width:100%;border:1px solid rgba(61,220,150,.35);background:rgba(61,220,150,.12);color:#86efac;font-family:inherit;font-size:11px;font-weight:900;letter-spacing:.03em;padding:10px;border-radius:11px;cursor:pointer;transition:transform 120ms var(--mfu-ease-out),background-color 180ms ease}
+.casehub-warmup button:not(:disabled):active{transform:scale(.985);background:rgba(61,220,150,.18)}
 .casehub-warmup button:disabled{opacity:.55;cursor:default}
 .casehub-empty{grid-column:1/-1;text-align:center;padding:22px 10px;color:#7f8aa3;font-size:11.5px}
 
@@ -927,6 +928,18 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 @media (prefers-reduced-motion: reduce){
   .screen.active,.mfu-enter>*,.pm-result>*,#upgNotice.good,#upgNotice.bad,#pmMsg.good,#pmMsg.bad,#trMsg.good,#trMsg.bad,.upg-frame.spin-win{animation:mfuFade .16s ease both!important;animation-delay:0ms!important}
   .game:active,.pm-chip:not(:disabled):active,.pm-dir:not(:disabled):active,.upg-source-btn:not(:disabled):active,.upg-quick button:active,.upg-tabs button:active,.upg-target:not(:disabled):active,.upg-inv:not(:disabled):active,.tr-answers button:not(:disabled):active,.upg-target-tools button:active{transform:none!important}
+}
+/* [game-feel][animate]: вход в игру, всплеск баланса и отклик результата. */
+@keyframes mfuGameIn{from{opacity:0;transform:translateY(10px) scale(.996)}to{opacity:1;transform:none}}
+@keyframes mfuBalBump{0%{transform:scale(1)}35%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes mfuGoodPop{0%{transform:scale(.985)}55%{transform:scale(1.012)}100%{transform:scale(1)}}
+@keyframes mfuBadShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}70%{transform:translateX(3px)}}
+#gameArea.mfu-game-in{animation:mfuGameIn 260ms var(--mfu-ease-out)}
+.js-bal.mfu-bal-bump{display:inline-block;animation:mfuBalBump .42s var(--mfu-ease-out)}
+.result.good{animation:mfuGoodPop .28s var(--mfu-ease-out)}
+.result.bad{animation:mfuBadShake .3s var(--mfu-ease-out)}
+@media (prefers-reduced-motion: reduce){
+  #gameArea.mfu-game-in,.js-bal.mfu-bal-bump,.result.good,.result.bad{animation:none!important}
 }
 /* Базовые компоненты: панель, таймер, прогресс, пустое состояние, skeleton. */
 .mfu-panel{background:var(--mfu-graphite-1);border:1px solid var(--mfu-line);border-radius:var(--mfu-radius);padding:14px}
@@ -1600,7 +1613,11 @@ function tgHaptic(kind){
   try{const h=TG&&TG.HapticFeedback;if(!h)return;
     if(kind==='win')h.notificationOccurred('success');
     else if(kind==='lose')h.notificationOccurred('error');
-    else h.impactOccurred(kind||'light');
+    else if(kind==='warning')h.notificationOccurred('warning');
+    else {
+      const type=(kind==='impact'||kind==='medium')?'medium':(kind==='heavy'||kind==='soft'||kind==='rigid'||kind==='light')?kind:'light';
+      h.impactOccurred(type);
+    }
   }catch(e){}
 }
 async function tgCall(path,body){
@@ -2059,13 +2076,23 @@ function tgProfile(){
   let av = ((parts[0] && parts[0][0]) || src[0] || 'M') + ((parts[1] && parts[1][0]) || src[1] || '');
   return { name, sub: un && full && un !== full ? full : '', avatar: av.toUpperCase() };
 }
+let __mfuLastBalance = null;
 function syncUI(){
   const pr=tgProfile();
   const pn=q('#pname');if(pn)pn.textContent=pr.name;
   const pnum=q('#pnumid');if(pnum)pnum.textContent='ID: #'+(S.numId||10000);
   const ps=q('#psub');if(ps){ps.textContent=pr.sub;if(!pr.sub)ps.style.display='none';}
   const pa=q('#pavatar');if(pa)pa.textContent=pr.avatar;
-  qa('.js-bal').forEach(e=>e.textContent=fmt(S.balance));
+  const balChanged = __mfuLastBalance !== null && __mfuLastBalance !== S.balance;
+  __mfuLastBalance = S.balance;
+  qa('.js-bal').forEach(e=>{
+    e.textContent=fmt(S.balance);
+    if(balChanged){
+      e.classList.remove('mfu-bal-bump');
+      void e.offsetWidth;
+      e.classList.add('mfu-bal-bump');
+    }
+  });
   qa('.js-rub').forEach(e=>e.textContent=fmtRub(S.balance));
   const h=q('#hist');
   h.innerHTML=S.hist.length?S.hist.slice(0,12).map(it=>`<div class="item row"><div><b>${it.label}</b><div class="muted small">${new Date(it.t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div></div><strong style="color:${it.delta>0?'var(--good)':'var(--muted)'}">${sgn(it.delta)}</strong></div>`).join(''):'<div class="item muted small">Пока нет операций</div>';
@@ -4101,7 +4128,7 @@ function gameWheel(){
     <div class="hero" style="background:linear-gradient(145deg,#201934,#141024);padding:16px;border-radius:20px;border:1.5px solid rgba(168,85,247,.35);margin-bottom:14px">
       <div class="wfc-badge" style="margin-bottom:8px">🎁 БЕСПЛАТНЫЙ СПИН РАЗ В 12 ЧАСОВ</div>
       <div style="font-size:22px;font-weight:900;color:#fff">Колесо Фортуны</div>
-      <div class="muted small" style="margin-top:4px">Испытайте свою удачу и забирайте до +1 000 ⬦ каждые 12 часов!</div>
+      <div class="muted small" style="margin-top:4px">До +1 000 ⬦ каждые 12 часов</div>
     </div>
 
     <div style="position:relative;width:280px;height:280px;margin:10px auto">
@@ -4110,18 +4137,18 @@ function gameWheel(){
     </div>
 
     <button class="control" id="btnSpinWheel" style="margin-top:16px;background:linear-gradient(135deg,#9333ea,#7c3aed)">КРУТИТЬ БЕСПЛАТНО</button>
-    <div class="result" id="wheelResult" style="margin-top:10px">Нажмите «КРУТИТЬ БЕСПЛАТНО», чтобы запустить колесо.</div>
+    <div class="result" id="wheelResult" style="margin-top:10px" hidden></div>
 
     <div id="wheelPromoWrap" style="margin-top:12px;display:none">
       <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1.5px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px;text-align:center">
-        <div style="font-weight:900;color:#fff;font-size:13px">🔥 Не хотите ждать 12 часов?</div>
-        <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Зарядите баланс от 150 ₽ с бонусом +25% и крутите слоты без пауз!</div>
-        <button class="control" id="btnWheelDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ С БОНУСОМ +25%</button>
+        <div style="font-weight:900;color:#fff;font-size:13px">Ждать 12 часов?</div>
+        <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Депозит от 150 ₽ · бонус +25%</div>
+        <button class="control" id="btnWheelDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ +25%</button>
       </div>
     </div>
 
     <div class="item" style="margin-top:14px;text-align:left">
-      <b>Секторы Колеса Фортуны:</b>
+      <b>Секторы:</b>
       <div class="statgrid" style="margin-top:8px">
         <div class="stat" style="text-align:center"><span class="muted small">Стандарт</span><b style="color:#3b82f6">+25, +50 ⬦</b></div>
         <div class="stat" style="text-align:center"><span class="muted small">Редкие</span><b style="color:#f59e0b">+100, +250, +500 ⬦</b></div>
@@ -4162,7 +4189,7 @@ function gameWheel(){
 
     isWheelSpinning = true;
     if(spinBtn) { spinBtn.disabled = true; spinBtn.textContent = 'КОЛЕСО ВРАЩАЕТСЯ...'; }
-    if(resEl) { resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
+    if(resEl) { resEl.hidden=false; resEl.className = 'result'; resEl.textContent = 'Испытываем удачу...'; }
 
     let targetIdx = 0;
     let prize = null;
@@ -4179,7 +4206,7 @@ function gameWheel(){
       } catch(e) {
         isWheelSpinning = false;
         if(spinBtn) { spinBtn.disabled = false; spinBtn.textContent = 'КРУТИТЬ БЕСПЛАТНО'; }
-        if(resEl) { resEl.className = 'result bad'; resEl.textContent = (e && e.message) || 'Ошибка спина'; }
+        if(resEl) { resEl.hidden=false; resEl.className = 'result bad'; resEl.textContent = (e && e.message) || 'Ошибка спина'; }
         return;
       }
     } else {
@@ -4242,6 +4269,7 @@ function gameWheel(){
         tgHaptic('win');
 
         if(resEl){
+          resEl.hidden=false;
           resEl.className = 'result good';
           resEl.innerHTML = `🎉 <b>ПОЗДРАВЛЯЕМ!</b> Вы выиграли <b style="color:#ffcf6b">+${prize.val} ⬦</b> (${fmtRub(prize.val)})! Награда зачислена.`;
         }
@@ -4489,9 +4517,9 @@ function gameRacket(){
     </div>
   </div>
 
-  <div class="muted small" style="margin:12px 0 6px">Последние 20 результатов (цикл 30с: 15с приём ставок + полёт)</div>
+  <div class="muted small" style="margin:12px 0 6px">Последние 20</div>
   <div class="hstrip" id="rHist"></div>
-  <div class="result" id="rr" style="margin-top:10px">Раунды каждые 30 секунд: 15 секунд на ставки, затем полёт. Ставку на следующий раунд можно поставить заранее — даже во время полёта и после кэшаута!</div>
+  <div class="result" id="rr" style="margin-top:10px">Раунд 30 секунд. Ставку можно ставить заранее.</div>
   <div class="racket-round-timer-box" id="rRoundTimerBox">
     <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
     <div class="rrt-val" id="rrtVal">06.0<span class="rrt-unit">с</span></div>
@@ -5443,19 +5471,19 @@ function gameRacket(){
 const JP_MODES = {
   lite: {
     name: 'Лайт',
-    desc: 'Умеренный риск: надёжный подъём на начальных ступенях. Максимальный множитель: ×4.5',
+    desc: 'Надёжный старт · максимум ×4.5',
     p: [0.78, 0.65, 0.40, 0.20, 0.15, 0.12, 0.09, 0.07, 0.05, 0.04, 0.03, 0.02],
     pay: [1.15, 1.30, 1.50, 1.75, 2.05, 2.40, 2.80, 3.25, 3.70, 4.05, 4.30, 4.50]
   },
   med: {
     name: 'Средний',
-    desc: 'Сбалансированный риск: крутой барьер высоты после 2-й ступени. Максимальный множитель: ×7.0',
+    desc: 'Крутой барьер после 2-й ступени · максимум ×7.0',
     p: [0.70, 0.46, 0.20, 0.12, 0.08, 0.055, 0.038, 0.025, 0.018, 0.012, 0.008, 0.005],
     pay: [1.25, 1.40, 1.68, 2.15, 2.75, 3.45, 4.25, 5.10, 5.85, 6.35, 6.75, 7.00]
   },
   crit: {
     name: 'Критический',
-    desc: 'Экстремальный риск: опасный подъем для самых смелых. Максимальный множитель: ×10.0',
+    desc: 'Максимальный риск · максимум ×10.0',
     p: [0.58, 0.36, 0.15, 0.07, 0.045, 0.03, 0.018, 0.012, 0.008, 0.005, 0.003, 0.002],
     pay: [1.35, 1.60, 2.05, 2.85, 3.85, 5.05, 6.35, 7.65, 8.80, 9.40, 9.75, 10.0]
   }
@@ -5666,7 +5694,7 @@ function gameSpin(){
     <div class="legend" id="sleg">${curM.pay.map((v,i)=>`<div class="lg" id="lg${i}"><span class="dot" style="background:${curM.col[i]}"></span><b style="color:${band(v)}">${lbl(v)}</b>сектор ${i+1}</div>`).join('')}</div>
     ${betHTML()}
     <button class="control" id="sgo">КРУТИТЬ · ${S.bet} ⬦</button>
-    <div class="result" id="sr">Нажмите «КРУТИТЬ», чтобы запустить колесо.</div>`;
+    <div class="result" id="sr">Максимум ${lbl(Math.max(...curM.pay))}</div>`;
 
     const wheel=q('#sw'),go=q('#sgo'),sr=q('#sr');
     wheel.innerHTML='';
@@ -5915,7 +5943,7 @@ function gameDrop(){
     }).join('')}</div>
     ${betHTML()}
     <button class="control" id="dgo">СДЕЛАТЬ ДРОП · ${S.bet} ⬦</button>
-    <div class="result" id="dr">Шарик падает по развилкам (${curM.slots} лунок). Режим: ${curM.name}.</div>`;
+    <div class="result" id="dr">${curM.slots} лунок · до ×${fx(Math.max(...curM.pay), Math.max(...curM.pay)%1?1:0)}</div>`;
 
     const cvs=q('#dcv'),go=q('#dgo'),dr=q('#dr');
     const dmEl=q('#dropModes');
@@ -6071,9 +6099,9 @@ function gameDrop(){
    СКУФ VS АЛЬТУШКА (🎀🖤 vs 🍺) — Сапёр с пониженными шансами и минусовым возврат игроку
    ======================================================================= */
 const SKUF_MODES = {
-  lite: { name: 'Лайт', skufs: 7, desc: '7 банок пива на 25 плиток. Повышенная плотность ловушек.' },
-  med:  { name: 'Средний', skufs: 11, desc: '11 банок пива на 25 плиток. Почти каждая вторая плитка — ловушка!' },
-  crit: { name: 'Критический', skufs: 15, desc: '15 банок пива на 25 плиток! Экстремальный хардкор, ловушек больше половины.' }
+  lite: { name: 'Лайт', skufs: 7, desc: '25 плиток · 7 ловушек' },
+  med:  { name: 'Средний', skufs: 11, desc: '25 плиток · 11 ловушек' },
+  crit: { name: 'Критический', skufs: 15, desc: '25 плиток · 15 ловушек' }
 };
 let curSkufMode = 'med';
 
@@ -6291,7 +6319,7 @@ const AVITO_LOTS = {
     name: 'Лайт',
     item: 'Дропнутый iPhone 15 Pro',
     icon: '📱',
-    desc: 'Торгуемся за разбитый айфон: шансы чуть мягче',
+    desc: 'Мягкие шансы · разбитый айфон',
     steps: [
       { name: '1. Сбить цену на Авито', p: 0.54, mult: 1.40 },
       { name: '2. Поменять экран на Горбушке', p: 0.35, mult: 3.50 },
@@ -6302,7 +6330,7 @@ const AVITO_LOTS = {
     name: 'Средний',
     item: 'Приора 2011 «не бит не крашен»',
     icon: '🏎️',
-    desc: 'Классика перекупа: высокий риск встрять на СТО',
+    desc: 'Высокий риск · СТО поджидает',
     steps: [
       { name: '1. Сбить цену у деда в деревне', p: 0.46, mult: 1.60 },
       { name: '2. Подкрасить из баллончика и смотать пробег', p: 0.27, mult: 5.00 },
@@ -6313,7 +6341,7 @@ const AVITO_LOTS = {
     name: 'Критический',
     item: 'Кроссовки Stone Island из Гуанчжоу',
     icon: '👟',
-    desc: 'Суровый перекуп: сорваться легко, коэффициенты гигантские',
+    desc: 'Гигантские коэффициенты · сорваться легко',
     steps: [
       { name: '1. Выбить оптовую партию на Садоводе', p: 0.38, mult: 1.90 },
       { name: '2. Нашить фирменные патчи и сделать чек', p: 0.17, mult: 8.50 },
@@ -6330,7 +6358,7 @@ function gameAvito(){
   let busy = false;
   let roundBet = S.bet;
   let boxState = '';
-  let resMsg = 'Купите лот, чтобы начать торг и перепродажу.';
+  let resMsg = 'Купите лот, чтобы начать.';
   let resClass = 'result';
 
   function render(){
@@ -7627,7 +7655,7 @@ function gameAuction(){
         </div>
         <button class="control" id="btnPlaceBid" ${ended?'disabled':''}>СДЕЛАТЬ ТАЙНУЮ СТАВКУ · +50 ⬦</button>
       </div>
-      <div class="result" id="aucMsg" style="margin-top:10px">Делайте ставки, чтобы перебить лидера (${topBid} ⬦)! Когда таймер дойдёт до 0, победитель заберёт сейф.</div>
+      <div class="result" id="aucMsg" style="margin-top:10px">Перебейте лидера (${topBid} ⬦) до конца таймера.</div>
       <div class="auction-feed" id="aucFeed"></div>
     </div>`;
 
@@ -7699,7 +7727,7 @@ function gameAuction(){
   }
 
   renderUI();
-  addFeed('Торги начались! Лот выставлен на закрытый аукцион.');
+  addFeed('Торги начались.');
 
   timerId = setInterval(() => {
     if(ended) return;
@@ -8021,20 +8049,20 @@ function gameHotDrop(){
 
       <div id="hdPromoWrap" style="margin-top:12px;${canOpen ? 'display:none' : ''}">
         <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.12));border:1.5px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px;text-align:center">
-          <div style="font-weight:900;color:#fff;font-size:13px">🔥 Не хотите ждать 60 минут?</div>
-          <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Зарядите баланс от 150 ₽ с бонусом +25% и выбивайте джекпоты в играх!</div>
-          <button class="control" id="btnHdDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ С БОНУСОМ +25%</button>
+          <div style="font-weight:900;color:#fff;font-size:13px">Ждать 60 минут?</div>
+          <div class="muted small" style="margin:3px 0 8px;font-size:11px;color:#fca5a5">Депозит от 150 ₽ · бонус +25%</div>
+          <button class="control" id="btnHdDeposit" style="margin:0;padding:8px 12px;font-size:12px;background:linear-gradient(135deg,#ef4444,#dc2626)">⚡️ ПОПОЛНИТЬ +25%</button>
         </div>
       </div>
 
       <div id="hdWinArea"></div>
 
       <div class="result" id="hdMsg" style="margin-top:12px">
-        Hot Drop доступен раз в 60 минут. Рулетка раскручивается и выдает от 15 до 500 ⬦ на баланс!
+        Раз в 60 минут · 15–500 ⬦
       </div>
 
       <div class="item" style="margin-top:14px">
-        <b>Возможные награды из Hot Drop:</b>
+        <b>Награды:</b>
         <div class="statgrid" style="margin-top:8px">
           <div class="stat" style="text-align:center"><span class="muted small">Обычный</span><b style="color:#8b92ff">15–35 ⬦</b></div>
           <div class="stat" style="text-align:center"><span class="muted small">Редкий</span><b style="color:#ffcf6b">50–120 ⬦</b></div>
@@ -8226,7 +8254,7 @@ function gameDice(){
     <div class="dice-stage">
       <div class="dice-display">
         <div class="dice-roll-num" id="diceNum">${String(lastRoll).padStart(6, '0')}</div>
-        <div class="dice-status-pill" id="diceSub">Генератор 000 000 — 999 999</div>
+        <div class="dice-status-pill" id="diceSub">000 000 — 999 999</div>
       </div>
 
       <div class="dice-slider-card">
@@ -8267,7 +8295,7 @@ function gameDice(){
         </button>
       </div>
 
-      <div class="result" id="diceMsg" style="margin-top:12px">Настройте вероятность и выберите «Меньше» или «Больше».</div>
+      <div class="result" id="diceMsg" style="margin-top:12px">Выберите «Меньше» или «Больше».</div>
     </div>`;
 
     wireBet(a, ()=>{
@@ -8574,8 +8602,8 @@ function gameScratch(){
       html += `
         <div style="text-align:center;padding:24px 14px;background:#101622;border:1px solid #1f2b3e;border-radius:18px">
           <div style="font-size:48px;line-height:1;margin-bottom:10px">🪙</div>
-          <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px">Мгновенная лотерея «Сотри монеткой»</div>
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Сотри защитный слой пальцем. Если совпадут 3 одинаковых символа — куш твой!</div>
+          <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px">3 одинаковых символа — выигрыш</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Сотрите слой пальцем.</div>
           <button class="primary" id="scratchBuyBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900" ${isPlaying?'disabled':''}>
             ${isPlaying ? 'Покупка билета...' : `КУПИТЬ БИЛЕТ ЗА ${totalCost} ⬦`}
           </button>
@@ -8958,7 +8986,7 @@ function gameRevolver(){
           }).join('')}
         </div>
 
-        <div style="font-size:12px;color:#64748b;margin-bottom:16px">В барабане 6 камор. 1 боевой патрон. Каждый холостой повышает множитель!</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px">6 камор · 1 патрон · множитель растёт</div>
 
         ${!inRound ? `
           <button class="primary" id="revStartBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900" ${isSpinning?'disabled':''}>
@@ -9293,7 +9321,7 @@ function gameSafe(){
         <div style="font-size:32px;font-weight:900;color:#ffcf6b;margin:4px 0;text-shadow:0 0 16px rgba(255,207,107,0.5)">
           ${fmt(jackpot)} ⬦
         </div>
-        <div style="font-size:11px;color:#94a3b8">Растёт с каждой попыткой взлома! Сделано попыток: <b>${guessesCount}</b></div>
+        <div style="font-size:11px;color:#94a3b8">Попыток: <b>${guessesCount}</b> · джекпот растёт</div>
       </div>
 
       <div style="background:#101622;border:1px solid #1f2b3e;border-radius:20px;padding:18px;margin-bottom:14px">
@@ -9322,9 +9350,9 @@ function gameSafe(){
 
       <!-- История попыток БЕЗ подсказок совпадений цифр -->
       <div style="background:#131a27;border:1px solid #243046;border-radius:18px;padding:14px">
-        <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-bottom:8px">ВАШИ ПОСЛЕДНИЕ ПОПЫТКИ:</div>
+        <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-bottom:8px">ПОПЫТКИ:</div>
         <div id="safeAttemptsList">
-          ${attempts.length === 0 ? `<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">Вы ещё не пробовали взломать сейф</div>` : `
+          ${attempts.length === 0 ? `<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">Пока пусто</div>` : `
             <div style="display:flex;flex-direction:column;gap:6px">
               ${attempts.map(att => `
                 <div style="display:flex;justify-content:space-between;align-items:center;background:#0d121c;padding:8px 12px;border-radius:10px;font-size:12.5px;border:1px solid ${att.won?'rgba(16,185,129,0.4)':'rgba(255,255,255,0.04)'}">
@@ -9624,7 +9652,7 @@ function gameCaseHubUnified(sel){
           ${active?'<span class="ch-active-mark" aria-hidden="true">✓</span>':''}
           <div class="ch-body">
             <div class="ch-name">${esc(c.name)}</div>
-            <div class="ch-tag">${esc(c.tagline||'')}</div>
+            ${c.kind==='mode'?`<div class="ch-tag">${esc(c.tagline||'')}</div>`:''}
             <div class="ch-price">${fmt(c.price)} ⬦<small>${c.items.length} предметов</small></div>
           </div>
         </button>`;}).join('') : '<div class="casehub-empty">В этом фильтре пока нет кейсов.</div>'}
@@ -9636,30 +9664,27 @@ function gameCaseHubUnified(sel){
         <div class="chh-top">
           <div style="flex:1;min-width:0">
             <div class="chh-name">${esc(m.name)}</div>
-            <div class="chh-sub">${esc(m.tagline||'')} · ${m.kind==='classic'?'классический кейс':'новый режим'}</div>
+            <div class="chh-sub">${esc(m.tagline||'')}</div>
           </div>
         </div>
         <p>${esc(m.desc||'')}</p>
         <div class="casehub-meta">
           <span>Цена: <b>${fmt(m.price)} ⬦</b></span>
           <span>Предметов: <b>${m.items.length}</b></span>
-          ${m.kind==='classic'
-            ? `<span>Тип: <b>Классика</b></span>`
-            : `<span>Диапазон: <b>${fmt(m.priceMin||m.price)}–${fmt(m.priceMax||m.price)} ⬦</b></span>`}
+          ${m.kind==='mode'?`<span>Диапазон: <b>${fmt(m.priceMin||m.price)}–${fmt(m.priceMax||m.price)} ⬦</b></span>`:''}
         </div>
         <div class="casehub-roulette">
           <div class="casehub-pointer"></div>
           <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
         </div>
-                <div class="casehub-warmup">
-          <div class="cw-top"><b>🧪 Демо-прокрут</b><span>БЕСПЛАТНО</span></div>
-          <button id="chWarmup" ${(busy||warmupBusy)?'disabled':''}>${warmupBusy?'ПРОКРУТ…':'ЗАПУСТИТЬ ДЕМО'}</button>
+        <div class="casehub-warmup">
+          <button id="chWarmup" ${(busy||warmupBusy)?'disabled':''}>${warmupBusy?'ПРОКРУТ…':'🎬 ДЕМО-ПРОКРУТ · БЕСПЛАТНО'}</button>
         </div>
         <div class="casehub-actions">
           <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
           <button class="control ghost" id="chRepeat" ${busy?'disabled':''}>↻ ПОВТОРИТЬ</button>
         </div>
-        <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его.'}</div>
+        <div class="result" id="chRes" ${statusText?'':'hidden'}>${statusText||''}</div>
         ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ⬦</span></div>
           <div class="casehub-case-actions">
             <button class="control" id="chUpgrade">⚡ В АПГРЕЙДЕР</button>
@@ -9678,18 +9703,28 @@ function gameCaseHubUnified(sel){
           </div>
         </div>`).join('')}
     </div>
-    <div class="section"><b>История открытий</b><span class="muted small">${hist.length?hist.length+' последних':'пока пусто'}</span></div>
+    ${hist.length?`
+    <div class="section"><b>История открытий</b><span class="muted small">${hist.length} последних</span></div>
     <div class="casehub-history">
-      ${hist.length ? hist.map(h=>`
+      ${hist.map(h=>`
         <div class="chr">
           <span style="font-size:16px">${h.item&&h.item.icon?h.item.icon:'📦'}</span>
           <b>${esc(h.item?h.item.name:(h.name||'Предмет'))}</b>
           <span>${fmt((h.item&&h.item.price)||h.price||0)} ⬦</span>
-        </div>`).join('') : '<div class="result">История появится после первого открытия.</div>'}
-    </div>`;
+        </div>`).join('')}
+    </div>`:''}`;
 
     a.querySelectorAll('[data-chm]').forEach(b=>{
-      b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; gridMotion=false; heroMotion=true; render(); };
+      b.onclick=()=>{
+        if(busy)return;
+        currentId=b.dataset.chm; statusText=''; lastDrop=null; gridMotion=false; heroMotion=true; render();
+        const hero=a.querySelector('.casehub-hero');
+        if(hero&&typeof hero.scrollIntoView==='function'){
+          let reduce=false;
+          try{reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}catch(_){}
+          try{hero.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}catch(_){}
+        }
+      };
     });
     a.querySelectorAll('[data-chfilter]').forEach(b=>{
       b.onclick=()=>{
@@ -9728,7 +9763,7 @@ function gameCaseHubUnified(sel){
   function setStatus(text, cls){
     statusText=text;
     const el=q('#chRes',a);
-    if(el){ el.className='result'+(cls?' '+cls:''); el.innerHTML=text; }
+    if(el){ el.hidden=false; el.className='result'+(cls?' '+cls:''); el.innerHTML=text; }
   }
 
   async function openWarmup(){
@@ -9985,7 +10020,7 @@ const UPG_CHANCE_CAP = 0.70;
    Вынесена, чтобы текст «House Edge» не расходился с серверной моделью (AUDIT A5). */
 const UPG_EDGE = 0.06;
 const UPG_FALLBACK_MODES = [
-  {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Выберите цель дороже источника. Шанс до 70%, результат определяет сервер.',edge:0.06,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
+  {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Цель дороже источника · шанс до 70%.',edge:0.06,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
 ];
 /* Оффлайн-демо: те же множители лесенки, что отдаёт сервер в ladderTables.
    В онлайн-режиме используется серверная таблица, эта — только фолбэк. */
@@ -10191,7 +10226,7 @@ function gameUpgradeArena(){
       </div>
       <div class="upg-dist" id="upgDist">${selectedList().length>1?selectedList().map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/selectedList().length*10000)/100).toFixed(2)}%</b></div>`).join(''):''}</div>
       <button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ⬦'}</button>
-      <div class="result" id="upgNotice" aria-live="polite">${notice||(selectedList().length?`Шанс рассчитан серверной формулой: (1 − edge) × источник / цель.`:'Выберите цель из списка.')}</div>
+      <div class="result" id="upgNotice" aria-live="polite">${notice||(selectedList().length?'Шанс зависит от выбранной цели.':'Выберите цель из списка.')}</div>
     </div>`;
   }
 
@@ -10209,7 +10244,7 @@ function gameUpgradeArena(){
           <button data-uq="max">MAX</button>
           <button data-uq="min">MIN</button>
         </div>
-        <div class="muted small" style="margin-top:6px;font-size:10px">Лимиты: 10–100 000 ⬦</div>
+        <div class="muted small" style="margin-top:6px;font-size:10px">10–100 000 ⬦</div>
       </div>`;
     }
     const list=inv();
@@ -10220,7 +10255,7 @@ function gameUpgradeArena(){
           <span class="ui">${it.icon||'📦'}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ⬦${it.upgrade_only?' · только апгрейд':''}</small></span>
         </button>`).join(''):'<div class="upg-empty">Инвентарь пуст — откройте кейс.</div>'}
       </div>
-      <div class="muted small" style="margin-top:6px;font-size:10px">Предмет списывается при запуске. При успехе цель попадёт в инвентарь.</div>
+      <div class="muted small" style="margin-top:6px;font-size:10px">Предмет списывается при запуске.</div>
     </div>`;
   }
 
@@ -10332,7 +10367,7 @@ function gameUpgradeArena(){
     a.innerHTML = `<div class="upg-shell${entered?'':' mfu-enter'}">
       <div class="upg-panel">
         <div class="upg-label">Шанс до <span>70%</span></div>
-        <div class="small" style="color:#b8c1d4;line-height:1.5">Чем дороже цель относительно источника, тем меньше шанс. Шанс никогда не выше 70%. Результат определяет сервер.</div>
+        <div class="small" style="color:#b8c1d4;line-height:1.5">Цель дороже источника — шанс ниже.</div>
       </div>
       <div class="upg-panel">
         <div class="upg-label">Источник апгрейда</div>
@@ -10905,7 +10940,6 @@ function gameTrend(){
     a.innerHTML=`<div class="tr-shell${entered?'':' mfu-enter'}">
       <div class="pm-head">
         <div class="pm-title">TREND HUNTER</div>
-        <div class="muted small">Определи паттерн графика</div>
       </div>
 
       <div class="pm-panel">
@@ -10932,14 +10966,14 @@ function gameTrend(){
             <div>Паттерн: <b>${PAT[last.pattern]||'—'}</b></div>
             <div>${last.correct?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
           </div>
-        `:`${idleChart()}<div class="muted small" style="margin-top:8px">Выберите сложность и ставку. Отвечать можно до конца таймера.</div>`}
+        `:`${idleChart()}<div class="muted small" style="margin-top:8px">Выберите сложность и ставку.</div>`}
       </div>
 
       ${!round?`
         <div class="pm-panel">
           <div class="pm-label">Ставка <span>баланс: ${fmt(S.balance||0)} ⬦</span></div>
           <input class="upg-input" id="trBet" type="number" min="${c.minBet}" max="${c.maxBet}" step="10" value="${bet}" ${busy?'disabled':''}>
-          <div class="muted small" style="margin-top:6px">Выплата при верном ответе: <b class="good">${fmt(payout)} ⬦</b> (×${L.multiplier}).</div>
+          <div class="muted small" style="margin-top:6px">К выплате: <b class="good">${fmt(payout)} ⬦</b> (×${L.multiplier})</div>
         </div>
         <button class="control upg-run" id="trGo" ${(busy||bet<c.minBet)?'disabled':''}>${busy?'СТАРТ…':'▶ СТАРТ · '+fmt(bet)+' ⬦'}</button>
       `:''}
@@ -11066,7 +11100,6 @@ function gamePulse(){
     a.innerHTML=`<div class="pm-shell${entered?'':' mfu-enter'}">
       <div class="pm-head">
         <div class="pm-title">PULSE MARKET</div>
-        <div class="muted small">Микрораунды рынка</div>
       </div>
 
       <div class="pm-panel">
@@ -11099,7 +11132,7 @@ function gamePulse(){
           <button class="pm-chip" data-pbet="half" ${(busy||round)?'disabled':''}>½</button>
           <button class="pm-chip" data-pbet="double" ${(busy||round)?'disabled':''}>×2</button>
         </div>
-        <div class="muted small" style="margin-top:6px">Выплата при победе: <b class="good">${fmt(payout)} ⬦</b> (×${mult}). Ставка ${c.minBet}–${c.maxBet} ⬦.</div>
+        <div class="muted small" style="margin-top:6px">К выплате: <b class="good">${fmt(payout)} ⬦</b> (×${mult}) · ставка ${c.minBet}–${c.maxBet} ⬦</div>
       </div>
 
       <div class="pm-panel pm-stage ${round?'live':''} ${last?(last.won?'won':'lost'):''}">
@@ -11116,7 +11149,7 @@ function gamePulse(){
             <div>Рынок: <b>${dirLabel(last.outcome)}</b>${last.move!=null?` · отклонение ${last.move>0?'+':''}${last.move}`:''}</div>
             <div>${last.won?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
           </div>
-        `:`${mfuPulseChart('idle:'+Math.floor(Date.now()/300000),5,1)}<div class="muted small" style="margin-top:8px">Выберите направление и сделайте ставку. Исход считается после таймера.</div>`}
+        `:`${mfuPulseChart('idle:'+Math.floor(Date.now()/300000),5,1)}<div class="muted small" style="margin-top:8px">Выберите направление и ставку.</div>`}
       </div>
 
       <button class="control upg-run" id="pmGo" ${(busy||round||!dir||bet<c.minBet)?'disabled':''}>${round?'РАУНД ИДЁТ…':busy?'СТАВКА…':'⚡ СДЕЛАТЬ СТАВКУ · '+fmt(bet)+' ⬦'}</button>
@@ -11285,16 +11318,34 @@ function gamePulse(){
 /* ---------- роутинг ---------- */
 const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',pulse:'Pulse Market',trend:'Trend Hunter',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
 const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,pulse:gamePulse,trend:gameTrend,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
+let __gameEnterTimer=0;
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';
   q('#gameTitle').textContent=NAMES[type]||'Игра';
   currentMode = type || '';
   paintModeBadges();
-  q('#gameArea').innerHTML='';
+  const area=q('#gameArea');
+  area.classList.remove('mfu-game-in');
+  area.innerHTML='';
+  void area.offsetWidth;
+  area.classList.add('mfu-game-in');
+  clearTimeout(__gameEnterTimer);
+  __gameEnterTimer=setTimeout(()=>area.classList.remove('mfu-game-in'),320);
   cleanup=(BUILD[type]||(()=>{}))();
 }
 qa('[data-game]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.game)));
+
+// [game-feel]: лёгкий тактильный отклик на любое нажатие в интерфейсе.
+let __lastTapHaptic=0;
+document.addEventListener('pointerdown',e=>{
+  const t=e.target&&e.target.closest?e.target.closest('button:not(:disabled),.game,.chip,[data-nav]'):null;
+  if(!t)return;
+  const now=Date.now();
+  if(now-__lastTapHaptic<45)return;
+  __lastTapHaptic=now;
+  tgHaptic('light');
+},{passive:true});
 
 /* отладочные хуки для автотестов (не влияют на игру) */
 window.MONEYFORUP_DEBUG={state:S,TERMS,REF_PERCENT,CASHBACK_RANKS,BOT_NAME,genRefCode,ensureRefCode,refLinkFor,sampleCrash,MINCASH,RK,tgProfile,SP_MODES,DP_MODES,JP_MODES,CASES_DATA,SP:SP_MODES.med};
