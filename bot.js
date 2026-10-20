@@ -451,8 +451,38 @@ function racketBustMs(crash) {
   const s = (-1 + Math.sqrt(1 + 0.24 * L)) / 0.12;     // 0.06 s^2 + s - L = 0
   return RACKET_WAIT_MS + (s / RACKET_SPEED) * 1000;
 }
+/* Момент краха в абсолютном времени. После полуночи rIdx*ROUND_MS — это
+   начало раунда, поэтому условие «уже взорвалась» не зависит от часов клиента. */
+function racketBustAt(rIdx, crash) {
+  return rIdx * RACKET_ROUND_MS + racketBustMs(crash);
+}
+/* Точка краха переживает перезапуск: сохраняем её в params ставки и
+   восстанавливаем в память, чтобы кэшаут после рестарта считался по тому же
+   секрету, а не по новому случайному. */
+function rememberRacketRound(rIdx, crash) {
+  if (Number.isFinite(crash) && crash >= 1) {
+    let r = racketRounds.get(rIdx);
+    if (!r) {
+      r = { crash: Number(crash), createdAt: Date.now() };
+      racketRounds.set(rIdx, r);
+    }
+    return r;
+  }
+  return getRacketRound(rIdx);
+}
+function racketRIdxFromRoundId(roundId) {
+  const m = /^RK_(\d+)_/.exec(String(roundId || ''));
+  return m ? Number(m[1]) : null;
+}
+/* Живым может быть только текущий раунд (или предыдущий — на границе 30 с).
+   Будущий индекс из подделанного roundId не должен открывать кэшаут. */
+function racketRoundIsLive(rIdx) {
+  if (!Number.isFinite(rIdx)) return false;
+  const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
+  return rIdx === nowIdx || rIdx === nowIdx - 1;
+}
 
-const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
+const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, crash, createdAt, cashed, settled }
 // Pulse Market: серверный seed и параметры открытых раундов (до раскрытия результата).
 const pulseRounds = new Map();     // roundId -> { userId, seed, startedAt, dueAt, direction, leverage, duration, bet, settled }
 // Trend Hunter: открытые сценарии (с правильным ответом на сервере) и комбо игрока.
@@ -464,7 +494,8 @@ const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance,
 setInterval(() => {
   const now = Date.now();
   for (const [id, bet] of activeRacketBets.entries()) {
-    if (now - bet.createdAt > 300000) activeRacketBets.delete(id);
+    // Незакрытую ставку не выбрасываем: свип должен сначала записать проигрыш.
+    if (now - bet.createdAt > 300000 && (bet.cashed || bet.settled)) activeRacketBets.delete(id);
   }
   for (const [rIdx, round] of racketRounds.entries()) {
     // держим только текущий и пару прошлых раундов (нужно для истории/поздних кэшаутов)
@@ -474,6 +505,31 @@ setInterval(() => {
     if (now - rev.createdAt > 300000) activeRevolvers.delete(uid);
   }
 }, 60000).unref();
+
+/* Незабранная ставка Ракетки — проигрыш, как только ракета взорвалась.
+   Пишем финальный статус в game_rounds, чтобы раунд не висел active вечно
+   после закрытия приложения и находился в истории. Денег здесь не трогаем:
+   ставка уже списана при приёме. */
+function settleRacketLoss(roundId, saved, force = false) {
+  if (!saved || saved.cashed || saved.settled) return false;
+  const r = rememberRacketRound(saved.rIdx, saved.crash);
+  saved.crash = r.crash;
+  if (!force && Date.now() <= racketBustAt(saved.rIdx, r.crash)) return false;
+  const closed = db.settleRoundOnce({
+    roundId, userId: saved.userId, game: 'Ракетка', bet: saved.bet,
+    mult: 0, win: 0, status: 'settled', settledAt: Date.now()
+  });
+  saved.settled = true;
+  if (!closed) return false;
+  try {
+    const row = db.getRoundParams(roundId, saved.userId);
+    const p = (row && row.params) || {};
+    db.setRoundParams(roundId, saved.userId, null, {
+      ...p, rIdx: saved.rIdx, crash: r.crash, autoClosed: true, settledAt: Date.now()
+    });
+  } catch (e) { console.error('[Racket] loss params:', e.message); }
+  return true;
+}
 
 /* Клиентский roundId превращаем в пространство имён пользователя. Иначе
    игрок мог занять чужой ключ идемпотентности и заблокировать чужой раунд. */
@@ -2346,8 +2402,17 @@ const server = http.createServer(async (req, res) => {
       }
       if (!claimed) {
         // Повтор того же запроса: вернуть уже существующий раунд, без нового списания.
-        const prev = db.getRound(roundId);
-        return send(200, { ok: true, duplicate: true, roundId, status: prev ? prev.status : 'pending', tokens: u.tokens });
+        // dueAt и параметры нужны, чтобы клиент продолжил таймер, а не гадал.
+        const prev = db.getRoundParams(roundId, u.id);
+        const p = (prev && prev.params) || {};
+        return send(200, {
+          ok: true, duplicate: true, roundId,
+          status: prev ? prev.status : 'pending',
+          startedAt: p.startedAt, dueAt: p.dueAt, duration: p.duration,
+          direction: p.direction, leverage: p.leverage,
+          bet: prev ? Number(prev.bet_tokens) || 0 : check.bet,
+          tokens: u.tokens
+        });
       }
 
       const r = applyBalance(u, -check.bet, 'pulse_bet',
@@ -2379,62 +2444,71 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/pulse/result' && req.method === 'POST') {
       const roundId = String(body.roundId || '');
-      let rd = pulseRounds.get(roundId);
-      if (!rd) {
-        // Раунда нет в памяти (перезапуск сервера): восстанавливаем из game_rounds.
-        const dbRow = db.getRoundParams(roundId, u.id);
-        if (dbRow && dbRow.seed && dbRow.game === pulse.PULSE.label) {
-          const p = dbRow.params || {};
-          rd = {
-            userId: u.id, seed: dbRow.seed, startedAt: p.startedAt, dueAt: p.dueAt,
-            direction: p.direction, leverage: p.leverage, duration: p.duration,
-            bet: Number(dbRow.bet_tokens) || 0, settled: dbRow.status === 'settled'
-          };
-          if (rd.settled) rd.result = { outcome: null, move: null, won: Number(dbRow.win_tokens) > 0, mult: dbRow.mult, payout: Number(dbRow.win_tokens) || 0 };
-          pulseRounds.set(roundId, rd);
-        }
-      }
+      // Раунда может не быть в памяти (перезапуск) — ensurePulseRound поднимет его из БД.
+      const rd = ensurePulseRound(roundId, u.id);
       if (!rd || rd.userId !== u.id) return send(404, { error: 'Раунд не найден' });
-      // Чистка завершённых раундов старше 10 минут (память не растёт бесконечно).
-      for (const [k, v] of pulseRounds) {
-        if (v.settled && v.settledAt && Date.now() - v.settledAt > 10 * 60 * 1000) pulseRounds.delete(k);
-      }
       // Результат раскрывается только по окончании таймера — не раньше.
-      if (Date.now() < rd.dueAt) {
+      if (Date.now() < (rd.dueAt || 0)) {
         return send(425, { error: 'Раунд ещё идёт', dueAt: rd.dueAt });
       }
       if (rd.settled) {
         // Повтор: отдаём уже записанный результат, деньги второй раз не начисляем.
         return send(200, { ok: true, duplicate: true, result: rd.result, tokens: u.tokens });
       }
-      const res = pulse.settle({
-        seedHex: rd.seed, roundId, direction: rd.direction, leverage: rd.leverage, bet: rd.bet
-      });
-      if (res.payout > 0) {
-        const pr = applyBalance(u, res.payout, 'pulse_win',
-          `Pulse Market · выигрыш +${res.payout} ⬦ (×${res.mult})`, roundId);
-        if (!pr.ok) return send(500, { error: 'Не удалось начислить выигрыш, повторите' });
+      const out = settlePulseOnce(rd, roundId, { auto: false });
+      if (!out.settled) return send(500, { error: out.error || 'Не удалось рассчитать раунд' });
+      return send(200, { ok: true, duplicate: false, result: out.result, tokens: out.tokens });
+    }
+
+    /* ── Pulse: восстановление после закрытия приложения/перезагрузки ────────
+       Идущий раунд возвращается с dueAt — клиент продолжает таймер.
+       Просроченный рассчитывается здесь же, результат отдаётся один раз. */
+    if (url.pathname === '/api/pulse/pending' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`pulse-pending:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
       }
-      rd.settled = true;
-      // mult при проигрыше = 0: так же, как записано в game_rounds (единый источник правды).
-      rd.result = { outcome: res.outcome, move: res.move, won: res.won, mult: res.won ? res.mult : 0, payout: res.payout };
-      try {
-        db.settleRound({
-          roundId, userId: u.id, game: pulse.PULSE.label, bet: rd.bet,
-          mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
-        });
-        // Исход сохраняем в params, чтобы повторный запрос после перезапуска отдал тот же результат.
-        db.setRoundParams(roundId, u.id, rd.seed, {
-          direction: rd.direction, leverage: rd.leverage, duration: rd.duration,
-          startedAt: rd.startedAt, dueAt: rd.dueAt, outcome: res.outcome, move: res.move,
-          won: res.won, payout: res.payout, mult: res.won ? res.mult : 0, settledAt: Date.now()
-        });
-      } catch (e) { console.error('[Pulse] settle not saved:', e.message); }
-      try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse result):', e.message); }
-      // Seed клиенту не отдаём. Раунд держим в памяти, чтобы повтор запроса
-      // (потерянный ответ) вернул тот же результат, а не 404. Чистка — ниже.
-      rd.settledAt = Date.now();
-      return send(200, { ok: true, duplicate: false, result: rd.result, tokens: u.tokens });
+      const now = Date.now();
+      const sinceReq = Number(body.since);
+      const since = (Number.isFinite(sinceReq) && sinceReq > 0) ? Math.min(now, sinceReq) : now - 30 * 60 * 1000;
+
+      let active = null;
+      const pendingRows = db.listUserOpenRounds(u.id, pulse.PULSE.label, ['pending'], now - 24 * 60 * 60 * 1000, 20);
+      for (const row of pendingRows) {
+        const rd = ensurePulseRound(row.round_id, u.id);
+        if (!rd) continue;
+        if (rd.dueAt && now < rd.dueAt) {
+          if (!active || (rd.startedAt || 0) > (active.startedAt || 0)) {
+            active = {
+              roundId: row.round_id, startedAt: rd.startedAt, dueAt: rd.dueAt,
+              duration: rd.duration, direction: rd.direction,
+              leverage: rd.leverage, bet: rd.bet
+            };
+          }
+        } else {
+          settlePulseOnce(rd, row.round_id, { auto: true });
+        }
+      }
+
+      // Только автоматически закрытые раунды: те, что игрок не увидел сам.
+      const results = db.listUserRoundsSince(u.id, pulse.PULSE.label, since, 50)
+        .filter(r => r.status === 'settled' && r.params && r.params.auto)
+        .slice(0, 10)
+        .map(r => ({
+          roundId: r.round_id,
+          direction: r.params.direction,
+          leverage: r.params.leverage,
+          bet: Number(r.bet_tokens) || 0,
+          won: !!r.params.won,
+          outcome: r.params.outcome,
+          move: r.params.move,
+          mult: Number(r.params.mult) || 0,
+          payout: Number(r.win_tokens) || 0,
+          settledAt: r.settled_at
+        }));
+
+      return send(200, {
+        ok: true, active, results, since, now: Date.now(), tokens: u.tokens
+      });
     }
 
     /* ── Прогрессия (DECISIONS.md D7/D8): миссии, титул, статистика, Replay, сезон.
@@ -2576,10 +2650,35 @@ const server = http.createServer(async (req, res) => {
 
       const rIdx = Math.floor(Date.now() / RACKET_ROUND_MS);   // раунд решает сервер, не клиент
       const round = getRacketRound(rIdx);                      // фиксируем (секретную) точку взрыва раунда
+      // Очень ранний крах мог случиться прямо на границе окна ставок —
+      // в мёртвый раунд ставку не принимаем.
+      if (Date.now() > racketBustAt(rIdx, round.crash)) {
+        return send(400, { error: 'Раунд уже завершился, подождите следующий' });
+      }
       const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex')));
 
+      // Claim ДО списания: повтор того же roundId (потерянный ответ, ретрай)
+      // не спишет ставку второй раз.
+      let claimed = false;
+      try {
+        claimed = db.claimRound({ roundId, userId: u.id, game: 'Ракетка', bet, status: 'active' });
+      } catch (e) {
+        console.error('[Racket] claim failed:', e.message);
+        return send(500, { error: 'Не удалось начать раунд, повторите позже' });
+      }
+      if (!claimed) {
+        const prev = db.getRound(roundId);
+        return send(200, {
+          ok: true, duplicate: true, roundId,
+          status: prev ? prev.status : 'active', tokens: u.tokens
+        });
+      }
+
       const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${bet} ⬦)`, roundId);
-      if (!r.ok) return send(400, { error: 'Не удалось списать ставку' });
+      if (!r.ok) {
+        db.releaseRoundClaim(roundId, u.id);
+        return send(400, { error: 'Не удалось списать ставку' });
+      }
 
       // Рейкбек: 0.5% от суммы ставки в Ракетке
       u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
@@ -2589,46 +2688,93 @@ const server = http.createServer(async (req, res) => {
         userId: u.id,
         bet,
         rIdx,
+        crash: round.crash,
         createdAt: Date.now(),
-        cashed: false
+        cashed: false,
+        settled: false
       });
 
+      // rIdx и точка взрыва — в БД: после перезапуска сервера раунд
+      // восстанавливается по тому же секрету, а не по новому случайному.
       try {
-        db.saveRound({ roundId, userId: u.id, game: 'Ракетка', bet, mult: 1, win: 0, status: 'active' });
-      } catch (_) {}
+        db.setRoundParams(roundId, u.id, null, {
+          rIdx, crash: round.crash, startedAt: rIdx * RACKET_ROUND_MS
+        });
+      } catch (e) { console.error('[Racket] params:', e.message); }
 
-      return send(200, { ok: true, roundId, bet, tokens: u.tokens });
+      return send(200, { ok: true, roundId, bet, rIdx, tokens: u.tokens });
     }
 
     /* ── Ракетка: кэшаут (забрать выигрыш на текущем множителе) ─────────────── */
     if (url.pathname === '/api/racket/cashout' && req.method === 'POST') {
       const roundId = String(body.roundId || '');
-      const saved = activeRacketBets.get(roundId);
+      let saved = activeRacketBets.get(roundId);
+      if (!saved) {
+        // Сервер перезапустился, память пуста — ставка ещё лежит в game_rounds.
+        const row = db.getRoundParams(roundId, u.id);
+        if (row && row.game === 'Ракетка' && (row.status === 'active' || row.status === 'pending')) {
+          const p = row.params || {};
+          const rIdx = Number.isFinite(Number(p.rIdx)) ? Number(p.rIdx) : racketRIdxFromRoundId(roundId);
+          if (rIdx != null) {
+            saved = {
+              userId: u.id, bet: Number(row.bet_tokens) || 0, rIdx,
+              crash: p.crash, createdAt: row.created_at, cashed: false, settled: false
+            };
+            activeRacketBets.set(roundId, saved);
+          }
+        }
+      }
       if (!saved || saved.userId !== u.id) {
         return send(400, { error: 'Активная ставка в Ракетке не найдена' });
       }
-      if (saved.cashed) {
-        return send(400, { error: 'Выигрыш уже забран' });
+      if (saved.cashed || saved.settled) {
+        return send(400, { error: 'Выигрыш уже забран или ставка сгорела' });
       }
 
-      const serverCrash = getRacketRound(saved.rIdx).crash;
+      // Кэшаут возможен только в живом раунде. Просроченную ставку закрываем
+      // проигрышем, а будущий индекс из подделанного roundId выплату не открывает.
+      if (!racketRoundIsLive(saved.rIdx)) {
+        const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
+        if (saved.rIdx < nowIdx) {
+          settleRacketLoss(roundId, saved, true);
+          return send(400, { error: 'Раунд уже завершился. Ставка сгорела.' });
+        }
+        return send(400, { error: 'Раунд ещё не начался' });
+      }
+
+      const serverCrash = rememberRacketRound(saved.rIdx, saved.crash).crash;
+      saved.crash = serverCrash;
       const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
 
-      // Ракета разбилась до того, как игрок нажал кэшаут
-      if (serverCrash <= 1.00 || clientMult > serverCrash) {
+      // Ракета разбилась до того, как игрок нажал кэшаут (в том числе если
+      // запрос пришёл уже после момента краха).
+      if (serverCrash <= 1.00 || clientMult > serverCrash || Date.now() > racketBustAt(saved.rIdx, serverCrash)) {
+        settleRacketLoss(roundId, saved);
         return send(400, { error: `Ракета уже взорвалась на ×${serverCrash}. Ставка сгорела.` });
       }
 
       const realMult = Math.min(serverCrash, Math.max(1.01, clientMult));
       const win = Math.floor(saved.bet * realMult);
-      saved.cashed = true;
 
       const r = applyBalance(u, win, 'racket_cashout', `Ракетка · выигрыш ×${realMult} (+${win} ⬦)`, roundId);
       if (!r.ok) return send(500, { error: 'Не удалось начислить выигрыш' });
 
+      saved.cashed = true;
+      saved.settled = true;
+
       try {
-        db.saveRound({ roundId, userId: u.id, game: 'Ракетка', bet: saved.bet, mult: realMult, win, status: 'settled' });
-      } catch (_) {}
+        const closed = db.settleRoundOnce({
+          roundId, userId: u.id, game: 'Ракетка', bet: saved.bet,
+          mult: realMult, win, status: 'settled', settledAt: Date.now()
+        });
+        if (closed) {
+          const row = db.getRoundParams(roundId, u.id);
+          const p = (row && row.params) || {};
+          db.setRoundParams(roundId, u.id, null, {
+            ...p, rIdx: saved.rIdx, crash: serverCrash, cashedOut: true, mult: realMult, win, settledAt: Date.now()
+          });
+        }
+      } catch (e) { console.error('[Racket] cashout settle not saved:', e.message); }
 
       betsMonitor.recordBet({
         userId: u.id,
@@ -2658,6 +2804,73 @@ const server = http.createServer(async (req, res) => {
         rIdx,
         crashed: busted,
         crash: busted ? round.crash : null
+      });
+    }
+
+    /* ── Ракетка: восстановление после закрытия приложения/перезагрузки ─────
+       Возвращает только СВОИ незакрытые ставки. Если ракета уже взорвалась,
+       ставка здесь же закрывается проигрышем (деньги не двигаются — они
+       списаны при приёме). Точка краха не раскрывается, пока полёт идёт. */
+    if (url.pathname === '/api/racket/pending' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`racket-pending:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Пожалуйста, подождите.' });
+      }
+      const now = Date.now();
+      const sinceReq = Number(body.since);
+      const since = (Number.isFinite(sinceReq) && sinceReq > 0) ? Math.min(now, sinceReq) : now - 30 * 60 * 1000;
+
+      const rows = db.listUserOpenRounds(u.id, 'Ракетка', ['active', 'pending'], now - 24 * 60 * 60 * 1000, 20);
+      const active = [];
+      for (const row of rows) {
+        const p = (row && row.params) || {};
+        const parsedIdx = Number(p.rIdx);
+        const rIdx = Number.isFinite(parsedIdx) ? parsedIdx : racketRIdxFromRoundId(row.round_id);
+        const bet = Number(row.bet_tokens) || 0;
+        if (rIdx == null) {
+          const closed = db.settleRoundOnce({
+            roundId: row.round_id, userId: u.id, game: 'Ракетка', bet,
+            mult: 0, win: 0, status: 'settled', settledAt: now
+          });
+          if (closed) db.setRoundParams(row.round_id, u.id, null, { autoClosed: true, settledAt: now, crash: null });
+          continue;
+        }
+        const round = rememberRacketRound(rIdx, p.crash);
+        let saved = activeRacketBets.get(row.round_id);
+        if (!saved) {
+          saved = {
+            userId: u.id, bet, rIdx, crash: round.crash,
+            createdAt: row.created_at, cashed: false, settled: false
+          };
+          activeRacketBets.set(row.round_id, saved);
+        }
+        // Синхронизируем память с БД: там лежат настоящие индекс/ставка/крах,
+        // даже если в памяти остался устаревший объект.
+        saved.rIdx = rIdx;
+        saved.bet = bet;
+        saved.crash = round.crash;
+        const nowIdx = Math.floor(now / RACKET_ROUND_MS);
+        if (now > racketBustAt(rIdx, round.crash) || rIdx !== nowIdx) {
+          // Взорвалась, закончилась или ещё не началась (битый индекс
+          // из подделанного roundId) — кэшаут уже невозможен.
+          settleRacketLoss(row.round_id, saved, true);
+        } else {
+          active.push({ roundId: row.round_id, bet, rIdx });
+        }
+      }
+
+      // Ставки, закрытые автоматически, пока приложение было закрыто.
+      const closed = db.listUserRoundsSince(u.id, 'Ракетка', since, 50)
+        .filter(r => r.status === 'settled' && r.params && r.params.autoClosed)
+        .slice(0, 10)
+        .map(r => ({
+          roundId: r.round_id,
+          bet: Number(r.bet_tokens) || 0,
+          crash: r.params.crash != null ? Number(r.params.crash) : null,
+          settledAt: r.settled_at
+        }));
+
+      return send(200, {
+        ok: true, active, closed, since, now: Date.now(), tokens: u.tokens
       });
     }
 
@@ -4194,6 +4407,7 @@ setInterval(() => {
   }
 }, HALF_DAY_MS);
 
+let recoveryReady = false;
 async function initPersistence() {
   if (db.tursoOn && db.tursoOn()) {
     try {
@@ -4206,31 +4420,137 @@ async function initPersistence() {
     }
   }
   recoverPendingGameRounds();
+  recoveryReady = true;
 }
 
-/* Восстановление Pulse/Trend после перезапуска сервера.
-   Pulse: раунды с истёкшим таймером досчитываются тем же расчётом, что и в /api/pulse/result.
-   Trend: сценарий в params; если ответа не было, ставка сгорает (раунд закрывается без выплаты). */
+/* ── Pulse: единый путь расчёта для API, свипа и восстановления ─────────── */
+function pulseRoundFromRow(row, userId) {
+  const p = row.params || {};
+  const settled = row.status !== 'pending';
+  const rd = {
+    userId: Number(userId != null ? userId : row.user_id),
+    seed: row.seed,
+    startedAt: p.startedAt,
+    dueAt: p.dueAt,
+    direction: p.direction,
+    leverage: p.leverage,
+    duration: p.duration,
+    bet: Number(row.bet_tokens) || 0,
+    settled,
+    settledAt: p.settledAt || row.settled_at || null
+  };
+  if (settled) {
+    rd.result = {
+      outcome: p.outcome != null ? p.outcome : null,
+      move: p.move != null ? p.move : null,
+      won: p.won != null ? !!p.won : Number(row.win_tokens) > 0,
+      mult: p.mult != null ? Number(p.mult) : (Number(row.mult) || 0),
+      payout: p.payout != null ? Number(p.payout) : (Number(row.win_tokens) || 0)
+    };
+  }
+  return rd;
+}
+
+function ensurePulseRound(roundId, userId) {
+  let rd = pulseRounds.get(roundId);
+  if (rd) return rd;
+  const row = db.getRoundParams(roundId, userId);
+  if (!row || !row.seed || row.game !== pulse.PULSE.label) return null;
+  rd = pulseRoundFromRow(row, userId);
+  pulseRounds.set(roundId, rd);
+  return rd;
+}
+
+/* Рассчитывает Pulse-раунд ровно один раз. Функция синхронная: проверка,
+   выплата и запись в БД идут в одном тике событийного цикла, поэтому
+   параллельные запросы не могут начислить выигрыш дважды. */
+function settlePulseOnce(rd, roundId, opts = {}) {
+  if (!rd) return { settled: false, error: 'Раунд не найден' };
+  if (rd.settled) {
+    const usr = users.get(rd.userId);
+    return { settled: true, result: rd.result, tokens: usr ? usr.tokens : 0 };
+  }
+  if (!rd.seed) return { settled: false, error: 'Раунд повреждён' };
+  if (Date.now() < (rd.dueAt || 0)) return { settled: false, early: true };
+
+  const res = pulse.settle({
+    seedHex: rd.seed, roundId, direction: rd.direction, leverage: rd.leverage, bet: rd.bet
+  });
+  rd.settled = true;
+  rd.settledAt = Date.now();
+  rd.result = {
+    outcome: res.outcome, move: res.move, won: res.won,
+    mult: res.won ? res.mult : 0, payout: res.payout
+  };
+  const uid = Number(rd.userId);
+  const usr = users.get(uid) || user(uid, null, null);
+  if (res.payout > 0) {
+    const pr = applyBalance(usr, res.payout, 'pulse_win',
+      `Pulse Market · выигрыш +${res.payout} ⬦ (×${res.mult})`, roundId);
+    if (!pr.ok) {
+      rd.settled = false;
+      rd.result = null;
+      return { settled: false, error: 'Не удалось начислить выигрыш' };
+    }
+  }
+  try {
+    db.settleRound({
+      roundId, userId: uid, game: pulse.PULSE.label, bet: rd.bet,
+      mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
+    });
+    db.setRoundParams(roundId, uid, rd.seed, {
+      direction: rd.direction, leverage: rd.leverage, duration: rd.duration,
+      startedAt: rd.startedAt, dueAt: rd.dueAt,
+      outcome: res.outcome, move: res.move, won: res.won,
+      payout: res.payout, mult: res.won ? res.mult : 0,
+      settledAt: rd.settledAt, auto: !!opts.auto
+    });
+    db.saveUser(usr);
+  } catch (e) { console.error('[Pulse] settle not saved:', e.message); }
+  return { settled: true, result: rd.result, tokens: usr.tokens };
+}
+
+/* Свип: закрывает брошенные раунды, даже если игрок больше не открыл игру.
+   Pulse — по истечении таймера, Ракетка — в момент взрыва. */
+function sweepUnfinishedRounds() {
+  const now = Date.now();
+  for (const [roundId, rd] of pulseRounds) {
+    if (rd.settled) {
+      if (rd.settledAt && now - rd.settledAt > 10 * 60 * 1000) pulseRounds.delete(roundId);
+      continue;
+    }
+    if (now >= (rd.dueAt || 0)) settlePulseOnce(rd, roundId, { auto: true });
+  }
+  for (const [roundId, saved] of activeRacketBets) {
+    if (!saved.cashed && !saved.settled) settleRacketLoss(roundId, saved);
+  }
+}
+setInterval(() => {
+  // До завершения pull из Turso не трогаем деньги: локальная БД ещё не полная.
+  if (!recoveryReady) return;
+  try { sweepUnfinishedRounds(); } catch (e) { console.error('[Sweep]', e.message); }
+}, 10000).unref();
+
+/* Восстановление после перезапуска сервера.
+   Pulse: незавершённые раунды возвращаем в память; истёкшие сразу считаем.
+   Racket: активные ставки возвращаем в память (кэшаут работает даже до
+   открытия игры), взорвавшиеся закрываем проигрышем.
+   Trend: сценарий в params; если ответа не было, ставка сгорает после дедлайна. */
 function recoverPendingGameRounds() {
   try {
-    const pending = db.listPendingGameRounds([pulse.PULSE.label, trend.TREND.label]);
     let fixed = 0;
+    const pending = db.listPendingGameRounds([pulse.PULSE.label, trend.TREND.label]);
     for (const row of pending) {
       const p = row.params || {};
       if (row.game === pulse.PULSE.label) {
-        if (Date.now() < (p.dueAt || 0)) continue;   // таймер ещё идёт: расчёт при запросе
-        const res = pulse.settle({
-          seedHex: row.seed, roundId: row.round_id, direction: p.direction, leverage: p.leverage, bet: row.bet_tokens
-        });
-        const uid = Number(row.user_id);
-        const usr = users.get(uid) || user(uid, null, null);
-        if (res.payout > 0) applyBalance(usr, res.payout, 'pulse_win', `Pulse Market · выигрыш +${res.payout} ⬦ (восстановлен после перезапуска)`, row.round_id);
-        db.settleRound({
-          roundId: row.round_id, userId: uid, game: row.game, bet: row.bet_tokens,
-          mult: res.won ? res.mult : 0, win: res.payout, status: 'settled'
-        });
-        db.setRoundParams(row.round_id, uid, row.seed, { ...p, outcome: res.outcome, move: res.move });
-        fixed++;
+        let rd = pulseRounds.get(row.round_id);
+        if (!rd) {
+          rd = pulseRoundFromRow(row, Number(row.user_id));
+          pulseRounds.set(row.round_id, rd);
+        }
+        if (Date.now() >= (rd.dueAt || 0)) {
+          if (settlePulseOnce(rd, row.round_id, { auto: true }).settled) fixed++;
+        }
       } else if (row.game === trend.TREND.label) {
         // Закрываем только после дедлайна: до него игрок ещё может ответить.
         const deadline = (p.startedAt || 0) + (p.seconds || 0) * 1000;
@@ -4242,7 +4562,34 @@ function recoverPendingGameRounds() {
         fixed++;
       }
     }
-    if (fixed) console.log(`[Recovery] закрыто зависших раундов Pulse/Trend: ${fixed}`);
+
+    const racketRows = db.listUnsettledGameRounds(['Ракетка'], ['active', 'pending'], Date.now() - 24 * 60 * 60 * 1000, 1000);
+    for (const row of racketRows) {
+      const p = row.params || {};
+      const parsedIdx = Number(p.rIdx);
+      const rIdx = Number.isFinite(parsedIdx) ? parsedIdx : racketRIdxFromRoundId(row.round_id);
+      const uid = Number(row.user_id);
+      const bet = Number(row.bet_tokens) || 0;
+      if (rIdx == null) {
+        const closed = db.settleRoundOnce({
+          roundId: row.round_id, userId: uid, game: 'Ракетка', bet,
+          mult: 0, win: 0, status: 'settled', settledAt: Date.now()
+        });
+        if (closed) {
+          db.setRoundParams(row.round_id, uid, null, { autoClosed: true, settledAt: Date.now(), crash: null });
+          fixed++;
+        }
+        continue;
+      }
+      const round = rememberRacketRound(rIdx, p.crash);
+      const saved = {
+        userId: uid, bet, rIdx, crash: round.crash,
+        createdAt: row.created_at, cashed: false, settled: false
+      };
+      activeRacketBets.set(row.round_id, saved);
+      if (settleRacketLoss(row.round_id, saved)) fixed++;
+    }
+    if (fixed) console.log(`[Recovery] закрыто зависших раундов: ${fixed}`);
   } catch (e) {
     console.error('[Recovery] не удалось восстановить раунды:', e.message);
   }

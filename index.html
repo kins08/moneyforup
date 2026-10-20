@@ -4408,6 +4408,7 @@ function gameRacket(){
   let curRound=-1,phase='betting',crash=1.01,cur=1,tStop=0,raf=0,dead=false;
   let boomT=0,roundCrashed=false,flightStarted=false;
   let lastStatePoll=0, serverCrashed=false;   // точка взрыва теперь серверная
+  let recoveredBets=[], recoveryLoaded=false; // ставки, пережившие закрытие приложения
 
   // Двойная ставка (Bet 1 и Bet 2)
   const B1 = {
@@ -5092,6 +5093,54 @@ function gameRacket(){
     }
   }
 
+  /* Ставка уже списана сервером до перезагрузки. Возвращаем её в слот,
+     чтобы кэшаут снова работал; повторно на сервер ничего не отправляем. */
+  function applyRecoveredForRound(rIdx){
+    if(!recoveredBets.length) return;
+    const forRound=recoveredBets.filter(b=>b.rIdx===rIdx);
+    recoveredBets=recoveredBets.filter(b=>b.rIdx!==rIdx);
+    if(!forRound.length) return;
+    const slots=[B1,B2];
+    let applied=0;
+    for(let i=0;i<forRound.length&&i<2;i++){
+      const rec=forRound[i],B=slots[i];
+      if(B.inRound) continue;
+      B.inRound=true; B.queued=false; B.nextRound=false;
+      B.lockedBet=rec.bet; B.roundId=rec.roundId; B.rIdx=rec.rIdx;
+      B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0;
+      applied++;
+    }
+    if(applied){
+      rr.className='result';
+      rr.innerHTML=`Ставка${applied>1?'и':''} восстановлен${applied>1?'ы':''} после перезагрузки: ${forRound.slice(0,applied).map(x=>fmt(x.bet)+' ⬦').join(' + ')}. Раунд продолжается — кэшаут доступен.`;
+      render(Date.now()%ROUND_MS);
+    }
+  }
+
+  async function recoverPendingRacket(){
+    if(!IS_TG||!API_BASE||recoveryLoaded) return;
+    recoveryLoaded=true;
+    try{
+      const res=await tgCall('/api/racket/pending',{since:S.racketSeenAt||0});
+      if(!res||!res.ok) return;
+      if(typeof res.tokens==='number') setTokens(res.tokens);
+      if(typeof res.now==='number'){ S.racketSeenAt=res.now; save(); }
+      if(Array.isArray(res.active)&&res.active.length){
+        recoveredBets=res.active.map(x=>({roundId:x.roundId,bet:Number(x.bet)||0,rIdx:Number(x.rIdx)}));
+        applyRecoveredForRound(curRound);
+      }
+      if(Array.isArray(res.closed)&&res.closed.length){
+        const list=res.closed;
+        const total=list.reduce((s,x)=>s+(Number(x.bet)||0),0);
+        const last=list[0];
+        rr.className='result bad';
+        rr.innerHTML=`Прошлая ставка (${fmt(last.bet)} ⬦) сгорела: приложение было закрыто, кэшаут не сделан`
+          +(last.crash?` — ракета взорвалась на <b style="color:${band(last.crash)}">×${fx(last.crash)}</b>`:'')+'.'
+          +(list.length>1?` Автоматически закрыто ставок: ${list.length} на ${fmt(total)} ⬦.`:'');
+      }
+    }catch(e){}
+  }
+
   async function cashBet(B, num, target){
     if(phase!=='flight'||!B.inRound||B.cashed)return;
     if(cur<MINCASH)return;
@@ -5193,6 +5242,8 @@ function gameRacket(){
         B.rIdx=null;
       });
       flightStarted=false;
+      // Восстановленные ставки уже приняты сервером — просто возвращаем их в слот.
+      applyRecoveredForRound(curRound);
       // Пред-ставки, собранные на этот раунд, срабатывают ЗДЕСЬ и подтверждаются сервером
       fireQueued('next');
     }
@@ -5369,6 +5420,7 @@ function gameRacket(){
 
   syncInputs();
   loop();
+  recoverPendingRacket();
 
   return ()=>{dead=true;cancelAnimationFrame(raf);clearInterval(balTimer)};
 }
@@ -10837,7 +10889,7 @@ function gamePulse(){
   let round=null;     // { roundId, dueAt, startedAt, duration, direction, leverage, bet }
   let last=null;      // последний результат от сервера
   let history=[];     // локальная история сессии (после перезагрузки берём с сервера)
-  let timer=0, tick=0, entered=false, enterScheduled=false;
+  let timer=0, tick=0, entered=false, enterScheduled=false, recoveryBusy=false;
 
   const fmtT=ms=>Math.max(0,Math.ceil(ms/1000))+' с';
   function dirLabel(d){ return d==='up'?'Вверх ▲':d==='down'?'Вниз ▼':'Боковик ◆'; }
@@ -10934,8 +10986,57 @@ function gamePulse(){
   async function loadConfig(){
     if(IS_TG&&API_BASE){
       try{ const d=await tgCall('/api/pulse/config',{}); if(d&&d.ok){ cfg=d.config; if(typeof d.tokens==='number') setTokens(d.tokens); } }catch(e){ notice('Не удалось загрузить правила: '+((e&&e.message)||'ошибка'),'bad'); }
+      await recoverPending();
     }
     render();
+  }
+
+  /* Раунд, начатый до закрытия приложения, сервер уже списал. Если таймер
+     ещё идёт — продолжаем его; если истёк — показываем готовый результат. */
+  async function recoverPending(){
+    if(!IS_TG||!API_BASE||round||recoveryBusy) return;
+    recoveryBusy=true;
+    try{
+      const d=await tgCall('/api/pulse/pending',{since:S.pulseSeenAt||0});
+      if(!d||!d.ok) return;
+      if(typeof d.tokens==='number') setTokens(d.tokens);
+      if(typeof d.now==='number'){ S.pulseSeenAt=d.now; save(); }
+
+      const list=Array.isArray(d.results)?d.results:[];
+      if(list.length){
+        list.forEach(x=>history.unshift({
+          dir:x.direction,lev:x.leverage,bet:Number(x.bet)||0,
+          won:!!x.won,payout:Number(x.payout)||0
+        }));
+        if(history.length>30) history=history.slice(0,30);
+        const x=list[0];
+        last={won:!!x.won,outcome:x.outcome,move:x.move,payout:Number(x.payout)||0,mult:Number(x.mult)||0};
+      }
+
+      if(d.active){
+        const a=d.active;
+        round={
+          roundId:a.roundId,startedAt:a.startedAt,dueAt:a.dueAt,duration:a.duration,
+          direction:a.direction,leverage:a.leverage,bet:a.bet
+        };
+        dir=a.direction; lev=a.leverage; dur=a.duration; bet=a.bet;
+        last=null;
+        render();
+        notice('Раунд восстановлен после перезагрузки — таймер продолжается.','good');
+        startTimer();
+        return;
+      }
+
+      if(list.length){
+        const x=list[0];
+        render();
+        notice(last.won
+          ?`✅ Пока вас не было: выигрыш +${fmt(last.payout)} ⬦`
+          :`❌ Пока вас не было: ставка ${fmt(Number(x.bet)||0)} ⬦ сгорела`,
+          last.won?'good':'bad');
+      }
+    }catch(e){}
+    finally{ recoveryBusy=false; }
   }
 
   async function placeBet(){

@@ -1293,8 +1293,19 @@ module.exports = {
      Игроки видят seed после расчёта; этим решением пользователь подтвердил открытое хранение. */
   setRoundParams: (roundId, userId, seed, params) => {
     try {
-      db.prepare('UPDATE game_rounds SET seed = ?, params = ? WHERE round_id = ? AND user_id = ?')
-        .run(String(seed), JSON.stringify(params || {}), String(roundId), userId);
+      const json = JSON.stringify(params || {});
+      if (seed == null) {
+        // Ракетке seed не нужен: сохраняем только серверные параметры раунда.
+        db.prepare('UPDATE game_rounds SET params = ? WHERE round_id = ? AND user_id = ?')
+          .run(json, String(roundId), userId);
+        turso.queueQuery('UPDATE game_rounds SET params = ? WHERE round_id = ? AND user_id = ?',
+          [json, String(roundId), userId]);
+      } else {
+        db.prepare('UPDATE game_rounds SET seed = ?, params = ? WHERE round_id = ? AND user_id = ?')
+          .run(String(seed), json, String(roundId), userId);
+        turso.queueQuery('UPDATE game_rounds SET seed = ?, params = ? WHERE round_id = ? AND user_id = ?',
+          [String(seed), json, String(roundId), userId]);
+      }
       return true;
     } catch (e) { console.error('[DB] setRoundParams:', e.message); return false; }
   },
@@ -1321,6 +1332,59 @@ module.exports = {
     } catch (e) { console.error('[DB] listPendingGameRounds:', e.message); return []; }
   },
 
+  /* Открытые раунды конкретного игрока: нужны для восстановления после
+     закрытия приложения (Ракетка) и после перезапуска сервера. */
+  listUserOpenRounds: (userId, game, statuses = ['pending', 'active'], since = 0, limit = 20) => {
+    try {
+      const list = Array.isArray(statuses) ? statuses : [statuses];
+      const marks = list.map(() => '?').join(',');
+      return db.prepare(`SELECT * FROM game_rounds
+        WHERE user_id = ? AND game = ? AND status IN (${marks}) AND created_at >= ?
+        ORDER BY created_at DESC LIMIT ?`)
+        .all(userId, String(game), ...list, since, Math.max(1, Math.min(100, Number(limit) || 20)))
+        .map(row => {
+          let params = {};
+          try { params = row.params ? JSON.parse(row.params) : {}; } catch (_) {}
+          return { ...row, params };
+        });
+    } catch (e) { console.error('[DB] listUserOpenRounds:', e.message); return []; }
+  },
+
+  /* Все незакрытые раунды указанных игр: свип при старте сервера. */
+  listUnsettledGameRounds: (games, statuses = ['pending', 'active'], since = 0, limit = 200) => {
+    try {
+      const g = Array.isArray(games) ? games : [games];
+      const st = Array.isArray(statuses) ? statuses : [statuses];
+      const gm = g.map(() => '?').join(',');
+      const sm = st.map(() => '?').join(',');
+      return db.prepare(`SELECT * FROM game_rounds
+        WHERE game IN (${gm}) AND status IN (${sm}) AND created_at >= ?
+        ORDER BY created_at DESC LIMIT ?`)
+        .all(...g, ...st, since, Math.max(1, Math.min(1000, Number(limit) || 200)))
+        .map(row => {
+          let params = {};
+          try { params = row.params ? JSON.parse(row.params) : {}; } catch (_) {}
+          return { ...row, params };
+        });
+    } catch (e) { console.error('[DB] listUnsettledGameRounds:', e.message); return []; }
+  },
+
+  /* Раунды, закрытые после указанного момента (для показа результата,
+     который игрок не увидел из-за закрытого приложения). */
+  listUserRoundsSince: (userId, game, since, limit = 50) => {
+    try {
+      return db.prepare(`SELECT * FROM game_rounds
+        WHERE user_id = ? AND game = ? AND settled_at >= ?
+        ORDER BY settled_at DESC LIMIT ?`)
+        .all(userId, String(game), since, Math.max(1, Math.min(200, Number(limit) || 50)))
+        .map(row => {
+          let params = {};
+          try { params = row.params ? JSON.parse(row.params) : {}; } catch (_) {}
+          return { ...row, params };
+        });
+    } catch (e) { console.error('[DB] listUserRoundsSince:', e.message); return []; }
+  },
+
   /* Атомарный claim раунда: INSERT OR IGNORE по PRIMARY KEY round_id.
      Возвращает true только победителю гонки; второй параллельный запрос
      с тем же roundId получит false и не спишет деньги. */
@@ -1328,12 +1392,13 @@ module.exports = {
     const res = db.prepare(`
       INSERT OR IGNORE INTO game_rounds
       (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
-      VALUES (?, ?, ?, ?, 1, 0, 'pending', ?, NULL, NULL, NULL)
-    `).run(String(r.roundId), r.userId, String(r.game), Math.floor(r.bet || 0), r.createdAt || Date.now());
+      VALUES (?, ?, ?, ?, 1, 0, ?, ?, NULL, NULL, NULL)
+    `).run(String(r.roundId), r.userId, String(r.game), Math.floor(r.bet || 0),
+      String(r.status || 'pending'), r.createdAt || Date.now());
     return res.changes > 0;
   },
   releaseRoundClaim: (roundId, userId) => {
-    try { db.prepare('DELETE FROM game_rounds WHERE round_id = ? AND user_id = ? AND status = ?').run(String(roundId), userId, 'pending'); } catch (_) {}
+    try { db.prepare(`DELETE FROM game_rounds WHERE round_id = ? AND user_id = ? AND status IN ('pending','active')`).run(String(roundId), userId); } catch (_) {}
   },
   settleRound: (r) => {
     // Множитель 0 (проигрыш) должен сохраняться как 0; undefined/null — по-прежнему 1.
@@ -1354,6 +1419,29 @@ module.exports = {
       r.status || 'settled', at, r.itemCode || null,
       r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId]);
     return { ok: true, roundId: String(r.roundId) };
+  },
+
+  /* Закрыть раунд только если он ещё открыт. Нужно для автоматического
+     проигрыша Ракетки и свипа Pulse: не перезаписывает уже рассчитанный раунд
+     и не даёт закрыть его дважды после перезапуска. */
+  settleRoundOnce: (r) => {
+    const multOf = v => (v === undefined || v === null) ? 1 : Number(v);
+    const at = r.settledAt || Date.now();
+    const res = db.prepare(`
+      UPDATE game_rounds
+      SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?,
+          item_code = ?, item_price = ?
+      WHERE round_id = ? AND user_id = ? AND status IN ('pending', 'active')
+    `).run(String(r.game), Math.floor(r.bet || 0), multOf(r.mult), Math.floor(r.win || 0),
+      r.status || 'settled', at, r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId);
+    turso.queueQuery(`
+      UPDATE game_rounds SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?, item_code = ?, item_price = ?
+      WHERE round_id = ? AND user_id = ? AND status IN ('pending', 'active')
+    `, [String(r.game), Math.floor(r.bet || 0), multOf(r.mult), Math.floor(r.win || 0),
+      r.status || 'settled', at, r.itemCode || null,
+      r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId]);
+    return res.changes > 0;
   },
 
   /* ── Новые кейсы / апгрейдер ─────────────────────────────────────────── */
