@@ -15,41 +15,25 @@
 
 const items = require('./items');
 
+/* Единственный режим апгрейдера (DECISIONS.md, D4): режимы риска убраны из UI.
+   Потолок шанса 70% для любой цели. Комиссия 6% — EV всегда −6% от источника. */
 const MODES = {
-  safe: {
-    id: 'safe',
-    label: 'SAFE',
-    title: 'Безопасный',
-    desc: 'Низкая комиссия и недорогие цели. Меньше риск — меньше потолок.',
-    edge: 0.04,
-    chanceCap: 0.90,
-    maxMult: 3,
-    minTargetRatio: 1.05,
-    color: '#3ddc96'
-  },
-  balanced: {
-    id: 'balanced',
-    label: 'BALANCED',
-    title: 'Сбалансированный',
-    desc: 'Средняя комиссия, цели до ×12. Базовый режим платформы.',
+  standard: {
+    id: 'standard',
+    label: 'АПГРЕЙД',
+    title: 'Апгрейд',
+    desc: 'Выберите цель дороже источника. Шанс до 70%, результат определяет сервер.',
     edge: 0.06,
-    chanceCap: 0.75,
-    maxMult: 12,
-    minTargetRatio: 1.05,
-    color: '#8b92ff'
-  },
-  extreme: {
-    id: 'extreme',
-    label: 'EXTREME',
-    title: 'Экстремальный',
-    desc: 'Высокая волатильность и цели до ×100. Шанс маленький, приз большой.',
-    edge: 0.09,
-    chanceCap: 0.40,
+    chanceCap: 0.70,
     maxMult: 100,
     minTargetRatio: 1.05,
-    color: '#ff7386'
+    color: '#ffcf6b'
   }
 };
+
+/* Старые id режимов (до упрощения) принимаются и маппятся в `standard`,
+   чтобы закэшированные клиенты и незавершённые лесенки не ломались. */
+const LEGACY_MODE_IDS = { safe: 'standard', balanced: 'standard', extreme: 'standard', stable: 'standard', experimental: 'standard' };
 
 const MAX_TARGETS = 5;
 
@@ -100,7 +84,8 @@ const TARGET_BY_CODE = new Map(TARGETS.map(t => [t.code, t]));
 
 function getMode(raw) {
   const key = String(raw || '').trim().toLowerCase();
-  return MODES[key] || null;
+  const resolved = LEGACY_MODE_IDS[key] || key;
+  return MODES[resolved] || null;
 }
 
 function getTarget(code) {
@@ -179,20 +164,10 @@ function rollUpgrade(mode, sourceValue, targets, randomTarget01, randomRoll01) {
    SAFE — маленькие шаги; EXTREME — крупные, иначе cap 0.40 превращал бы
    экстремальный режим в самый невыгодный. */
 const LADDER_MULTS = {
-  safe: {
-    3: [1.6, 1.45, 1.3],
-    5: [1.5, 1.4, 1.3, 1.22, 1.15],
-    10: [1.4, 1.3, 1.22, 1.16, 1.12, 1.1, 1.08, 1.06, 1.05, 1.04]
-  },
-  balanced: {
+  standard: {
     3: [2.0, 1.7, 1.45],
     5: [1.8, 1.6, 1.45, 1.35, 1.25],
     10: [1.6, 1.5, 1.4, 1.35, 1.3, 1.25, 1.2, 1.18, 1.15, 1.12]
-  },
-  extreme: {
-    3: [3.0, 2.6, 2.2],
-    5: [2.8, 2.5, 2.2, 2.0, 1.8],
-    10: [2.6, 2.4, 2.2, 2.05, 1.95, 1.85, 1.75, 1.65, 1.55, 1.45]
   }
 };
 

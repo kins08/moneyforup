@@ -826,6 +826,23 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 /* ═══════════ UPGRADE ARENA ═══════════ */
 .upg-shell{padding-bottom:6px}
+/* Лента прокрутки апгрейда: одна полоса, указатель по центру, цвет = результат сервера. */
+.upg-frame{position:relative;overflow:hidden;height:118px;border-radius:14px;background:#0c0f16;border:1px solid rgba(255,255,255,.08);margin:6px 0 10px}
+.upg-frame.spin-win{border-color:rgba(61,220,150,.7);box-shadow:0 0 0 1px rgba(61,220,150,.25) inset}
+.upg-frame.spin-lose{border-color:rgba(255,115,134,.7);box-shadow:0 0 0 1px rgba(255,115,134,.25) inset}
+.upg-pointer-line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffcf6b;z-index:2;pointer-events:none}
+.upg-strip{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;will-change:transform}
+.upg-strip.spin-wait{animation:upgWait .45s linear infinite}
+@keyframes upgWait{from{transform:translateX(0)}to{transform:translateX(-92px)}}
+.upg-cell{flex:0 0 92px;width:92px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;text-align:center}
+.upg-cell span{font-size:26px;line-height:1}
+.upg-cell small{font-size:10px;color:#b8c1d4;line-height:1.2;max-height:24px;overflow:hidden}
+.upg-cell.win{background:rgba(61,220,150,.12)}
+.upg-cell.win small{color:#8ff0c4;font-weight:800}
+.upg-cell.lose{background:rgba(255,115,134,.12)}
+.upg-cell.lose small{color:#ffb3bf;font-weight:800}
+@media (prefers-reduced-motion: reduce){ .upg-strip,.upg-strip.spin-wait{animation:none!important;transition:none!important} }
+@media (max-width:380px){ .upg-frame{height:104px} .upg-cell{flex-basis:80px;width:80px} }
 .upg-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .upg-mode{flex:1;min-width:92px;border-radius:14px;padding:10px 8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#9aa3b8;cursor:pointer;font-family:inherit;text-align:center;transition:all .18s}
 .upg-mode b{display:block;font-size:12px;font-weight:950;letter-spacing:.05em;color:#fff}
@@ -10286,17 +10303,15 @@ function gameCaseHub(sel){ return gameCaseHubUnified(sel); }
    серия. Клиент только показывает и отправляет ВЫБОР; шанс и исход считает
    сервер (/api/upgrade/*), клиентские значения не влияют на баланс.
    ══════════════════════════════════════════════════════════════════════════ */
+/* DECISIONS.md D4: один режим апгрейдера, потолок шанса 70%, режимы не показываются. */
+const UPG_CHANCE_CAP = 0.70;
 const UPG_FALLBACK_MODES = [
-  {id:'safe',label:'SAFE',title:'Безопасный',desc:'Низкая комиссия и недорогие цели. Меньше риск — меньше потолок.',edge:0.04,chanceCap:0.90,maxMult:3,minTargetRatio:1.05,color:'#3ddc96'},
-  {id:'balanced',label:'BALANCED',title:'Сбалансированный',desc:'Средняя комиссия, цели до ×12. Базовый режим платформы.',edge:0.06,chanceCap:0.75,maxMult:12,minTargetRatio:1.05,color:'#8b92ff'},
-  {id:'extreme',label:'EXTREME',title:'Экстремальный',desc:'Высокая волатильность и цели до ×100. Шанс маленький, приз большой.',edge:0.09,chanceCap:0.40,maxMult:100,minTargetRatio:1.05,color:'#ff7386'}
+  {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Выберите цель дороже источника. Шанс до 70%, результат определяет сервер.',edge:0.06,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
 ];
 /* Оффлайн-демо: те же множители лесенки, что отдаёт сервер в ladderTables.
    В онлайн-режиме используется серверная таблица, эта — только фолбэк. */
 const UPG_FALLBACK_LADDER = {
-  safe:{3:[1.6,1.45,1.3],5:[1.5,1.4,1.3,1.22,1.15],10:[1.4,1.3,1.22,1.16,1.12,1.1,1.08,1.06,1.05,1.04]},
-  balanced:{3:[2.0,1.7,1.45],5:[1.8,1.6,1.45,1.35,1.25],10:[1.6,1.5,1.4,1.35,1.3,1.25,1.2,1.18,1.15,1.12]},
-  extreme:{3:[3.0,2.6,2.2],5:[2.8,2.5,2.2,2.0,1.8],10:[2.6,2.4,2.2,2.05,1.95,1.85,1.75,1.65,1.55,1.45]}
+  standard:{3:[2.0,1.7,1.45],5:[1.8,1.6,1.45,1.35,1.25],10:[1.6,1.5,1.4,1.35,1.3,1.25,1.2,1.18,1.15,1.12]}
 };
 
 function upgBuildFallbackCatalog(){
@@ -10339,7 +10354,7 @@ function gameUpgradeArena(){
   };
 
   let cat=upgBuildFallbackCatalog();
-  let modeId='balanced';
+  const modeId='standard';
   let tab='single';
   let sourceType='tokens';
   let amount=100;
@@ -10363,12 +10378,13 @@ function gameUpgradeArena(){
   function chanceFor(t){
     const m=mode(), s=sourceValue();
     if(!m||!t||s<=0)return 0;
-    return Math.min(Number(m.chanceCap)||0.75,(1-(Number(m.edge)||0.06))*s/Number(t.value));
+    return Math.min(UPG_CHANCE_CAP,(1-(Number(m.edge)||0.06))*s/Number(t.value));
   }
   function validTarget(t){
     const m=mode(), s=sourceValue();
     if(!m||s<=0)return false;
-    return t.value > s*(Number(m.minTargetRatio)||1.05) && t.value <= s*(Number(m.maxMult)||12);
+    // Цель должна стоить дороже источника (минимум +5%), иначе шанс >= 100% и апгрейд бессмысленен.
+    return t.value > s*(Number(m.minTargetRatio)||1.05) && chanceFor(t) > 0;
   }
   function visibleTargets(){
     let list=cat.targets.filter(t=>{
@@ -10491,7 +10507,7 @@ function gameUpgradeArena(){
         <div class="upg-stat"><small>Источник</small><b>${fmt(s)} ⬦</b></div>
         <div class="upg-stat"><small>${tab==='multi'?'Средний шанс':'Шанс успеха'}</small><b id="upgChance" class="${aggregateChance()>0?'warn':''}">${(Math.round(aggregateChance()*10000)/100).toFixed(2)}%</b></div>
         <div class="upg-stat"><small>Возможный результат</small><b id="upgPot" class="good">${selectedList().length?(tab==='multi'?'до '+fmt(Math.max(...selectedList().map(t=>t.value)))+' ⬦':fmt(selectedList()[0].value)+' ⬦'):'—'}</b></div>
-        <div class="upg-stat"><small>Потолок режима</small><b>×${mode().maxMult}</b></div>
+        <div class="upg-stat"><small>Потолок шанса</small><b>70%</b></div>
       </div>
       <div class="upg-dist" id="upgDist">${selectedList().length>1?selectedList().map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/selectedList().length*10000)/100).toFixed(2)}%</b></div>`).join(''):''}</div>
       <button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ⬦'}</button>
@@ -10634,20 +10650,9 @@ function gameUpgradeArena(){
     const m=mode();
     const s=sourceValue();
     a.innerHTML = `<div class="upg-shell">
-      <div class="upg-head">
-        ${cat.modes.map(x=>`<button class="upg-mode ${x.id===modeId?'on':''}" data-umode="${esc(x.id)}" style="--upg-col:${x.color||'#ffcf6b'}">
-          <b>${esc(x.label)}</b><small>edge ${Math.round((x.edge||0)*100)}% · до ×${x.maxMult}</small>
-        </button>`).join('')}
-      </div>
-      <div class="upg-panel" style="border-color:${m.color||'#ffcf6b'}44">
-        <div class="upg-label">Режим риска <span style="color:${m.color||'#ffcf6b'}">${esc(m.title)}</span></div>
-        <div class="small" style="color:#b8c1d4;line-height:1.5">${esc(m.desc)}</div>
-        <div class="upg-summary">
-          <div class="upg-stat"><small>Комиссия (edge)</small><b>${Math.round((m.edge||0)*100)}%</b></div>
-          <div class="upg-stat"><small>Потолок цели</small><b>×${m.maxMult}</b></div>
-          <div class="upg-stat"><small>Макс. шанс</small><b>${Math.round((m.chanceCap||0)*100)}%</b></div>
-          <div class="upg-stat"><small>Мин. цель</small><b>+${Math.round(((m.minTargetRatio||1.05)-1)*100)}%</b></div>
-        </div>
+      <div class="upg-panel">
+        <div class="upg-label">Шанс до <span>70%</span></div>
+        <div class="small" style="color:#b8c1d4;line-height:1.5">Чем дороже цель относительно источника, тем меньше шанс. Шанс никогда не выше 70%. Результат определяет сервер.</div>
       </div>
       <div class="upg-panel">
         <div class="upg-label">Источник апгрейда</div>
@@ -10663,6 +10668,7 @@ function gameUpgradeArena(){
         <button data-utab="ladder" class="${tab==='ladder'?'on':''}">Лесенка</button>
         <button data-utab="serial" class="${tab==='serial'?'on':''}">Серия</button>
       </div>
+      ${(strip.cells&&strip.cells.length)?stripHtml():''}
       ${tab==='ladder'?renderLadder():tab==='serial'?renderSerial():renderTargets()}
       ${renderHistory()}
       ${notice&&tab!=='ladder'&&tab!=='serial'?'':''}
@@ -10746,6 +10752,58 @@ function gameUpgradeArena(){
     return callUpgrade('/api/upgrade/run',body);
   }
 
+  /* ── Прокрутка ленты апгрейда ─────────────────────────────────────────────
+     1) после клика лента крутится в режиме ожидания (без результата);
+     2) сервер возвращает результат;
+     3) лента останавливается на цели, которую вернул СЕРВЕР, и окрашивается
+        по его результату: зелёный = выигрыш, красный = проигрыш.
+     Анимация никогда не выбирает результат сама. */
+  const UPG_CELL_W=92, UPG_CELL_N=36, UPG_STOP_AT=30, UPG_SPIN_MS=3200;
+  let strip={cells:[],offset:0,cls:'',wait:false};
+  function stripHtml(){
+    const cells=strip.cells.map(c=>`<div class="upg-cell ${c.cls||''}"><span>${c.icon}</span><small>${esc(c.name)}</small></div>`).join('');
+    return `<div class="upg-frame ${strip.cls}" id="upgFrame">
+      <div class="upg-pointer-line"></div>
+      <div class="upg-strip ${strip.wait?'spin-wait':''}" id="upgStrip" style="transform:translateX(${strip.offset}px)">${cells}</div>
+    </div>`;
+  }
+  function buildStrip(winCode, won, fallbackCode){
+    const pool=(cat.targets&&cat.targets.length)?cat.targets:[{code:'x',name:'—',icon:'📦',value:0}];
+    const winner=pool.find(x=>x.code===winCode)||pool.find(x=>x.code===fallbackCode)||pool[0];
+    const cells=[];
+    for(let i=0;i<UPG_CELL_N;i++){
+      if(i===UPG_STOP_AT){
+        cells.push({icon:winner.icon||'📦',name:winner.name||'',cls:won?'win':'lose'});
+      } else {
+        const t=pool[(i*7+3)%pool.length];
+        cells.push({icon:t.icon||'📦',name:t.name||'',cls:''});
+      }
+    }
+    return cells;
+  }
+  function stopOffset(){
+    const fr=q('#upgFrame',a);
+    const w=fr?fr.clientWidth:0;
+    return -(UPG_STOP_AT*UPG_CELL_W)+w/2-UPG_CELL_W/2;
+  }
+  async function animateStop(won){
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const target=stopOffset();
+    const st=q('#upgStrip',a), fr=q('#upgFrame',a);
+    if(!st||!fr||reduce){
+      strip.offset=target; strip.cls=won?'spin-win':'spin-lose'; strip.wait=false;
+      return;
+    }
+    st.style.transition='none';
+    st.style.transform='translateX(0px)';
+    void st.offsetWidth;
+    st.style.transition=`transform ${UPG_SPIN_MS}ms cubic-bezier(.08,.8,.1,1)`;
+    st.style.transform=`translateX(${target}px)`;
+    await sleepLocal(UPG_SPIN_MS+80);
+    strip.offset=target; strip.cls=won?'spin-win':'spin-lose'; strip.wait=false;
+    const fr2=q('#upgFrame',a); if(fr2) fr2.classList.add(won?'spin-win':'spin-lose');
+  }
+
   async function runUpgrade(){
     if(busy)return;
     if(!selectedList().length){ setNotice('Выберите хотя бы одну цель.','bad'); return; }
@@ -10754,9 +10812,25 @@ function gameUpgradeArena(){
     if(sourceType==='tokens'&&s>(S.balance||0)){ setNotice('Сумма больше баланса.','bad'); return; }
     if(sourceType==='item'&&!sourceItem()){ setNotice('Выберите предмет.','bad'); return; }
     busy=true; result=null; markBusy('АПГРЕЙДИМ…');
+    const fallbackCode=selectedList()[0]?selectedList()[0].code:null;
+    // Фаза ожидания: лента крутится, результат ещё неизвестен.
+    strip={cells:buildStrip(null,true,fallbackCode),offset:0,cls:'',wait:true};
+    render();
+    const startedAt=Date.now();
     let res=null, err=null;
     try{ res=await runOnce(); }catch(e){ err=e; }
-    await sleepLocal(850);
+    const waited=Date.now()-startedAt;
+    if(waited<1200) await sleepLocal(1200-waited);
+    if(res&&res.ok){
+      // Фаза остановки: лента встаёт на цели, которую вернул сервер.
+      const winCode=(res.won&&res.target&&res.target.code)||fallbackCode;
+      strip={cells:buildStrip(winCode,Boolean(res.won),fallbackCode),offset:0,cls:'',wait:false};
+      render();
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      await animateStop(Boolean(res.won));
+    } else {
+      strip={cells:[],offset:0,cls:'',wait:false};
+    }
     busy=false;
     if(!res||!res.ok){
       setNotice((err&&err.message)||(res&&res.error)||'Не удалось выполнить апгрейд.','bad');

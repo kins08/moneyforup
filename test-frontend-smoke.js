@@ -125,7 +125,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     upCard.click();
     await wait(300);
     ok(d.querySelector('#play').classList.contains('active'), 'экран игры открыт');
-    eq(d.querySelectorAll('.upg-mode').length, 3, 'три режима риска');
+    eq(d.querySelectorAll('.upg-mode').length, 0, 'режимы риска убраны из интерфейса (DECISIONS D4)');
+    ok(/70%/.test(d.querySelector('#play').textContent), 'виден потолок шанса 70%');
     eq(d.querySelectorAll('[data-utab]').length, 4, 'четыре вкладки: одиночный/мульти/лесенка/серия');
     ok(d.querySelectorAll('[data-ut]').length > 10, 'каталог целей отрисован');
 
@@ -143,22 +144,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const chanceText = d.querySelector('#upgChance').textContent;
     ok(/%$/.test(chanceText) && parseFloat(chanceText) > 0, `шанс пересчитан: ${chanceText}`);
 
-    const safe = d.querySelector('[data-umode="safe"]');
-    safe.click();
-    await wait(100);
-    ok(d.querySelector('[data-umode="safe"]').classList.contains('on'), 'режим SAFE переключается');
-    // Смена режима меняет допустимые цели, поэтому выбор сбрасывается —
-    // выбираем заново и проверяем, что шанс посчитан по новому edge/cap.
-    const safeTarget = d.querySelector('[data-ut]:not([disabled])');
-    if (safeTarget) safeTarget.click();
-    await wait(80);
-    ok(parseFloat(d.querySelector('#upgChance').textContent) > 0, 'шанс пересчитан после смены режима');
+    // Шанс не выше 70% ни для одной цели (DECISIONS D4).
+    const maxShown = Math.max(...[...d.querySelectorAll('.upg-target .ut-p')].map(x => parseFloat(x.textContent)).filter(n => !isNaN(n)));
+    ok(maxShown <= 70.0001, `ни один шанс не выше 70% (макс. ${maxShown}%)`);
 
     console.log('\n3) Мульти-апгрейд');
-    // Для мульти нужен режим с несколькими допустимыми целями: SAFE при
-    // ставке 500 разрешает только узкий диапазон.
-    d.querySelector('[data-umode="balanced"]').click();
-    await wait(100);
     const amount2 = d.querySelector('#upgAmount');
     amount2.value = '1000';
     amount2.dispatchEvent(new w.Event('input', { bubbles: true }));
@@ -194,7 +184,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(100);
     d.querySelector('[data-game="upgrader"]').click();
     await wait(250);
-    eq(d.querySelectorAll('.upg-mode').length, 3, 'повторный вход рендерит арену без дублей');
+    eq(d.querySelectorAll('.upg-mode').length, 0, 'повторный вход рендерит арену без дублей и без режимов');
+    eq(d.querySelectorAll('[data-utab]').length, 4, 'после повторного входа вкладки не дублируются');
     eq(errors.length, 0, `нет JS-ошибок (${errors.slice(0, 3).join(' | ')})`);
 
     console.log(`\nИТОГ: ${passed} проверок пройдено.`);

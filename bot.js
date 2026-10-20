@@ -2688,9 +2688,9 @@ const server = http.createServer(async (req, res) => {
         maxTargets: upgrade.MAX_TARGETS,
         limits: { minTokens: 10, maxTokens: 100000, maxTargets: upgrade.MAX_TARGETS },
         ladder: {
-          3: upgrade.ladderPreview(upgrade.MODES.balanced, 3, 1000),
-          5: upgrade.ladderPreview(upgrade.MODES.balanced, 5, 1000),
-          10: upgrade.ladderPreview(upgrade.MODES.balanced, 10, 1000)
+          3: upgrade.ladderPreview(upgrade.MODES.standard, 3, 1000),
+          5: upgrade.ladderPreview(upgrade.MODES.standard, 5, 1000),
+          10: upgrade.ladderPreview(upgrade.MODES.standard, 10, 1000)
         },
         ladderTables: upgrade.LADDER_MULTS,
         inventory: db.listInventory(u.id).map(it => ({

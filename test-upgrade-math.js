@@ -18,12 +18,14 @@ const close = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
 
 console.log('=== UPGRADE MATH ===');
 
-// 1. Режимы действительно различаются параметрами, а не только цветом.
+// 1. Единственный режим апгрейдера (DECISIONS.md, D4): потолок шанса 70%.
 const modes = Object.values(upgrade.MODES);
-ok(modes.length === 3, 'три режима риска');
-ok(new Set(modes.map(m => m.edge)).size === 3, 'у режимов разные edge');
-ok(new Set(modes.map(m => m.maxMult)).size === 3, 'у режимов разные потолки целей');
+ok(modes.length === 1 && modes[0].id === 'standard', 'один внутренний режим standard');
+ok(modes.every(m => m.chanceCap === 0.70), 'потолок шанса 70%');
 ok(modes.every(m => m.edge > 0 && m.edge < 0.2), 'edge в разумных пределах');
+ok(upgrade.getMode('safe') && upgrade.getMode('safe').id === 'standard', 'старый id safe маппится в standard');
+ok(upgrade.getMode('balanced') && upgrade.getMode('extreme'), 'старые id balanced/extreme маппятся');
+ok(upgrade.getMode('bogus') === null, 'неизвестный режим отклоняется');
 
 // 2. Каталог целей собран из существующего items.js и не содержит дублей.
 ok(upgrade.TARGETS.length >= 20, `каталог целей: ${upgrade.TARGETS.length}`);
@@ -45,11 +47,12 @@ for (const m of modes) {
 }
 
 // 4. Валидация целей на сервере.
-const m = upgrade.MODES.balanced;
+const m = upgrade.MODES.standard;
 const cheap = upgrade.TARGETS.find(t => t.value <= 1000 * 1.05);
 ok(!upgrade.validateTargets(m, 1000, [cheap.code]).ok, 'цель дешевле источника +5% отклонена');
-const tooExpensive = upgrade.TARGETS.find(t => t.value > 1000 * m.maxMult);
-ok(!upgrade.validateTargets(m, 1000, [tooExpensive.code]).ok, 'цель выше потолка режима отклонена');
+const tooExpensive = upgrade.TARGETS.find(t => t.value > 10 * m.maxMult);
+ok(Boolean(tooExpensive), 'в каталоге есть цель выше потолка для проверки');
+ok(!upgrade.validateTargets(m, 10, [tooExpensive.code]).ok, 'цель выше потолка режима отклонена');
 const two = upgrade.TARGETS.filter(t => t.value > 1200 && t.value < 5000).slice(0, 2);
 ok(two.length === 2, 'есть две цели для мульти');
 ok(!upgrade.validateTargets(m, 1000, [two[0].code, two[0].code]).ok, 'дубль цели отклонён');
