@@ -49,6 +49,7 @@ const db            = require('./db');
 const items         = require('./items');   // серверный каталог кейсов и предметов
 const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
 const pulse         = require('./pulse');   // Pulse Market: исход и выплаты (DECISIONS D5)
+const trend         = require('./trend');   // Trend Hunter: сценарии и проверка ответа (DECISIONS D6)
 /* Каталог пяти новых режимов кейсов — единый UMD-файл: его же грузит браузер
    как статику. Поэтому цены/предметы не дублируются между фронтом и бэком. */
 const caseModes     = require('./assets/case-modes.js');
@@ -451,6 +452,10 @@ function racketBustMs(crash) {
 const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, createdAt, cashed: false }
 // Pulse Market: серверный seed и параметры открытых раундов (до раскрытия результата).
 const pulseRounds = new Map();     // roundId -> { userId, seed, startedAt, dueAt, direction, leverage, duration, bet, settled }
+// Trend Hunter: открытые сценарии (с правильным ответом на сервере) и комбо игрока.
+const trendRounds = new Map();     // roundId -> { userId, bet, level, scenario, answered, result, deadline, settledAt }
+const trendComboState = new Map(); // userId -> число правильных подряд (только отображение)
+function trendCombo(userId) { return trendComboState.get(userId) || 0; }
 const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance, createdAt }
 
 setInterval(() => {
@@ -2400,6 +2405,94 @@ const server = http.createServer(async (req, res) => {
       // (потерянный ответ) вернул тот же результат, а не 404. Чистка — ниже.
       rd.settledAt = Date.now();
       return send(200, { ok: true, duplicate: false, result: rd.result, tokens: u.tokens });
+    }
+
+    /* ── Trend Hunter: распознавание паттерна (DECISIONS.md D6) ─────────────────
+       Сценарий и правильный ответ фиксируются на сервере при генерации. */
+    if (url.pathname === '/api/trend/config' && req.method === 'POST') {
+      return send(200, { ok: true, config: trend.publicConfig(), combo: trendCombo(u.id), tokens: u.tokens });
+    }
+
+    if (url.pathname === '/api/trend/start' && req.method === 'POST') {
+      if (!checkRateLimit(`trend-start:${u.id}`, 30, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      }
+      const level = Math.floor(Number(body.level) || 0);
+      if (!trend.TREND.levels[level]) return send(400, { error: 'Уровень: 1, 2 или 3' });
+      const bet = Math.floor(Number(body.bet) || 0);
+      if (!Number.isFinite(bet) || bet < trend.TREND.minBet || bet > trend.TREND.maxBet) {
+        return send(400, { error: `Ставка от ${trend.TREND.minBet} до ${trend.TREND.maxBet} ⬦` });
+      }
+      if (bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно токенов' });
+      const clientKey = String(body.requestId || '').trim();
+      if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
+        return send(400, { error: 'Некорректный идентификатор запроса' });
+      }
+      const roundId = `TH_${u.id}_${clientKey}`;
+      let claimed = false;
+      try {
+        claimed = db.claimRound({ roundId, userId: u.id, game: trend.TREND.label, bet });
+      } catch (e) {
+        console.error('[Trend] claim failed:', e.message);
+        return send(500, { error: 'Не удалось начать раунд, повторите позже' });
+      }
+      if (!claimed) return send(200, { ok: true, duplicate: true, roundId, tokens: u.tokens });
+
+      const r = applyBalance(u, -bet, 'trend_bet', `Trend Hunter · ставка ${bet} ⬦ · уровень ${level}`, roundId);
+      if (!r.ok) {
+        db.releaseRoundClaim(roundId, u.id);
+        return send(400, { error: 'Не удалось списать ставку' });
+      }
+      u.rakeback = Math.round(((u.rakeback || 0) + (bet * 0.005)) * 100) / 100;
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (trend start):', e.message); }
+
+      const seed = crypto.randomBytes(32).toString('hex');
+      const scenario = trend.generateScenario({ seedHex: seed, level, scenarioId: roundId });
+      trendRounds.set(roundId, {
+        userId: u.id, bet, level, scenario, answered: false, answer: null, correct: null, payout: 0,
+        startedAt: Date.now(), deadline: Date.now() + scenario.seconds * 1000
+      });
+      // Клиент получает график и параметры, но НЕ правильный ответ.
+      return send(200, {
+        ok: true, duplicate: false, roundId, level, bet,
+        seconds: scenario.seconds, points: scenario.points, multiplier: scenario.mult,
+        deadline: Date.now() + scenario.seconds * 1000, tokens: u.tokens
+      });
+    }
+
+    if (url.pathname === '/api/trend/answer' && req.method === 'POST') {
+      const roundId = String(body.roundId || '');
+      const rd = trendRounds.get(roundId);
+      if (!rd || rd.userId !== u.id) return send(404, { error: 'Раунд не найден' });
+      const answer = String(body.answer || '');
+      if (!trend.TREND.patterns.includes(answer)) return send(400, { error: 'Выберите: рост, падение или боковик' });
+      if (rd.answered) {
+        // Повтор ответа: отдаём уже сохранённый результат, без второй выплаты.
+        return send(200, { ok: true, duplicate: true, result: rd.result, combo: trendCombo(u.id), tokens: u.tokens });
+      }
+      // Время вышло — ответ не принимаем, ставка сгорает.
+      const late = Date.now() > rd.deadline + 2000;
+      const correct = !late && trend.checkAnswer(rd.scenario, answer);
+      const payout = correct ? Math.floor(rd.bet * rd.scenario.mult) : 0;
+      if (payout > 0) {
+        const pr = applyBalance(u, payout, 'trend_win', `Trend Hunter · выигрыш +${payout} ⬦`, roundId);
+        if (!pr.ok) return send(500, { error: 'Не удалось начислить выигрыш, повторите' });
+      }
+      trendComboState.set(u.id, trend.nextCombo(trendCombo(u.id), correct));
+      rd.answered = true;
+      rd.answer = answer;
+      rd.correct = correct;
+      rd.payout = payout;
+      rd.result = { correct, late, pattern: rd.scenario.pattern, payout, mult: rd.scenario.mult };
+      try {
+        db.settleRound({
+          roundId, userId: u.id, game: trend.TREND.label, bet: rd.bet,
+          mult: correct ? rd.scenario.mult : 0, win: payout, status: 'settled'
+        });
+      } catch (e) { console.error('[Trend] settle not saved:', e.message); }
+      try { db.saveUser(u); } catch (e) { console.error('saveUser (trend answer):', e.message); }
+      rd.settledAt = Date.now();
+      return send(200, { ok: true, duplicate: false, result: rd.result, combo: trendCombo(u.id), tokens: u.tokens });
     }
 
     /* ── Ракетка: приём ставки до старта полёта ────────────────────────────── */

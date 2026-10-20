@@ -195,6 +195,18 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(60);
     ok(d.querySelector('[data-pdir="range"]').disabled === true, 'при плече ×2 кнопка «Боковик» отключена');
 
+    console.log('\n4c) Trend Hunter');
+    d.querySelector('.nav button[data-nav="games"]').click();
+    await wait(100);
+    const trendCard = d.querySelector('[data-game="trend"]');
+    ok(Boolean(trendCard), 'карточка Trend Hunter есть в играх');
+    trendCard.click();
+    await wait(300);
+    ok(/TREND HUNTER/.test(d.querySelector('#gameArea').textContent), 'экран Trend Hunter открыт');
+    eq(d.querySelectorAll('[data-tlev]').length, 3, 'три уровня сложности');
+    ok(/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'дисклеймер Trend на экране');
+    ok(d.querySelectorAll('[data-tans]').length === 0, 'до старта кнопок ответа нет (ответ не виден заранее)');
+
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();
     await wait(100);

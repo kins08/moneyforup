@@ -1070,6 +1070,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Выбери цель и рискни токенами: шанс до 70%, результат виден сразу</span><i class="arrow">→</i></button>
+<button class="game" data-game="trend"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="trend">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Trend Hunter"></div><div class="gi">🔎</div><strong>Trend Hunter</strong><span>Угадай паттерн графика: рост, падение или боковик. Три уровня сложности</span><i class="arrow">→</i></button>
 <button class="game" data-game="pulse"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="pulse">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Pulse Market"></div><div class="gi">📈</div><strong>Pulse Market</strong><span>Рынок вверх, вниз или боковик: ставка на направление за 5–20 секунд</span><i class="arrow">→</i></button>
 <button class="game" data-nav="casehub"><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>20 кейсов: 15 классических + 5 новых режимов, обложки и полная механика</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
@@ -11061,6 +11062,170 @@ function gameUpgradeArena(){
 /* Совместимость со старыми вызовами: инвентарь и кейсы зовут play('upgrader'). */
 function gameUpgrader(){ return gameUpgradeArena(); }
 
+/* ── Trend Hunter (DECISIONS.md D6) ────────────────────────────────────────
+   Паттерн и правильный ответ — только на сервере. Клиент рисует график,
+   отправляет ответ и показывает результат, который вернул сервер. */
+function gameTrend(){
+  const a=q('#gameArea');
+  if(!a) return ()=>{};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sleepLocal=ms=>new Promise(r=>setTimeout(r,ms));
+  const rid=()=>'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  const PAT={rise:'РОСТ ▲',fall:'ПАДЕНИЕ ▼',flat:'БОКОВИК ◆'};
+  let cfg=null, level=1, bet=50, busy=false, dead=false;
+  let round=null;  // { roundId, points, deadline, seconds, level, bet, multiplier }
+  let last=null;   // { correct, pattern, payout, mult, late }
+  let combo=0, timer=0;
+
+  function chart(points){
+    if(!points||points.length<2) return '';
+    const w=300,h=110,pad=8;
+    const min=Math.min(...points), max=Math.max(...points), span=(max-min)||1;
+    const X=i=>pad+(w-2*pad)*i/(points.length-1);
+    const Y=v=>pad+(h-2*pad)*(1-(v-min)/span);
+    const d=points.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+    return `<svg class="tr-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="график"><path d="${d}" fill="none" stroke="#35d6ff" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
+  }
+
+  function render(){
+    if(dead) return;
+    const c=cfg||{levels:[{level:1,label:'Лёгкий',points:12,seconds:20,multiplier:2.76},{level:2,label:'Средний',points:18,seconds:15,multiplier:2.76},{level:3,label:'Сложный',points:24,seconds:10,multiplier:2.76}],minBet:10,maxBet:5000,disclaimer:''};
+    const L=c.levels.find(x=>x.level===level)||c.levels[0];
+    const left=round?Math.max(0,round.deadline-Date.now()):0;
+    const progress=round?Math.min(100,(1-left/(round.seconds*1000))*100):0;
+    const payout=Math.floor(bet*L.multiplier);
+    a.innerHTML=`<div class="tr-shell">
+      <div class="pm-head">
+        <div class="pm-title">TREND HUNTER</div>
+        <div class="muted small">Определи паттерн графика: рост, падение или боковик</div>
+      </div>
+      <div class="pm-disclaimer">${esc(c.disclaimer||'Учебная симуляция. Не прогнозирует реальный рынок.')}</div>
+
+      <div class="pm-panel">
+        <div class="pm-label">Сложность <span>комбо: ${combo}</span></div>
+        <div class="pm-row">
+          ${c.levels.map(x=>`<button class="pm-chip ${level===x.level?'on':''}" data-tlev="${x.level}" ${(busy||round)?'disabled':''}>${esc(x.label)} · ${x.points} точек · ${x.seconds} с</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="pm-panel tr-stage">
+        ${round?`
+          <div class="pm-live-head"><b>Определи паттерн</b><span id="trLeft">${Math.ceil(left/1000)} с</span></div>
+          <div class="pm-bar"><i id="trBar" style="width:${progress}%"></i></div>
+          ${chart(round.points)}
+          <div class="tr-answers">
+            <button class="pm-dir up" data-tans="rise" ${busy?'disabled':''}>РОСТ ▲</button>
+            <button class="pm-dir down" data-tans="fall" ${busy?'disabled':''}>ПАДЕНИЕ ▼</button>
+            <button class="pm-dir range" data-tans="flat" ${busy?'disabled':''}>БОКОВИК ◆</button>
+          </div>
+        `:last?`
+          <div class="pm-result ${last.correct?'win':'lose'}">
+            <div class="pm-res-title">${last.correct?'✅ ВЕРНО':last.late?'⏱ ВРЕМЯ ВЫШЛО':'❌ НЕВЕРНО'}</div>
+            <div>Паттерн: <b>${PAT[last.pattern]||'—'}</b></div>
+            <div>${last.correct?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
+          </div>
+        `:`<div class="muted small">Выберите сложность и ставку. График появится после старта. Ответ принимается до конца таймера.</div>`}
+      </div>
+
+      ${!round?`
+        <div class="pm-panel">
+          <div class="pm-label">Ставка <span>баланс: ${fmt(S.balance||0)} ⬦</span></div>
+          <input class="upg-input" id="trBet" type="number" min="${c.minBet}" max="${c.maxBet}" step="10" value="${bet}" ${busy?'disabled':''}>
+          <div class="muted small" style="margin-top:6px">Выплата при верном ответе: <b class="good">${fmt(payout)} ⬦</b> (×${L.multiplier}).</div>
+        </div>
+        <button class="control upg-run" id="trGo" ${(busy||bet<c.minBet)?'disabled':''}>${busy?'СТАРТ…':'▶ СТАРТ · '+fmt(bet)+' ⬦'}</button>
+      `:''}
+      <div class="result" id="trMsg"></div>
+    </div>`;
+    bind();
+  }
+
+  function bind(){
+    a.querySelectorAll('[data-tlev]').forEach(b=>b.onclick=()=>{ level=Number(b.dataset.tlev); render(); });
+    const inp=a.querySelector('#trBet');
+    if(inp) inp.onchange=()=>{ const mx=(cfg&&cfg.maxBet)||5000, mn=(cfg&&cfg.minBet)||10; bet=Math.max(mn,Math.min(mx,Math.floor(Number(inp.value)||mn))); render(); };
+    const go=a.querySelector('#trGo');
+    if(go) go.onclick=()=>start();
+    a.querySelectorAll('[data-tans]').forEach(b=>b.onclick=()=>answer(b.dataset.tans));
+  }
+
+  function notice(t,cls){ const m=a.querySelector('#trMsg'); if(m){ m.className='result'+(cls?' '+cls:''); m.innerHTML=t; } }
+
+  async function loadConfig(){
+    if(IS_TG&&API_BASE){
+      try{
+        const d=await tgCall('/api/trend/config',{});
+        if(d&&d.ok){ cfg=d.config; combo=Number(d.combo)||0; if(typeof d.tokens==='number') setTokens(d.tokens); }
+      }catch(e){ notice('Не удалось загрузить правила: '+((e&&e.message)||'ошибка'),'bad'); }
+    }
+    render();
+  }
+
+  async function start(){
+    if(busy||round) return;
+    const mn=(cfg&&cfg.minBet)||10;
+    if(bet<mn){ notice('Ставка меньше минимума.','bad'); return; }
+    if(bet>(S.balance||0)){ notice('Недостаточно токенов.','bad'); return; }
+    if(!(IS_TG&&API_BASE)){ notice('Демо-режим без Telegram: раунд не проводится.','bad'); return; }
+    busy=true; last=null; render();
+    try{
+      const res=await tgCall('/api/trend/start',{level,bet,requestId:rid()});
+      if(!res||!res.ok) throw new Error((res&&res.error)||'Раунд не начат');
+      if(typeof res.tokens==='number') setTokens(res.tokens);
+      round={roundId:res.roundId,points:res.points,deadline:res.deadline,seconds:res.seconds,level:res.level,bet:res.bet,multiplier:res.multiplier};
+      busy=false; render(); startTimer();
+    }catch(e){ busy=false; notice((e&&e.message)||'Ошибка старта','bad'); render(); }
+  }
+
+  function startTimer(){
+    clearInterval(timer);
+    timer=setInterval(()=>{
+      if(dead||!round){ clearInterval(timer); return; }
+      const left=round.deadline-Date.now();
+      const el=a.querySelector('#trLeft'), bar=a.querySelector('#trBar');
+      if(el) el.textContent=Math.max(0,Math.ceil(left/1000))+' с';
+      if(bar) bar.style.width=Math.min(100,(1-Math.max(0,left)/(round.seconds*1000))*100)+'%';
+      if(left<=-1500){ clearInterval(timer); timeout(); }
+    }, 200);
+  }
+
+  async function timeout(){
+    // Время вышло: отправляем «пустой» ответ, сервер сам отметит просрочку.
+    if(!round) return;
+    await answer('flat', true);
+  }
+
+  async function answer(pattern, auto){
+    if(busy||!round) return;
+    busy=true;
+    clearInterval(timer);
+    const roundNow=round;
+    try{
+      let res=null;
+      for(let i=0;i<4;i++){
+        try{ res=await tgCall('/api/trend/answer',{roundId:roundNow.roundId,answer:pattern}); if(res&&res.ok) break; }
+        catch(e){ if(i===3) throw e; await sleepLocal(350); }
+      }
+      if(!res||!res.ok) throw new Error((res&&res.error)||'Ответ не принят');
+      const r=res.result||{};
+      last={correct:Boolean(r.correct),late:Boolean(r.late),pattern:r.pattern,payout:r.payout||0,mult:r.mult};
+      combo=Number(res.combo)||0;
+      if(typeof res.tokens==='number') setTokens(res.tokens);
+      round=null; busy=false;
+      tgHaptic(last.correct?'win':'lose');
+      render();
+      notice(last.correct?`✅ +${fmt(last.payout)} ⬦`:last.late?'⏱ Время вышло, ставка сгорела':`❌ Ставка ${fmt(roundNow.bet)} ⬦ сгорела`,last.correct?'good':'bad');
+    }catch(e){
+      busy=false; round=null;
+      notice((e&&e.message)||'Ошибка ответа. Обновите экран.','bad');
+      render();
+    }
+  }
+
+  loadConfig();
+  return ()=>{ dead=true; clearInterval(timer); };
+}
+
 /* ── Pulse Market (DECISIONS.md D5) ─────────────────────────────────────────
    Ставка и исход — только на сервере. Клиент показывает таймер раунда и
    запрашивает результат после его окончания. Учебная симуляция, токены. */
@@ -11251,8 +11416,8 @@ function gamePulse(){
 }
 
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',pulse:'Pulse Market',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
-const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,pulse:gamePulse,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',pulse:'Pulse Market',trend:'Trend Hunter',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,pulse:gamePulse,trend:gameTrend,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
 function play(type){
   screen('play');
   q('#gameLabel').textContent='ИГРА';

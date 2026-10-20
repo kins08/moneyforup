@@ -14,7 +14,7 @@
     "test:rtp": "node tools/simulate-rtp.js",
     "test:stress": "node .agents/skills/security-audit/scripts/test-stress-and-audit.js",
     "test:racket": "node racket-test.js",
-    "test:new": "node test-upgrade-math.js && node test-new-features-e2e.js && node test-pulse.js",
+    "test:new": "node test-upgrade-math.js && node test-new-features-e2e.js && node test-pulse.js && node test-trend.js",
     "test:ui": "node test-frontend-smoke.js",
     "test:all": "npm test && npm run test:new && npm run test:ui && npm run check:frontend",
     "test:security": "node racket-test.js && node .agents/skills/security-audit/scripts/e2e-game-authority-test.js && node .agents/skills/security-audit/scripts/e2e-inventory-test.js && node .agents/skills/security-audit/scripts/e2e-exploit-test.js && node .agents/skills/security-audit/scripts/poc-db-double-write.js"
