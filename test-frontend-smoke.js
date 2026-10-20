@@ -207,6 +207,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'дисклеймер Trend на экране');
     ok(d.querySelectorAll('[data-tans]').length === 0, 'до старта кнопок ответа нет (ответ не виден заранее)');
 
+    console.log('\n4d) Прогресс в профиле');
+    d.querySelector('.nav button[data-nav="profile"]').click();
+    await wait(150);
+    ok(Boolean(d.querySelector('#progressBlock')), 'блок «Прогресс» есть в профиле');
+    ok(/Прогресс доступен|Прогресс пока|Загрузка|Не удалось/.test(d.querySelector('#progressBlock').textContent), 'блок прогресса показывает состояние без Telegram');
+    ok(!/токен|⬦ начисл|бонус токен/i.test((d.querySelector('#progressBlock')||{}).textContent || ''), 'в блоке прогресса нет начисления токенов');
+
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();
     await wait(100);

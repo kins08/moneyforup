@@ -1278,6 +1278,16 @@ module.exports = {
   },
   getRound: (roundId) => stmts.getRound.get(String(roundId)),
 
+  /* Раунды игрока для прогрессии (DECISIONS D7): только чтение game_rounds,
+     без новых таблиц. Ограничение по количеству — защита от раздувания ответа. */
+  getUserRounds: (userId, limit = 500) => {
+    try {
+      return db.prepare(`SELECT round_id, game, status, bet_tokens, mult, win_tokens, created_at
+        FROM game_rounds WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`)
+        .all(userId, Math.max(1, Math.min(2000, Number(limit) || 500)));
+    } catch (e) { console.error('[DB] getUserRounds:', e.message); return []; }
+  },
+
   /* Атомарный claim раунда: INSERT OR IGNORE по PRIMARY KEY round_id.
      Возвращает true только победителю гонки; второй параллельный запрос
      с тем же roundId получит false и не спишет деньги. */

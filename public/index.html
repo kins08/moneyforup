@@ -1123,6 +1123,10 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="muted small" style="margin:-14px 0 0">по курсу 10 ⬦ = 1 ₽ → ≈ <b class="js-rub">5,00 ₽</b></div>
 </div>
 
+<!-- Прогресс: миссии, титул, сезон, Market Replay (DECISIONS D7/D8, без токенов) -->
+<div class="section" style="margin-top:16px"><b>📈 Прогресс</b></div>
+<div class="item" style="padding:14px" id="progressBlock"><div class="muted small">Загрузка прогресса…</div></div>
+
 <!-- Игровая статистика пользователя -->
 <div class="section" style="margin-top:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
@@ -2638,12 +2642,59 @@ function renderProfileInventory(){
   });
 }
 
+/* Блок «Прогресс» профиля (DECISIONS D7/D8): миссии, титул, сезон, Replay.
+   Все данные — с сервера из game_rounds. Награды — только косметика. */
+async function renderProgressBlock(){
+  const box=q('#progressBlock');
+  if(!box) return;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  if(!(IS_TG&&API_BASE)){
+    box.innerHTML='<div class="muted small">Прогресс доступен в Telegram-приложении.</div>';
+    return;
+  }
+  let d=null;
+  try{ d=await tgCall('/api/progress',{}); }catch(e){
+    box.innerHTML=`<div class="muted small">Не удалось загрузить прогресс: ${esc((e&&e.message)||'ошибка')}</div>`;
+    return;
+  }
+  if(!d||!d.ok){ box.innerHTML='<div class="muted small">Прогресс пока недоступен.</div>'; return; }
+  const t=d.title||{}, cur=t.current||{name:'—',icon:'🔰'}, nxt=t.next;
+  const missions=(d.missions||[]).map(m=>`
+    <div class="uhr">
+      <span>${m.done?'✅':'⬜'}</span>
+      <b>${esc(m.title)}</b>
+      <span class="muted small">${m.progress}/${m.need}</span>
+    </div>`).join('');
+  const replay=(d.replay||[]).slice(0,5).map(r=>`
+    <div class="uhr">
+      <span>${r.won?'🟢':'🔴'}</span>
+      <b>Pulse · ставка ${fmt(r.bet)} ⬦</b>
+      <span class="${r.won?'win':'lose'}">${r.won?'+'+fmt(r.payout):'−'+fmt(r.bet)} ⬦</span>
+    </div>`).join('');
+  const season=d.season||{};
+  const seasonNext=season.next?`до награды «${esc((season.next.reward||{}).name||'')}»: ещё ${season.next.left} раундов`:'все награды сезона получены';
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <b>${cur.icon||''} ${esc(cur.name)}</b>
+      <span class="muted small">${nxt?'до «'+esc(nxt.name)+'»: '+t.leftToNext+' раундов':'максимальный титул'}</span>
+    </div>
+    <div class="muted small" style="margin-bottom:10px">Раундов Pulse/Trend: <b>${(d.stats||{}).rounds||0}</b> · точность: <b>${(d.stats||{}).accuracy||0}%</b></div>
+    <div class="muted small" style="margin:6px 0 4px;font-weight:800">ЕЖЕДНЕВНЫЕ МИССИИ</div>
+    ${missions||'<div class="muted small">Миссий нет</div>'}
+    <div class="muted small" style="margin:10px 0 4px;font-weight:800">${esc(season.season||'СЕЗОН')} · раундов: ${season.rounds||0}</div>
+    <div class="muted small">${seasonNext}</div>
+    <div class="muted small" style="margin:10px 0 4px;font-weight:800">MARKET REPLAY · последние раунды</div>
+    ${replay||'<div class="muted small">Пока нет завершённых раундов Pulse Market</div>'}
+    <div class="muted small" style="margin-top:10px">Награды — косметика и титулы. Токены в прогрессии не начисляются.</div>`;
+}
+
 function renderUserStatsUI(){
   const rankPill = q('#userRankPill');
   const maxWinEl = q('#uStatMaxWin');
   const maxGameEl = q('#uStatMaxGame');
   const favGameEl = q('#uStatFavGame');
   const favSubEl = q('#uStatFavGameSub');
+  renderProgressBlock();
 
   if(!maxWinEl && !favGameEl) return;
 

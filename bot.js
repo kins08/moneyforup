@@ -50,6 +50,9 @@ const items         = require('./items');   // серверный каталог
 const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
 const pulse         = require('./pulse');   // Pulse Market: исход и выплаты (DECISIONS D5)
 const trend         = require('./trend');   // Trend Hunter: сценарии и проверка ответа (DECISIONS D6)
+const progress      = require('./progress'); // прогрессия: миссии, титулы, сезон — без токенов (D7/D8)
+// Старт сезона фиксирован в коде, чтобы не сдвигался при перезапуске.
+const SEASON_START_MS = Date.UTC(2026, 9, 1);   // 1 октября 2026 (UTC)
 /* Каталог пяти новых режимов кейсов — единый UMD-файл: его же грузит браузер
    как статику. Поэтому цены/предметы не дублируются между фронтом и бэком. */
 const caseModes     = require('./assets/case-modes.js');
@@ -2405,6 +2408,22 @@ const server = http.createServer(async (req, res) => {
       // (потерянный ответ) вернул тот же результат, а не 404. Чистка — ниже.
       rd.settledAt = Date.now();
       return send(200, { ok: true, duplicate: false, result: rd.result, tokens: u.tokens });
+    }
+
+    /* ── Прогрессия (DECISIONS.md D7/D8): миссии, титул, статистика, Replay, сезон.
+       Всё считается из game_rounds на сервере. Награды — только косметика. */
+    if (url.pathname === '/api/progress' && req.method === 'POST') {
+      const rounds = db.getUserRounds(u.id, 500);
+      const now = Date.now();
+      return send(200, {
+        ok: true,
+        stats: progress.stats(rounds),
+        title: progress.titleFor(progress.stats(rounds).rounds),
+        missions: progress.dailyMissions(rounds, now),
+        replay: progress.replay(rounds, 10),
+        season: progress.seasonProgress(rounds, SEASON_START_MS, now),
+        tokens: u.tokens
+      });
     }
 
     /* ── Trend Hunter: распознавание паттерна (DECISIONS.md D6) ─────────────────
