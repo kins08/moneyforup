@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS challenge_claims (
   PRIMARY KEY (user_id, quest_id, claim_date)
 );
 
+-- Персональный буст дропа (0..100), который владелец выдаёт отдельным игрокам.
+-- Отдельная таблица, чтобы не менять схему users и не трогать сохранение профиля.
+CREATE TABLE IF NOT EXISTS player_boosts (
+  user_id INTEGER PRIMARY KEY,
+  luck INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
   type TEXT,

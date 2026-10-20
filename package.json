@@ -10,7 +10,7 @@
     "preview": "wrangler dev",
     "sync:frontend": "node tools/sync-frontend.js",
     "check:frontend": "node tools/sync-frontend.js --check",
-    "check:syntax": "node --check bot.js && node --check db.js && node --check upgrade.js && node --check pulse.js && node --check trend.js && node --check progress.js && node --check items.js && node --check assets/case-modes.js",
+    "check:syntax": "node --check bot.js && node --check db.js && node --check upgrade.js && node --check pulse.js && node --check boost.js && node --check trend.js && node --check progress.js && node --check items.js && node --check assets/case-modes.js",
     "lint": "npm run check:syntax && npm run check:frontend",
     "typecheck": "npm run check:syntax",
     "build": "npm run check:frontend",
@@ -19,7 +19,7 @@
     "test:stress": "node .agents/skills/security-audit/scripts/test-stress-and-audit.js",
     "test:racket": "node racket-test.js",
     "test:recovery": "node test-unfinished-rounds.js",
-    "test:new": "node test-upgrade-math.js && node test-new-features-e2e.js && node test-pulse.js && node test-trend.js && node test-progress.js && node test-restart.js && node test-round-params.js && node test-unfinished-rounds.js",
+    "test:new": "node test-upgrade-math.js && node test-new-features-e2e.js && node test-pulse.js && node test-boost.js && node test-trend.js && node test-progress.js && node test-restart.js && node test-round-params.js && node test-unfinished-rounds.js",
     "test:ui": "node test-frontend-smoke.js",
     "test:all": "npm test && npm run test:new && npm run test:ui && npm run check:frontend",
     "test:security": "node racket-test.js && node .agents/skills/security-audit/scripts/e2e-game-authority-test.js && node .agents/skills/security-audit/scripts/e2e-inventory-test.js && node .agents/skills/security-audit/scripts/e2e-exploit-test.js && node .agents/skills/security-audit/scripts/poc-db-double-write.js"

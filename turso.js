@@ -111,6 +111,18 @@ async function pullFromTurso(dbSync) {
   console.log('[Turso] ⏳ Восстановление данных из облака Turso...');
 
   try {
+    // Таблица персональных бустов появилась позже остальных. Создаём её здесь,
+    // иначе первая же запись встанет в очередь и будет вечно ретраиться.
+    try {
+      await client.execute(`CREATE TABLE IF NOT EXISTS player_boosts (
+        user_id INTEGER PRIMARY KEY,
+        luck INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0
+      )`);
+    } catch (e) {
+      console.warn('[Turso] player_boosts не создана:', e.message);
+    }
+
     // 1. Users
     const uRes = await client.execute('SELECT * FROM users');
     if (uRes.rows.length > 0) {
@@ -280,6 +292,20 @@ async function pullFromTurso(dbSync) {
       }
     } catch (e) {
       console.warn('[Turso] новые таблицы не восстановлены (миграция не применена?):', e.message);
+    }
+
+    // 7b. Персональные бусты дропа.
+    try {
+      const pbRes = await client.execute('SELECT * FROM player_boosts');
+      if (pbRes.rows.length > 0) {
+        const insPb = dbSync.prepare(`
+          INSERT INTO player_boosts (user_id, luck, updated_at) VALUES (?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET luck = excluded.luck, updated_at = excluded.updated_at
+        `);
+        for (const r of pbRes.rows) insPb.run(r.user_id, Number(r.luck || 0), Number(r.updated_at || 0));
+      }
+    } catch (e) {
+      console.warn('[Turso] player_boosts не восстановлены:', e.message);
     }
 
     console.log(

@@ -156,17 +156,30 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 /* ======== SPLASH, ПРЕВЬЮ ИГР, БУСТ-ИГРЫ, АВАТАРКА ======== */
 .mup-splash{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#2a1118 0%,#0d080e 52%,#040305 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;transition:opacity .45s ease,visibility .45s ease}
 .mup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-.mup-splash-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:38px 38px;-webkit-mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 70%);mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 70%);opacity:.5;pointer-events:none}
+.mup-splash-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:38px 38px;-webkit-mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 70%);mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 70%);opacity:.5;pointer-events:none;animation:splGridDrift 8s linear infinite}
+.mup-splash-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.mup-splash-particles i{position:absolute;bottom:-30px;width:2px;height:14px;border-radius:2px;background:linear-gradient(180deg,#3ddc96,rgba(61,220,150,0));box-shadow:0 0 10px rgba(61,220,150,.35);opacity:0;animation:splRise 2.1s cubic-bezier(.25,.6,.3,1) infinite}
+.mup-splash-particles i:nth-child(1){left:9%;animation-delay:.05s}
+.mup-splash-particles i:nth-child(2){left:21%;height:20px;animation-delay:.55s}
+.mup-splash-particles i:nth-child(3){left:33%;height:10px;animation-delay:.25s}
+.mup-splash-particles i:nth-child(4){left:46%;animation-delay:.8s}
+.mup-splash-particles i:nth-child(5){left:58%;height:18px;animation-delay:.15s}
+.mup-splash-particles i:nth-child(6){left:70%;height:11px;animation-delay:.65s}
+.mup-splash-particles i:nth-child(7){left:82%;animation-delay:.35s}
+.mup-splash-particles i:nth-child(8){left:92%;height:22px;animation-delay:.95s}
+.mup-splash-particles i:nth-child(3n+1){background:linear-gradient(180deg,#ff6b6b,rgba(255,107,107,0));box-shadow:0 0 10px rgba(255,107,107,.35)}
+.mup-splash-particles i:nth-child(3n+2){background:linear-gradient(180deg,#ffcf6b,rgba(255,207,107,0));box-shadow:0 0 10px rgba(255,207,107,.3)}
 .mup-splash-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,.26),rgba(61,220,150,.07) 48%,transparent 68%);filter:blur(14px);animation:splGlow 3.4s ease-in-out infinite alternate;pointer-events:none}
 .mup-splash-center{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:360px;position:relative;z-index:1}
-.mup-splash-mark{width:min(88vw,350px);display:flex;flex-direction:column;align-items:center;animation:splashPopIn .55s cubic-bezier(.16,1,.3,1)}
+.mup-splash-mark{width:min(88vw,350px);display:flex;flex-direction:column;align-items:center;animation:splashPopIn .55s cubic-bezier(.16,1,.3,1),splMarkFloat 2.6s ease-in-out .62s infinite alternate}
 .mup-splash-chart{width:100%;height:auto;display:block;filter:drop-shadow(0 10px 26px rgba(0,0,0,.55))}
 .mup-splash .spl-line{stroke-dasharray:520;stroke-dashoffset:520;animation:splDraw 1.15s cubic-bezier(.16,1,.3,1) .08s forwards}
 .mup-splash .spl-area{opacity:0;animation:splFade .7s ease .75s forwards}
 .mup-splash .spl-dot{opacity:0;transform-origin:236px 18px;animation:splFade .35s ease 1.05s forwards,splPulse 1.9s ease-in-out 1.45s infinite}
 .mup-splash-word{font-size:clamp(29px,9.2vw,41px);font-weight:950;letter-spacing:-.025em;line-height:1;color:#fff;text-shadow:0 10px 34px rgba(0,0,0,.75);margin-top:-4px}
 .mup-splash-word .sp-for{color:#ff6b6b}
-.mup-splash-word .sp-up{background:linear-gradient(135deg,#3ddc96,#7dd3fc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mup-splash-word .sp-up{background:linear-gradient(135deg,#3ddc96,#7dd3fc);-webkit-background-clip:text;background-clip:text;color:transparent;animation:splUpGlow 1.8s ease-in-out 1.05s infinite alternate}
+.mup-splash .spl-ring{transform-box:fill-box;transform-origin:center;animation:splRipple 1.7s ease-out 1.15s infinite}
 .mup-splash-tag{color:#8b94ab;font-size:9.5px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;margin-top:9px}
 .mup-splash-bar{height:3px;width:100%;max-width:190px;background:rgba(255,255,255,.07);border-radius:10px;overflow:hidden;position:relative;margin-top:25px}
 .mup-splash-bar i{position:absolute;left:-50%;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#ef4444,#f59e0b,#3ddc96);border-radius:10px;box-shadow:0 0 14px rgba(239,68,68,.6);animation:splBar 1.05s infinite ease-in-out}
@@ -177,9 +190,15 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 @keyframes splPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.55}}
 @keyframes splGlow{0%{transform:scale(.92);opacity:.65}100%{transform:scale(1.08);opacity:1}}
 @keyframes splBar{0%{left:-50%;width:30%}50%{left:35%;width:60%}100%{left:100%;width:30%}}
+@keyframes splGridDrift{to{background-position:38px 38px,38px 38px}}
+@keyframes splRise{0%{transform:translateY(0) scaleY(.7);opacity:0}10%{opacity:.55}65%{opacity:.28}100%{transform:translateY(-108vh) scaleY(1.25);opacity:0}}
+@keyframes splMarkFloat{from{transform:translateY(0)}to{transform:translateY(-5px)}}
+@keyframes splUpGlow{from{filter:drop-shadow(0 0 0 rgba(61,220,150,0))}to{filter:drop-shadow(0 0 12px rgba(61,220,150,.45))}}
+@keyframes splRipple{0%{transform:scale(.55);opacity:0}28%{opacity:.55}100%{transform:scale(2.2);opacity:0}}
 @media (prefers-reduced-motion:reduce){
-  .mup-splash-mark,.mup-splash-glow,.mup-splash .spl-line,.mup-splash .spl-area,.mup-splash .spl-dot,.mup-splash-bar i{animation:none!important}
-  .mup-splash .spl-line{stroke-dashoffset:0}.mup-splash .spl-area,.mup-splash .spl-dot{opacity:1}
+  .mup-splash-mark,.mup-splash-glow,.mup-splash-grid,.mup-splash .spl-line,.mup-splash .spl-area,.mup-splash .spl-dot,.mup-splash .spl-ring,.mup-splash-word .sp-up,.mup-splash-bar i{animation:none!important}
+  .mup-splash-particles{display:none}
+  .mup-splash .spl-line{stroke-dashoffset:0}.mup-splash .spl-area,.mup-splash .spl-dot{opacity:1}.mup-splash .spl-ring{opacity:.25}
 }
 
 .game-card-cover{width:100%;height:84px;border-radius:14px;overflow:hidden;margin-bottom:10px;position:relative;background:#20161a}
@@ -1110,6 +1129,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div id="mupSplash" class="mup-splash">
   <div class="mup-splash-grid" aria-hidden="true"></div>
   <div class="mup-splash-glow" aria-hidden="true"></div>
+  <div class="mup-splash-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="mup-splash-center">
     <div class="mup-splash-mark">
       <svg class="mup-splash-chart" viewBox="0 0 240 96" aria-hidden="true">
@@ -1127,7 +1147,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
         <path class="spl-area" d="M4 80 L22 74 L38 78 L54 62 L70 68 L88 52 L104 58 L120 40 L136 48 L154 30 L170 36 L188 24 L206 30 L224 16 L236 20 L236 92 L4 92 Z" fill="url(#splFill)"/>
         <path class="spl-line" d="M4 80 L22 74 L38 78 L54 62 L70 68 L88 52 L104 58 L120 40 L136 48 L154 30 L170 36 L188 24 L206 30 L224 16 L236 20" fill="none" stroke="url(#splLine)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         <circle class="spl-dot" cx="236" cy="20" r="4.2" fill="#3ddc96"/>
-        <circle cx="236" cy="20" r="9" fill="none" stroke="#3ddc96" stroke-opacity=".25" stroke-width="1.5"/>
+        <circle class="spl-ring" cx="236" cy="20" r="9" fill="none" stroke="#3ddc96" stroke-opacity=".25" stroke-width="1.5"/>
       </svg>
       <div class="mup-splash-word">MONEY<span class="sp-for">FOR</span><span class="sp-up">UP</span></div>
       <div class="mup-splash-tag">рынок, который платит</div>
@@ -1277,12 +1297,11 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <span class="cp-go">→</span>
 </button>
 
-<div class="section"><b>Игры</b><span class="muted small">15 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">14 режимов</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Выбери цель и рискни токенами: шанс до 70%, результат виден сразу</span><i class="arrow">→</i></button>
-<button class="game" data-game="trend"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="trend">онлайн</span></span><div class="game-card-cover"><img src="assets/game_trend.jpg" alt="Trend Hunter"></div><div class="gi">🔎</div><strong>Trend Hunter</strong><span>Угадай паттерн графика: рост, падение или боковик. Три уровня сложности</span><i class="arrow">→</i></button>
 <button class="game" data-game="pulse"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="pulse">онлайн</span></span><div class="game-card-cover"><img src="assets/game_pulse.jpg" alt="Pulse Market"></div><div class="gi">📈</div><strong>Pulse Market</strong><span>Рынок вверх, вниз или боковик: ставка на направление за 5–20 секунд</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
@@ -1440,7 +1459,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 </div>
 <!-- ======== ЗАКРЫТАЯ ПАНЕЛЬ АДМИНИСТРАТОРА (ВИДНА СТРОГО ТОЛЬКО ВЛАДЕЛЬЦУ) ======== -->
 <div id="adminExclusiveWrap" style="display:none;margin-top:18px">
-  <div class="section"><b style="color:#ffcf6b">👑 Админ-панель (Аналитика, Пополнения, Выводы)</b><button class="chip" id="btnAdminRefresh" style="padding:4px 10px;font-size:11px">🔄 Обновить</button></div>
+  <div class="section"><b style="color:#ffcf6b">👑 Админ-панель (Аналитика, Заявки, Буст игроков)</b><button class="chip" id="btnAdminRefresh" style="padding:4px 10px;font-size:11px">🔄 Обновить</button></div>
   <div class="item" style="border-color:rgba(245,158,11,.45);background:linear-gradient(145deg,#241c15,#181310)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       <span class="muted small" style="font-weight:700">Период аналитики:</span>
@@ -1461,6 +1480,45 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <div>
       <b style="font-size:13.5px;color:#60a5fa;display:block;margin-bottom:8px">💳 Заявки на пополнение (СБП / Карты):</b>
       <div id="adminDepositList" class="list"><div class="muted small">Нет ожидающих заявок на пополнение</div></div>
+    </div>
+  </div>
+  <div class="item" style="border-color:rgba(61,220,150,.45);background:linear-gradient(145deg,#122019,#101612);margin-top:12px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div>
+        <b style="color:#3ddc96;font-size:13.5px">🎯 Буст дропа для игрока</b>
+        <div class="muted small" style="margin-top:2px">Удача 0–100%: шанс, что сервер улучшит исход раунда именно этому игроку.</div>
+      </div>
+      <span class="pill" style="background:rgba(61,220,150,.15);color:#86efac;font-size:10px">Только владелец</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <input class="upg-input" id="admLuckSearch" placeholder="ID, @username или имя" maxlength="64" autocomplete="off" style="flex:1 1 170px;text-align:left;font-size:14px;padding:10px">
+      <button class="control" id="admLuckSearchBtn" style="margin:0;padding:10px 14px;font-size:13px;background:linear-gradient(135deg,#3ddc96,#15803d);color:#07130c;font-weight:900">Найти</button>
+    </div>
+    <div id="admLuckSearchResults" class="list" style="margin-top:8px"></div>
+    <div id="admLuckEditor" style="display:none;margin-top:10px;padding:10px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid rgba(61,220,150,.25)">
+      <div class="muted small" id="admLuckSelectedLabel"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px">
+        <input type="range" id="admLuckRange" min="0" max="100" step="5" value="0" style="flex:1;accent-color:#3ddc96">
+        <input type="number" id="admLuckValue" min="0" max="100" step="1" value="0" class="upg-input" style="width:72px;text-align:center;padding:8px;font-size:15px">
+        <span class="muted small">%</span>
+      </div>
+      <div class="chips" id="admLuckQuick" style="margin:8px 0">
+        <button class="chip" data-luck-quick="10" style="padding:5px 9px;font-size:11px">10%</button>
+        <button class="chip" data-luck-quick="25" style="padding:5px 9px;font-size:11px">25%</button>
+        <button class="chip" data-luck-quick="50" style="padding:5px 9px;font-size:11px">50%</button>
+        <button class="chip" data-luck-quick="75" style="padding:5px 9px;font-size:11px">75%</button>
+        <button class="chip" data-luck-quick="100" style="padding:5px 9px;font-size:11px">100%</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="control" id="admLuckApply" style="margin:0;flex:1 1 130px;padding:10px;background:linear-gradient(135deg,#3ddc96,#15803d);color:#07130c;font-weight:900;font-size:13px">Применить</button>
+        <button class="chip" id="admLuckReset" style="padding:10px 12px;color:#fca5a5;border-color:rgba(239,68,68,.4)">Сбросить</button>
+        <button class="chip" id="admLuckCancel" style="padding:10px 12px">Отмена</button>
+      </div>
+      <div class="muted small" style="margin-top:8px;font-size:10px;line-height:1.45">Кейсы: лучший из трёх дропов. Апгрейд и лесенка: успешный шаг. Pulse: победа по направлению. Ракетка: +50% к кэшауту. Сейф использует общий код платформы — буст на него не действует.</div>
+    </div>
+    <div style="margin-top:12px">
+      <b style="font-size:12px;color:#86efac;display:block;margin-bottom:6px">Сейчас с бустом:</b>
+      <div id="admLuckList" class="list"><div class="muted small">Загрузка...</div></div>
     </div>
   </div>
 </div>
@@ -3394,6 +3452,7 @@ function checkAdminVisibility(){
   if(isOwner && IS_TG && API_BASE && !window.__adminLoadedOnce){
     window.__adminLoadedOnce = true;
     loadAdminOverview();
+    if(typeof admLuckLoadList === 'function') admLuckLoadList();
   }
 }
 
@@ -3663,8 +3722,168 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
     });
   }catch(_){}
 }
+
+/* ---------- БУСТ ДРОПА: поиск игрока, удача 0–100% ---------- */
+let __admLuckSelected = null;
+
+function admLuckEsc(v){
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function admLuckUserName(u){
+  const id = (u && (u.id || u.userId)) || '?';
+  const name = (u && u.name) || ('ID ' + id);
+  const uname = (u && u.username) ? ' · @' + u.username : '';
+  return name + uname;
+}
+function admLuckSetValue(v){
+  const n = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  const range = q('#admLuckRange'), num = q('#admLuckValue');
+  if(range) range.value = String(n);
+  if(num) num.value = String(n);
+}
+function admLuckCloseEditor(){
+  __admLuckSelected = null;
+  const ed = q('#admLuckEditor');
+  if(ed) ed.style.display = 'none';
+  const res = q('#admLuckSearchResults');
+  if(res) res.innerHTML = '';
+}
+function admLuckSelect(u){
+  __admLuckSelected = u;
+  const ed = q('#admLuckEditor');
+  const label = q('#admLuckSelectedLabel');
+  const res = q('#admLuckSearchResults');
+  if(res) res.innerHTML = '';
+  if(ed) ed.style.display = 'block';
+  if(label){
+    label.innerHTML = `Выбран: <b style="color:#fff">${admLuckEsc(admLuckUserName(u))}</b>`
+      + `<span class="muted small"> · ID ${u.id}${u.numId ? ' · №' + u.numId : ''} · сейчас ${Number(u.luck || 0)}%</span>`;
+  }
+  admLuckSetValue(u.luck || 0);
+}
+function admLuckRenderSearch(users){
+  const box = q('#admLuckSearchResults');
+  if(!box) return;
+  if(!users.length){
+    box.innerHTML = '<div class="muted small">Никого не нашли. Попробуйте числовой ID или @username.</div>';
+    return;
+  }
+  box.innerHTML = users.map(u => `
+    <button class="chip" data-luck-user="${u.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;margin-bottom:4px">
+      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${admLuckEsc(admLuckUserName(u))}<span class="muted small"> · ID ${u.id}</span></span>
+      <span class="muted small" style="flex:0 0 auto">${u.luck ? '🎯 ' + u.luck + '%' : fmt(u.tokens) + ' ⬦'}</span>
+    </button>`).join('');
+  qa('[data-luck-user]', box).forEach(btn => {
+    btn.onclick = () => {
+      const found = users.find(x => String(x.id) === String(btn.dataset.luckUser));
+      if(found) admLuckSelect(found);
+    };
+  });
+}
+async function admLuckSearch(){
+  const input = q('#admLuckSearch');
+  const btn = q('#admLuckSearchBtn');
+  const query = input ? input.value.trim() : '';
+  if(!query){ showAppNotification('Введите ID, @username или имя игрока'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Ищу...'; }
+  try{
+    const r = await tgCall('/api/admin/luck/search', { query });
+    if(r && r.ok) admLuckRenderSearch(r.users || []);
+  }catch(e){
+    showAppNotification('Поиск не удался: ' + (e && e.message ? e.message : e));
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Найти'; }
+  }
+}
+async function admLuckLoadList(){
+  const box = q('#admLuckList');
+  if(!box || !IS_TG || !API_BASE) return;
+  try{
+    const r = await tgCall('/api/admin/luck/list', {});
+    if(!r || !r.ok) return;
+    const list = r.boosts || [];
+    if(!list.length){
+      box.innerHTML = '<div class="muted small">Пока никому не выдан</div>';
+      return;
+    }
+    box.innerHTML = list.map(b => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="min-width:0">
+          <b style="font-size:12px;color:#fff">${admLuckEsc(admLuckUserName(b))}</b>
+          <div class="muted small" style="font-size:10px">ID ${b.userId}${b.numId ? ' · №' + b.numId : ''} · ${fmt(b.tokens)} ⬦</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+          <span class="pill" style="background:rgba(61,220,150,.16);color:#86efac;font-size:10.5px">🎯 ${b.luck}%</span>
+          <button class="chip" data-luck-reset="${b.userId}" style="padding:5px 8px;font-size:10.5px;color:#fca5a5;border-color:rgba(239,68,68,.4)">сброс</button>
+        </div>
+      </div>`).join('');
+    qa('[data-luck-reset]', box).forEach(btn => {
+      btn.onclick = () => admLuckApply(btn.dataset.luckReset, 0);
+    });
+  }catch(_){}
+}
+async function admLuckApply(userId, luck){
+  if(!userId) return;
+  try{
+    const r = await tgCall('/api/admin/luck/set', { userId: Number(userId), luck: Number(luck) });
+    if(r && r.ok){
+      const who = r.user ? admLuckUserName(r.user) : ('ID ' + userId);
+      showAppNotification(r.luck > 0 ? `🎯 Буст ${r.luck}% выдан: ${who}` : `Буст снят: ${who}`);
+      if(__admLuckSelected && String(__admLuckSelected.id) === String(userId)){
+        __admLuckSelected.luck = r.luck;
+        admLuckSetValue(r.luck);
+      }
+      admLuckLoadList();
+    }
+  }catch(e){
+    showAppNotification('Не удалось изменить буст: ' + (e && e.message ? e.message : e));
+  }
+}
+
+const admLuckSearchBtn = q('#admLuckSearchBtn');
+if(admLuckSearchBtn) admLuckSearchBtn.addEventListener('click', admLuckSearch);
+const admLuckSearchInput = q('#admLuckSearch');
+if(admLuckSearchInput){
+  admLuckSearchInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); admLuckSearch(); }
+  });
+}
+const admLuckRange = q('#admLuckRange');
+if(admLuckRange) admLuckRange.addEventListener('input', () => {
+  const num = q('#admLuckValue');
+  if(num) num.value = admLuckRange.value;
+});
+const admLuckValue = q('#admLuckValue');
+if(admLuckValue) admLuckValue.addEventListener('input', () => {
+  const n = Math.max(0, Math.min(100, Math.round(Number(admLuckValue.value) || 0)));
+  const range = q('#admLuckRange');
+  if(range) range.value = String(n);
+});
+const admLuckQuick = q('#admLuckQuick');
+if(admLuckQuick){
+  admLuckQuick.addEventListener('click', e => {
+    const btn = e.target.closest('[data-luck-quick]');
+    if(btn) admLuckSetValue(btn.dataset.luckQuick);
+  });
+}
+const admLuckApplyBtn = q('#admLuckApply');
+if(admLuckApplyBtn) admLuckApplyBtn.addEventListener('click', () => {
+  if(!__admLuckSelected){ showAppNotification('Сначала выберите игрока'); return; }
+  admLuckApply(__admLuckSelected.id, q('#admLuckValue') ? q('#admLuckValue').value : 0);
+});
+const admLuckResetBtn = q('#admLuckReset');
+if(admLuckResetBtn) admLuckResetBtn.addEventListener('click', () => {
+  if(!__admLuckSelected){ showAppNotification('Сначала выберите игрока'); return; }
+  admLuckApply(__admLuckSelected.id, 0);
+});
+const admLuckCancelBtn = q('#admLuckCancel');
+if(admLuckCancelBtn) admLuckCancelBtn.addEventListener('click', admLuckCloseEditor);
+
 const btnAdmRef = q('#btnAdminRefresh');
-if(btnAdmRef) btnAdmRef.addEventListener('click', () => loadAdminOverview(window.__adminCurPeriod || 'all'));
+if(btnAdmRef) btnAdmRef.addEventListener('click', () => {
+  loadAdminOverview(window.__adminCurPeriod || 'all');
+  admLuckLoadList();
+});
 
 const admPeriodWrap = q('#adminPeriodFilter');
 if(admPeriodWrap){
@@ -11161,10 +11380,8 @@ function gameUpgradeArena(){
 /* Совместимость со старыми вызовами: инвентарь и кейсы зовут play('upgrader'). */
 function gameUpgrader(){ return gameUpgradeArena(); }
 
-/* ── Trend Hunter (DECISIONS.md D6) ────────────────────────────────────────
-   Паттерн и правильный ответ — только на сервере. Клиент рисует график,
-   отправляет ответ и показывает результат, который вернул сервер. */
-/* Свечной график в стиле торгового терминала. Данные синтетические:
+/* ── Графики рынка для Pulse Market ────────────────────────────────────────
+   Свечной график в стиле торгового терминала. Данные синтетические:
    это модель рынка MFU / USD, а не котировки реальных активов. */
 let __mfuChartSeq = 0;
 function mfuChartRng(seedStr){
@@ -11257,22 +11474,6 @@ function mfuMarketSeries(seedStr,n,style){
   for(let i=0;i<n;i++){
     const t=n>1?i/(n-1):0;
     out.push(Math.max(1,style.start*(1+raw[i]-endRaw*t)));
-  }
-  return out;
-}
-function mfuChartDense(points,factor,seedStr){
-  if(!Array.isArray(points)||points.length<2) return points||[];
-  const rnd=mfuChartRng(seedStr||'dense');
-  const range=(Math.max(...points)-Math.min(...points))||1;
-  const out=[points[0]];
-  for(let i=1;i<points.length;i++){
-    const from=points[i-1], to=points[i];
-    for(let k=1;k<=factor;k++){
-      const f=k/factor;
-      const base=from+(to-from)*f;
-      const jitter=(k===factor)?0:(rnd()*2-1)*range*0.035*Math.sin(f*Math.PI);
-      out.push(base+jitter);
-    }
   }
   return out;
 }
@@ -11397,194 +11598,6 @@ function mfuPulseChart(roundId,duration,progress,move){
   });
 }
 
-function gameTrend(){
-  const a=q('#gameArea');
-  if(!a) return ()=>{};
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const sleepLocal=ms=>new Promise(r=>setTimeout(r,ms));
-  const rid=()=>'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
-  const PAT={rise:'РОСТ ▲',fall:'ПАДЕНИЕ ▼',flat:'БОКОВИК ◆'};
-  let cfg=null, level=1, bet=50, busy=false, dead=false;
-  let round=null;  // { roundId, points, chart, deadline, seconds, level, bet, multiplier }
-  let last=null;   // { correct, pattern, payout, mult, late }
-  let combo=0, timer=0, entered=false, enterScheduled=false;
-
-  function chart(points,meta,neutral){
-    if(!points||points.length<2) return '';
-    const seed='trend:'+points.length+':'+points[0]+':'+points[points.length-1];
-    const style=meta||{};
-    return mfuChart(mfuChartDense(points,3,seed),{
-      interval:style.interval||'15М',tone:style.tone||'mint',
-      marker:true,seed,neutral:neutral!==false
-    });
-  }
-  function idleChart(){
-    const bucket=Math.floor(Date.now()/300000);
-    const key='trend-idle:'+bucket;
-    const style=mfuMarketStyle(key);
-    return mfuChart(mfuMarketSeries(key,44,style),{
-      interval:style.interval,tone:style.tone,marker:true,neutral:true,seed:key
-    });
-  }
-
-  function render(){
-    if(dead) return;
-    const c=cfg||{levels:[{level:1,label:'Лёгкий',points:12,seconds:20,multiplier:2.76},{level:2,label:'Средний',points:18,seconds:15,multiplier:2.76},{level:3,label:'Сложный',points:24,seconds:10,multiplier:2.76}],minBet:10,maxBet:5000,disclaimer:''};
-    const L=c.levels.find(x=>x.level===level)||c.levels[0];
-    const left=round?Math.max(0,round.deadline-Date.now()):0;
-    const progress=round?Math.min(100,(1-left/(round.seconds*1000))*100):0;
-    const payout=Math.floor(bet*L.multiplier);
-    const lastBet=Math.floor(Number(S.lastTrendBet)||0);
-    a.innerHTML=`<div class="tr-shell${entered?'':' mfu-enter'}">
-      <div class="pm-head">
-        <div class="pm-title">TREND HUNTER</div>
-      </div>
-
-      <div class="pm-panel">
-        <div class="pm-label">Сложность <span>комбо: ${combo}</span></div>
-        <div class="pm-row">
-          ${c.levels.map(x=>`<button class="pm-chip ${level===x.level?'on':''}" data-tlev="${x.level}" ${(busy||round)?'disabled':''}>${esc(x.label)} · ${x.points} точек · ${x.seconds} с</button>`).join('')}
-        </div>
-      </div>
-
-      ${!round?`
-        <div class="pm-panel">
-          <div class="pm-label">Ставка <span>баланс: ${fmt(S.balance||0)} ⬦</span></div>
-          <input class="upg-input" id="trBet" type="number" min="${c.minBet}" max="${c.maxBet}" step="10" value="${bet}" ${busy?'disabled':''}>
-          <div class="pm-row" style="margin-top:6px">
-            <button class="pm-chip" data-tquick="half" ${busy?'disabled':''}>½</button>
-            <button class="pm-chip" data-tquick="double" ${busy?'disabled':''}>×2</button>
-            <button class="pm-chip" data-tquick="max" ${busy?'disabled':''}>MAX</button>
-            <button class="pm-chip" data-tquick="last" ${(busy||!lastBet)?'disabled':''} title="Повторить последнюю ставку">↻ ${lastBet?fmt(lastBet):'—'}</button>
-          </div>
-          <div class="muted small" style="margin-top:6px">К выплате: <b class="good">${fmt(payout)} ⬦</b> (×${L.multiplier})</div>
-        </div>
-        <button class="control upg-run" id="trGo" ${(busy||bet<c.minBet)?'disabled':''}>${busy?'СТАРТ…':'▶ СТАРТ · '+fmt(bet)+' ⬦'}</button>
-      `:''}
-
-      <div class="pm-panel tr-stage">
-        ${round?`
-          <div class="pm-live-head"><b>Определи паттерн</b><span id="trLeft">${Math.ceil(left/1000)} с</span></div>
-          <div class="pm-bar"><i id="trBar" style="transform:scaleX(${progress/100})"></i></div>
-          ${chart(round.points,round.chart,true)}
-          <div class="tr-answers">
-            <button class="pm-dir up" data-tans="rise" aria-label="Ответ: рост" ${busy?'disabled':''}>РОСТ ▲</button>
-            <button class="pm-dir down" data-tans="fall" aria-label="Ответ: падение" ${busy?'disabled':''}>ПАДЕНИЕ ▼</button>
-            <button class="pm-dir range" data-tans="flat" aria-label="Ответ: боковик" ${busy?'disabled':''}>БОКОВИК ◆</button>
-          </div>
-        `:last?`
-          ${last.points?chart(last.points,last.chart,false):''}
-          <div class="pm-result ${last.correct?'win':'lose'}">
-            <div class="pm-res-title">${last.correct?'✅ ВЕРНО':last.late?'⏱ ВРЕМЯ ВЫШЛО':'❌ НЕВЕРНО'}</div>
-            <div>Паттерн: <b>${PAT[last.pattern]||'—'}</b></div>
-            <div>${last.correct?`Выплата <b>+${fmt(last.payout)} ⬦</b> (×${last.mult})`:'Ставка сгорела'}</div>
-          </div>
-        `:`${idleChart()}<div class="muted small" style="margin-top:8px">Выберите сложность и ставку.</div>`}
-      </div>
-
-      <div class="result" id="trMsg" aria-live="polite"></div>
-    </div>`;
-    if(!entered&&!enterScheduled){ enterScheduled=true; requestAnimationFrame(()=>{ entered=true; }); }
-    bind();
-  }
-
-  function bind(){
-    const mn=(cfg&&cfg.minBet)||10, mx=(cfg&&cfg.maxBet)||5000;
-    a.querySelectorAll('[data-tlev]').forEach(b=>b.onclick=()=>{ level=Number(b.dataset.tlev); render(); });
-    const inp=a.querySelector('#trBet');
-    if(inp) inp.onchange=()=>{ bet=Math.max(mn,Math.min(mx,Math.floor(Number(inp.value)||mn))); render(); };
-    a.querySelectorAll('[data-tquick]').forEach(b=>b.onclick=()=>{
-      const k=b.dataset.tquick;
-      if(k==='half') bet=Math.max(mn,Math.floor(bet/2));
-      else if(k==='double') bet=Math.min(mx,Math.max(mn,bet*2));
-      else if(k==='max') bet=mx;
-      else if(k==='last') bet=Math.max(mn,Math.min(mx,Math.floor(Number(S.lastTrendBet)||bet)));
-      render();
-    });
-    const go=a.querySelector('#trGo');
-    if(go) go.onclick=()=>start();
-    a.querySelectorAll('[data-tans]').forEach(b=>b.onclick=()=>answer(b.dataset.tans));
-  }
-
-  function notice(t,cls){ const m=a.querySelector('#trMsg'); if(m){ m.className='result'+(cls?' '+cls:''); m.innerHTML=t; } }
-
-  async function loadConfig(){
-    if(IS_TG&&API_BASE){
-      try{
-        const d=await tgCall('/api/trend/config',{});
-        if(d&&d.ok){ cfg=d.config; combo=Number(d.combo)||0; if(typeof d.tokens==='number') setTokens(d.tokens); }
-      }catch(e){ notice('Не удалось загрузить правила: '+((e&&e.message)||'ошибка'),'bad'); }
-    }
-    render();
-  }
-
-  async function start(){
-    if(busy||round) return;
-    const mn=(cfg&&cfg.minBet)||10;
-    if(bet<mn){ notice('Ставка меньше минимума.','bad'); return; }
-    if(bet>(S.balance||0)){ notice('Недостаточно токенов.','bad'); return; }
-    if(!(IS_TG&&API_BASE)){ notice('Демо-режим без Telegram: раунд не проводится.','bad'); return; }
-    busy=true; last=null; render();
-    try{
-      const res=await tgCall('/api/trend/start',{level,bet,requestId:rid()});
-      if(!res||!res.ok) throw new Error((res&&res.error)||'Раунд не начат');
-      if(typeof res.tokens==='number') setTokens(res.tokens);
-      S.lastTrendBet=Number(res.bet)||bet; save();
-      round={roundId:res.roundId,points:res.points,chart:res.chart||null,deadline:res.deadline,seconds:res.seconds,level:res.level,bet:res.bet,multiplier:res.multiplier};
-      busy=false; render(); startTimer(); snd('start');
-    }catch(e){ busy=false; notice((e&&e.message)||'Ошибка старта','bad'); render(); }
-  }
-
-  function startTimer(){
-    clearInterval(timer);
-    timer=setInterval(()=>{
-      if(dead||!round){ clearInterval(timer); return; }
-      const left=round.deadline-Date.now();
-      const el=a.querySelector('#trLeft'), bar=a.querySelector('#trBar');
-      if(el){ el.textContent=Math.max(0,Math.ceil(left/1000))+' с'; el.classList.toggle('is-urgent', left>0&&left<=3000); }
-      if(bar) bar.style.transform='scaleX('+Math.min(1,(1-Math.max(0,left)/(round.seconds*1000)))+')';
-      if(left<=-1500){ clearInterval(timer); timeout(); }
-    }, 200);
-  }
-
-  async function timeout(){
-    // Время вышло: отправляем «пустой» ответ, сервер сам отметит просрочку.
-    if(!round) return;
-    await answer('flat', true);
-  }
-
-  async function answer(pattern, auto){
-    if(busy||!round) return;
-    busy=true;
-    clearInterval(timer);
-    const roundNow=round;
-    try{
-      let res=null;
-      for(let i=0;i<4;i++){
-        try{ res=await tgCall('/api/trend/answer',{roundId:roundNow.roundId,answer:pattern}); if(res&&res.ok) break; }
-        catch(e){ if(i===3) throw e; await sleepLocal(350); }
-      }
-      if(!res||!res.ok) throw new Error((res&&res.error)||'Ответ не принят');
-      const r=res.result||{};
-      last={correct:Boolean(r.correct),late:Boolean(r.late),pattern:r.pattern,payout:r.payout||0,mult:r.mult,points:roundNow.points,chart:roundNow.chart};
-      combo=Number(res.combo)||0;
-      if(typeof res.tokens==='number') setTokens(res.tokens);
-      round=null; busy=false;
-      tgHaptic(last.correct?'win':'lose');
-      snd(last.correct?'win':'lose');
-      render();
-      notice(last.correct?`✅ +${fmt(last.payout)} ⬦`:last.late?'⏱ Время вышло, ставка сгорела':`❌ Ставка ${fmt(roundNow.bet)} ⬦ сгорела`,last.correct?'good':'bad');
-    }catch(e){
-      busy=false; round=null;
-      notice((e&&e.message)||'Ошибка ответа. Обновите экран.','bad');
-      render();
-    }
-  }
-
-  loadConfig();
-  return ()=>{ dead=true; clearInterval(timer); };
-}
-
 /* ── Pulse Market (DECISIONS.md D5) ─────────────────────────────────────────
    Ставка и исход — только на сервере. Клиент показывает таймер раунда и
    запрашивает результат после его окончания. */
@@ -11607,7 +11620,7 @@ function gamePulse(){
 
   function render(){
     if(dead) return;
-    const c=cfg||{durations:[5,10,20],leverages:[{leverage:1,outcomes:['up','down','range'],multiplier:2.76,winChance:1/3},{leverage:2,outcomes:['up','down'],multiplier:1.84,winChance:1/2}],minBet:10,maxBet:5000,disclaimer:''};
+    const c=cfg||{durations:[5,10,20],leverages:[{leverage:1,outcomes:['up','down','range'],multiplier:2.46,winChance:1/3},{leverage:2,outcomes:['up','down'],multiplier:1.64,winChance:1/2}],minBet:10,maxBet:5000,disclaimer:''};
     const mult=(c.leverages.find(x=>x.leverage===lev)||{}).multiplier||0;
     const payout=Math.floor(bet*mult);
     const left=round?Math.max(0,round.dueAt-Date.now()):0;
@@ -11628,8 +11641,8 @@ function gamePulse(){
       <div class="pm-panel">
         <div class="pm-label">Плечо</div>
         <div class="pm-row">
-          <button class="pm-chip ${lev===1?'on':''}" data-plev="1" ${(busy||round)?'disabled':''}>×1 · ${(c.leverages.find(x=>x.leverage===1)||{}).multiplier||2.76}</button>
-          <button class="pm-chip ${lev===2?'on':''}" data-plev="2" ${(busy||round)?'disabled':''}>×2 · ${(c.leverages.find(x=>x.leverage===2)||{}).multiplier||1.84} <small>без боковика</small></button>
+          <button class="pm-chip ${lev===1?'on':''}" data-plev="1" ${(busy||round)?'disabled':''}>×1 · ${(c.leverages.find(x=>x.leverage===1)||{}).multiplier||2.46}</button>
+          <button class="pm-chip ${lev===2?'on':''}" data-plev="2" ${(busy||round)?'disabled':''}>×2 · ${(c.leverages.find(x=>x.leverage===2)||{}).multiplier||1.64} <small>без боковика</small></button>
         </div>
       </div>
 
@@ -11841,8 +11854,8 @@ function gamePulse(){
 }
 
 /* ---------- роутинг ---------- */
-const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',pulse:'Pulse Market',trend:'Trend Hunter',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
-const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,pulse:gamePulse,trend:gameTrend,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
+const NAMES={racket:'Ракетка',dice:'Dice',jumper:'Попрыгун',spin:'Спин',drop:'Дроп',skuf:'Скуф vs Альтушка',avito:'Перекуп на Авито',cases:'Кейсы',upgrader:'Апгрейдер',pulse:'Pulse Market',auction:'Тайный аукцион',challenge24:'Челлендж 24ч',hotdrop:'Hot Drop',wheel:'Колесо Фортуны',scratch:'Скретч-карты',revolver:'Револьвер',safe:'Взлом Сейфа'};
+const BUILD={racket:gameRacket,dice:gameDice,jumper:gameJumper,spin:gameSpin,drop:gameDrop,skuf:gameSkuf,avito:gameAvito,cases:gameCases,upgrader:gameUpgrader,pulse:gamePulse,auction:gameAuction,challenge24:gameChallenge,hotdrop:gameHotDrop,wheel:gameWheel,scratch:gameScratch,revolver:gameRevolver,safe:gameSafe};
 let __gameEnterTimer=0;
 function play(type){
   screen('play');

@@ -2,7 +2,7 @@
 /**
  * MoneyForUp — тесты прогрессии (DECISIONS.md D7, D8).
  *   1) чистая логика progress.js: статистика, титулы, миссии, Replay, сезон;
- *   2) API: раунды Pulse и Trend из реального bot.js попадают в прогресс,
+ *   2) API: раунды Pulse из реального bot.js попадают в прогресс,
  *      прогресс не меняет баланс (токены не начисляются за миссии).
  */
 const assert = require('assert');
@@ -30,8 +30,8 @@ const DAY = 24 * 60 * 60 * 1000;
   ];
 
   const s = P.stats(rounds);
-  eq(s.rounds, 5, 'статистика: 2 Pulse + 2 Trend + вчерашний Pulse; апгрейд и pending не учитываются');
-  eq(s.wins, 2, 'статистика: выигрышных раундов 2 (по win_tokens > 0)');
+  eq(s.rounds, 3, 'статистика: 2 Pulse + вчерашний Pulse; Trend, апгрейд и pending не учитываются');
+  eq(s.wins, 1, 'статистика: выигрышных раундов 1 (по win_tokens > 0)');
   eq(s.bestWin, 276, 'статистика: лучший выигрыш 276 ⬦');
   eq(s.favorite, 'PULSE MARKET', 'статистика: любимая игра — Pulse Market');
 
@@ -41,13 +41,13 @@ const DAY = 24 * 60 * 60 * 1000;
   eq(P.titleFor(25).leftToNext, 35, 'титул: до Аналитика осталось 35 раундов');
 
   const daily = P.dailyMissions(rounds, now);
-  eq(daily.length, 3, 'три ежедневные миссии');
-  eq(daily[0].progress, 3, 'миссия «три раунда»: прогресс кап 3 (фактически 4 за сегодня)');
-  ok(daily[0].done === true, 'миссия «три раунда» выполнена');
-  eq(daily[1].progress, 2, 'миссия «два выигрыша»: 2 выигрыша за сегодня');
-  ok(daily[2].done === false, 'миссия Trend (3 ответа) не выполнена — сыграно 2');
-  ok(daily.every(m => m.reward && (m.reward.type === 'frame' || m.reward.type === 'color' || m.reward.type === 'badge')),
-    'награды миссий — только косметика (рамка, цвет, значок), без токенов');
+  eq(daily.length, 2, 'две ежедневные миссии');
+  eq(daily[0].progress, 2, 'миссия «три раунда»: 2 Pulse за сегодня');
+  ok(daily[0].done === false, 'миссия «три раунда» не выполнена');
+  eq(daily[1].progress, 1, 'миссия «два выигрыша»: 1 выигрыш за сегодня');
+  ok(!daily.some(m => /trend/i.test(m.title)), 'миссии Trend Hunter больше нет');
+  ok(daily.every(m => m.reward && (m.reward.type === 'frame' || m.reward.type === 'color')),
+    'награды миссий — только косметика (рамка, цвет), без токенов');
 
   const rp = P.replay(rounds, 10);
   eq(rp[0].roundId, 'PM_b', 'Replay: самый свежий завершённый раунд первым');
@@ -73,19 +73,15 @@ const DAY = 24 * 60 * 60 * 1000;
     eq(empty.body.stats.rounds, 0, 'у нового игрока 0 раундов');
     eq(empty.body.title.current.id, 'rookie', 'новичок получает титул «Новичок»');
 
-    // Играем реальные раунды: Pulse (ставка + результат) и Trend (ставка + ответ).
+    // Играем реальный раунд Pulse: ставка + результат.
     const pb = await post('/api/pulse/bet', { direction: 'up', leverage: 1, duration: 5, bet: 100, requestId: 'prog-pulse-0001' });
     eq(pb.status, 200, 'Pulse: ставка принята для прогресса');
     await new Promise(r => setTimeout(r, 5200));
     await post('/api/pulse/result', { roundId: pb.body.roundId });
 
-    const ts = await post('/api/trend/start', { level: 1, bet: 50, requestId: 'prog-trend-0001' });
-    eq(ts.status, 200, 'Trend: раунд начат для прогресса');
-    await post('/api/trend/answer', { roundId: ts.body.roundId, answer: 'flat' });
-
     const after = await post('/api/progress', {});
-    ok(after.body.stats.rounds >= 2, `прогресс видит сыгранные раунды (${after.body.stats.rounds})`);
-    ok(after.body.stats.favorite === 'PULSE MARKET' || after.body.stats.favorite === 'TREND HUNTER', 'прогресс назвал любимую игру');
+    ok(after.body.stats.rounds >= 1, `прогресс видит сыгранные раунды (${after.body.stats.rounds})`);
+    ok(after.body.stats.favorite === 'PULSE MARKET', 'прогресс назвал любимую игру');
     ok(after.body.replay.some(r => r.roundId === pb.body.roundId), 'Replay содержит сыгранный Pulse-раунд');
     ok(after.body.missions.some(m => m.progress > 0), 'миссии обновились по сыгранным раундам');
 

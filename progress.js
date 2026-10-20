@@ -12,14 +12,13 @@
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Игры прогрессии: Pulse Market и Trend Hunter. Остальные игры в миссиях не учитываются. */
-const GAMES = { pulse: 'PULSE MARKET', trend: 'TREND HUNTER' };
+/** Игры прогрессии: Pulse Market. Остальные игры в миссиях не учитываются. */
+const GAMES = { pulse: 'PULSE MARKET' };
 
 /** Ежедневные миссии: условие и косметическая награда. Значения в коде, без токенов. */
 const DAILY_MISSIONS = [
   { id: 'play_3',    title: 'Три раунда',              need: 3, metric: 'rounds',  reward: { type: 'frame', id: 'frame_steel' } },
-  { id: 'win_2',     title: 'Два выигрыша',            need: 2, metric: 'wins',    reward: { type: 'color', id: 'theme_cyan' } },
-  { id: 'trend_3',   title: 'Три ответа в Trend Hunter', need: 3, metric: 'trend', reward: { type: 'badge', id: 'badge_analyst' } }
+  { id: 'win_2',     title: 'Два выигрыша',            need: 2, metric: 'wins',    reward: { type: 'color', id: 'theme_cyan' } }
 ];
 
 /** Титулы по накопленной статистике (всё считается из game_rounds). */
@@ -74,8 +73,7 @@ function dailyMissions(rounds, now = Date.now()) {
   const today = gameRounds(rounds).filter(r => Number(r.created_at) >= start && Number(r.created_at) < start + DAY_MS);
   const rounds_ = today.length;
   const wins = today.filter(r => Number(r.win_tokens) > 0).length;
-  const trend = today.filter(r => r.game === GAMES.trend).length;
-  const metrics = { rounds: rounds_, wins, trend };
+  const metrics = { rounds: rounds_, wins };
   return DAILY_MISSIONS.map(m => {
     const have = Math.min(metrics[m.metric] || 0, m.need);
     return {

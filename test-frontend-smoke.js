@@ -225,21 +225,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(60);
     ok(d.querySelector('[data-pdir="range"]').disabled === true, 'при плече ×2 кнопка «Боковик» отключена');
 
-    console.log('\n4c) Trend Hunter');
+    console.log('\n4c) Trend Hunter удалён');
     d.querySelector('.nav button[data-nav="games"]').click();
     await wait(100);
-    const trendCard = d.querySelector('[data-game="trend"]');
-    ok(Boolean(trendCard), 'карточка Trend Hunter есть в играх');
-    trendCard.click();
-    await wait(300);
-    ok(/TREND HUNTER/.test(d.querySelector('#gameArea').textContent), 'экран Trend Hunter открыт');
-    eq(d.querySelectorAll('[data-tlev]').length, 3, 'три уровня сложности');
-    ok(!/Учебная симуляция/.test(d.querySelector('#gameArea').textContent), 'на экране Trend нет учебного дисклеймера');
-    ok(Boolean(d.querySelector('#gameArea .mfu-chart')), 'на экране Trend есть свечной график');
-    ok(d.querySelectorAll('#gameArea .mfu-chart rect[rx="0.6"]').length > 20, 'график Trend состоит из свечей');
-    ok(d.querySelectorAll('[data-tans]').length === 0, 'до старта кнопок ответа нет (ответ не виден заранее)');
-    ok(Boolean(d.querySelector('[data-tquick="last"]')), 'в Trend есть кнопка повторной ставки');
-    ok(d.querySelector('[data-tquick="last"]').disabled === true, 'повтор ставки Trend выключен без прошлой ставки');
+    ok(!d.querySelector('[data-game="trend"]'), 'карточки Trend Hunter нет в играх');
+    eq(d.querySelectorAll('.cards .game').length, 14, 'в сетке осталось 14 режимов');
 
     console.log('\n4d) Прогресс в профиле');
     d.querySelector('.nav button[data-nav="profile"]').click();

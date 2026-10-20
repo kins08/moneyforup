@@ -23,7 +23,7 @@ const crypto = require('crypto');
 const PULSE = {
   id: 'pulse',
   label: 'PULSE MARKET',
-  edge: 0.08,                 // комиссия кассы: RTP 92%
+  edge: 0.18,                 // комиссия кассы: RTP 82%
   durations: [5, 10, 20],     // секунды раунда
   leverages: [1, 2],          // ×1 — три исхода, ×2 — два исхода (без RANGE)
   minBet: 10,

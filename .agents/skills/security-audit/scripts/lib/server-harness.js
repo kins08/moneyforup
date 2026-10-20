@@ -93,7 +93,7 @@ async function startServer(opts = {}) {
   const reuse = !!opts.reuseTmp;
   const tmp = reuse ? opts.reuseTmp : fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-audit-'));
   fs.mkdirSync(tmp, { recursive: true });
-  for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'upgrade.js', 'pulse.js', 'trend.js', 'progress.js', 'turso.js']) {
+  for (const f of ['bot.js', 'db.js', 'schema.js', 'bets_monitor.js', 'items.js', 'upgrade.js', 'pulse.js', 'boost.js', 'trend.js', 'progress.js', 'turso.js']) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmp, f));
   }

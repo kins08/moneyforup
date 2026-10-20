@@ -19,8 +19,8 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
 (async () => {
   console.log('=== PULSE MATH ===');
   // 1. Выплата и RTP по плечам.
-  eq(pulse.payoutMultiplier(1), 2.76, 'плечо ×1: множитель 3 × (1 − 0.08) = 2.76');
-  eq(pulse.payoutMultiplier(2), 1.84, 'плечо ×2: множитель 2 × (1 − 0.08) = 1.84');
+  eq(pulse.payoutMultiplier(1), 2.46, 'плечо ×1: множитель 3 × (1 − 0.18) = 2.46');
+  eq(pulse.payoutMultiplier(2), 1.64, 'плечо ×2: множитель 2 × (1 − 0.18) = 1.64');
   ok(Math.abs(pulse.winProbability(1) - 1 / 3) < 1e-12, 'вероятность направления ×1 = 1/3');
   ok(Math.abs(pulse.winProbability(2) - 1 / 2) < 1e-12, 'вероятность направления ×2 = 1/2');
 
@@ -33,7 +33,7 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
       total += pulse.settle({ seedHex: seed, roundId: 'R' + i, direction: dir, leverage: lev, bet: 100 }).payout;
     }
     const rtp = total / (N * 100);
-    ok(Math.abs(rtp - 0.92) < 0.01, `RTP плеча ×${lev} ≈ 0.92 (получили ${rtp.toFixed(4)})`);
+    ok(Math.abs(rtp - 0.82) < 0.01, `RTP плеча ×${lev} ≈ 0.82 (получили ${rtp.toFixed(4)})`);
     ok(rtp < 1, `касса в плюсе при плече ×${lev}`);
   }
 

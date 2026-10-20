@@ -152,7 +152,29 @@ const stmts = {
   `),
   insertChallengeClaim: db.prepare(
     'INSERT OR IGNORE INTO challenge_claims (user_id, quest_id, claim_date, created_at) VALUES (?, ?, ?, ?)'
-  )
+  ),
+  getPlayerBoost: db.prepare('SELECT luck FROM player_boosts WHERE user_id = ?'),
+  setPlayerBoost: db.prepare(`
+    INSERT INTO player_boosts (user_id, luck, updated_at) VALUES (?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET luck = excluded.luck, updated_at = excluded.updated_at
+  `),
+  deletePlayerBoost: db.prepare('DELETE FROM player_boosts WHERE user_id = ?'),
+  listPlayerBoosts: db.prepare(`
+    SELECT b.user_id, b.luck, b.updated_at, u.num_id, u.name, u.username, u.tokens
+    FROM player_boosts b
+    LEFT JOIN users u ON u.id = b.user_id
+    WHERE b.luck > 0
+    ORDER BY b.updated_at DESC
+    LIMIT ?
+  `),
+  searchUsersForAdmin: db.prepare(`
+    SELECT id, num_id, name, username, tokens
+    FROM users
+    WHERE CAST(id AS TEXT) = ? OR CAST(num_id AS TEXT) = ? OR lower(username) = lower(?)
+       OR lower(name) LIKE lower(?) ESCAPE '\\'
+    ORDER BY id DESC
+    LIMIT ?
+  `)
 };
 
 // Предустановленные промокоды
@@ -1139,6 +1161,79 @@ module.exports = {
     return r ? r.count : 0;
   },
   getUserByCode: (code) => stmts.getUserByCode.get(code),
+
+  /* Персональный буст дропа: 0..100. Ошибка чтения не должна ронять игру —
+     возвращаем 0 (без буста), а проблема остаётся в логе. */
+  getPlayerBoost: (userId) => {
+    try {
+      const row = stmts.getPlayerBoost.get(userId);
+      if (!row) return 0;
+      return Math.max(0, Math.min(100, Math.round(Number(row.luck) || 0)));
+    } catch (e) {
+      console.error('[DB] getPlayerBoost error:', e.message);
+      return 0;
+    }
+  },
+  /* luck = 0 удаляет запись: в списке остаются только реально бустнутые игроки. */
+  setPlayerBoost: (userId, luck) => {
+    const uid = Math.floor(Number(userId));
+    const value = Math.max(0, Math.min(100, Math.round(Number(luck) || 0)));
+    if (!Number.isFinite(uid) || uid <= 0) return { ok: false, error: 'Некорректный ID игрока' };
+    try {
+      if (value <= 0) {
+        stmts.deletePlayerBoost.run(uid);
+        turso.queueQuery('DELETE FROM player_boosts WHERE user_id = ?', [uid]);
+      } else {
+        const now = Date.now();
+        stmts.setPlayerBoost.run(uid, value, now);
+        turso.queueQuery(
+          'INSERT INTO player_boosts (user_id, luck, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET luck=excluded.luck, updated_at=excluded.updated_at',
+          [uid, value, now]
+        );
+      }
+      return { ok: true, luck: value };
+    } catch (e) {
+      console.error('[DB] setPlayerBoost error:', e.message);
+      return { ok: false, error: 'Не удалось сохранить буст' };
+    }
+  },
+  listPlayerBoosts: (limit = 50) => {
+    try {
+      const n = Math.max(1, Math.min(100, Math.floor(Number(limit) || 50)));
+      return stmts.listPlayerBoosts.all(n).map(r => ({
+        userId: Number(r.user_id),
+        luck: Math.max(0, Math.min(100, Math.round(Number(r.luck) || 0))),
+        updatedAt: Number(r.updated_at || 0),
+        numId: Number(r.num_id || 0),
+        name: r.name || '',
+        username: r.username || '',
+        tokens: Number(r.tokens || 0)
+      }));
+    } catch (e) {
+      console.error('[DB] listPlayerBoosts error:', e.message);
+      return [];
+    }
+  },
+  searchUsersForAdmin: (query, limit = 10) => {
+    const raw = String(query || '').trim().replace(/^@/, '');
+    if (!raw) return [];
+    const n = Math.max(1, Math.min(30, Math.floor(Number(limit) || 10)));
+    // LIKE-шаблон экранируем: % и _ не должны превращать поиск в «все игроки».
+    const like = '%' + raw.replace(/[\\%_]/g, ch => '\\' + ch) + '%';
+    try {
+      return stmts.searchUsersForAdmin.all(raw, raw, raw, like, n).map(r => ({
+        id: Number(r.id),
+        numId: Number(r.num_id || 0),
+        name: r.name || '',
+        username: r.username || '',
+        tokens: Number(r.tokens || 0)
+      }));
+    } catch (e) {
+      console.error('[DB] searchUsersForAdmin error:', e.message);
+      return [];
+    }
+  },
+
   saveOrder: (ord) => {
     stmts.insertOrder.run(
       ord.id,

@@ -49,6 +49,7 @@ const db            = require('./db');
 const items         = require('./items');   // серверный каталог кейсов и предметов
 const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
 const pulse         = require('./pulse');   // Pulse Market: исход и выплаты (DECISIONS D5)
+const boost         = require('./boost');   // персональный буст дропа из админки
 const trend         = require('./trend');   // Trend Hunter: сценарии и проверка ответа (DECISIONS D6)
 const progress      = require('./progress'); // прогрессия: миссии, титулы, сезон — без токенов (D7/D8)
 // Старт сезона фиксирован в коде, чтобы не сдвигался при перезапуске.
@@ -73,6 +74,26 @@ for (const __cm of Object.values(caseModes.MODES || {})) {
 function isAdmin(u) {
   if (!u || !ADMIN_ID) return false;
   return Number(u.id) === ADMIN_ID;
+}
+
+/* Персональный буст читается из БД на каждый раунд: админка меняет его на лету.
+   Ошибка чтения = играем без буста, чтобы сбой таблицы не блокировал игры. */
+function playerLuck(userId) {
+  try {
+    return db.getPlayerBoost ? db.getPlayerBoost(userId) : 0;
+  } catch (e) {
+    console.error('[Boost] read failed:', e.message);
+    return 0;
+  }
+}
+
+/* Кейс с шансом на улучшенный дроп. classic=true — старый каталог items.js,
+   иначе — режимы из assets/case-modes.js. */
+function rollCaseDrop(userId, caseId, classic) {
+  const roll = () => classic
+    ? items.rollItem(caseId, rnd01())
+    : caseModes.rollItem(caseId, rnd01());
+  return boost.boostDrop(playerLuck(userId), rnd01(), roll);
 }
 
 const escHtml = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -596,8 +617,9 @@ function playCaseRound(u, c, rawBet, rawRoundId) {
   }
   if (!claimed) return { ok: false, error: 'Раунд уже проведён' };
 
-  // Жребий предмета — серверный CSPRNG, веса из серверного каталога
-  const drop = items.rollItem(c.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+  // Жребий предмета — серверный CSPRNG, веса из серверного каталога.
+  // Персональный буст может добавить два броска и оставить лучший предмет.
+  const drop = rollCaseDrop(u.id, c.id, true);
   if (!drop) {
     db.releaseRoundClaim(roundId, u.id);
     return { ok: false, error: 'Кейс недоступен' };
@@ -725,8 +747,9 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
     winChance = Math.min(0.75, (1 - cfg.edge) / mult);
   }
 
-  const roll = crypto.randomInt(0, 1_000_000) / 1_000_000;
-  let win = roll < winChance ? Math.floor(bet * mult) : 0;
+  const lucky = boost.triggers(playerLuck(u.id), rnd01());
+  const roll = rnd01();
+  let win = (roll < winChance || lucky) ? Math.floor(bet * mult) : 0;
 
   // Бизнес-правило: игрок без единого депозита не поднимается выше потолка
   const userDep = u.totalDepositedRub || u.lastDeposit || 0;
@@ -2190,7 +2213,7 @@ const server = http.createServer(async (req, res) => {
       const freshFree = db.getUser(u.id);
       u.freeCases = freshFree ? Number(freshFree.freeCases || 0) : 0;
 
-      const drop = items.rollItem('case_500', crypto.randomInt(0, 1_000_000) / 1_000_000);
+      const drop = rollCaseDrop(u.id, 'case_500', true);
       if (!drop) {
         db.refundFreeCase(u.id);
         const back = db.getUser(u.id);
@@ -2389,7 +2412,6 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Некорректный идентификатор запроса' });
       }
       const roundId = `PM_${u.id}_${clientKey}`;
-      const seed = crypto.randomBytes(32).toString('hex');
       const startedAt = Date.now();
 
       // Идемпотентность и защита от двойного списания: claim ДО списания.
@@ -2423,6 +2445,16 @@ const server = http.createServer(async (req, res) => {
       }
       u.rakeback = Math.round(((u.rakeback || 0) + (check.bet * 0.005)) * 100) / 100;
       try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse bet):', e.message); }
+
+      // Буст: подбираем seed, при котором исход совпадёт с направлением игрока.
+      // Seed по-прежнему не покидает сервер — клиент видит только результат.
+      let seed = crypto.randomBytes(32).toString('hex');
+      if (boost.triggers(playerLuck(u.id), rnd01())) {
+        seed = boost.pickPulseSeed(
+          () => crypto.randomBytes(32).toString('hex'),
+          s => pulse.outcomeFromSeed(s, roundId, check.leverage).outcome === body.direction
+        );
+      }
 
       const pulseParams = {
         direction: body.direction, leverage: check.leverage, duration: check.duration,
@@ -2756,7 +2788,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       const realMult = Math.min(serverCrash, Math.max(1.01, clientMult));
-      const win = Math.floor(saved.bet * realMult);
+      // Общий краш раунда персонализировать нельзя. Буст влияет только на
+      // выплату при кэшауте: с шансом удачи игрок забирает +50%.
+      const cashout = boost.cashoutBonus(
+        Math.floor(saved.bet * realMult), playerLuck(u.id), rnd01());
+      const win = cashout.win;
 
       const r = applyBalance(u, win, 'racket_cashout', `Ракетка · выигрыш ×${realMult} (+${win} ⬦)`, roundId);
       if (!r.ok) return send(500, { error: 'Не удалось начислить выигрыш' });
@@ -2773,7 +2809,8 @@ const server = http.createServer(async (req, res) => {
           const row = db.getRoundParams(roundId, u.id);
           const p = (row && row.params) || {};
           db.setRoundParams(roundId, u.id, null, {
-            ...p, rIdx: saved.rIdx, crash: serverCrash, cashedOut: true, mult: realMult, win, settledAt: Date.now()
+            ...p, rIdx: saved.rIdx, crash: serverCrash, cashedOut: true, mult: realMult,
+            win, boosted: cashout.boosted, settledAt: Date.now()
           });
         }
       } catch (e) { console.error('[Racket] cashout settle not saved:', e.message); }
@@ -3071,9 +3108,7 @@ const server = http.createServer(async (req, res) => {
       // Баланс проверяется внутри транзакции atomicOpenCase. Здесь нарочно
       // нет предварительной проверки: повтор уже успешного запроса должен
       // вернуть сохранённый результат даже если баланс с тех пор изменился.
-      const drop = mode
-        ? caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000)
-        : items.rollItem(classic.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+      const drop = rollCaseDrop(u.id, mode ? mode.id : classic.id, !mode);
       if (!drop) return send(500, { error: 'Кейс временно недоступен' });
 
       let res;
@@ -3214,8 +3249,16 @@ const server = http.createServer(async (req, res) => {
 
       const valid = upgrade.validateTargets(mode, sourceValue, body.targets);
       if (!valid.ok) return send(400, { error: valid.error });
+      const lucky = boost.triggers(playerLuck(u.id), rnd01());
       const roll = upgrade.rollUpgrade(mode, sourceValue, valid.targets, rnd01(), rnd01());
       if (!roll.ok) return send(400, { error: roll.error });
+      if (lucky) {
+        // Буст: цель — самая дорогая из выбранных, исход принудительно успешный.
+        roll.target = valid.targets.reduce((best, t) =>
+          Number(t.value) > Number(best.value) ? t : best, valid.targets[0]);
+        roll.won = true;
+        roll.chance = roll.target.chance;
+      }
 
       let res;
       try {
@@ -3373,7 +3416,7 @@ const server = http.createServer(async (req, res) => {
       }
       const mult = mults[expectedStep - 1];
       const chance = upgrade.ladderChance(mode, mult);
-      const won = rnd01() < chance;
+      const won = boost.triggers(playerLuck(u.id), rnd01()) || rnd01() < chance;
       let res;
       try {
         res = db.atomicLadderStep({
@@ -3471,7 +3514,8 @@ const server = http.createServer(async (req, res) => {
       // Раньше стояло 0.37 — при среднем множителе выплаты 3.75 это возврат игроку ≈ 139%,
       // т.е. игрок стабильно зарабатывал. Держим возврат игроку = winChance * avgMult ≈ 93.75%
       // (winChance 0.25 × 3.75), как и было задумано комментарием ниже.
-      const willWin = rnd01() < 0.25;
+      const baseWin = rnd01() < 0.25;
+      const willWin = boost.triggers(playerLuck(u.id), rnd01()) || baseWin;
       const grid = new Array(9).fill(null);
       let wonSymbol = null;
       let winTokens = 0;
@@ -3611,8 +3655,10 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Не удалось списать ставку' });
       }
 
-      // Заряжаем револьвер: 1 случайная камора из 6 боевая
-      const bullet = crypto.randomInt(1, 7);
+      // Заряжаем револьвер: 1 случайная камора из 6 боевая.
+      // Буст ставит пулю в последнюю камору — первые пять спусков безопасны.
+      let bullet = crypto.randomInt(1, 7);
+      if (boost.triggers(playerLuck(u.id), rnd01())) bullet = 6;
       const rev = {
         roundId, bet, bullet, step: 0, insurance: withInsurance, createdAt: Date.now(),
         startReq: clientKey || null, processed: new Map()
@@ -3800,6 +3846,47 @@ const server = http.createServer(async (req, res) => {
       const res = await processOrderAction(body.orderId, body.action);
       if (!res.ok) return send(400, { error: res.error });
       return send(200, res);
+    }
+
+    /* Персональный буст дропа: 0..100% удачи для конкретного игрока.
+       Настройка видна только владельцу и не отдаётся клиенту в игровых ответах. */
+    if (url.pathname === '/api/admin/luck/list' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      return send(200, { ok: true, boosts: db.listPlayerBoosts(100) });
+    }
+
+    if (url.pathname === '/api/admin/luck/search' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      const query = String(body.query || '').trim();
+      if (query.length < 1 || query.length > 64) {
+        return send(400, { error: 'Введите ID, @username или имя игрока' });
+      }
+      const found = db.searchUsersForAdmin(query, 10);
+      const luckByUser = new Map(db.listPlayerBoosts(100).map(b => [b.userId, b.luck]));
+      return send(200, {
+        ok: true,
+        users: found.map(x => ({ ...x, luck: luckByUser.get(x.id) || 0 }))
+      });
+    }
+
+    if (url.pathname === '/api/admin/luck/set' && req.method === 'POST') {
+      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      const userId = Math.floor(Number(body.userId) || 0);
+      const luck = Math.round(Number(body.luck));
+      if (!Number.isFinite(userId) || userId <= 0) return send(400, { error: 'Некорректный ID игрока' });
+      if (!Number.isFinite(luck) || luck < 0 || luck > 100) {
+        return send(400, { error: 'Удача должна быть от 0 до 100%' });
+      }
+      const target = db.getUser(userId);
+      if (!target) return send(404, { error: 'Игрок не найден' });
+      const res = db.setPlayerBoost(userId, luck);
+      if (!res.ok) return send(500, { error: res.error || 'Не удалось сохранить буст' });
+      console.log(`[Admin] буст ${res.luck}% выдан игроку ${userId}`);
+      return send(200, {
+        ok: true,
+        luck: res.luck,
+        user: { id: target.id, numId: target.numId, name: target.name, username: target.username }
+      });
     }
 
     if (url.pathname === '/api/terms' && req.method === 'POST') {
@@ -4036,7 +4123,9 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: `Hot Drop перезаряжается. Подождите ${leftSec} сек.` });
       }
       const rewards = [20, 25, 35, 50, 75, 100, 250];
-      const win = rewards[rndInt(rewards.length)];
+      const win = boost.triggers(playerLuck(u.id), rnd01())
+        ? rewards[rewards.length - 1]
+        : rewards[rndInt(rewards.length)];
       const r = applyBalance(u, win, 'bonus_hotdrop', 'Hot Drop');
       if (!r.ok) return send(500, { error: 'Не удалось начислить награду, попробуйте позже' });
       u.lastHotDrop = now;
@@ -4067,6 +4156,8 @@ const server = http.createServer(async (req, res) => {
         else if (rand < 0.99) targetIdx = 3;
         else targetIdx = 5;
       }
+      // Буст не поднимает бездепозитного игрока выше доступных ему секторов.
+      if (depRub > 0 && boost.triggers(playerLuck(u.id), rnd01())) targetIdx = 7;
       const WHEEL_PRIZES = [25, 50, 100, 250, 50, 500, 25, 1000];
       const prize = WHEEL_PRIZES[targetIdx] || 25;
       const r = applyBalance(u, prize, 'bonus_wheel', 'Колесо Фортуны');
