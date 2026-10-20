@@ -1528,7 +1528,7 @@ module.exports = {
         SELECT COUNT(*) AS count FROM users WHERE first_deposit_bonus_claimed = 1
       `).get() || {}).count || 0;
 
-      // 4. Игровые раунды (RTP, GGR, оборот)
+      // 4. Игровые раунды (возврат игроку, GGR, оборот)
       const roundsSummary = db.prepare(`
         SELECT COUNT(*) AS count,
                COALESCE(SUM(bet_tokens), 0) AS wagered,

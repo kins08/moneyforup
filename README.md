@@ -118,13 +118,15 @@ CREATE TABLE orders (
 
 ### Новые режимы кейсов и Апгрейдер
 
-В отдельном разделе «Кейсы» (`casehub`) пять режимов: **STARTER DROP** (250 ⬦),
-**CYBER RUSH** (750 ⬦), **GOLDEN VAULT** (3 500 ⬦), **GLITCH MODE** (11 000 ⬦) и
-**OMEGA CORE** (35 000 ⬦). Их цены, состав и веса лежат в одном файле
-`assets/case-modes.js`; этот же UMD-файл грузит браузер, поэтому значения не
-дублируются между фронтом и бэком. RTP каждого режима 82–86 %. Открытие
-идемпотентно по `requestId` (таблица `case_opens`), цена и дроп проверяются на
-сервере, предмет сразу попадает в `user_inventory`.
+В разделе «Кейсы» (`casehub`) теперь **все 20 кейсов**: 15 классических из
+`items.js` и 5 новых режимов — **STARTER DROP** (250 ⬦), **CYBER RUSH**
+(750 ⬦), **GOLDEN VAULT** (3 500 ⬦), **GLITCH MODE** (11 000 ⬦) и
+**OMEGA CORE** (35 000 ⬦). Цены и состав классики лежат в `items.js`, новых
+режимов — в `assets/case-modes.js`; у каждого кейса есть обложка
+`assets/cases/<id>.jpg`. Открытие идёт через один эндпоинт, идемпотентно по
+`requestId` (таблица `case_opens`); цена и дроп проверяются на сервере, предмет
+сразу попадает в `user_inventory`. Сохранены рулетка, продажа, апгрейд,
+бесплатный кейс за депозит и кейс за 5 друзей.
 
 Апгрейдер (`upgrader`) переработан в серверную Upgrade Arena:
 * три режима риска с разными `edge`, потолком цели и максимальным шансом;
@@ -138,6 +140,10 @@ CREATE TABLE orders (
 * серия: несколько последовательных серверных раундов с отдельным
   `requestId` на каждый и остановкой при сетевой ошибке.
 
+Реферальная программа перенесена в профиль: отдельной кнопки «Рефералы» в
+нижней навигации больше нет, весь прежний функционал (код, ссылка, статистика,
+15 % с пополнений) находится в блоке `#profileRef`.
+
 Баланс меняется только внутри транзакций `db.atomicOpenCase()`,
 `db.atomicUpgradeRun()`, `db.atomicLadder*()`, `db.atomicScratchPlay()`,
 `db.atomicSafeGuess()`; клиент не присылает ни цену, ни результат.
@@ -147,7 +153,7 @@ CREATE TABLE orders (
 ```bash
 npm test                # bot-test.js: 36 проверок — Platega/Coinso, подписи вебхуков, идемпотентность, реферальные 15 %, auth_date из будущего, энтропия orderId
 npm run test:security   # e2e аудита: исход игры решает сервер, инвентарь серверный, баланс применяется ровно один раз
-npm run test:new        # математика апгрейдера, RTP пяти кейсов, E2E кейсов/апгрейда/лесенки/идемпотентности
+npm run test:new        # математика апгрейдера, экономика пяти кейсов, E2E кейсов/апгрейда/лесенки/идемпотентности
 npm run test:ui         # jsdom smoke: раздел «Кейсы», Upgrade Arena, мульти/лесенка/серия, отсутствие JS-ошибок
 npm run check:frontend  # index.html и public/index.html идентичны; assets/case-modes.js синхронизирован
 ```
@@ -178,13 +184,13 @@ npm run check:frontend  # index.html и public/index.html идентичны; as
 На Cloudflare уходит **только статика** — `public/` (`wrangler.jsonc` → `assets.directory`); бот и API живут на Render/Fly и исключены через `.cfignore`.
 
 ```bash
-npx wrangler deploy --dry-run   # проверка сборки без токенов: ждём «Read 25 files from .../public»
+npx wrangler deploy --dry-run   # проверка сборки без токенов: ждём «Read 46 files from .../public»
 npm run deploy                  # боевой деплой (нужен CLOUDFLARE_API_TOKEN или интерактивный логин)
 ```
 
 В настройках сборки на Cloudflare используются две команды: превью ветки — `npx wrangler preview`, прод — `npx wrangler deploy`. Команда `preview` в wrangler ≥ 4.150 **требует блок `previews`** в `wrangler.jsonc` — он добавлен и намеренно пуст: `assets`, `compatibility_date` и `observability` остаются на верхнем уровне и наследуются превью. Без блока сборка падает с `Your Wrangler configuration is missing a previews block`.
 
-Wrangler закреплён в `devDependencies` точной версией (`4.150.0`), чтобы `npx wrangler` не тянул свежий релиз и сборка не ломалась от изменений в апстриме. Перед обновлением версии прогоните `npx wrangler deploy --dry-run` (должно собрать 25 файлов из `public/`) и `npx wrangler preview --ignore-base-config` (проверка конфига должна пройти).
+Wrangler закреплён в `devDependencies` точной версией (`4.150.0`), чтобы `npx wrangler` не тянул свежий релиз и сборка не ломалась от изменений в апстриме. Перед обновлением версии прогоните `npx wrangler deploy --dry-run` (должно собрать 46 файлов из `public/`) и `npx wrangler preview --ignore-base-config` (проверка конфига должна пройти).
 
 ## Полезные ссылки
 

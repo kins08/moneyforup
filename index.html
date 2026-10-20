@@ -55,7 +55,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#dc2626);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#ffffff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.profileHead{display:flex;gap:13px;align-items:center}
 .pill{padding:6px 9px;border-radius:9px;background:rgba(239,68,68,.16);color:#fca5a5;font-size:11px;font-weight:700}
-.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(22,17,20,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(5,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(22,17,20,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(4,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
 .nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit;transition:all .2s}
 .nav button .ni{font-size:20px;display:block;margin-bottom:3px}
 .nav button.active{background:#352026;color:#ffffff;box-shadow:inset 0 0 12px rgba(239,68,68,.25)}
@@ -781,6 +781,41 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-actions .control{flex:1;margin:0;min-width:130px}
 .casehub-note{font-size:10.5px;color:#7f8aa3;line-height:1.45;margin-top:9px}
 
+/* Карточки с полноценными обложками вместо эмодзи */
+.casehub-case{padding:0!important;display:flex;flex-direction:column;overflow:hidden;min-height:0!important}
+.casehub-case .ch-cover-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#0a090d}
+.casehub-case .ch-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease;z-index:1}
+.casehub-case:hover .ch-cover{transform:scale(1.045)}
+.casehub-case .ch-cover-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:42px;background:radial-gradient(circle at 50% 40%,rgba(255,207,107,.18),#0a090d 70%);z-index:2}
+.casehub-case .ch-cover-wrap.img-missing .ch-cover-fallback{display:grid}
+.casehub-case .ch-kind{position:absolute;top:8px;left:8px;font-size:8.5px;font-weight:950;letter-spacing:.06em;padding:4px 7px;border-radius:7px;background:rgba(8,7,10,.78);border:1px solid rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(6px)}
+.casehub-case .ch-body{padding:10px 11px 12px;display:flex;flex-direction:column;flex:1;min-width:0}
+.casehub-case .ch-name{font-size:12.5px;line-height:1.2}
+.casehub-case .ch-tag{font-size:9.5px;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.casehub-case .ch-price{margin-top:7px;font-size:11.5px}
+.casehub-case .ch-online{margin-top:auto;padding-top:7px}
+.casehub-hero.has-cover{padding:0!important;overflow:hidden}
+.casehub-hero .chh-cover{position:relative;width:100%;aspect-ratio:2.7/1;overflow:hidden;background:#0a090d}
+.casehub-hero .chh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 34%;display:block;z-index:1}
+.casehub-hero .chh-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 30%,rgba(14,10,13,.88) 82%,#0e0a0d)}
+.casehub-hero .chh-cover-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:64px;background:radial-gradient(circle at 50% 40%,var(--cm-glow,rgba(255,207,107,.25)),#0a090d 72%);z-index:2}
+.casehub-hero .chh-cover.img-missing .chh-cover-fallback{display:grid}
+.casehub-hero .chh-content{position:relative;z-index:2;padding:0 16px 16px;margin-top:-42px}
+.casehub-hero .chh-top{position:relative}
+.casehub-tools{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 11px}
+.casehub-tools button{border-radius:10px;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.04);color:#aeb8ce;font-family:inherit;font-size:10.5px;font-weight:800;padding:7px 10px;cursor:pointer}
+.casehub-tools button.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
+.casehub-promo{border-radius:16px;border:1px solid rgba(255,207,107,.38);background:linear-gradient(135deg,rgba(255,207,107,.13),rgba(245,158,11,.05));padding:11px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.casehub-promo .cp-ic{font-size:25px;line-height:1}
+.casehub-promo .cp-b{flex:1;min-width:0}
+.casehub-promo .cp-b b{display:block;font-size:11.5px;color:#ffcf6b}
+.casehub-promo .cp-b small{display:block;font-size:9.5px;color:#b8c1d4;margin-top:2px;line-height:1.35}
+.casehub-promo button{border:0;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:10px;font-weight:900;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;cursor:pointer;white-space:nowrap}
+.casehub-promo button:disabled{opacity:.5;cursor:default}
+.casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
+.casehub-empty{grid-column:1/-1;text-align:center;padding:22px 10px;color:#7f8aa3;font-size:11.5px}
+
 /* ═══════════ UPGRADE ARENA ═══════════ */
 .upg-shell{padding-bottom:6px}
 .upg-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -999,8 +1034,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button class="casehub-card" data-nav="casehub" style="--cm-accent:#ffcf6b;--cm-border:rgba(255,207,107,.45);--cm-glow:rgba(255,207,107,.28);width:100%;margin-bottom:12px;min-height:0;display:flex;align-items:center;gap:12px;text-align:left">
   <div style="font-size:32px;line-height:1">📦</div>
   <div style="flex:1;min-width:0">
-    <div class="ch-name" style="font-size:14px">НОВЫЙ РАЗДЕЛ КЕЙСОВ</div>
-    <div class="ch-tag" style="font-size:10.5px">5 режимов · от 250 до 35 000 ⬦ · STARTER DROP → OMEGA CORE</div>
+    <div class="ch-name" style="font-size:14px">КЕЙСЫ · 20 ШТУК</div>
+    <div class="ch-tag" style="font-size:10.5px">15 классических + 5 новых режимов · от 250 до 35 000 ⬦</div>
+    <div class="ch-online" style="margin-top:5px"><span class="online-dot"></span>онлайн</div>
   </div>
   <div style="font-size:18px;color:#ffcf6b">→</div>
 </button>
@@ -1010,7 +1046,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Умножай выигранные предметы или рискуй токенами до ×20</span><i class="arrow">→</i></button>
-<button class="game" data-game="cases"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>15 кейсов от 50 до 1000 ₽, 250 уникальных предметов</span><i class="arrow">→</i></button>
+<button class="game" data-nav="casehub"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>20 кейсов: 15 классических + 5 новых режимов, обложки и полная механика</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -1243,28 +1279,21 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <div class="result" id="msgCashback" style="display:none;margin-top:8px"></div>
   </div>
 </div>
-<div class="section"><b>Последняя активность</b></div>
-<div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
-<div class="item row" style="margin-top:16px;background:rgba(143,151,255,.09);border:1px solid rgba(143,151,255,.28);border-radius:14px;padding:12px 14px">
-  <div>
-    <b style="color:#fff;font-size:14.5px">Служба поддержки</b>
-    <div class="muted small" style="margin-top:2px">Вопросы по играм, выводу и балансу (@lev_god)</div>
-  </div>
-  <button class="pillbtn" id="btnSupportProfile" style="background:var(--accent);color:#0d1017;font-weight:800;border:none;padding:9px 14px;cursor:pointer">💬 Написать</button>
+<!-- Реферальная программа перенесена в профиль: отдельной кнопки в навигации больше нет. -->
+<div id="profileRef">
+<div class="section"><b>Реферальная программа</b><span class="muted small">15 % с пополнений</span></div>
+<div class="hero" style="padding:18px">
+  <div class="eyebrow">Приглашения</div>
+  <div class="big" style="font-size:24px;margin-top:4px">Приглашай и получай 15 %</div>
+  <p class="muted" style="margin-top:6px">Получай <b>15 % от каждого пополнения</b> приглашённых — токенами на свой баланс.</p>
+  <div class="code" id="refCode">—</div>
+  <div class="muted small" style="margin:-4px 0 6px">Ваш уникальный код приглашения</div>
+  <div class="code refLinkBox" id="refLink">—</div>
+  <div class="muted small" style="margin:-4px 0 10px">Ссылка для приглашения — открывает игру сразу с вашим кодом</div>
+  <button class="primary" id="copy" style="width:100%">Скопировать код</button>
+  <button class="secondary" id="copyLink" style="width:100%;margin-top:8px">Скопировать ссылку</button>
+  <div class="muted small" id="tgRefInfo" style="margin-top:9px"></div>
 </div>
-</section>
-
-<!-- ======== РЕФЕРАЛЫ ======== -->
-<section class="screen" id="ref">
-<div class="hero"><div class="eyebrow">Приглашения</div><div class="big">Реферальная программа</div>
-<p class="muted">Получай <b>15 % от каждого пополнения</b> приглашённых — токенами на свой баланс.</p>
-<div class="code" id="refCode">—</div>
-<div class="muted small" style="margin:-4px 0 6px">Ваш уникальный код приглашения</div>
-<div class="code refLinkBox" id="refLink">—</div>
-<div class="muted small" style="margin:-4px 0 10px">Ссылка для приглашения — открывает игру сразу с вашим кодом</div>
-<button class="primary" id="copy" style="width:100%">Скопировать код</button>
-<button class="secondary" id="copyLink" style="width:100%;margin-top:8px">Скопировать ссылку</button>
-<div class="muted small" id="tgRefInfo" style="margin-top:9px"></div></div>
 <div class="section"><b>Ваша статистика</b></div>
 <div class="statgrid">
   <div class="stat"><span class="muted small">Приглашено</span><b id="refInvited">0</b></div>
@@ -1279,6 +1308,17 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <div class="item"><b>04 · Растите в рангах кэшбэка</b><div class="muted small">Чем выше общая сумма пополнений, тем выше процент кэшбэка (до 10 %) и бонусы.</div></div>
 </div>
 <p class="muted small" style="margin-top:10px;line-height:1.5">Самоприглашение, мультиаккаунты и накрутка запрещены — такие начисления отменяются.</p>
+</div>
+
+<div class="section"><b>Последняя активность</b></div>
+<div class="list" id="pactiv"><div class="item muted small">Пока нет операций</div></div>
+<div class="item row" style="margin-top:16px;background:rgba(143,151,255,.09);border:1px solid rgba(143,151,255,.28);border-radius:14px;padding:12px 14px">
+  <div>
+    <b style="color:#fff;font-size:14.5px">Служба поддержки</b>
+    <div class="muted small" style="margin-top:2px">Вопросы по играм, выводу и балансу (@lev_god)</div>
+  </div>
+  <button class="pillbtn" id="btnSupportProfile" style="background:var(--accent);color:#0d1017;font-weight:800;border:none;padding:9px 14px;cursor:pointer">💬 Написать</button>
+</div>
 </section>
 
 <!-- ======== СОГЛАШЕНИЕ И КОНФИДЕНЦИАЛЬНОСТЬ ======== -->
@@ -1326,7 +1366,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
 <button data-nav="casehub"><span class="ni">📦</span>Кейсы</button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
-<button data-nav="ref"><span class="ni">♧</span>Рефералы</button>
 </div>
 
 <script src="assets/case-modes.js"></script>
@@ -2638,6 +2677,9 @@ function renderUserStatsUI(){
 
 let onBetChange=null,cleanup=null;
 function screen(id){
+  // Старые ссылки/кнопки «Рефералы» теперь ведут в профиль, к блоку рефералов.
+  let scrollToRef=false;
+  if(id==='ref'){ id='profile'; scrollToRef=true; }
   if(cleanup){try{cleanup()}catch(e){}cleanup=null}
   qa('.screen').forEach(x=>x.classList.remove('active'));
   const el=q('#'+id);if(el)el.classList.add('active');
@@ -2646,6 +2688,9 @@ function screen(id){
   root.scrollTop=0;
   const se=document.scrollingElement||document.documentElement;
   if(se)se.scrollTop=0;
+  if(scrollToRef){
+    setTimeout(()=>{ const ref=q('#profileRef'); if(ref && ref.scrollIntoView) ref.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
+  }
   paintModeBadges();
   if(id==='challenge'){
     cleanup=gameChallenge('#challengeArea');
@@ -3002,7 +3047,7 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
         <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px">
           <div>
             <b style="color:#fff">${g.game}</b>
-            <span class="muted small"> · ${g.rounds} раундов (RTP ${g.rtpPct}%, Оборот: ${fmt(g.wageredTk)} ⬦)</span>
+            <span class="muted small"> · ${g.rounds} раундов (выплаты: ${fmt(g.payoutTk)} ⬦, оборот: ${fmt(g.wageredTk)} ⬦)</span>
           </div>
           <b style="color:${gCol}">${(g.netRub>=0?'+':'') + Number(g.netRub||0).toFixed(1)} ₽</b>
         </div>`;
@@ -3066,7 +3111,7 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
         <div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:8px">
           <span class="muted small">GGR (Доход от ставок):</span>
           <div><b style="font-size:13px;color:${netPeriodCol}">${(netPeriodRub >= 0 ? '+' : '') + Number(netPeriodRub).toFixed(1)} ₽</b></div>
-          <div class="muted small" style="font-size:9.5px">RTP: ${m.rtpPct || 0}% (${m.roundsCount || 0} раундов)</div>
+          <div class="muted small" style="font-size:9.5px">Раундов: ${m.roundsCount || 0} · выплаты: ${fmt(m.payoutsTk || 0)} ⬦</div>
         </div>
       </div>
 
@@ -5285,19 +5330,19 @@ const SP_MODES = {
   lite: {
     name: 'Лайт',
     pay: [2.0, 1.3, 1.0, 0.8, 0.6, 0.2, 1.2, 0.7],
-    w:   [4,   12,  18,  24,  20,  8,   6,   8], // RTP 87.2% (House Edge 12.8%)
+    w:   [4,   12,  18,  24,  20,  8,   6,   8], // возврат игроку 87.2% (House Edge 12.8%)
     col: ['#ffcf6b','#ff7386','#3ddc96','#687699','#4c5670','#323a4e','#a175ff','#2dc284']
   },
   med: {
     name: 'Средний',
     pay: [5, 3, 0.75, 0.5, 0.25, 0, 2, 1],
-    w:   [2, 8, 21, 23, 21, 9, 8, 8], // RTP 90.5% (House Edge 9.5%)
+    w:   [2, 8, 21, 23, 21, 9, 8, 8], // возврат игроку 90.5% (House Edge 9.5%)
     col: ['#ffcf6b','#ff7386','#6e7b9e','#515b74','#394154','#212634','#a175ff','#3ddc96']
   },
   crit: {
     name: 'Критический',
     pay: [15, 8, 0.5, 0.2, 0, 0, 4, 1.5],
-    w:   [1, 3, 16, 20, 30, 20, 5, 5], // RTP 78.5% (House Edge 21.5%)
+    w:   [1, 3, 16, 20, 30, 20, 5, 5], // возврат игроку 78.5% (House Edge 21.5%)
     col: ['#ffcf6b','#ff7386','#606c8b','#41495e','#292f3f','#191d27','#a175ff','#3ddc96']
   }
 };
@@ -5722,7 +5767,7 @@ function gameDrop(){
 }
 
 /* =======================================================================
-   СКУФ VS АЛЬТУШКА (🎀🖤 vs 🍺) — Сапёр с пониженными шансами и минусовым RTP
+   СКУФ VS АЛЬТУШКА (🎀🖤 vs 🍺) — Сапёр с пониженными шансами и минусовым возврат игроку
    ======================================================================= */
 const SKUF_MODES = {
   lite: { name: 'Лайт', skufs: 7, desc: '7 банок пива на 25 плиток. Повышенная плотность ловушек.' },
@@ -5748,7 +5793,7 @@ function gameSkuf(){
     return c;
   }
 
-  // Расчет множителя со строгим минусовым матожиданием (RTP 75%, House Edge 25%):
+  // Расчет множителя со строгим минусовым матожиданием (возврат игроку 75%, House Edge 25%):
   function getMult(k){
     const M = SKUF_MODES[curSkufMode].skufs;
     if(k <= 0) return 1;
@@ -6120,7 +6165,7 @@ function gameAvito(){
 }
 
 /* =======================================================================
-   КЕЙСЫ (📦) — 5 кейсов, 100 уникальных предметов, рулетка CS:GO с отрицательным RTP
+   КЕЙСЫ (📦) — 5 кейсов, 100 уникальных предметов, рулетка CS:GO с отрицательным возврат игроку
    ======================================================================= */
 const TIER_COLS = {
   cheap: '#64748b',   // Серый (Обычный)
@@ -8238,7 +8283,7 @@ function gameUpgraderLegacy(){
   function setChance(c){
     let num = parseFloat(c);
     if(!Number.isFinite(num) || num <= 0) num = 47.0;
-    // Ограничение шанса: максимум 75% и менее кастомно (RTP 94%), минимум 0.94% (при x100)
+    // Ограничение шанса: максимум 75% и менее кастомно (возврат игроку 94%), минимум 0.94% (при x100)
     num = Math.min(75.0, Math.max(0.94, num));
     num = Math.round(num * 100) / 100;
     curChance = num;
@@ -9733,46 +9778,89 @@ function gameSafe(){
    Источник цен/состава — assets/case-modes.js (тот же файл, что require'ит
    сервер) и /api/cases/catalog. Клиент не назначает цену и не решает дроп.
    ══════════════════════════════════════════════════════════════════════════ */
-function gameCaseHub(sel){
+/* ══════════════════════════════════════════════════════════════════════════
+   CASE HUB UNIFIED — все кейсы в одном разделе.
+   15 классических (items.js / CASES_DATA) + 5 новых режимов
+   (assets/case-modes.js). Сохранены: рулетка, инвентарь, продажа,
+   апгрейд, бесплатный кейс за депозит и кейс за 5 друзей.
+   ══════════════════════════════════════════════════════════════════════════ */
+function gameCaseHubUnified(sel){
   const a = q(sel || '#caseHubArea');
   if(!a) return ()=>{};
   const UMD = window.MONEYFORUP_CASE_MODES;
-  const LOCAL = (UMD && UMD.MODES) ? UMD.MODES : {};
+  const LOCAL_MODES = (UMD && UMD.MODES) ? UMD.MODES : {};
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const r2 = n => Math.round(n*10000)/100;
+  // chance уже в процентах (например, 4.0), не в долях.
+  const r2 = n => Math.round(Number(n || 0) * 100) / 100;
 
-  function normalizeLocal(modes){
-    return Object.values(modes).map(m => {
-      const totalW = m.items.reduce((s,i)=>s+i.w,0) || 1;
-      const ev = m.items.reduce((s,i)=>s + i.price*(i.w/totalW),0);
-      return Object.assign({}, m, {
-        rtp: ev/m.price,
-        items: m.items.map((it,i)=>Object.assign({}, it, {
-          code: it.code || (m.id+'#'+i),
-          chance: (it.w/totalW)*100
-        }))
-      });
+  function themeFor(m){
+    if(m && m.theme) return m.theme;
+    const p = Number((m && m.price) || 0);
+    if(p < 1000) return {accent:'#c9d2dc',accent2:'#8f9aa8',panel:'#14171c',border:'#2a303a',glow:'rgba(201,210,220,.28)'};
+    if(p < 3000) return {accent:'#8b92ff',accent2:'#a855f7',panel:'#151226',border:'#2d2850',glow:'rgba(139,146,255,.3)'};
+    if(p < 7000) return {accent:'#35d6ff',accent2:'#3b82f6',panel:'#0c1420',border:'#1e3a5f',glow:'rgba(53,214,255,.3)'};
+    if(p < 10000) return {accent:'#ffd76a',accent2:'#f59e0b',panel:'#171208',border:'#3a2c12',glow:'rgba(255,215,106,.3)'};
+    return {accent:'#ff7386',accent2:'#ef4444',panel:'#180d10',border:'#4a1f28',glow:'rgba(239,68,68,.32)'};
+  }
+  function themeVars(m){
+    const th=themeFor(m);
+    return `--cm-accent:${th.accent||'#ffcf6b'};--cm-accent2:${th.accent2||'#ef4444'};--cm-panel:${th.panel||'#181215'};--cm-border:${th.border||'rgba(255,255,255,.14)'};--cm-glow:${th.glow||'rgba(255,207,107,.25)'}`;
+  }
+  function normalizeCase(c){
+    const kind = c.kind || (String(c.id||'').startsWith('case_') ? 'classic' : 'mode');
+    const rawItems = Array.isArray(c.items) ? c.items : [];
+    const totalW = rawItems.reduce((s,x)=>s+Number(x.w||0),0) || 1;
+    const items = rawItems.map((it,i)=>{
+      const chance = (typeof it.chance === 'number') ? it.chance : (Number(it.w||0) / totalW) * 100;
+      return Object.assign({}, it, { code: it.code || (c.id+'#'+i), chance });
+    });
+    return Object.assign({}, c, {
+      kind, items,
+      cover: c.cover || ('assets/cases/'+c.id+'.jpg'),
+      tagline: c.tagline || (kind === 'classic' ? 'Классический кейс' : 'Новый режим')
     });
   }
+  function fallbackCatalog(){
+    const classic = Object.values(CASES_DATA || {}).map(c=>{
+      const total = (c.items||[]).reduce((s,i)=>s+(i.w||0),0) || 1;
+      return normalizeCase({
+        id:c.id, kind:'classic', name:c.name, tagline:'Классический кейс',
+        desc:c.desc, icon:c.icon, cover:'assets/cases/'+c.id+'.jpg', price:c.cost,
+        items:(c.items||[]).map((it,i)=>({...it, code:c.id+'#'+i, chance:(it.w/total)*100}))
+      });
+    });
+    const modes = Object.values(LOCAL_MODES).map(m=>{
+      const total = (m.items||[]).reduce((s,i)=>s+(i.w||0),0) || 1;
+      return normalizeCase({
+        ...m, kind:'mode', cover:'assets/cases/'+m.id+'.jpg',
+        items:(m.items||[]).map((it,i)=>({...it, code:it.code||(m.id+'#'+i), chance:(it.w/total)*100}))
+      });
+    });
+    return [...classic, ...modes];
+  }
 
-  let catalog = normalizeLocal(LOCAL);
-  let currentId = catalog[0] ? catalog[0].id : 'starter_drop';
+  let catalog = fallbackCatalog();
+  let currentId = 'case_500';
+  let filterKind = 'all';
   let history = [];
   let busy = false, dead = false, timer = 0;
   let timeouts = [];
   let statusText = '';
   let lastDrop = null;
   let catalogError = '';
+  let fiveRef = null;
+  let freeBusy = false;
 
   function clearTimers(){
     timeouts.forEach(t=>clearTimeout(t));
     timeouts = [];
     if(timer){ clearTimeout(timer); timer = 0; }
   }
-  function current(){ return catalog.find(x=>x.id===currentId) || catalog[0] || null; }
-  function themeVars(m){
-    const th = (m && m.theme) || {};
-    return `--cm-accent:${th.accent||'#ffcf6b'};--cm-accent2:${th.accent2||'#ef4444'};--cm-panel:${th.panel||'#181215'};--cm-border:${th.border||'rgba(255,255,255,.14)'};--cm-glow:${th.glow||'rgba(255,207,107,.25)'}`;
+  function visibleCases(){
+    return catalog.filter(c => filterKind === 'all' || c.kind === filterKind);
+  }
+  function current(){
+    return catalog.find(x=>x.id===currentId) || visibleCases()[0] || catalog[0] || null;
   }
   function itemCard(it){
     const col = (typeof TIER_COLS!=='undefined' && TIER_COLS[it.tier]) || '#8f97ff';
@@ -9780,6 +9868,14 @@ function gameCaseHub(sel){
       <div class="ci-i">${it.icon||'📦'}</div>
       <div class="ci-n">${esc(it.name)}</div>
       <div class="ci-p">${fmt(it.price)} ⬦</div>
+    </div>`;
+  }
+  function coverTag(m, cls){
+    const src = m.cover || ('assets/cases/'+m.id+'.jpg');
+    const imgCls = cls === 'ch-cover-wrap' ? 'ch-cover' : 'chh-cover-img';
+    return `<div class="${cls}">
+      <img class="${imgCls}" src="${esc(src)}" alt="${esc(m.name)}" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('img-missing')">
+      <div class="${cls==='ch-cover-wrap'?'ch-cover-fallback':'chh-cover-fallback'}">${m.icon||'📦'}</div>
     </div>`;
   }
 
@@ -9791,43 +9887,83 @@ function gameCaseHub(sel){
       return;
     }
     const hist = history.slice(0,10);
+    const freeCount = Math.max(0, Number(S.freeCases || 0));
+    const fr = fiveRef || {
+      claimed: Boolean(S.freeCase5RefClaimed),
+      qualified: Number(S.refQualified || 0),
+      canClaim: !S.freeCase5RefClaimed && Number(S.refQualified || 0) >= 5
+    };
+    const promos = [];
+    if(freeCount > 0){
+      promos.push(`<div class="casehub-promo">
+        <div class="cp-ic">🎁</div>
+        <div class="cp-b"><b>Бесплатный кейс за депозит</b><small>Доступно: ${freeCount}. Откройте без списания токенов.</small></div>
+        <button id="chFreeOpen" ${(freeBusy||busy)?'disabled':''}>ОТКРЫТЬ</button>
+      </div>`);
+    }
+    if(!fr.claimed){
+      promos.push(`<div class="casehub-promo" style="border-color:rgba(168,85,247,.4);background:linear-gradient(135deg,rgba(168,85,247,.13),rgba(99,102,241,.05))">
+        <div class="cp-ic">🗡️</div>
+        <div class="cp-b"><b style="color:#c4b5fd">Кейс за 5 друзей</b><small>Приглашено активных: ${fr.qualified||0}/5. Скин Cyber-Dagger идёт под апгрейд.</small></div>
+        ${(fr.canClaim||fr.qualified>=5)
+          ? `<button id="ch5RefOpen" ${(freeBusy||busy)?'disabled':''}>ЗАБРАТЬ</button>`
+          : `<span style="font-size:10px;color:#c4b5fd;font-weight:800">${fr.qualified||0}/5</span>`}
+      </div>`);
+    }
+    const visible = visibleCases();
     a.innerHTML = `
+    ${promos.join('')}
+    <div class="casehub-tools">
+      <button data-chfilter="all" class="${filterKind==='all'?'on':''}">Все · ${catalog.length}</button>
+      <button data-chfilter="classic" class="${filterKind==='classic'?'on':''}">Классика · ${catalog.filter(c=>c.kind==='classic').length}</button>
+      <button data-chfilter="mode" class="${filterKind==='mode'?'on':''}">Новые режимы · ${catalog.filter(c=>c.kind==='mode').length}</button>
+    </div>
     <div class="casehub-grid">
-      ${catalog.map(c=>`
-        <button class="casehub-card" data-chm="${esc(c.id)}" style="${themeVars(c)}">
-          <div class="ch-icon">${c.icon||'📦'}</div>
-          <div class="ch-name">${esc(c.name)}</div>
-          <div class="ch-tag">${esc(c.tagline||'')}</div>
-          <div class="ch-price">${fmt(c.price)} ⬦<small>${Math.round((c.rtp||0)*1000)/10}% RTP · ${c.items.length} предметов</small></div>
-          <div class="ch-online"><span class="online-dot"></span>онлайн</div>
-        </button>`).join('')}
+      ${visible.length ? visible.map(c=>`
+        <button class="casehub-card casehub-case" data-chm="${esc(c.id)}" style="${themeVars(c)}">
+          ${coverTag(c,'ch-cover-wrap')}
+          <span class="ch-kind">${c.kind==='classic'?'КЛАССИКА':'НОВЫЙ РЕЖИМ'}</span>
+          <div class="ch-body">
+            <div class="ch-name">${esc(c.name)}</div>
+            <div class="ch-tag">${esc(c.tagline||'')}</div>
+            <div class="ch-price">${fmt(c.price)} ⬦<small>${c.items.length} предметов</small></div>
+            <div class="ch-online"><span class="online-dot"></span>онлайн</div>
+          </div>
+        </button>`).join('') : '<div class="casehub-empty">В этом фильтре пока нет кейсов.</div>'}
     </div>
     ${catalogError?`<div class="result bad" style="margin-top:10px">${esc(catalogError)}</div>`:''}
-    <div class="casehub-hero" style="${themeVars(m)}">
-      <div class="chh-top">
-        <div class="chh-icon">${m.icon||'📦'}</div>
-        <div style="flex:1;min-width:0">
-          <div class="chh-name">${esc(m.name)}</div>
-          <div class="chh-sub">${esc(m.tagline||'')}</div>
+    <div class="casehub-hero has-cover" style="${themeVars(m)}">
+      ${coverTag(m,'chh-cover')}
+      <div class="chh-content">
+        <div class="chh-top">
+          <div style="flex:1;min-width:0">
+            <div class="chh-name">${esc(m.name)}</div>
+            <div class="chh-sub">${esc(m.tagline||'')} · ${m.kind==='classic'?'классический кейс':'новый режим'}</div>
+          </div>
         </div>
+        <p>${esc(m.desc||'')}</p>
+        <div class="casehub-meta">
+          <span>Цена: <b>${fmt(m.price)} ⬦</b></span>
+          <span>Предметов: <b>${m.items.length}</b></span>
+          ${m.kind==='classic'
+            ? `<span>Тип: <b>Классика</b></span>`
+            : `<span>Диапазон: <b>${fmt(m.priceMin||m.price)}–${fmt(m.priceMax||m.price)} ⬦</b></span>`}
+        </div>
+        <div class="casehub-roulette">
+          <div class="casehub-pointer"></div>
+          <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
+        </div>
+        <div class="casehub-actions">
+          <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
+          <button class="control ghost" id="chRepeat" ${busy?'disabled':''}>↻ ПОВТОРИТЬ</button>
+        </div>
+        <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его. Все предметы — виртуальные токены внутри платформы.'}</div>
+        ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ⬦</span></div>
+          <div class="casehub-case-actions">
+            <button class="control" id="chUpgrade">⚡ В АПГРЕЙДЕР</button>
+            <button class="control ghost" id="chSell">💰 ПРОДАТЬ +${fmt(lastDrop.price||0)} ⬦</button>
+          </div>`:''}
       </div>
-      <p>${esc(m.desc||'')}</p>
-      <div class="casehub-meta">
-        <span>Цена: <b>${fmt(m.price)} ⬦</b></span>
-        <span>Диапазон: <b>${fmt(m.priceMin||m.price)}–${fmt(m.priceMax||m.price)} ⬦</b></span>
-        <span>RTP: <b>${Math.round((m.rtp||0)*1000)/10}%</b></span>
-        <span>Предметов: <b>${m.items.length}</b></span>
-      </div>
-      <div class="casehub-roulette">
-        <div class="casehub-pointer"></div>
-        <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
-      </div>
-      <div class="casehub-actions">
-        <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
-        <button class="control ghost" id="chRepeat" ${busy?'disabled':''}>↻ ПОВТОРИТЬ</button>
-      </div>
-      <div class="result" id="chRes">${statusText || 'Выберите кейс и откройте его. Все предметы — виртуальные токены внутри платформы.'}</div>
-      ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ⬦</span></div>`:''}
     </div>
     <div class="section"><b>Содержимое «${esc(m.name)}»</b><span class="muted small">${m.items.length} предметов</span></div>
     <div class="casehub-list">
@@ -9850,14 +9986,35 @@ function gameCaseHub(sel){
           <span>${fmt((h.item&&h.item.price)||h.price||0)} ⬦</span>
         </div>`).join('') : '<div class="result">История появится после первого открытия.</div>'}
     </div>
-    <div class="casehub-note">Все цены и предметы — виртуальные токены MoneyForUp. Это не деньги и не вывод средств. Шансы зафиксированы в конфигурации режима и проверяются на сервере.</div>`;
+    <div class="casehub-note">Все цены и предметы — виртуальные токены MoneyForUp. Это не деньги и не вывод средств. Шансы заданы в конфигурации кейса и проверяются на сервере.</div>`;
 
     a.querySelectorAll('[data-chm]').forEach(b=>{
       b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; render(); };
     });
+    a.querySelectorAll('[data-chfilter]').forEach(b=>{
+      b.onclick=()=>{ if(busy)return; filterKind=b.dataset.chfilter; statusText=''; render(); };
+    });
     const openBtn=q('#chOpen',a), repeatBtn=q('#chRepeat',a);
     if(openBtn) openBtn.onclick=()=>openCase();
     if(repeatBtn) repeatBtn.onclick=()=>openCase();
+    const freeBtn=q('#chFreeOpen',a); if(freeBtn) freeBtn.onclick=openFreeCase;
+    const refBtn=q('#ch5RefOpen',a); if(refBtn) refBtn.onclick=open5RefCase;
+    const upBtn=q('#chUpgrade',a);
+    if(upBtn) upBtn.onclick=()=>{
+      if(!lastDrop||!lastDrop.id)return;
+      play('upgrader');
+      if(typeof window.__upgraderSelectItem==='function') window.__upgraderSelectItem(lastDrop,100);
+    };
+    const sellBtn=q('#chSell',a);
+    if(sellBtn) sellBtn.onclick=async()=>{
+      if(!lastDrop||!lastDrop.id||busy)return;
+      try{
+        await sellInventoryItem(lastDrop.id);
+        lastDrop=null;
+        setStatus('✅ Предмет продан, токены зачислены на баланс.','good');
+        render();
+      }catch(e){ setStatus((e&&e.message)||'Не удалось продать предмет','bad'); }
+    };
   }
 
   function setStatus(text, cls){
@@ -9867,10 +10024,10 @@ function gameCaseHub(sel){
   }
 
   function localRoll(m){
-    const total=m.items.reduce((s,i)=>s+(i.w||1),0);
+    const total=(m.items||[]).reduce((s,i)=>s+Number(i.w||i.chance||1),0) || 1;
     let r=Math.random()*total, cum=0;
-    for(const it of m.items){ cum+=(it.w||1); if(r<=cum) return it; }
-    return m.items[m.items.length-1];
+    for(const it of (m.items||[])){ cum+=Number(it.w||it.chance||1); if(r<=cum) return it; }
+    return (m.items||[])[m.items.length-1] || null;
   }
 
   async function openCase(){
@@ -9887,16 +10044,17 @@ function gameCaseHub(sel){
     const clientKey='ch'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
     let res=null, err=null;
     if(IS_TG && API_BASE){
-      try{ res=await tgCall('/api/cases/open',{ modeId:m.id, requestId:clientKey }); }
+      try{ res=await tgCall('/api/cases/open',{ caseId:m.id, requestId:clientKey }); }
       catch(e){ err=e; }
       // Неизвестный исход сети: повторяем ТОТ ЖЕ requestId — сервер либо
       // вернёт сохранённый результат, либо не спишет второй раз.
       if(!res && err && (!err.status || err.status>=500)){
-        try{ res=await tgCall('/api/cases/open',{ modeId:m.id, requestId:clientKey }); err=null; }
+        try{ res=await tgCall('/api/cases/open',{ caseId:m.id, requestId:clientKey }); err=null; }
         catch(e2){ err=e2; }
       }
     } else {
       const it=localRoll(m);
+      if(!it){ busy=false; setStatus('Кейс временно недоступен.','bad'); return; }
       const tokens=Math.max(0,(S.balance||0)-m.price);
       S.balance=tokens; S.tgBalance=tokens;
       S.inventory=S.inventory||[];
@@ -9925,14 +10083,76 @@ function gameCaseHub(sel){
     animate(m,drop);
   }
 
+  async function openFreeCase(){
+    if(freeBusy||busy)return;
+    if(Number(S.freeCases||0)<=0)return;
+    freeBusy=true; clearTimers(); render();
+    setStatus('Открываем бесплатный кейс…','');
+    const base=catalog.find(c=>c.id==='case_500')||current();
+    let res=null, err=null;
+    try{
+      if(IS_TG&&API_BASE) res=await tgCall('/api/open-free-case',{});
+      else{
+        const it=localRoll(base);
+        S.freeCases=Math.max(0,Number(S.freeCases||1)-1);
+        const drop=Object.assign({},it,{id:'inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),caseName:'Бесплатный кейс'});
+        S.inventory=S.inventory||[]; S.inventory.unshift(drop); save(); syncUI();
+        res={ok:true,freeCases:S.freeCases,drop};
+      }
+    }catch(e){ err=e; }
+    if(!res||!res.ok){
+      freeBusy=false;
+      setStatus((err&&err.message)||(res&&res.error)||'Не удалось открыть бесплатный кейс.','bad');
+      render(); return;
+    }
+    freeBusy=false;
+    S.freeCases=Number(res.freeCases||0); save(); syncUI();
+    const drop=res.drop||{};
+    lastDrop=drop;
+    history.unshift({item:drop,createdAt:Date.now()});
+    if(typeof tgLoadBalance==='function')tgLoadBalance();
+    busy=true; render();
+    animate(base||{name:'Бесплатный кейс',price:0,items:[]},drop);
+  }
+
+  async function open5RefCase(){
+    if(freeBusy||busy)return;
+    freeBusy=true; render();
+    setStatus('Открываем кейс за 5 друзей…','');
+    const base=catalog.find(c=>c.id==='case_500')||current();
+    let res=null, err=null;
+    try{
+      if(IS_TG&&API_BASE) res=await tgCall('/api/5ref-case/open',{});
+      else{
+        res={ok:true,claimed:true,drop:{id:'inv_'+Date.now(),code:'ref5_cyber_dagger',name:'Cyber-Dagger | Neon Fade',icon:'🗡️',price:2400,tier:'secret',upgrade_only:true,caseName:'Кейс за 5 друзей'}};
+        S.inventory=S.inventory||[]; S.inventory.unshift(res.drop); save(); syncUI();
+      }
+    }catch(e){ err=e; }
+    freeBusy=false;
+    if(!res||!res.ok){
+      setStatus((err&&err.message)||(res&&res.error)||'Не удалось открыть кейс за 5 друзей.','bad');
+      render(); return;
+    }
+    S.freeCase5RefClaimed=1;
+    if(fiveRef) fiveRef.claimed=true;
+    save(); syncUI();
+    const drop=res.drop||{};
+    lastDrop=drop;
+    history.unshift({item:drop,createdAt:Date.now()});
+    if(typeof tgLoadBalance==='function')tgLoadBalance();
+    busy=true; render();
+    animate(base||{name:'Кейс за 5 друзей',price:0,items:[]},drop);
+  }
+
   function animate(m,drop){
     const strip=q('#chStrip',a);
-    if(!strip){ busy=false; render(); return; }
+    if(!strip){ busy=false; freeBusy=false; render(); return; }
     const targetIndex=45;
     const cards=[];
+    const pool=(m.items&&m.items.length)?m.items:[{icon:'📦',name:'Предмет',price:0}];
     for(let i=0;i<62;i++){
       if(i===targetIndex) cards.push(drop);
-      else cards.push(m.items[Math.floor(Math.random()*m.items.length)]);
+      else cards.push(pool[Math.floor(Math.random()*pool.length)]);
     }
     strip.style.transition='none';
     strip.style.transform='translateX(0px)';
@@ -9950,36 +10170,49 @@ function gameCaseHub(sel){
       strip.style.transform=`translateX(-${targetX}px)`;
     });
     [180,380,620,900,1240,1640,2120,2680,3260,3820].forEach(t=>{
-      timeouts.push(setTimeout(()=>{ if(!dead && busy) tgHaptic('light'); },t));
+      timeouts.push(setTimeout(()=>{ if(!dead && (busy||freeBusy)) tgHaptic('light'); },t));
     });
     timer=setTimeout(()=>{
       if(dead) return;
       clearTimers();
-      busy=false;
+      busy=false; freeBusy=false;
       if(targetCard) targetCard.classList.add('win-picked');
-      const profit=(drop.price||0)>=m.price;
+      const profit=(drop.price||0)>=Number(m.price||0);
       tgHaptic(profit?'win':'light');
-      setStatus(`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
+      lastDrop=drop;
+      statusText=`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
         <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
         <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ⬦</span>
-        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`, profit?'good':'');
+        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`;
       if(typeof loadInventory==='function') loadInventory();
       render();
     },4400);
+  }
+
+  async function loadFiveRef(){
+    if(!(IS_TG&&API_BASE))return;
+    try{
+      const d=await tgCall('/api/5ref-case/status',{});
+      if(d&&d.ok) fiveRef={claimed:Boolean(d.claimed),qualified:Number(d.qualified||0),canClaim:Boolean(d.canClaim)};
+    }catch(_){}
   }
 
   async function load(){
     if(IS_TG && API_BASE){
       try{
         const d=await tgCall('/api/cases/catalog',{});
-        if(d && Array.isArray(d.modes) && d.modes.length){
-          catalog=d.modes.map(m=>({...m, items:m.items.map(it=>({...it}))}));
+        const list = Array.isArray(d.cases) ? d.cases : (Array.isArray(d.modes) ? d.modes : null);
+        if(list && list.length){
+          catalog=list.map(normalizeCase);
           history=Array.isArray(d.history)?d.history:[];
           if(!catalog.find(x=>x.id===currentId)) currentId=catalog[0].id;
           if(typeof d.tokens==='number') setTokens(d.tokens);
           catalogError='';
         }
-      }catch(e){ catalogError='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.'; }
+        await loadFiveRef();
+      }catch(e){
+        catalogError='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.';
+      }
     }
     render();
   }
@@ -9987,9 +10220,12 @@ function gameCaseHub(sel){
   render();
   load();
   return ()=>{
-    dead=true; busy=false; clearTimers();
+    dead=true; busy=false; freeBusy=false; clearTimers();
   };
 }
+
+/* Активное имя экрана: старый вызов play('cases') тоже ведёт в единый хаб. */
+function gameCaseHub(sel){ return gameCaseHubUnified(sel); }
 
 /* ══════════════════════════════════════════════════════════════════════════
    UPGRADE ARENA — серверный апгрейд: режимы риска, цели, мульти, лесенка,
@@ -10738,7 +10974,8 @@ if(refPromoBanner){
   refPromoBanner.addEventListener('click', (e) => {
     e.preventDefault();
     tgHaptic('light');
-    screen('ref');
+    screen('profile');
+    setTimeout(()=>{ const ref=q('#profileRef'); if(ref && ref.scrollIntoView) ref.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
   });
 }
 
@@ -10761,6 +10998,8 @@ if(effectiveRoute === 'boost' || startParam === 'boost' || searchParams.get('boo
   applyQuickDeposit(targetAmt, bonus, 0);
 } else if(effectiveRoute==='casehub'||effectiveRoute==='cases'){
   screen('casehub');
+} else if(effectiveRoute==='profile'||effectiveRoute==='ref'){
+  screen('profile');
 } else if(BUILD[hashRoute]){
   play(hashRoute);
 } else {

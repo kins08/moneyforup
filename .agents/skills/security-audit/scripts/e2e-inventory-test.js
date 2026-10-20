@@ -87,17 +87,17 @@ const bad = m => { failures++; console.log(`   ${C.red('❌')} ${m}`); };
   if (mismatches === 0) ok('клиентская таблица совпадает с серверным каталогом — анимация не разойдётся с инвентарём');
   else bad(`${mismatches} расхождений между клиентом и сервером`);
 
-  // ── 2. РТП кейсов в разумных границах ────────────────────────────────────
+  // ── 2. Экономика кейсов в разумных границах ──────────────────────────────
   console.log('\n2) Экономика кейсов (предмет = выплата)');
-  let minRtp = 9, maxRtp = 0, worst = '';
+  let minReturn = 9, maxReturn = 0, worst = '';
   for (const id of caseIds) {
-    const r = items.caseRtp(id);
-    if (r.rtp < minRtp) { minRtp = r.rtp; worst = id; }
-    if (r.rtp > maxRtp) maxRtp = r.rtp;
+    const r = items.caseEconomy(id);
+    if (r.returnRate < minReturn) { minReturn = r.returnRate; worst = id; }
+    if (r.returnRate > maxReturn) maxReturn = r.returnRate;
   }
-  console.log(`   RTP: от ${minRtp.toFixed(3)} (${worst}) до ${maxRtp.toFixed(3)}`);
-  if (minRtp > 0.5 && maxRtp < 1.0) ok('ни один кейс не отдаёт больше, чем берёт');
-  else bad(`RTP вне границ: ${minRtp.toFixed(3)}…${maxRtp.toFixed(3)} — кейс печатает деньги`);
+  console.log(`   Возврат игроку: от ${minReturn.toFixed(3)} (${worst}) до ${maxReturn.toFixed(3)}`);
+  if (minReturn > 0.5 && maxReturn < 1.0) ok('ни один кейс не отдаёт больше, чем берёт');
+  else bad(`Возврат вне границ: ${minReturn.toFixed(3)}…${maxReturn.toFixed(3)} — кейс печатает деньги`);
 
   // ── 3. Открытие кейса: ставка = цена кейса, предмет уходит в инвентарь ────
   console.log('\n3) Открытие кейса: предмет попадает в СЕРВЕРНЫЙ инвентарь');

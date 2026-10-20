@@ -52,16 +52,16 @@ const upgrade       = require('./upgrade'); // серверная модель �
    как статику. Поэтому цены/предметы не дублируются между фронтом и бэком. */
 const caseModes     = require('./assets/case-modes.js');
 // Цена режима и цены предметов лежат в одном конфиге. Если после правки
-// цены RTP вышел из безопасного коридора — громко предупреждаем на старте,
-// чтобы кейс не начал печатать токены.
+// цены доля возврата игроку вышла из безопасного коридора — предупреждаем
+// на старте, чтобы кейс не начал печатать токены.
 for (const __cm of Object.values(caseModes.MODES || {})) {
   try {
-    const __rtp = caseModes.caseRtp(__cm.id);
-    if (!__rtp || !Number.isFinite(__rtp.rtp) || __rtp.rtp < 0.78 || __rtp.rtp > 0.90) {
-      console.warn(`[CaseModes] ${__cm.name}: RTP ${__rtp ? (__rtp.rtp * 100).toFixed(2) + '%' : '?'} вне коридора 78–90% — проверьте цены в assets/case-modes.js`);
+    const __economy = caseModes.caseEconomy(__cm.id);
+    if (!__economy || !Number.isFinite(__economy.returnRate) || __economy.returnRate < 0.78 || __economy.returnRate > 0.90) {
+      console.warn(`[CaseModes] ${__cm.name}: возврат игроку ${__economy ? (__economy.returnRate * 100).toFixed(2) + '%' : '?'} вне коридора 78–90% — проверьте цены в assets/case-modes.js`);
     }
   } catch (e) {
-    console.warn(`[CaseModes] ${__cm && __cm.id}: не удалось посчитать RTP: ${e.message}`);
+    console.warn(`[CaseModes] ${__cm && __cm.id}: не удалось посчитать экономику: ${e.message}`);
   }
 }
 
@@ -500,8 +500,8 @@ function gameConfig(rawName) {
  * Раунд в КЕЙСЕ. Отличие от остальных игр принципиальное:
  * предмет И ЕСТЬ выигрыш, токены за раунд не начисляются.
  *
- * Почему так: EV предмета в кейсах 0.74–0.88 от цены кейса (см. caseRtp).
- * Если вдобавок платить токены по обычной формуле, суммарный RTP станет ~1.7
+ * Почему так: EV предмета в кейсах 0.74–0.88 от цены кейса (см. caseEconomy).
+ * Если вдобавок платить токены по обычной формуле, суммарный возврат игроку станет ~1.7
  * и кейс начнёт печатать деньги. Ценность забирается продажей предмета.
  */
 function playCaseRound(u, c, rawBet, rawRoundId) {
@@ -651,7 +651,7 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
     // Особый акционный скин за 5 друзей: в 97% случаев апгрейд НЕ летит (Near-Miss байт!)
     winChance = 0.03;
   } else {
-    // RTP = (1 − edge) ровно при любом множителе: winChance = (1 − edge) / mult.
+    // возврат игроку = (1 − edge) ровно при любом множителе: winChance = (1 − edge) / mult.
     // Нижней отсечки быть НЕ должно: она поднимала шанс при больших mult (напр. safe ×1000)
     // и делала игру печатным станком (EV > 0). Верхний предел 0.75 уменьшает выплату
     // только в пользу кассы, поэтому он безопасен.
@@ -2502,18 +2502,30 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* ══════════════════════════════════════════════════════════════════════
-       CASE HUB — пять новых режимов кейсов.
-       Цена, состав и вероятности берутся из public/assets/case-modes.js.
-       Клиент не присылает ни цену, ни предмет, ни результат.
+       CASE HUB — ОДИН раздел для всех кейсов.
+       15 классических кейсов живут в items.js, 5 новых режимов — в
+       assets/case-modes.js. Оба каталога отдаются одним ответом; открытие
+       идёт через один эндпоинт и одну атомарную транзакцию.
        ══════════════════════════════════════════════════════════════════════ */
     if (url.pathname === '/api/cases/catalog' && req.method === 'POST') {
+      const classic = Object.values(items.CASES).map(c => {
+        const totalW = c.items.reduce((s, it) => s + it.w, 0);
+        return {
+          id: c.id, kind: 'classic', name: c.name, tagline: 'Классический кейс',
+          desc: c.desc, icon: c.icon, cover: `assets/cases/${c.id}.jpg`,
+          price: c.cost, theme: null,
+          items: c.items.map(it => ({
+            code: it.code, name: it.name, icon: it.icon, price: it.price, tier: it.tier,
+            chance: Number(((it.w / totalW) * 100).toFixed(3))
+          }))
+        };
+      });
       const modes = Object.values(caseModes.MODES).map(m => {
         const totalW = m.items.reduce((s, it) => s + it.w, 0);
-        const rtp = caseModes.caseRtp(m.id);
         return {
-          id: m.id, name: m.name, tagline: m.tagline, desc: m.desc, icon: m.icon,
+          id: m.id, kind: 'mode', name: m.name, tagline: m.tagline, desc: m.desc,
+          icon: m.icon, cover: `assets/cases/${m.id}.jpg`,
           price: m.price, priceMin: m.priceMin, priceMax: m.priceMax, theme: m.theme,
-          rtp: rtp ? Number(rtp.rtp.toFixed(4)) : null,
           items: m.items.map(it => ({
             code: it.code, name: it.name, icon: it.icon, price: it.price, tier: it.tier,
             chance: Number(((it.w / totalW) * 100).toFixed(3))
@@ -2521,7 +2533,10 @@ const server = http.createServer(async (req, res) => {
         };
       });
       return send(200, {
-        ok: true, modes,
+        ok: true,
+        cases: [...classic, ...modes],
+        classic,
+        modes,
         history: db.getCaseHistory(u.id, 12),
         tokens: u.tokens
       });
@@ -2531,25 +2546,33 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`case-open:${u.id}`, 30, 60000)) {
         return send(429, { error: 'Слишком часто открываете кейсы. Подождите минуту.' });
       }
-      const mode = caseModes.getMode(body.modeId);
-      if (!mode) return send(400, { error: 'Неизвестный режим кейса' });
+      // Поддерживаем оба имени: caseId (новый клиент) и modeId (старый).
+      const caseId = String(body.caseId || body.modeId || '').trim();
+      const mode = caseModes.getMode(caseId);
+      const classic = mode ? null : items.getCase(caseId);
+      if (!mode && !classic) return send(400, { error: 'Кейс не найден' });
       const clientKey = String(body.requestId || '').trim();
       if (!/^[A-Za-z0-9_-]{8,64}$/.test(clientKey)) {
         return send(400, { error: 'Некорректный идентификатор запроса' });
       }
       const requestId = `CASE_${u.id}_${clientKey}`;
       const roundId = `CM_${u.id}_${clientKey}`;
+      const price = mode ? mode.price : classic.cost;
+      const caseName = mode ? mode.name : classic.name;
+      const kind = mode ? 'mode' : 'classic';
       // Баланс проверяется внутри транзакции atomicOpenCase. Здесь нарочно
       // нет предварительной проверки: повтор уже успешного запроса должен
       // вернуть сохранённый результат даже если баланс с тех пор изменился.
-      const drop = caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+      const drop = mode
+        ? caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000)
+        : items.rollItem(classic.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
       if (!drop) return send(500, { error: 'Кейс временно недоступен' });
 
       let res;
       try {
         res = db.atomicOpenCase({
-          requestId, userId: u.id, modeId: mode.id, modeName: mode.name,
-          price: mode.price, item: drop, roundId
+          requestId, userId: u.id, modeId: caseId, modeName: caseName,
+          price, item: drop, roundId
         });
       } catch (e) {
         console.error('[CaseHub] open failed:', e.message);
@@ -2559,13 +2582,13 @@ const server = http.createServer(async (req, res) => {
 
       u.tokens = Number(res.balanceAfter);   // ledger-ok: записано в БД атомарной транзакцией
       if (!res.duplicate) {
-        u.rakeback = Math.round(((u.rakeback || 0) + (mode.price * 0.005)) * 100) / 100;
+        u.rakeback = Math.round(((u.rakeback || 0) + (price * 0.005)) * 100) / 100;
       }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (case hub):', e.message); }
       if (!res.duplicate) {
         betsMonitor.recordBet({
           userId: u.id, name: u.username ? '@' + u.username : (u.name || String(u.id)),
-          game: 'Кейс: ' + mode.name, betTokens: mode.price, winTokens: 0,
+          game: 'Кейс: ' + caseName, betTokens: price, winTokens: 0,
           balanceAfter: u.tokens, totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
         });
       }
@@ -2577,13 +2600,15 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         duplicate: Boolean(res.duplicate),
         requestId: clientKey,
-        modeId: mode.id,
-        modeName: mode.name,
-        price: res.duplicate && open.price ? open.price : mode.price,
+        caseId,
+        kind,
+        modeId: caseId,
+        modeName: caseName,
+        price: res.duplicate && open.price ? open.price : price,
         drop: {
           id: open.inventoryId || res.inventoryId || null,
           code: out.code, name: out.name, icon: out.icon,
-          price: out.price, tier: out.tier, caseName: mode.name
+          price: out.price, tier: out.tier, caseName
         },
         tokens: u.tokens
       });
@@ -2935,8 +2960,8 @@ const server = http.createServer(async (req, res) => {
         { id: 'star',  name: 'Звезда',   mult: 1.5, weight: 40 }
       ];
 
-      // Раньше стояло 0.37 — при среднем множителе выплаты 3.75 это RTP ≈ 139%,
-      // т.е. игрок стабильно зарабатывал. Держим RTP = winChance * avgMult ≈ 93.75%
+      // Раньше стояло 0.37 — при среднем множителе выплаты 3.75 это возврат игроку ≈ 139%,
+      // т.е. игрок стабильно зарабатывал. Держим возврат игроку = winChance * avgMult ≈ 93.75%
       // (winChance 0.25 × 3.75), как и было задумано комментарием ниже.
       const willWin = rnd01() < 0.25;
       const grid = new Array(9).fill(null);

@@ -56,30 +56,53 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(2200);
     console.log('\n1) Навигация и раздел кейсов');
     const nav = [...d.querySelectorAll('.nav button')].map(b => b.dataset.nav);
-    ok(nav.length === 5, 'в нижней навигации 5 разделов');
+    ok(nav.length === 4, 'в нижней навигации 4 раздела');
     ok(nav.includes('casehub'), 'есть отдельный раздел casehub');
+    ok(!nav.includes('ref'), 'отдельной кнопки «Рефералы» больше нет');
 
     d.querySelector('.nav button[data-nav="casehub"]').click();
-    await wait(150);
+    await wait(180);
     ok(d.querySelector('#casehub').classList.contains('active'), 'экран кейсов активирован');
-    eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 5, 'пять карточек режимов');
+    eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 20, '20 кейсов: 15 классических + 5 новых');
     ok(Boolean(d.querySelector('.casehub-hero')), 'есть экран содержимого кейса');
     ok(Boolean(d.querySelector('#chOpen')), 'есть кнопка открытия');
     const names = [...d.querySelectorAll('#caseHubArea .casehub-card .ch-name')].map(x => x.textContent.trim());
-    for (const n of ['STARTER DROP', 'CYBER RUSH', 'GOLDEN VAULT', 'GLITCH MODE', 'OMEGA CORE']) {
-      ok(names.includes(n), `режим ${n} отрисован`);
+    for (const n of ['Стартовый дроп', 'Флагманский люкс', 'STARTER DROP', 'CYBER RUSH', 'GOLDEN VAULT', 'GLITCH MODE', 'OMEGA CORE']) {
+      ok(names.includes(n), `кейс «${n}» отрисован`);
     }
-    eq(d.querySelectorAll('#caseHubArea .ch-online .online-dot').length, 5, 'у каждого кейса зелёный кружок слева от «онлайн»');
+    eq(d.querySelectorAll('#caseHubArea .ch-online .online-dot').length, 20, 'у каждого кейса зелёный кружок слева от «онлайн»');
+    eq(d.querySelectorAll('#caseHubArea .ch-cover').length, 20, 'у каждого кейса обложка-изображение');
     const dotStyle = w.getComputedStyle(d.querySelector('#caseHubArea .ch-online .online-dot'));
     ok(dotStyle.borderRadius === '50%', 'кружок «онлайн» круглый');
     ok(/rgb\(61,\s*220,\s*150\)/.test(dotStyle.backgroundColor), 'кружок «онлайн» зелёный');
+    ok(!/\bRTP\b/i.test(d.body.textContent), 'в интерфейсе нет упоминаний RTP');
+    eq(d.querySelectorAll('[data-chfilter]').length, 3, 'фильтры «Все / Классика / Новые режимы»');
 
-    // Переключение режима меняет hero.
+    // Переключение на новый режим меняет hero.
+    d.querySelector('[data-chfilter="mode"]').click();
+    await wait(100);
+    eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 5, 'фильтр «Новые режимы» оставляет 5 кейсов');
     const cards = [...d.querySelectorAll('[data-chm]')];
-    cards[4].click();
+    const omega = cards.find(x => x.dataset.chm === 'omega_core');
+    ok(Boolean(omega), 'карточка OMEGA CORE есть');
+    omega.click();
     await wait(80);
     ok(d.querySelector('.chh-name').textContent.includes('OMEGA CORE'), 'клик по карточке меняет детали режима');
     ok(d.querySelectorAll('.casehub-list .cli').length === 14, 'в содержимом 14 предметов');
+    const pcts = [...d.querySelectorAll('.casehub-list .pct')].map(x => parseFloat(x.textContent));
+    ok(pcts.length === 14 && pcts.every(p => p > 0 && p <= 100), 'шансы предметов в процентах 0–100, без ×100');
+
+    console.log('\n1b) Рефералы внутри профиля');
+    d.querySelector('.nav button[data-nav="profile"]').click();
+    await wait(150);
+    ok(Boolean(d.querySelector('#profileRef')), 'блок рефералов находится в профиле');
+    ok(Boolean(d.querySelector('#profileRef #refCode')), 'код приглашения доступен');
+    ok(Boolean(d.querySelector('#profileRef #refLink')), 'реферальная ссылка доступна');
+    ok(Boolean(d.querySelector('#profileRef #copy')), 'кнопка копирования кода доступна');
+    ok(Boolean(d.querySelector('#profileRef #refInvited')), 'статистика приглашённых доступна');
+    ok(/^MF[A-Z0-9]{6}$/.test(d.querySelector('#refCode').textContent.trim()), 'реферальный код реально сгенерирован');
+    ok(/startapp=/.test(d.querySelector('#refLink').textContent), 'реферальная ссылка содержит startapp-код');
+    ok(!d.querySelector('#ref'), 'отдельного экрана #ref больше нет');
 
     console.log('\n2) Upgrade Arena');
     d.querySelector('.nav button[data-nav="games"]').click();

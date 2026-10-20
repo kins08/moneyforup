@@ -13,10 +13,10 @@
  * scripts/inventory-catalog-parity-test.js.
  *
  * Модель выплаты в кейсах: предмет И ЕСТЬ выигрыш. Игрок платит стоимость
- * кейса, получает предмет и забирает его стоимость продажей. RTP кейса =
+ * кейса, получает предмет и забирает его стоимость продажей. Возврат игроку =
  * EV(предмета) / cost — от 0.74 до 0.88 по кейсам. Дополнительно токены за
  * раунд НЕ начисляются: иначе выплата шла бы дважды (предмет + токены)
- * и кейс печатал бы деньги (RTP ~1.7).
+ * и кейс печатал бы деньги (возврат ~1.7).
  */
 
 /** Все кейсы: id -> { id, name, cost, icon, desc, items[] } */
@@ -2244,12 +2244,12 @@ function rollItem(caseId, random01) {
 }
 
 /** Матожидание кейса — для аудита экономики */
-function caseRtp(caseId) {
+function caseEconomy(caseId) {
   const c = CASES[caseId];
   if (!c) return null;
   const total = c.items.reduce((s, it) => s + it.w, 0);
   const ev = c.items.reduce((s, it) => s + (it.w / total) * it.price, 0);
-  return { cost: c.cost, ev, rtp: ev / c.cost };
+  return { cost: c.cost, ev, returnRate: ev / c.cost };
 }
 
-module.exports = { CASES, getCase, getItem, findCaseByName, rollItem, caseRtp, normName };
+module.exports = { CASES, getCase, getItem, findCaseByName, rollItem, caseEconomy, normName };

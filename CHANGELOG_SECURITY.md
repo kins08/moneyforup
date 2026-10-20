@@ -16,10 +16,13 @@
 
 ### Новые механики
 
-- **Case Hub**: 5 режимов (`STARTER DROP`, `CYBER RUSH`, `GOLDEN VAULT`,
-  `GLITCH MODE`, `OMEGA CORE`) в `assets/case-modes.js`; RTP 0.838–0.855.
-  Открытие: `POST /api/cases/open`, цена/дроп/шансы — серверные, запись в
-  `case_opens` и `game_rounds`, предмет — в `user_inventory`.
+- **Case Hub**: все 20 кейсов в одном разделе — 15 классических из `items.js`
+  и 5 режимов (`STARTER DROP`, `CYBER RUSH`, `GOLDEN VAULT`, `GLITCH MODE`,
+  `OMEGA CORE`) из `assets/case-modes.js`; у каждого кейса обложка
+  `assets/cases/<id>.jpg`. Сохранены рулетка, инвентарь, продажа, апгрейд,
+  бесплатный кейс и кейс за 5 друзей. Открытие: `POST /api/cases/open`,
+  цена/дроп/шансы — серверные, запись в `case_opens` и `game_rounds`,
+  предмет — в `user_inventory`.
 - **Upgrade Arena**: `POST /api/upgrade/run` (одиночный/мульти),
   `POST /api/upgrade/ladder/{start,step,cashout,state}` (3/5/10 шагов),
   `POST /api/upgrade/catalog`, `POST /api/upgrade/history`.
@@ -27,6 +30,13 @@
   учёта; режимы SAFE/BALANCED/EXTREME различаются edge/потолком/cap.
 - Серия на клиенте — последовательность серверных раундов, каждый со своим
   `requestId`; при ошибке серия останавливается и баланс сверяется.
+- У каждого кейса — обложка `assets/cases/<id>.jpg` (генератор
+  `tools/generate-case-covers.py`), без эмодзи вместо иконки. В карточках
+  сохранён зелёный индикатор «онлайн» слева от текста.
+- Рефералы перенесены из отдельного экрана в профиль (`#profileRef`):
+  навигация стала 4-раздельной, код/ссылка/статистика/15 % сохранены.
+- Упоминания RTP убраны из интерфейса, README, CHANGELOG и конфига новых
+  кейсов.
 
 ### Исправленные дефекты
 
@@ -43,7 +53,7 @@
 
 ### Проверки
 
-- `node test-upgrade-math.js` — 236 проверок математики/RTP.
+- `node test-upgrade-math.js` — 236 проверок математики и экономики.
 - `node test-new-features-e2e.js` — 90+ проверок на живом `bot.js`.
 - `node test-frontend-smoke.js` — 35 проверок jsdom.
 - `npm test`, `npm run test:new`, `npm run test:ui`,

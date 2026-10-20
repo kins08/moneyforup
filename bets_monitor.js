@@ -492,7 +492,7 @@ function formatTelegramReport(hours = 12) {
     for (const [gName, gData] of gamesEntries) {
       const gNetRub = (gData.netProject / TOKENS_PER_RUB).toFixed(1);
       const gIcon = gData.netProject >= 0 ? '🟢' : '🔴';
-      gameLines += `• <b>${escHtml(gName)}</b>: ${gData.count} ст. (RTP ${gData.rtpPct}%) | Итог: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
+      gameLines += `• <b>${escHtml(gName)}</b>: ${gData.count} ст. (выплаты ${gData.rtpPct}% от оборота) | Итог: ${gIcon} <b>${gData.netProject >= 0 ? '+' : ''}${gNetRub} ₽</b>\n`;
     }
   } else {
     gameLines = '\n🎮 <i>За выбранный период ставок ещё не было.</i>\n';
@@ -506,7 +506,7 @@ function formatTelegramReport(hours = 12) {
     `├ Всего сыграно: <b>${periodStats.betsCount}</b> ставок (игроков: ${periodStats.activePlayers})\n` +
     `├ Побед игроков: <b>${periodStats.wonCount}</b> шт. | Сливов: <b>${periodStats.lostCount}</b> шт.\n` +
     `├ Оборот ставок: <b>${periodStats.wageredRub} ₽</b> (${periodStats.wageredTk} ⬦)\n` +
-    `├ Выплачено выигрышей: <b>${periodStats.payoutRub} ₽</b> (Факт. RTP: <b>${periodStats.rtpOverallPct}%</b>)\n` +
+    `├ Выплачено выигрышей: <b>${periodStats.payoutRub} ₽</b> (доля выплат: <b>${periodStats.rtpOverallPct}%</b> от оборота)\n` +
     `└ Чистый доход казино по играм: <b>${signRub(periodStats.projectNetRub)}</b> (${sign(periodStats.projectNetTk)} ⬦)\n` +
     gameLines +
     `\n🏦 <b>Общая касса проекта за всё время:</b>\n` +
@@ -518,7 +518,7 @@ function formatTelegramReport(hours = 12) {
 }
 
 /**
- * Детальный отчёт по каждой игре (обороты, RTP, профит казино, макс выигрыши)
+ * Детальный отчёт по каждой игре (обороты, выплаты, профит казино, макс выигрыши)
  */
 function formatGamesReport(hours = 0) {
   const st = getAnalytics(hours);
@@ -539,7 +539,7 @@ function formatGamesReport(hours = 0) {
     out +=
       `\n<b>${icon} ${escHtml(gName)}</b>\n` +
       `├ Ставок: <b>${g.count}</b> (Побед: ${g.wonCount} / Сливов: ${g.lostCount} · WinRate: <b>${g.winRatePct}%</b>)\n` +
-      `├ Оборот: <b>${wagRub} ₽</b> | Выплаты: <b>${payRub} ₽</b> (RTP: <b>${g.rtpPct}%</b>)\n` +
+      `├ Оборот: <b>${wagRub} ₽</b> | Выплаты: <b>${payRub} ₽</b> (доля выплат: <b>${g.rtpPct}%</b>)\n` +
       `├ Макс. занос игрока: <b>${maxRub} ₽</b> (${g.maxWinTk} ⬦ — ${escHtml(g.maxWinUser || '—')})\n` +
       `└ Доход проекта: <b>${g.netProject >= 0 ? '+' : ''}${netRub} ₽</b> (${g.netProject >= 0 ? '+' : ''}${g.netProject} ⬦)\n`;
   }

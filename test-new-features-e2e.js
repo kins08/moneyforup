@@ -41,6 +41,8 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
     const cat = await post('/api/cases/catalog', {});
     eq(cat.status, 200, 'каталог кейсов доступен');
     eq(cat.body.modes.length, 5, 'ровно 5 режимов');
+    eq(cat.body.classic.length, 15, '15 классических кейсов перенесены в каталог');
+    eq(cat.body.cases.length, 20, 'в едином каталоге 20 кейсов');
     const modeIds = cat.body.modes.map(m => m.id);
     for (const id of ['starter_drop', 'cyber_rush', 'golden_vault', 'glitch_mode', 'omega_core']) {
       ok(modeIds.includes(id), `режим ${id} присутствует`);
@@ -58,8 +60,16 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
       eq(r.body.tokens, expected, `${m.name}: списана ровно цена ${m.price} ⬦`);
     }
     eq(bal(), expected, 'баланс после пяти кейсов сходится');
+
+    // Классический кейс открывается через тот же единый эндпоинт.
+    const cl = cat.body.classic.find(c => c.id === 'case_500');
+    const classicOpen = await post('/api/cases/open', { caseId: 'case_500', requestId: 'classic-case-000001' });
+    eq(classicOpen.status, 200, 'классический кейс открыт через Case Hub');
+    eq(classicOpen.body.kind, 'classic', 'ответ помечен как classic');
+    expected -= cl.price;
+    eq(classicOpen.body.tokens, expected, 'списана цена классического кейса');
     const inv = await post('/api/inventory', {});
-    eq(inv.body.count, 5, 'в инвентаре ровно 5 предметов');
+    eq(inv.body.count, 6, 'в инвентаре 5 новых + 1 классический предмет');
     eq(OPENING + ledger(), bal(), 'ledger-инвариант после кейсов');
 
     console.log('\n2) Идемпотентность открытия кейса');

@@ -185,7 +185,7 @@ async function run() {
   assert.strictEqual(res.status, 400);
   console.log('✓ 8. Продажа всего инвентаря защищает скин от списания в деньги');
 
-  // 9. Тестируем кастомные множители в Апгрейдере (до x100, ограничение шанса до 75%, RTP 94%)
+  // 9. Тестируем кастомные множители в Апгрейдере (до x100, ограничение шанса до 75%, возврат игроку 94%)
   const upgRound = await request('/api/play', {
     method: 'POST',
     initData: mainUserInitData,

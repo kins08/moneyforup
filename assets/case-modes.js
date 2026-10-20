@@ -14,9 +14,9 @@
    *
    * ЦЕНА РЕЖИМА (`price`) — единственное место, где она задана. Сервер и
    * браузер читают этот же файл, поэтому менять цену нужно только здесь.
-   * После изменения цены обязательно пересчитайте RTP: он равен
-   * EV(предметов) / price и обязан оставаться в диапазоне 0.82–0.86
-   * (`node test-upgrade-math.js` падает, если RTP вышел из диапазона).
+   * После изменения цены обязательно пересчитайте возврат игроку:
+   * EV(предметов) / price должен оставаться в диапазоне 0.82–0.86
+   * (`node test-upgrade-math.js` падает, если возврат вышел из диапазона).
    */
 
   const VERSION = 1;
@@ -222,14 +222,14 @@
     return { ...mode.items[last], index: last, modeId: mode.id, modeName: mode.name, cost: mode.price };
   }
 
-  /** EV и RTP режима (веса нормируются на их сумму) или null. */
-  function caseRtp(modeId) {
+  /** EV и доля возврата игроку (веса нормируются на их сумму) или null. */
+  function caseEconomy(modeId) {
     const mode = getMode(modeId);
     if (!mode) return null;
     const total = mode.items.reduce((sum, item) => sum + item.w, 0);
     const ev = mode.items.reduce((sum, item) => sum + (item.w / total) * item.price, 0);
-    return { cost: mode.price, ev, rtp: ev / mode.price };
+    return { cost: mode.price, ev, returnRate: ev / mode.price };
   }
 
-  return { VERSION, MODES, getMode, rollItem, caseRtp };
+  return { VERSION, MODES, getMode, rollItem, caseEconomy };
 });
