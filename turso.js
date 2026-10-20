@@ -233,6 +233,15 @@ async function pullFromTurso(dbSync) {
         for (const r of coRes.rows) insCo.run(r.request_id, r.user_id, r.mode_id, r.price, r.item_code,
           r.item_name, r.item_icon, r.item_price, r.item_tier, r.inventory_id, r.created_at);
       }
+      try {
+        const cwRes = await client.execute('SELECT * FROM case_warmups');
+        if (cwRes.rows.length > 0) {
+          const insCw = dbSync.prepare(`INSERT INTO case_warmups
+            (user_id, case_id, points, last_roll_at) VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, case_id) DO UPDATE SET points = excluded.points, last_roll_at = excluded.last_roll_at`);
+          for (const r of cwRes.rows) insCw.run(r.user_id, r.case_id, r.points, r.last_roll_at);
+        }
+      } catch (e) { /* таблица появляется миграцией schema.js */ }
       const urRes = await client.execute('SELECT * FROM upgrade_runs');
       if (urRes.rows.length > 0) {
         const insUr = dbSync.prepare(`INSERT OR IGNORE INTO upgrade_runs

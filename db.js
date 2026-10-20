@@ -517,8 +517,59 @@ function __mapSession(row) {
  * Открытие кейса нового режима. price и item приходят ТОЛЬКО из серверного
  * каталога (case-modes.js) — не из тела запроса.
  */
+/** Все прогревы игрока: { caseId: points }. */
+function getWarmups(userId) {
+  try {
+    const rows = db.prepare('SELECT case_id, points FROM case_warmups WHERE user_id = ?').all(userId);
+    const out = {};
+    for (const r of rows) out[r.case_id] = Number(r.points || 0);
+    return out;
+  } catch (e) {
+    console.error('[DB] getWarmups:', e.message);
+    return {};
+  }
+}
+
+/**
+ * Бесплатный тест-прокрут. Атомарно выдаёт один балл прогрева не чаще
+ * cooldownMs; балл потом сам сгорает при платном открытии. Предмет за
+ * тест-прокрут в инвентарь НЕ попадает.
+ */
+function claimWarmup(userId, caseId, cooldownMs = 60000, maxPoints = 1) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const now = Date.now();
+    const row = __q('SELECT * FROM case_warmups WHERE user_id = ? AND case_id = ?').get(userId, String(caseId));
+    if (row && Number(row.points) >= maxPoints) {
+      db.exec('ROLLBACK');
+      return { ok: false, error: 'Прогрев уже готов — откройте кейс платно', points: Number(row.points) };
+    }
+    if (row && now - Number(row.last_roll_at) < cooldownMs) {
+      db.exec('ROLLBACK');
+      return {
+        ok: false, error: 'Тест-прокрут перезаряжается',
+        retryAfter: Math.ceil((cooldownMs - (now - Number(row.last_roll_at))) / 1000)
+      };
+    }
+    const points = Math.min(maxPoints, Number(row ? row.points : 0) + 1);
+    __q(`INSERT INTO case_warmups (user_id, case_id, points, last_roll_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id, case_id) DO UPDATE SET points = excluded.points, last_roll_at = excluded.last_roll_at`)
+      .run(userId, String(caseId), points, now);
+    db.exec('COMMIT');
+    turso.queueQuery(`INSERT INTO case_warmups (user_id, case_id, points, last_roll_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(user_id, case_id) DO UPDATE SET points = excluded.points, last_roll_at = excluded.last_roll_at`,
+      [userId, String(caseId), points, now]);
+    return { ok: true, points };
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw e;
+  }
+}
+
 function atomicOpenCase(args) {
-  const { requestId, userId, modeId, modeName, price, item, roundId } = args;
+  const { requestId, userId, modeId, modeName, price, item, bonusItem, roundId } = args;
   if (!Number.isFinite(Number(price)) || Number(price) <= 0) return { ok: false, error: 'Некорректная цена кейса' };
   if (!item || !item.code || !Number.isFinite(Number(item.price)) || Number(item.price) < 0) {
     return { ok: false, error: 'Некорректный предмет кейса' };
@@ -538,39 +589,58 @@ function atomicOpenCase(args) {
       return { ok: false, error: 'Недостаточно токенов' };
     }
     const at = Date.now();
+    // «Тест-прокрут» заранее даёт один прогревающий балл. Если он есть,
+    // сервер берёт лучший из двух дропов и атомарно списывает балл.
+    // Демо-предмет из тест-прокрута сюда не попадает и в инвентарь не идёт.
+    let chosen = item;
+    let warmupUsed = false;
+    if (bonusItem && bonusItem.code && Number.isFinite(Number(bonusItem.price))) {
+      const w = __q('SELECT points FROM case_warmups WHERE user_id = ? AND case_id = ?').get(userId, String(modeId));
+      if (w && Number(w.points) > 0) {
+        __q('UPDATE case_warmups SET points = points - 1 WHERE user_id = ? AND case_id = ? AND points > 0')
+          .run(userId, String(modeId));
+        warmupUsed = true;
+        if (Number(bonusItem.price) > Number(item.price)) chosen = bonusItem;
+      }
+    }
     const balBefore = Number(row.tokens);
     const balAfter = balBefore - Number(price);
     __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
-    const led = __ledger(userId, -price, 'case_open', `Кейс «${modeName}» · ${item.name}`, roundId, balBefore, balAfter, at);
-    __round(roundId, userId, 'Кейс: ' + modeName, price, 1, 0, 'settled', at, item.code, item.price);
+    const led = __ledger(userId, -price, 'case_open', `Кейс «${modeName}» · ${chosen.name}`, roundId, balBefore, balAfter, at);
+    __round(roundId, userId, 'Кейс: ' + modeName, price, 1, 0, 'settled', at, chosen.code, chosen.price);
     const inv = stmts.insertInventoryItem.run(
-      userId, String(item.code), String(item.name), String(item.icon || ''),
-      Math.floor(item.price), String(item.tier || ''), String(modeId), String(modeName),
+      userId, String(chosen.code), String(chosen.name), String(chosen.icon || ''),
+      Math.floor(chosen.price), String(chosen.tier || ''), String(modeId), String(modeName),
       String(roundId), at, 0
     );
     const inventoryId = Number(inv.lastInsertRowid);
     __q(`INSERT INTO case_opens
         (request_id, user_id, mode_id, price, item_code, item_name, item_icon, item_price, item_tier, inventory_id, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(String(requestId), userId, String(modeId), Math.floor(price), String(item.code),
-        String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''),
+      .run(String(requestId), userId, String(modeId), Math.floor(price), String(chosen.code),
+        String(chosen.name), String(chosen.icon || ''), Math.floor(chosen.price), String(chosen.tier || ''),
         inventoryId, at);
     db.exec('COMMIT');
 
     __queueBalance(userId, balAfter, led.lastInsertRowid, -price, 'case_open',
-      `Кейс «${modeName}» · ${item.name}`, roundId, balBefore, balAfter, at);
-    turso.queueBatch([
+      `Кейс «${modeName}» · ${chosen.name}`, roundId, balBefore, balAfter, at);
+    const queue = [
       { sql: 'INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        args: [String(roundId), userId, 'Кейс: ' + modeName, Math.floor(price), 1, 0, 'settled', at, at, String(item.code), Math.floor(item.price)] },
+        args: [String(roundId), userId, 'Кейс: ' + modeName, Math.floor(price), 1, 0, 'settled', at, at, String(chosen.code), Math.floor(chosen.price)] },
       { sql: 'INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        args: [inventoryId, userId, String(item.code), String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''), String(modeId), String(modeName), String(roundId), at, null, null, 0] },
+        args: [inventoryId, userId, String(chosen.code), String(chosen.name), String(chosen.icon || ''), Math.floor(chosen.price), String(chosen.tier || ''), String(modeId), String(modeName), String(roundId), at, null, null, 0] },
       { sql: `INSERT OR IGNORE INTO case_opens (request_id, user_id, mode_id, price, item_code, item_name, item_icon, item_price, item_tier, inventory_id, created_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [String(requestId), userId, String(modeId), Math.floor(price), String(item.code), String(item.name), String(item.icon || ''), Math.floor(item.price), String(item.tier || ''), inventoryId, at] }
-    ]);
+        args: [String(requestId), userId, String(modeId), Math.floor(price), String(chosen.code), String(chosen.name), String(chosen.icon || ''), Math.floor(chosen.price), String(chosen.tier || ''), inventoryId, at] }
+    ];
+    if (warmupUsed) {
+      queue.push({ sql: 'UPDATE case_warmups SET points = points - 1 WHERE user_id = ? AND case_id = ? AND points > 0',
+        args: [userId, String(modeId)] });
+    }
+    turso.queueBatch(queue);
     return {
-      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId,
-      open: { requestId, userId, modeId, price, item: { ...item, id: inventoryId }, inventoryId, createdAt: at }
+      ok: true, duplicate: false, balanceAfter: balAfter, inventoryId, warmupUsed,
+      open: { requestId, userId, modeId, price, item: { ...chosen, id: inventoryId }, inventoryId, createdAt: at, warmupUsed }
     };
   } catch (e) {
     try { db.exec('ROLLBACK'); } catch (_) {}
@@ -1242,6 +1312,8 @@ module.exports = {
   },
 
   /* ── Новые кейсы / апгрейдер ─────────────────────────────────────────── */
+  getWarmups,
+  claimWarmup,
   atomicOpenCase,
   atomicUpgradeRun,
   atomicLadderStart,

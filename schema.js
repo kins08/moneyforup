@@ -176,6 +176,16 @@ CREATE TABLE IF NOT EXISTS case_opens (
 );
 CREATE INDEX IF NOT EXISTS idx_case_opens_user ON case_opens(user_id, created_at DESC);
 
+-- Бесплатный тест-прокрут: предмет не выдаётся, но даёт один реальный
+-- «прогрев» следующего платного открытия этого кейса (лучший из двух дропов).
+CREATE TABLE IF NOT EXISTS case_warmups (
+  user_id INTEGER NOT NULL,
+  case_id TEXT NOT NULL,
+  points INTEGER NOT NULL DEFAULT 0,
+  last_roll_at INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, case_id)
+);
+
 -- ── Апгрейдер: журнал одиночных/мульти-апгрейдов ─────────────────────────
 CREATE TABLE IF NOT EXISTS upgrade_runs (
   request_id TEXT PRIMARY KEY,

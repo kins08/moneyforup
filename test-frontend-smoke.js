@@ -66,15 +66,28 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 20, '20 кейсов: 15 классических + 5 новых');
     ok(Boolean(d.querySelector('.casehub-hero')), 'есть экран содержимого кейса');
     ok(Boolean(d.querySelector('#chOpen')), 'есть кнопка открытия');
+    ok(Boolean(d.querySelector('.casehub-warmup')), 'есть блок тест-прокрута');
+    ok(Boolean(d.querySelector('#chWarmup')), 'есть кнопка тест-прокрута');
+    ok(/ТЕСТ-ПРОКРУТ/i.test(d.querySelector('#chWarmup').textContent), 'кнопка тест-прокрута подписана');
     const names = [...d.querySelectorAll('#caseHubArea .casehub-card .ch-name')].map(x => x.textContent.trim());
     for (const n of ['Стартовый дроп', 'Флагманский люкс', 'STARTER DROP', 'CYBER RUSH', 'GOLDEN VAULT', 'GLITCH MODE', 'OMEGA CORE']) {
       ok(names.includes(n), `кейс «${n}» отрисован`);
     }
-    eq(d.querySelectorAll('#caseHubArea .ch-online .online-dot').length, 20, 'у каждого кейса зелёный кружок слева от «онлайн»');
+    eq(d.querySelectorAll('#caseHubArea .ch-online').length, 0, 'у кейсов нет метки «онлайн»');
+    ok(!/онлайн/i.test(d.querySelector('#caseHubArea').textContent), 'в разделе кейсов нет слова «онлайн»');
     eq(d.querySelectorAll('#caseHubArea .ch-cover').length, 20, 'у каждого кейса обложка-изображение');
-    const dotStyle = w.getComputedStyle(d.querySelector('#caseHubArea .ch-online .online-dot'));
-    ok(dotStyle.borderRadius === '50%', 'кружок «онлайн» круглый');
-    ok(/rgb\(61,\s*220,\s*150\)/.test(dotStyle.backgroundColor), 'кружок «онлайн» зелёный');
+    // В играх зелёный кружок обязан быть слева от счётчика «онлайн».
+    const gameDot = d.querySelector('[data-game="racket"] .game-online-badge .online-dot');
+    ok(Boolean(gameDot), 'у игрового бейджа «онлайн» есть зелёный кружок');
+    const gameDotStyle = w.getComputedStyle(gameDot);
+    ok(gameDotStyle.display !== 'none', 'кружок онлайн не скрыт');
+    ok(gameDotStyle.borderRadius === '50%', 'кружок онлайн круглый');
+    ok(/rgb\(61,\s*220,\s*150\)/.test(gameDotStyle.backgroundColor), 'кружок онлайн зелёный');
+    // Внешний rubup-catalog.css раньше скрывал все span в .game, включая точку.
+    const rubupCss = fs.readFileSync(path.join(ROOT, 'assets', 'rubup-catalog.css'), 'utf8');
+    ok(!/\.game span:not\(\.game-online-badge\):not\(\.game-online-val\)(?!:not\(\.online-dot\))/.test(rubupCss),
+      'rubup-catalog.css не скрывает .online-dot');
+    ok(/\.game span[^{]*:not\(\.online-dot\)/.test(rubupCss), 'в CSS есть явное исключение для .online-dot');
     ok(!/\bRTP\b/i.test(d.body.textContent), 'в интерфейсе нет упоминаний RTP');
     eq(d.querySelectorAll('[data-chfilter]').length, 3, 'фильтры «Все / Классика / Новые режимы»');
 

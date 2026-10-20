@@ -2537,7 +2537,52 @@ const server = http.createServer(async (req, res) => {
         cases: [...classic, ...modes],
         classic,
         modes,
+        warmups: db.getWarmups(u.id),
         history: db.getCaseHistory(u.id, 12),
+        tokens: u.tokens
+      });
+    }
+
+    /* Бесплатный тест-прокрут: показывает дроп, но НЕ выдаёт предмет и НЕ
+       списывает токены. Даёт один реальный балл прогрева следующего платного
+       открытия этого кейса (лучший из двух дропов). */
+    if (url.pathname === '/api/cases/warmup' && req.method === 'POST') {
+      if (!checkRateLimit(`case-warmup:${u.id}`, 20, 60000)) {
+        return send(429, { error: 'Слишком часто. Подождите минуту.' });
+      }
+      const caseId = String(body.caseId || body.modeId || '').trim();
+      const mode = caseModes.getMode(caseId);
+      const classic = mode ? null : items.getCase(caseId);
+      if (!mode && !classic) return send(400, { error: 'Кейс не найден' });
+      const demo = mode
+        ? caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000)
+        : items.rollItem(classic.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
+      if (!demo) return send(500, { error: 'Кейс временно недоступен' });
+      let claimed;
+      try {
+        claimed = db.claimWarmup(u.id, caseId, 60000, 1);
+      } catch (e) {
+        console.error('[CaseHub] warmup failed:', e.message);
+        return send(500, { error: 'Не удалось выполнить тест-прокрут' });
+      }
+      if (!claimed.ok) {
+        return send(429, {
+          error: claimed.error + (claimed.retryAfter ? `, через ${claimed.retryAfter} с` : ''),
+          retryAfter: claimed.retryAfter || 0,
+          warmupPoints: claimed.points || 0
+        });
+      }
+      return send(200, {
+        ok: true,
+        demo: true,
+        caseId,
+        caseName: mode ? mode.name : classic.name,
+        item: {
+          code: demo.code, name: demo.name, icon: demo.icon,
+          price: demo.price, tier: demo.tier
+        },
+        warmupPoints: claimed.points,
+        warmupCooldown: 180,
         tokens: u.tokens
       });
     }
@@ -2567,12 +2612,17 @@ const server = http.createServer(async (req, res) => {
         ? caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000)
         : items.rollItem(classic.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
       if (!drop) return send(500, { error: 'Кейс временно недоступен' });
+      // Второй бросок нужен только если у игрока есть прогрев. Атомарно
+      // решает БД: если балла нет, второй дроп игнорируется.
+      const bonusDrop = mode
+        ? caseModes.rollItem(mode.id, crypto.randomInt(0, 1_000_000) / 1_000_000)
+        : items.rollItem(classic.id, crypto.randomInt(0, 1_000_000) / 1_000_000);
 
       let res;
       try {
         res = db.atomicOpenCase({
           requestId, userId: u.id, modeId: caseId, modeName: caseName,
-          price, item: drop, roundId
+          price, item: drop, bonusItem: bonusDrop || null, roundId
         });
       } catch (e) {
         console.error('[CaseHub] open failed:', e.message);
@@ -2595,7 +2645,7 @@ const server = http.createServer(async (req, res) => {
       const open = res.open || {};
       // При повторе возвращаем СОХРАНЁННЫЙ предмет, а не результат нового
       // броска: иначе клиент увидит один id и другое имя.
-      const out = (res.duplicate && open.item) ? open.item : drop;
+      const out = open.item || drop;
       return send(200, {
         ok: true,
         duplicate: Boolean(res.duplicate),
@@ -2605,6 +2655,7 @@ const server = http.createServer(async (req, res) => {
         modeId: caseId,
         modeName: caseName,
         price: res.duplicate && open.price ? open.price : price,
+        warmupUsed: Boolean(res.warmupUsed || open.warmupUsed),
         drop: {
           id: open.inventoryId || res.inventoryId || null,
           code: out.code, name: out.name, icon: out.icon,

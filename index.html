@@ -47,7 +47,7 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .game{min-height:168px;padding:15px;text-align:left;border-radius:20px;background:var(--panel);border:1px solid var(--line);color:#fff;cursor:pointer;position:relative;font-family:inherit;transition:border-color .2s,transform .2s}
 .game:hover{border-color:rgba(239,68,68,.4);transform:translateY(-2px)}
-.game .gi{font-size:31px;height:34px;margin-bottom:22px;display:flex;align-items:center}.game .gi svg{display:block}.game strong{display:block;font-size:16px;color:#fff}.game span{font-size:11px;color:var(--muted);display:block;margin-top:4px;line-height:1.4}
+.game .gi{font-size:31px;height:34px;margin-bottom:22px;display:flex;align-items:center}.game .gi svg{display:block}.game strong{display:block;font-size:16px;color:#fff}.game > span:not(.game-online-badge){font-size:11px;color:var(--muted);display:block;margin-top:4px;line-height:1.4}.game .game-online-badge{display:flex;margin-top:0;color:#f1f5f9}.game .game-online-badge .online-dot{display:inline-block;margin:0}.game .game-online-badge .game-online-val{display:inline;margin:0;font-size:10px;color:#f1f5f9}
 .game .arrow{position:absolute;right:13px;bottom:13px;width:28px;height:28px;border-radius:10px;background:#2d1e23;display:grid;place-items:center;font-style:normal;color:#fca5a5}
 .wide{grid-column:1/-1}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:13px}.stat b{font-size:18px;display:block;margin-top:5px;color:#fff}
@@ -241,8 +241,6 @@ body{margin:0;background:#0d1017;color:var(--text);font-family:Inter,system-ui,s
 /* Зелёный кружок «онлайн» в шапке самого режима (не только в карточке лобби). */
 .mode-online{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(15,23,42,.88);border:1px solid rgba(61,220,150,.38);border-radius:11px;padding:4px 10px;font-size:11px;font-weight:750;color:#c7f9e4;white-space:nowrap}
 .mode-online .online-dot{width:8px;height:8px}
-.ch-online{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#86efac;margin-top:7px}
-.ch-online .online-dot{width:7px;height:7px;min-width:7px;min-height:7px}
 .mode-online.off{color:#94a3b8;border-color:rgba(148,163,184,.32)}
 .mode-online.off .online-dot{background:#94a3b8;box-shadow:none;animation:none}
 
@@ -793,7 +791,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-case .ch-name{font-size:12.5px;line-height:1.2}
 .casehub-case .ch-tag{font-size:9.5px;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .casehub-case .ch-price{margin-top:7px;font-size:11.5px}
-.casehub-case .ch-online{margin-top:auto;padding-top:7px}
 .casehub-hero.has-cover{padding:0!important;overflow:hidden}
 .casehub-hero .chh-cover{position:relative;width:100%;aspect-ratio:2.7/1;overflow:hidden;background:#0a090d}
 .casehub-hero .chh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 34%;display:block;z-index:1}
@@ -814,6 +811,17 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-promo button:disabled{opacity:.5;cursor:default}
 .casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
+.casehub-warmup{border:1px solid rgba(61,220,150,.32);background:linear-gradient(135deg,rgba(61,220,150,.10),rgba(255,255,255,.02));border-radius:14px;padding:10px 11px;margin-top:10px}
+.casehub-warmup.ready{border-color:rgba(255,207,107,.5);background:linear-gradient(135deg,rgba(255,207,107,.12),rgba(245,158,11,.03))}
+.casehub-warmup .cw-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.casehub-warmup .cw-top b{font-size:11.5px;color:#86efac}
+.casehub-warmup.ready .cw-top b{color:#ffcf6b}
+.casehub-warmup .cw-top span{font-size:9px;font-weight:900;letter-spacing:.05em;color:#86efac}
+.casehub-warmup.ready .cw-top span{color:#ffcf6b}
+.casehub-warmup .cw-desc{font-size:9.8px;color:#9aa3b8;line-height:1.4;margin-top:3px}
+.casehub-warmup button{width:100%;margin-top:8px;border:1px solid rgba(61,220,150,.35);background:rgba(61,220,150,.12);color:#86efac;font-family:inherit;font-size:10.5px;font-weight:900;padding:8px;border-radius:9px;cursor:pointer}
+.casehub-warmup.ready button{border-color:rgba(255,207,107,.4);background:rgba(255,207,107,.10);color:#ffcf6b}
+.casehub-warmup button:disabled{opacity:.55;cursor:default}
 .casehub-empty{grid-column:1/-1;text-align:center;padding:22px 10px;color:#7f8aa3;font-size:11.5px}
 
 /* ═══════════ UPGRADE ARENA ═══════════ */
@@ -1036,7 +1044,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <div style="flex:1;min-width:0">
     <div class="ch-name" style="font-size:14px">КЕЙСЫ · 20 ШТУК</div>
     <div class="ch-tag" style="font-size:10.5px">15 классических + 5 новых режимов · от 250 до 35 000 ⬦</div>
-    <div class="ch-online" style="margin-top:5px"><span class="online-dot"></span>онлайн</div>
   </div>
   <div style="font-size:18px;color:#ffcf6b">→</div>
 </button>
@@ -1046,7 +1053,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Умножай выигранные предметы или рискуй токенами до ×20</span><i class="arrow">→</i></button>
-<button class="game" data-nav="casehub"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="cases">10 онлайн</span></span><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>20 кейсов: 15 классических + 5 новых режимов, обложки и полная механика</span><i class="arrow">→</i></button>
+<button class="game" data-nav="casehub"><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>20 кейсов: 15 классических + 5 новых режимов, обложки и полная механика</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -1357,7 +1364,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 <!-- ======== CASE HUB: пять новых режимов ======== -->
 <section class="screen" id="casehub">
-<div class="gameTop"><button class="back" id="caseHubBack">‹</button><div><div class="eyebrow" style="color:#ffcf6b">ОТДЕЛЬНЫЙ РАЗДЕЛ</div><div class="gameTitle">Кейсы</div></div><span class="mode-online" data-mode-online="cases"><span class="online-dot"></span><span class="mode-online-val">онлайн</span></span></div>
+<div class="gameTop"><button class="back" id="caseHubBack">‹</button><div><div class="eyebrow" style="color:#ffcf6b">ОТДЕЛЬНЫЙ РАЗДЕЛ</div><div class="gameTitle">Кейсы</div></div></div>
 <div id="caseHubArea"></div>
 </section>
 
@@ -9850,6 +9857,8 @@ function gameCaseHubUnified(sel){
   let catalogError = '';
   let fiveRef = null;
   let freeBusy = false;
+  let warmupBusy = false;
+  let warmups = {};
 
   function clearTimers(){
     timeouts.forEach(t=>clearTimeout(t));
@@ -9888,6 +9897,7 @@ function gameCaseHubUnified(sel){
     }
     const hist = history.slice(0,10);
     const freeCount = Math.max(0, Number(S.freeCases || 0));
+    const wp = Math.max(0, Number(warmups[m.id] || 0));
     const fr = fiveRef || {
       claimed: Boolean(S.freeCase5RefClaimed),
       qualified: Number(S.refQualified || 0),
@@ -9927,7 +9937,6 @@ function gameCaseHubUnified(sel){
             <div class="ch-name">${esc(c.name)}</div>
             <div class="ch-tag">${esc(c.tagline||'')}</div>
             <div class="ch-price">${fmt(c.price)} ⬦<small>${c.items.length} предметов</small></div>
-            <div class="ch-online"><span class="online-dot"></span>онлайн</div>
           </div>
         </button>`).join('') : '<div class="casehub-empty">В этом фильтре пока нет кейсов.</div>'}
     </div>
@@ -9952,6 +9961,13 @@ function gameCaseHubUnified(sel){
         <div class="casehub-roulette">
           <div class="casehub-pointer"></div>
           <div class="casehub-strip" id="chStrip">${m.items.slice(0,12).map(itemCard).join('')}</div>
+        </div>
+                <div class="casehub-warmup ${wp?'ready':''}">
+          <div class="cw-top"><b>🧪 Тест-прокрут</b><span>${wp?'ПРОГРЕВ ГОТОВ':'БЕСПЛАТНО'}</span></div>
+          <div class="cw-desc">${wp
+            ? 'Следующее платное открытие возьмёт лучший из двух дропов. Предмет за тест не выдаётся.'
+            : 'Демо-дроп без списания: предмет не выдаётся, но прогревает следующий платный кейс (лучший из двух дропов).'}</div>
+          <button id="chWarmup" ${(busy||warmupBusy||wp)?'disabled':''}>${warmupBusy?'ПРОКРУТ…':(wp?'⚡ ПРОГРЕВ ГОТОВ':'ЗАПУСТИТЬ ТЕСТ-ПРОКРУТ')}</button>
         </div>
         <div class="casehub-actions">
           <button class="control" id="chOpen" ${busy?'disabled':''}>${busy?'ОТКРЫВАЕМ…':'ОТКРЫТЬ КЕЙС · '+fmt(m.price)+' ⬦'}</button>
@@ -9999,6 +10015,7 @@ function gameCaseHubUnified(sel){
     if(repeatBtn) repeatBtn.onclick=()=>openCase();
     const freeBtn=q('#chFreeOpen',a); if(freeBtn) freeBtn.onclick=openFreeCase;
     const refBtn=q('#ch5RefOpen',a); if(refBtn) refBtn.onclick=open5RefCase;
+    const warmBtn=q('#chWarmup',a); if(warmBtn) warmBtn.onclick=openWarmup;
     const upBtn=q('#chUpgrade',a);
     if(upBtn) upBtn.onclick=()=>{
       if(!lastDrop||!lastDrop.id)return;
@@ -10021,6 +10038,31 @@ function gameCaseHubUnified(sel){
     statusText=text;
     const el=q('#chRes',a);
     if(el){ el.className='result'+(cls?' '+cls:''); el.innerHTML=text; }
+  }
+
+  async function openWarmup(){
+    if(warmupBusy||busy)return;
+    const m=current();
+    if(!m || Number(warmups[m.id]||0)>=1)return;
+    warmupBusy=true; clearTimers(); render();
+    setStatus('Тест-прокрут: предмет не выдаётся, прогреваем следующий платный кейс…','');
+    let res=null, err=null;
+    try{
+      if(IS_TG&&API_BASE){
+        res=await tgCall('/api/cases/warmup',{caseId:m.id});
+      }else{
+        const demo=localRoll(m);
+        res={ok:true,demo:true,item:demo,warmupPoints:1};
+      }
+    }catch(e){err=e;}
+    warmupBusy=false;
+    if(!res||!res.ok){
+      setStatus((err&&err.message)||(res&&res.error)||'Не удалось выполнить тест-прокрут.','bad');
+      render(); return;
+    }
+    warmups[m.id]=Number(res.warmupPoints||1);
+    busy=true; render();
+    animate(m,res.item||{}, {demo:true, caseId:m.id});
   }
 
   function localRoll(m){
@@ -10077,10 +10119,11 @@ function gameCaseHubUnified(sel){
     }
     if(typeof res.tokens==='number') setTokens(res.tokens);
     const drop=res.drop||{};
+    if(res.warmupUsed) warmups[m.id]=0;
     lastDrop=drop;
     history.unshift({ item:drop, createdAt:Date.now() });
     if(history.length>50) history=history.slice(0,50);
-    animate(m,drop);
+    animate(m,drop,{warmupUsed:Boolean(res.warmupUsed)});
   }
 
   async function openFreeCase(){
@@ -10144,9 +10187,10 @@ function gameCaseHubUnified(sel){
     animate(base||{name:'Кейс за 5 друзей',price:0,items:[]},drop);
   }
 
-  function animate(m,drop){
+  function animate(m,drop,opts){
+    opts=opts||{};
     const strip=q('#chStrip',a);
-    if(!strip){ busy=false; freeBusy=false; render(); return; }
+    if(!strip){ busy=false; freeBusy=false; warmupBusy=false; render(); return; }
     const targetIndex=45;
     const cards=[];
     const pool=(m.items&&m.items.length)?m.items:[{icon:'📦',name:'Предмет',price:0}];
@@ -10175,15 +10219,24 @@ function gameCaseHubUnified(sel){
     timer=setTimeout(()=>{
       if(dead) return;
       clearTimers();
-      busy=false; freeBusy=false;
+      busy=false; freeBusy=false; warmupBusy=false;
       if(targetCard) targetCard.classList.add('win-picked');
+      if(opts.demo){
+        lastDrop=null;
+        statusText=`<div style="text-align:center"><div style="font-size:28px">🧪</div>
+          <b style="color:#fff;font-size:14px">Демо-дроп: ${esc(drop.name||'предмет')}</b><br>
+          <span style="color:#ffcf6b;font-weight:900">${fmt(drop.price||0)} ⬦</span>
+          <div class="muted small" style="margin-top:4px">Предмет НЕ выдан. Прогрев готов: следующее платное открытие возьмёт лучший из двух дропов.</div></div>`;
+        render();
+        return;
+      }
       const profit=(drop.price||0)>=Number(m.price||0);
       tgHaptic(profit?'win':'light');
       lastDrop=drop;
       statusText=`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
         <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
         <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ⬦</span>
-        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`;
+        <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}${opts.warmupUsed?' · ⚡ прогрев учтён':''}</div></div>`;
       if(typeof loadInventory==='function') loadInventory();
       render();
     },4400);
@@ -10204,6 +10257,7 @@ function gameCaseHubUnified(sel){
         const list = Array.isArray(d.cases) ? d.cases : (Array.isArray(d.modes) ? d.modes : null);
         if(list && list.length){
           catalog=list.map(normalizeCase);
+          warmups=(d.warmups && typeof d.warmups==='object') ? d.warmups : {};
           history=Array.isArray(d.history)?d.history:[];
           if(!catalog.find(x=>x.id===currentId)) currentId=catalog[0].id;
           if(typeof d.tokens==='number') setTokens(d.tokens);
