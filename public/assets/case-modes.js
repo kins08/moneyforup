@@ -28,7 +28,7 @@
   const MODES = {
     starter_drop: {
       id: 'starter_drop',
-      name: 'STARTER DROP',
+      name: 'Старт',
       tagline: 'Серебро и минимализм',
       desc: 'Минималистичная стартовая коллекция с серебристыми гаджетами и аксессуарами.',
       icon: '🥈',
@@ -62,7 +62,7 @@
 
     cyber_rush: {
       id: 'cyber_rush',
-      name: 'CYBER RUSH',
+      name: 'Неон-рывок',
       tagline: 'Неон режет тьму',
       desc: 'Неоновый набор кибер-гаджетов в синих и фиолетовых тонах.',
       icon: '⚡',
@@ -96,7 +96,7 @@
 
     golden_vault: {
       id: 'golden_vault',
-      name: 'GOLDEN VAULT',
+      name: 'Золотое хранилище',
       tagline: 'Золото не тускнеет',
       desc: 'Коллекция чёрно-золотых артефактов для витрины ценителя.',
       icon: '👑',
@@ -130,7 +130,7 @@
 
     glitch_mode: {
       id: 'glitch_mode',
-      name: 'GLITCH MODE',
+      name: 'Сбой системы',
       tagline: 'Система дала сбой',
       desc: 'Сбойная коллекция красно-чёрных артефактов с эффектом цифрового шума.',
       icon: '📺',
@@ -164,7 +164,7 @@
 
     omega_core: {
       id: 'omega_core',
-      name: 'OMEGA CORE',
+      name: 'Омега-ядро',
       tagline: 'Предел достигнут',
       desc: 'Обсидианово-хромовая коллекция с фиолетовыми голографическими акцентами.',
       icon: '🌌',

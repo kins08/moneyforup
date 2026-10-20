@@ -739,9 +739,33 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 }
 
 /* ═══════════ CASE HUB (пять новых режимов) ═══════════ */
-.casehub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
-.casehub-card{position:relative;overflow:hidden;border-radius:20px;padding:15px;text-align:left;cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(150deg,var(--cm-panel,#181215),#100c10);border:1px solid var(--cm-border,rgba(255,255,255,.14));min-height:142px;transition:transform .18s,border-color .18s}
-.casehub-card:hover{transform:translateY(-2px);border-color:var(--cm-accent,#ef4444)}
+.casehub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;align-items:start}
+.casehub-card{position:relative;overflow:hidden;border-radius:20px;padding:15px;text-align:left;cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(150deg,var(--cm-panel,#181215),#100c10);border:1px solid var(--cm-border,rgba(255,255,255,.14));min-height:142px;transition:transform var(--mfu-t-base) var(--mfu-ease-out),border-color var(--mfu-t-base) var(--mfu-ease-out),box-shadow var(--mfu-t-base) var(--mfu-ease-out)}
+@media (hover:hover) and (pointer:fine){
+  .casehub-card:hover{transform:translateY(-2px);border-color:var(--cm-accent,#ef4444)}
+}
+.casehub-card:active{transform:scale(.985);transition-duration:80ms}
+
+/* Промо-карточка кейсов на главной: веер реальных обложек вместо эмодзи */
+.cases-promo{width:100%;margin-bottom:12px;min-height:0;display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px}
+.cp-fan{position:relative;width:78px;height:60px;flex:0 0 78px;display:block}
+.cp-fan img{position:absolute;top:2px;width:41px;height:54px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,255,255,.24);box-shadow:0 8px 18px rgba(0,0,0,.45);background:#0b0910;transition:transform var(--mfu-t-enter) var(--mfu-ease-out)}
+.cp-fan img:nth-child(1){left:0;transform:rotate(-9deg) translateY(2px);z-index:1}
+.cp-fan img:nth-child(2){left:19px;transform:translateY(-2px);z-index:2}
+.cp-fan img:nth-child(3){left:38px;transform:rotate(9deg) translateY(2px);z-index:1}
+.cp-copy{flex:1;min-width:0;display:block}
+.cp-copy .ch-name{display:block;font-size:14px}
+.cp-copy .ch-tag{display:block;font-size:10.5px;margin-top:3px}
+.cp-go{font-size:18px;color:#ffcf6b;flex:0 0 auto;transition:transform var(--mfu-t-base) var(--mfu-ease-out)}
+@media (hover:hover) and (pointer:fine){
+  .cases-promo:hover .cp-fan img:nth-child(1){transform:rotate(-14deg) translate(-3px,3px)}
+  .cases-promo:hover .cp-fan img:nth-child(2){transform:translateY(-5px)}
+  .cases-promo:hover .cp-fan img:nth-child(3){transform:rotate(14deg) translate(3px,3px)}
+  .cases-promo:hover .cp-go{transform:translateX(3px)}
+}
+@media (prefers-reduced-motion: reduce){
+  .cp-fan img,.cp-go{transition:none}
+}
 .casehub-card:before{content:'';position:absolute;inset:-40% -20% auto auto;width:150px;height:150px;background:radial-gradient(circle,var(--cm-glow,rgba(239,68,68,.3)),transparent 70%);pointer-events:none}
 .casehub-card .ch-icon{font-size:30px;line-height:1;margin-bottom:9px;filter:drop-shadow(0 4px 10px var(--cm-glow,rgba(239,68,68,.35)))}
 .casehub-card .ch-name{font-size:13.5px;font-weight:950;letter-spacing:.04em;color:#fff}
@@ -781,24 +805,38 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 /* Карточки с полноценными обложками вместо эмодзи */
 .casehub-case{padding:0!important;display:flex;flex-direction:column;overflow:hidden;min-height:0!important}
-.casehub-case .ch-cover-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#0a090d}
-.casehub-case .ch-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease;z-index:1}
-.casehub-case:hover .ch-cover{transform:scale(1.045)}
+.casehub-case .ch-cover-wrap{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#0a090d}
+.casehub-case .ch-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--mfu-t-reveal) var(--mfu-ease-out);z-index:1}
+@media (hover:hover) and (pointer:fine){
+  .casehub-case:hover .ch-cover{transform:scale(1.045)}
+}
 .casehub-case .ch-cover-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:42px;background:radial-gradient(circle at 50% 40%,rgba(255,207,107,.18),#0a090d 70%);z-index:2}
 .casehub-case .ch-cover-wrap.img-missing .ch-cover-fallback{display:grid}
 .casehub-case .ch-kind{position:absolute;top:8px;left:8px;font-size:8.5px;font-weight:950;letter-spacing:.06em;padding:4px 7px;border-radius:7px;background:rgba(8,7,10,.78);border:1px solid rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(6px)}
+.casehub-case .ch-active-mark{position:absolute;top:8px;right:8px;z-index:3;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:950;line-height:1;color:#0b090d;background:var(--cm-accent,#ffcf6b);box-shadow:0 5px 14px var(--cm-glow,rgba(255,207,107,.35));animation:mfuMarkIn 220ms var(--mfu-ease-out) both}
+.casehub-case.is-active{border-color:var(--cm-accent,#ffcf6b);box-shadow:0 0 0 1px var(--cm-accent,#ffcf6b),0 16px 32px -20px var(--cm-glow,rgba(255,207,107,.5));transform:none}
+.casehub-case.is-active .ch-cover-wrap:after{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(10,8,12,.5));pointer-events:none}
 .casehub-case .ch-body{padding:10px 11px 12px;display:flex;flex-direction:column;flex:1;min-width:0}
 .casehub-case .ch-name{font-size:12.5px;line-height:1.2}
 .casehub-case .ch-tag{font-size:9.5px;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .casehub-case .ch-price{margin-top:7px;font-size:11.5px}
+.casehub-grid.ch-anim .casehub-case{animation:mfuCaseIn 300ms var(--mfu-ease-out) backwards;animation-delay:calc(var(--i,0)*18ms)}
 .casehub-hero.has-cover{padding:0!important;overflow:hidden}
-.casehub-hero .chh-cover{position:relative;width:100%;aspect-ratio:2.7/1;overflow:hidden;background:#0a090d}
-.casehub-hero .chh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 34%;display:block;z-index:1}
-.casehub-hero .chh-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 30%,rgba(14,10,13,.88) 82%,#0e0a0d)}
+.casehub-hero.hero-in{animation:mfuHeroIn 300ms var(--mfu-ease-out)}
+.casehub-hero .chh-cover{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#0a090d}
+.casehub-hero .chh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;display:block;z-index:1}
+.casehub-hero .chh-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 34%,rgba(14,10,13,.88) 84%,#0e0a0d)}
 .casehub-hero .chh-cover-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:64px;background:radial-gradient(circle at 50% 40%,var(--cm-glow,rgba(255,207,107,.25)),#0a090d 72%);z-index:2}
 .casehub-hero .chh-cover.img-missing .chh-cover-fallback{display:grid}
-.casehub-hero .chh-content{position:relative;z-index:2;padding:0 16px 16px;margin-top:-42px}
+.casehub-hero .chh-content{position:relative;z-index:2;padding:0 16px 16px;margin-top:-58px}
 .casehub-hero .chh-top{position:relative}
+@keyframes mfuCaseIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes mfuHeroIn{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes mfuMarkIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .casehub-grid.ch-anim .casehub-case,.casehub-hero.hero-in,.casehub-case .ch-active-mark{animation:none!important}
+  .casehub-case .ch-cover{transition:none}
+}
 .casehub-tools{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 11px}
 .casehub-tools button{border-radius:10px;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.04);color:#aeb8ce;font-family:inherit;font-size:10.5px;font-weight:800;padding:7px 10px;cursor:pointer}
 .casehub-tools button.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
@@ -1170,23 +1208,26 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<button class="casehub-card" data-nav="casehub" style="--cm-accent:#ffcf6b;--cm-border:rgba(255,207,107,.45);--cm-glow:rgba(255,207,107,.28);width:100%;margin-bottom:12px;min-height:0;display:flex;align-items:center;gap:12px;text-align:left">
-  <div style="font-size:32px;line-height:1">📦</div>
-  <div style="flex:1;min-width:0">
-    <div class="ch-name" style="font-size:14px">КЕЙСЫ · 20 ШТУК</div>
-    <div class="ch-tag" style="font-size:10.5px">15 классических + 5 новых режимов · от 250 до 35 000 ⬦</div>
-  </div>
-  <div style="font-size:18px;color:#ffcf6b">→</div>
+<button class="casehub-card cases-promo" data-nav="casehub" style="--cm-accent:#ffcf6b;--cm-border:rgba(255,207,107,.45);--cm-glow:rgba(255,207,107,.28)">
+  <span class="cp-fan" aria-hidden="true">
+    <img src="assets/cases/case_500.jpg" alt="" loading="lazy" decoding="async">
+    <img src="assets/cases/cyber_rush.jpg" alt="" loading="lazy" decoding="async">
+    <img src="assets/cases/case_10000.jpg" alt="" loading="lazy" decoding="async">
+  </span>
+  <span class="cp-copy">
+    <span class="ch-name">КЕЙСЫ · 20 ШТУК</span>
+    <span class="ch-tag">15 классических + 5 новых режимов · от 250 до 35 000 ⬦</span>
+  </span>
+  <span class="cp-go">→</span>
 </button>
 
-<div class="section"><b>Игры</b><span class="muted small">14 режимов</span></div>
+<div class="section"><b>Игры</b><span class="muted small">15 режимов</span></div>
 <div class="cards">
 <button class="game" data-game="racket"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="racket">11 онлайн</span></span><div class="game-card-cover"><img src="assets/game_racket.jpg" alt="Ракетка"></div><div class="gi">🚀</div><strong>Ракетка</strong><span>Ракета летит по кривой и останавливается сама</span><i class="arrow">→</i></button>
 <button class="game" data-game="dice"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="dice">8 онлайн</span></span><div class="game-card-cover"><img src="assets/game_dice.jpg" alt="Dice"></div><div class="gi">🎲📊</div><strong>Dice (Больше/Меньше)</strong><span>Шанс от 1% до 95%, выбор исхода и множители до 95x</span><i class="arrow">→</i></button>
 <button class="game" data-game="upgrader"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="upgrader">9 онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Апгрейдер"></div><div class="gi">⚡⚙️</div><strong>Апгрейдер</strong><span>Выбери цель и рискни токенами: шанс до 70%, результат виден сразу</span><i class="arrow">→</i></button>
 <button class="game" data-game="trend"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="trend">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Trend Hunter"></div><div class="gi">🔎</div><strong>Trend Hunter</strong><span>Угадай паттерн графика: рост, падение или боковик. Три уровня сложности</span><i class="arrow">→</i></button>
 <button class="game" data-game="pulse"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="pulse">онлайн</span></span><div class="game-card-cover"><img src="assets/game_upgrader.jpg" alt="Pulse Market"></div><div class="gi">📈</div><strong>Pulse Market</strong><span>Рынок вверх, вниз или боковик: ставка на направление за 5–20 секунд</span><i class="arrow">→</i></button>
-<button class="game" data-nav="casehub"><div class="game-card-cover"><img src="assets/game_cases.jpg" alt="Кейсы"></div><div class="gi">📦</div><strong>Кейсы</strong><span>20 кейсов: 15 классических + 5 новых режимов, обложки и полная механика</span><i class="arrow">→</i></button>
 <button class="game" data-game="hotdrop"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="hotdrop">6 онлайн</span></span><div class="game-card-cover"><img src="assets/game_hotdrop.jpg" alt="Hot Drop"></div><div class="gi">🔥📦</div><strong>Hot Drop</strong><span>Бесплатный супер-бокс каждый час с рулеткой</span><i class="arrow">→</i></button>
 <button class="game" data-game="auction"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="auction">4 онлайн</span></span><div class="game-card-cover"><img src="assets/game_auction.jpg" alt="Тайный аукцион"></div><div class="gi">🤫🔨</div><strong>Тайный аукцион</strong><span>Ставки вслепую на редкие сейфы и лоты</span><i class="arrow">→</i></button>
 <button class="game" data-game="jumper"><span class="game-online-badge"><span class="online-dot"></span><span class="game-online-val" data-online-game="jumper">5 онлайн</span></span><div class="game-card-cover"><img src="assets/game_jumper.jpg" alt="Попрыгун"></div><div class="gi">🪜</div><strong>Попрыгун</strong><span>Шарик прыгает на черту или срывается</span><i class="arrow">→</i></button>
@@ -3555,7 +3596,7 @@ function syncBonusUI(){
     }else if((S.totalDeposited || 0) <= 0){
       pCard.style.display = 'block';
       if(pTitle) pTitle.textContent = 'Бесплатный кейс за первый депозит';
-      if(pDesc) pDesc.textContent = 'Пополните баланс от 150 ₽ и заберите кейс «Стартовый дроп» в подарок!';
+      if(pDesc) pDesc.textContent = 'Пополните баланс от 150 ₽ и заберите кейс «Первый шаг» в подарок!';
       if(pBtn) pBtn.textContent = 'Пополнить 💳';
     }else{
       pCard.style.display = 'none';
@@ -6380,7 +6421,7 @@ const TIER_NAMES = {
 
 const CASES_DATA = {
   case_500: {
-    id: 'case_500', name: 'Стартовый дроп', cost: 500, icon: '🔌', desc: 'Кабели, адаптеры, чехлы и базовые аксессуары',
+    id: 'case_500', name: 'Первый шаг', cost: 500, icon: '🔌', desc: 'Кабели, адаптеры, чехлы и базовые аксессуары',
     items: [
       { name: 'Кабель Type-C нейлон 1м', icon: '🔌', price: 120, w: 4.0, tier: 'cheap' },
       { name: 'Стилус для тачскрина', icon: '🖊️', price: 140, w: 4.0, tier: 'cheap' },
@@ -6402,7 +6443,7 @@ const CASES_DATA = {
     ]
   },
   case_750: {
-    id: 'case_750', name: 'Кабели и адаптеры', cost: 750, icon: '⚡', desc: 'Быстрые зарядки, прочные шнуры и переходники',
+    id: 'case_750', name: 'Коннект', cost: 750, icon: '⚡', desc: 'Быстрые зарядки, прочные шнуры и переходники',
     items: [
       { name: 'Кабель Micro-USB плоский', icon: '🔌', price: 180, w: 4.0, tier: 'cheap' },
       { name: 'Защитные пружинки на кабель', icon: '📎', price: 220, w: 4.0, tier: 'cheap' },
@@ -6468,7 +6509,7 @@ const CASES_DATA = {
     ]
   },
   case_2000: {
-    id: 'case_2000', name: 'Портативное аудио', cost: 2000, icon: '🎧', desc: 'Наушники, беспроводные колонки и аудио-девайсы',
+    id: 'case_2000', name: 'Звук в дорогу', cost: 2000, icon: '🎧', desc: 'Наушники, беспроводные колонки и аудио-девайсы',
     items: [
       { name: 'Аудио-переходник Type-C Jack 3.5', icon: '🔌', price: 450, w: 4.0, tier: 'cheap' },
       { name: 'Чехол для наушников силиконовый', icon: '👝', price: 520, w: 4.0, tier: 'cheap' },
@@ -6490,7 +6531,7 @@ const CASES_DATA = {
     ]
   },
   case_2500: {
-    id: 'case_2500', name: 'Авто-гаджеты', cost: 2500, icon: '🚗', desc: 'Все для автомобиля: зарядки, держатели и компрессоры',
+    id: 'case_2500', name: 'На колёсах', cost: 2500, icon: '🚗', desc: 'Все для автомобиля: зарядки, держатели и компрессоры',
     items: [
       { name: 'Ароматизатор в дефлектор авто', icon: '🌸', price: 550, w: 4.0, tier: 'cheap' },
       { name: 'Салфетки из микрофибры для авто', icon: '🧽', price: 650, w: 4.0, tier: 'cheap' },
@@ -6512,7 +6553,7 @@ const CASES_DATA = {
     ]
   },
   case_3000: {
-    id: 'case_3000', name: 'Геймерский старт', cost: 3000, icon: '🎯', desc: 'Периферия, быстрые сенсоры, мыши и коврики XXL',
+    id: 'case_3000', name: 'Геймер', cost: 3000, icon: '🎯', desc: 'Периферия, быстрые сенсоры, мыши и коврики XXL',
     items: [
       { name: 'Глайды тефлоновые для мыши', icon: '⛸️', price: 680, w: 4.0, tier: 'cheap' },
       { name: 'Держатель провода мыши Bungee', icon: '🦂', price: 780, w: 4.0, tier: 'cheap' },
@@ -6600,7 +6641,7 @@ const CASES_DATA = {
     ]
   },
   case_7000: {
-    id: 'case_7000', name: 'Кибер-стрим', cost: 7000, icon: '🎙️', desc: 'Оборудование для стримов, подкастов и видеозаписи',
+    id: 'case_7000', name: 'Стрим-ядро', cost: 7000, icon: '🎙️', desc: 'Оборудование для стримов, подкастов и видеозаписи',
     items: [
       { name: 'Поп-фильтр поролоновый для микрофона', icon: '🎙️', price: 1550, w: 4.0, tier: 'cheap' },
       { name: 'Крепление-паук шокмаунт для стойки', icon: '🕷️', price: 1800, w: 4.0, tier: 'cheap' },
@@ -6622,7 +6663,7 @@ const CASES_DATA = {
     ]
   },
   case_8000: {
-    id: 'case_8000', name: 'Премиум аудио', cost: 8000, icon: '🔊', desc: 'Hi-Fi акустика, премиальные наушники и звуковые карты',
+    id: 'case_8000', name: 'Премиум-звук', cost: 8000, icon: '🔊', desc: 'Hi-Fi акустика, премиальные наушники и звуковые карты',
     items: [
       { name: 'Адаптер Jack 6.35 на 3.5 позолота', icon: '🔌', price: 1800, w: 4.0, tier: 'cheap' },
       { name: 'Металлическая подставка под колонки', icon: '📐', price: 2100, w: 4.0, tier: 'cheap' },
@@ -6644,7 +6685,7 @@ const CASES_DATA = {
     ]
   },
   case_9000: {
-    id: 'case_9000', name: 'Про-девайсы', cost: 9000, icon: '💻', desc: 'NVMe SSD, кастомные клавиатуры, роутеры Wi-Fi 6',
+    id: 'case_9000', name: 'Про-гаджеты', cost: 9000, icon: '💻', desc: 'NVMe SSD, кастомные клавиатуры, роутеры Wi-Fi 6',
     items: [
       { name: 'Радиатор с термопрокладкой для M.2 SSD', icon: '❄️', price: 2000, w: 4.0, tier: 'cheap' },
       { name: 'Свитчи механические смазанные 90шт', icon: '⚙️', price: 2400, w: 4.0, tier: 'cheap' },
@@ -6666,7 +6707,7 @@ const CASES_DATA = {
     ]
   },
   case_9500: {
-    id: 'case_9500', name: 'Ультра-сетап', cost: 9500, icon: '🖥️', desc: 'Мониторы, портативные консоли и топовое железо',
+    id: 'case_9500', name: 'Рабочая станция', cost: 9500, icon: '🖥️', desc: 'Мониторы, портативные консоли и топовое железо',
     items: [
       { name: 'Кронштейн для монитора газлифт на стол', icon: '🦾', price: 2150, w: 4.0, tier: 'cheap' },
       { name: 'Антистатический набор отверток 128в1', icon: '🪛', price: 2550, w: 4.0, tier: 'cheap' },
@@ -6688,7 +6729,7 @@ const CASES_DATA = {
     ]
   },
   case_10000: {
-    id: 'case_10000', name: 'Флагманский люкс', cost: 10000, icon: '💎', desc: 'Планшеты, смарт-часы, флагманские аудио и ультрабуки',
+    id: 'case_10000', name: 'Флагман', cost: 10000, icon: '💎', desc: 'Планшеты, смарт-часы, флагманские аудио и ультрабуки',
     items: [
       { name: 'Чехол-клавиатура с тачпадом для планшета', icon: '⌨️', price: 2300, w: 4.0, tier: 'cheap' },
       { name: 'Алюминиевая подставка для ноутбука', icon: '📐', price: 2700, w: 4.0, tier: 'cheap' },
@@ -9430,6 +9471,7 @@ function gameCaseHubUnified(sel){
   let catalog = fallbackCatalog();
   let currentId = 'case_500';
   let filterKind = 'all';
+  let gridMotion = true, heroMotion = false;
   let history = [];
   let busy = false, dead = false, timer = 0;
   let timeouts = [];
@@ -9462,10 +9504,11 @@ function gameCaseHubUnified(sel){
   }
   function coverTag(m, cls){
     const src = m.cover || ('assets/cases/'+m.id+'.jpg');
-    const imgCls = cls === 'ch-cover-wrap' ? 'ch-cover' : 'chh-cover-img';
+    const isHero = cls !== 'ch-cover-wrap';
+    const imgCls = isHero ? 'chh-cover-img' : 'ch-cover';
     return `<div class="${cls}">
-      <img class="${imgCls}" src="${esc(src)}" alt="${esc(m.name)}" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('img-missing')">
-      <div class="${cls==='ch-cover-wrap'?'ch-cover-fallback':'chh-cover-fallback'}">${m.icon||'📦'}</div>
+      <img class="${imgCls}" src="${esc(src)}" alt="${esc(m.name)}" loading="${isHero?'eager':'lazy'}" decoding="async"${isHero?' fetchpriority="high"':''} onerror="this.style.display='none';this.parentElement.classList.add('img-missing')">
+      <div class="${isHero?'chh-cover-fallback':'ch-cover-fallback'}">${m.icon||'📦'}</div>
     </div>`;
   }
 
@@ -9509,20 +9552,23 @@ function gameCaseHubUnified(sel){
       <button data-chfilter="classic" class="${filterKind==='classic'?'on':''}">Классика · ${catalog.filter(c=>c.kind==='classic').length}</button>
       <button data-chfilter="mode" class="${filterKind==='mode'?'on':''}">Новые режимы · ${catalog.filter(c=>c.kind==='mode').length}</button>
     </div>
-    <div class="casehub-grid">
-      ${visible.length ? visible.map(c=>`
-        <button class="casehub-card casehub-case" data-chm="${esc(c.id)}" style="${themeVars(c)}">
+    <div class="casehub-grid${gridMotion?' ch-anim':''}">
+      ${visible.length ? visible.map((c,i)=>{
+        const active = c.id===m.id;
+        return `
+        <button class="casehub-card casehub-case${active?' is-active':''}" data-chm="${esc(c.id)}" aria-pressed="${active}" style="--i:${i};${themeVars(c)}">
           ${coverTag(c,'ch-cover-wrap')}
           <span class="ch-kind">${c.kind==='classic'?'КЛАССИКА':'НОВЫЙ РЕЖИМ'}</span>
+          ${active?'<span class="ch-active-mark" aria-hidden="true">✓</span>':''}
           <div class="ch-body">
             <div class="ch-name">${esc(c.name)}</div>
             <div class="ch-tag">${esc(c.tagline||'')}</div>
             <div class="ch-price">${fmt(c.price)} ⬦<small>${c.items.length} предметов</small></div>
           </div>
-        </button>`).join('') : '<div class="casehub-empty">В этом фильтре пока нет кейсов.</div>'}
+        </button>`;}).join('') : '<div class="casehub-empty">В этом фильтре пока нет кейсов.</div>'}
     </div>
     ${catalogError?`<div class="result bad" style="margin-top:10px">${esc(catalogError)}</div>`:''}
-    <div class="casehub-hero has-cover" style="${themeVars(m)}">
+    <div class="casehub-hero has-cover${heroMotion?' hero-in':''}" style="${themeVars(m)}">
       ${coverTag(m,'chh-cover')}
       <div class="chh-content">
         <div class="chh-top">
@@ -9586,10 +9632,16 @@ function gameCaseHubUnified(sel){
     <div class="casehub-note">Все цены и предметы — виртуальные токены MoneyForUp. Это не деньги и не вывод средств. Шансы заданы в конфигурации кейса и проверяются на сервере.</div>`;
 
     a.querySelectorAll('[data-chm]').forEach(b=>{
-      b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; render(); };
+      b.onclick=()=>{ if(busy)return; currentId=b.dataset.chm; statusText=''; lastDrop=null; gridMotion=false; heroMotion=true; render(); };
     });
     a.querySelectorAll('[data-chfilter]').forEach(b=>{
-      b.onclick=()=>{ if(busy)return; filterKind=b.dataset.chfilter; statusText=''; render(); };
+      b.onclick=()=>{
+        if(busy)return;
+        filterKind=b.dataset.chfilter;
+        const vis=visibleCases();
+        if(vis.length && !vis.some(c=>c.id===currentId)) currentId=vis[0].id;
+        statusText=''; gridMotion=true; heroMotion=true; render();
+      };
     });
     const openBtn=q('#chOpen',a), repeatBtn=q('#chRepeat',a);
     if(openBtn) openBtn.onclick=()=>openCase();
@@ -9613,6 +9665,7 @@ function gameCaseHubUnified(sel){
         render();
       }catch(e){ setStatus((e&&e.message)||'Не удалось продать предмет','bad'); }
     };
+    gridMotion=false; heroMotion=false;
   }
 
   function setStatus(text, cls){
@@ -9849,6 +9902,7 @@ function gameCaseHubUnified(sel){
         catalogError='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.';
       }
     }
+    gridMotion=true; heroMotion=true;
     render();
   }
 

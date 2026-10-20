@@ -70,9 +70,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#chWarmup')), 'есть кнопка тест-прокрута');
     ok(/ТЕСТ-ПРОКРУТ/i.test(d.querySelector('#chWarmup').textContent), 'кнопка тест-прокрута подписана');
     const names = [...d.querySelectorAll('#caseHubArea .casehub-card .ch-name')].map(x => x.textContent.trim());
-    for (const n of ['Стартовый дроп', 'Флагманский люкс', 'STARTER DROP', 'CYBER RUSH', 'GOLDEN VAULT', 'GLITCH MODE', 'OMEGA CORE']) {
+    for (const n of ['Первый шаг', 'Флагман', 'Старт', 'Неон-рывок', 'Золотое хранилище', 'Сбой системы', 'Омега-ядро']) {
       ok(names.includes(n), `кейс «${n}» отрисован`);
     }
+    ok(!d.querySelector('.cards [data-nav="casehub"]'), 'кейсы не дублируются в сетке игр');
+    ok(Boolean(d.querySelector('.cases-promo .cp-fan img')), 'промо кейсов показывает реальные обложки');
+    eq(d.querySelectorAll('.casehub-case.is-active').length, 1, 'выбранный кейс подсвечен');
+    eq(d.querySelectorAll('.casehub-case .ch-active-mark').length, 1, 'у выбранного кейса есть галочка');
+    ok(d.querySelector('.casehub-grid').classList.contains('ch-anim'), 'у сетки кейсов есть анимация входа');
     eq(d.querySelectorAll('#caseHubArea .ch-online').length, 0, 'у кейсов нет метки «онлайн»');
     ok(!/онлайн/i.test(d.querySelector('#caseHubArea').textContent), 'в разделе кейсов нет слова «онлайн»');
     eq(d.querySelectorAll('#caseHubArea .ch-cover').length, 20, 'у каждого кейса обложка-изображение');
@@ -97,10 +102,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     eq(d.querySelectorAll('#caseHubArea .casehub-card').length, 5, 'фильтр «Новые режимы» оставляет 5 кейсов');
     const cards = [...d.querySelectorAll('[data-chm]')];
     const omega = cards.find(x => x.dataset.chm === 'omega_core');
-    ok(Boolean(omega), 'карточка OMEGA CORE есть');
+    ok(Boolean(omega), 'карточка «Омега-ядро» есть');
     omega.click();
     await wait(80);
-    ok(d.querySelector('.chh-name').textContent.includes('OMEGA CORE'), 'клик по карточке меняет детали режима');
+    ok(d.querySelector('.chh-name').textContent.includes('Омега-ядро'), 'клик по карточке меняет детали режима');
     ok(d.querySelectorAll('.casehub-list .cli').length === 14, 'в содержимом 14 предметов');
     const pcts = [...d.querySelectorAll('.casehub-list .pct')].map(x => parseFloat(x.textContent));
     ok(pcts.length === 14 && pcts.every(p => p > 0 && p <= 100), 'шансы предметов в процентах 0–100, без ×100');
