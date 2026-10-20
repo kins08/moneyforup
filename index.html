@@ -826,6 +826,76 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 /* ═══════════ UPGRADE ARENA ═══════════ */
 .upg-shell{padding-bottom:6px}
+
+/* ── Дизайн-система MoneyForUp (этап 1 редизайна, DECISIONS.md) ─────────────
+   Палитра по ТЗ: графит фон; cyan / lime / white — акценты; orange и red —
+   только предупреждения и отрицательная динамика. Новые экраны (Pulse Market,
+   Trend Hunter, прогресс, лента апгрейда) используют ТОЛЬКО эти токены.
+   Старые экраны не трогаем, чтобы не сломать их вёрстку. */
+:root{
+  --mfu-graphite-0:#0c0e12;   /* фон страницы */
+  --mfu-graphite-1:#14171d;   /* панели */
+  --mfu-graphite-2:#1d2129;   /* вложенные блоки */
+  --mfu-line:rgba(255,255,255,.08);
+  --mfu-text:#ffffff;
+  --mfu-muted:#9aa3b2;
+  --mfu-cyan:#35d6ff;
+  --mfu-lime:#a3e635;
+  --mfu-orange:#fb923c;       /* только предупреждения */
+  --mfu-red:#f87171;          /* только минус и отказ */
+  --mfu-radius:14px;
+  --mfu-motion:.2s ease;
+}
+@media (prefers-reduced-motion: reduce){
+  .pm-bar i,.tr-chart path,.upg-strip,.upg-strip.spin-wait{transition:none!important;animation:none!important}
+}
+/* Базовые компоненты: панель, таймер, прогресс, пустое состояние, skeleton. */
+.mfu-panel{background:var(--mfu-graphite-1);border:1px solid var(--mfu-line);border-radius:var(--mfu-radius);padding:14px}
+.mfu-empty{padding:18px;text-align:center;color:var(--mfu-muted);font-size:13px;border:1px dashed var(--mfu-line);border-radius:var(--mfu-radius)}
+.mfu-skeleton{background:linear-gradient(90deg,var(--mfu-graphite-2) 25%,#262b35 50%,var(--mfu-graphite-2) 75%);background-size:200% 100%;border-radius:10px;min-height:14px}
+@media (prefers-reduced-motion: no-preference){ .mfu-skeleton{animation:mfuShimmer 1.4s linear infinite} }
+@keyframes mfuShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.mfu-timer{font-variant-numeric:tabular-nums;font-weight:800;color:var(--mfu-cyan)}
+.mfu-progress{height:6px;border-radius:99px;background:var(--mfu-graphite-2);overflow:hidden}
+.mfu-progress>i{display:block;height:100%;background:var(--mfu-cyan);width:0;transition:width var(--mfu-motion)}
+/* Мобильная ширина 360px: без горизонтального скролла в новых экранах. */
+@media (max-width:380px){
+  .pm-dirs,.tr-answers{grid-template-columns:1fr!important}
+  .pm-row{flex-wrap:wrap}
+  .pm-chip{flex:1 1 auto;min-width:0}
+}
+.tr-answers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+
+/* Pulse Market / Trend Hunter: общие каркасы экранов (см. палитру выше). */
+.pm-shell,.tr-shell{display:flex;flex-direction:column;gap:10px;padding-bottom:6px;max-width:100%;overflow-x:hidden}
+.pm-head{display:flex;flex-direction:column;gap:2px}
+.pm-title{font-size:13px;font-weight:900;letter-spacing:.12em;color:var(--mfu-cyan)}
+.pm-disclaimer{font-size:11px;color:var(--mfu-muted);line-height:1.4;padding:8px 10px;border:1px solid var(--mfu-line);border-radius:10px;background:var(--mfu-graphite-2)}
+.pm-panel{background:var(--mfu-graphite-1);border:1px solid var(--mfu-line);border-radius:var(--mfu-radius);padding:12px}
+.pm-label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#8d97ad;margin-bottom:8px}
+.pm-row{display:flex;gap:6px;flex-wrap:wrap}
+.pm-dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.pm-chip{padding:8px 10px;border-radius:10px;border:1px solid var(--mfu-line);background:var(--mfu-graphite-2);color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.pm-chip.on{border-color:var(--mfu-cyan);color:var(--mfu-cyan)}
+.pm-chip small{color:var(--mfu-muted);font-weight:600}
+.pm-chip:disabled{opacity:.45;cursor:not-allowed}
+.pm-dir{padding:10px 6px;border-radius:10px;border:1px solid var(--mfu-line);background:var(--mfu-graphite-2);color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.pm-dir.up.on{border-color:var(--mfu-lime);color:var(--mfu-lime)}
+.pm-dir.down.on{border-color:var(--mfu-orange);color:var(--mfu-orange)}
+.pm-dir.range.on{border-color:var(--mfu-cyan);color:var(--mfu-cyan)}
+.pm-dir:disabled{opacity:.4;cursor:not-allowed}
+.pm-stage{min-height:120px}
+.pm-live-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px}
+.pm-bar{height:6px;border-radius:99px;background:var(--mfu-graphite-2);overflow:hidden;margin-bottom:10px}
+.pm-bar i{display:block;height:100%;background:var(--mfu-cyan);width:0;transition:width .2s linear}
+.pm-wait{margin-top:8px;font-size:12px;color:var(--mfu-muted)}
+.pm-result{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.pm-res-title{font-size:15px;font-weight:900}
+.pm-result.win .pm-res-title{color:var(--mfu-lime)}
+.pm-result.lose .pm-res-title{color:var(--mfu-red)}
+.pm-stage.won{border-color:rgba(163,230,53,.45)}
+.pm-stage.lost{border-color:rgba(248,113,113,.4)}
+.tr-chart{width:100%;height:110px;display:block;margin:6px 0 2px;background:var(--mfu-graphite-2);border-radius:10px}
 /* Лента прокрутки апгрейда: одна полоса, указатель по центру, цвет = результат сервера. */
 .upg-frame{position:relative;overflow:hidden;height:118px;border-radius:14px;background:#0c0f16;border:1px solid rgba(255,255,255,.08);margin:6px 0 10px}
 .upg-frame.spin-win{border-color:rgba(61,220,150,.7);box-shadow:0 0 0 1px rgba(61,220,150,.25) inset}
