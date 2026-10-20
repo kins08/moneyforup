@@ -36,7 +36,36 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
   const b = trend.generateScenario({ seedHex: 'k', level: 2, scenarioId: 'id1' });
   ok(JSON.stringify(a) === JSON.stringify(b), 'сценарий детерминирован для одного seed и id');
 
-  // 4. Публичная конфигурация не раскрывает правильный ответ.
+  // 4. 128 визуальных форм × 25 оболочек, направление не читается по глазам.
+  const variants = new Set(), tones = new Set(), intervals = new Set();
+  let dirOk = true, flatOk = true, withTurns = 0;
+  const SAMPLE = 4000;
+  for (let i = 0; i < SAMPLE; i++) {
+    const s = trend.generateScenario({ seedHex: 'visual-' + i, level: 1, scenarioId: 'V' + i });
+    variants.add(s.chart.variant);
+    tones.add(s.chart.tone);
+    intervals.add(s.chart.interval);
+    const p = s.points;
+    const net = (p[p.length - 1] - p[0]) / p[0];
+    if (s.pattern === 'flat') {
+      if (Math.abs(net) > 0.007) flatOk = false;
+    } else if (Math.sign(net) !== (s.pattern === 'rise' ? 1 : -1)) {
+      dirOk = false;
+    }
+    let turns = 0;
+    for (let j = 2; j < p.length; j++) {
+      if (Math.sign(p[j] - p[j - 1]) !== Math.sign(p[j - 1] - p[j - 2])) turns++;
+    }
+    if (turns >= 2) withTurns++;
+  }
+  eq(variants.size, 128, '128 базовых визуальных форм');
+  eq(tones.size, 5, '5 цветовых тонов графика');
+  eq(intervals.size, 5, '5 таймфреймов графика');
+  ok(dirOk, 'рост/падение закрываются в свою сторону');
+  ok(flatOk, 'боковик остаётся в узком коридоре');
+  ok(withTurns / SAMPLE > 0.9, 'в большинстве графиков есть контр-движения');
+
+  // 5. Публичная конфигурация не раскрывает правильный ответ.
   const pubNoAnswer = JSON.stringify(trend.publicConfig()).replace(/"patterns":\[[^\]]*\]/g, '');
   ok(!/"pattern"|"correct"|"answer"/i.test(pubNoAnswer), 'публичная конфигурация не раскрывает ответ');
 
@@ -63,6 +92,9 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
     eq(st.status, 200, 'раунд начат');
     eq(st.body.tokens, 9700, 'ставка 300 списана сервером');
     ok(Array.isArray(st.body.points) && st.body.points.length === 12, 'клиент получил график уровня 1');
+    ok(st.body.chart && st.body.chart.variant >= 0 && st.body.chart.variant < 128, 'клиент получил один из 128 визуальных вариантов');
+    ok(typeof st.body.chart.tone === 'string' && typeof st.body.chart.interval === 'string', 'клиент получил тон и таймфрейм');
+    eq(st.body.points[0], st.body.chart.start, 'старт графика совпадает с первой точкой');
     ok(!/"pattern"|"answer"|"correct"/i.test(JSON.stringify(st.body)), 'ответ старта не содержит правильный паттерн');
 
     const dup = await post('/api/trend/start', { level: 1, bet: 300, requestId: 'trend-req-00001' });

@@ -2572,7 +2572,7 @@ const server = http.createServer(async (req, res) => {
       // Seed и сценарий (с правильным ответом) — в game_rounds: переживают перезапуск.
       db.setRoundParams(roundId, u.id, seed, {
         level, scenarioId: roundId, pattern: scenario.pattern, points: scenario.points,
-        seconds: scenario.seconds, mult: scenario.mult, startedAt: Date.now()
+        seconds: scenario.seconds, mult: scenario.mult, chart: scenario.chart, startedAt: Date.now()
       });
       trendRounds.set(roundId, {
         userId: u.id, bet, level, scenario, answered: false, answer: null, correct: null, payout: 0,
@@ -2582,6 +2582,7 @@ const server = http.createServer(async (req, res) => {
       return send(200, {
         ok: true, duplicate: false, roundId, level, bet,
         seconds: scenario.seconds, points: scenario.points, multiplier: scenario.mult,
+        chart: scenario.chart,
         deadline: Date.now() + scenario.seconds * 1000, tokens: u.tokens
       });
     }

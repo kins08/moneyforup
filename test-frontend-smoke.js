@@ -55,6 +55,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
   try {
     await wait(2200);
+    console.log('\n0) Загрузочный экран');
+    ok(Boolean(d.querySelector('#mupSplash .mup-splash-word')), 'загрузочный экран нарисован кодом');
+    ok(!d.querySelector('#mupSplash img'), 'в загрузочном экране нет JPG-логотипа');
+    ok(/MONEY/.test(d.querySelector('#mupSplash').textContent), 'на загрузочном экране есть вордмарк');
+
     console.log('\n1) Навигация и раздел кейсов');
     const nav = [...d.querySelectorAll('.nav button')].map(b => b.dataset.nav);
     ok(nav.length === 4, 'в нижней навигации 4 раздела');
@@ -125,6 +130,15 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(/^MF[A-Z0-9]{6}$/.test(d.querySelector('#refCode').textContent.trim()), 'реферальный код реально сгенерирован');
     ok(/startapp=/.test(d.querySelector('#refLink').textContent), 'реферальная ссылка содержит startapp-код');
     ok(!d.querySelector('#ref'), 'отдельного экрана #ref больше нет');
+    const sndBtn = d.querySelector('#sndToggle');
+    ok(Boolean(sndBtn), 'в профиле есть переключатель звука');
+    eq(sndBtn.getAttribute('aria-pressed'), 'true', 'звук включён по умолчанию');
+    sndBtn.click();
+    await wait(60);
+    eq(sndBtn.getAttribute('aria-pressed'), 'false', 'переключатель выключает звук');
+    sndBtn.click();
+    await wait(60);
+    eq(sndBtn.getAttribute('aria-pressed'), 'true', 'переключатель возвращает звук');
 
     console.log('\n2) Upgrade Arena');
     d.querySelector('.nav button[data-nav="games"]').click();
@@ -201,6 +215,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#gameArea .mfu-chart')), 'на экране Pulse есть свечной график');
     ok(d.querySelectorAll('#gameArea .mfu-chart rect[rx="0.6"]').length > 20, 'график Pulse состоит из свечей');
     ok(d.querySelector('[data-plev="2"]') && d.querySelector('[data-plev="2"]').textContent.includes('без боковика'), 'на плече ×2 написано, что боковика нет');
+    ok(Boolean(d.querySelector('#pmGo')), 'кнопка ставки Pulse на месте');
+    const pmGo = d.querySelector('#pmGo'), pmChart = d.querySelector('#gameArea .mfu-chart');
+    ok(Boolean(pmGo && pmChart && (pmGo.compareDocumentPosition(pmChart) & w.Node.DOCUMENT_POSITION_FOLLOWING)), 'кнопка ставки Pulse стоит выше графика');
+    ok(Boolean(d.querySelector('[data-pbet="last"]')), 'в Pulse есть кнопка повторной ставки');
+    ok(d.querySelector('[data-pbet="last"]').disabled === true, 'повтор ставки Pulse выключен без прошлой ставки');
     // На плече ×2 боковик недоступен.
     d.querySelector('[data-plev="2"]').click();
     await wait(60);
@@ -219,6 +238,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#gameArea .mfu-chart')), 'на экране Trend есть свечной график');
     ok(d.querySelectorAll('#gameArea .mfu-chart rect[rx="0.6"]').length > 20, 'график Trend состоит из свечей');
     ok(d.querySelectorAll('[data-tans]').length === 0, 'до старта кнопок ответа нет (ответ не виден заранее)');
+    ok(Boolean(d.querySelector('[data-tquick="last"]')), 'в Trend есть кнопка повторной ставки');
+    ok(d.querySelector('[data-tquick="last"]').disabled === true, 'повтор ставки Trend выключен без прошлой ставки');
 
     console.log('\n4d) Прогресс в профиле');
     d.querySelector('.nav button[data-nav="profile"]').click();
