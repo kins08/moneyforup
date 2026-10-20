@@ -92,7 +92,10 @@ const DAY = 24 * 60 * 60 * 1000;
     // Прогресс не меняет баланс: токены не начисляются за миссии и статистику.
     const balNow = srv.bal(UID);
     eq(balNow, after.body.tokens, 'ответ прогресса содержит текущий баланс');
-    ok(before >= balNow, 'баланс не вырос от прогресса (токены только ставками)');
+    // Прогресс не начисляет: повторный вызов не меняет баланс.
+    const again = await post('/api/progress', {});
+    eq(srv.bal(UID), balNow, 'повторный запрос прогресса не меняет баланс');
+    eq(again.body.tokens, balNow, 'баланс в ответе прогресса не меняется');
     eq(20000 + srv.ledgerSum(UID), srv.bal(UID), 'инвариант ledger сохранён');
   } finally {
     await srv.stop();

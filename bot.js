@@ -2416,7 +2416,8 @@ const server = http.createServer(async (req, res) => {
         if (!pr.ok) return send(500, { error: 'Не удалось начислить выигрыш, повторите' });
       }
       rd.settled = true;
-      rd.result = { outcome: res.outcome, move: res.move, won: res.won, mult: res.mult, payout: res.payout };
+      // mult при проигрыше = 0: так же, как записано в game_rounds (единый источник правды).
+      rd.result = { outcome: res.outcome, move: res.move, won: res.won, mult: res.won ? res.mult : 0, payout: res.payout };
       try {
         db.settleRound({
           roundId, userId: u.id, game: pulse.PULSE.label, bet: rd.bet,
@@ -2425,7 +2426,8 @@ const server = http.createServer(async (req, res) => {
         // Исход сохраняем в params, чтобы повторный запрос после перезапуска отдал тот же результат.
         db.setRoundParams(roundId, u.id, rd.seed, {
           direction: rd.direction, leverage: rd.leverage, duration: rd.duration,
-          startedAt: rd.startedAt, dueAt: rd.dueAt, outcome: res.outcome, move: res.move
+          startedAt: rd.startedAt, dueAt: rd.dueAt, outcome: res.outcome, move: res.move,
+          won: res.won, payout: res.payout, mult: res.won ? res.mult : 0, settledAt: Date.now()
         });
       } catch (e) { console.error('[Pulse] settle not saved:', e.message); }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (pulse result):', e.message); }
@@ -2554,7 +2556,9 @@ const server = http.createServer(async (req, res) => {
         });
         const stored = db.getRoundParams(roundId, u.id);
         const prevParams = (stored && stored.params) || {};
-        db.setRoundParams(roundId, u.id, stored ? stored.seed : null, { ...prevParams, result: rd.result });
+        db.setRoundParams(roundId, u.id, stored ? stored.seed : null, {
+          ...prevParams, answer, answeredAt: Date.now(), result: rd.result
+        });
       } catch (e) { console.error('[Trend] settle not saved:', e.message); }
       try { db.saveUser(u); } catch (e) { console.error('saveUser (trend answer):', e.message); }
       rd.settledAt = Date.now();

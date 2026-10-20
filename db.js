@@ -1336,19 +1336,21 @@ module.exports = {
     try { db.prepare('DELETE FROM game_rounds WHERE round_id = ? AND user_id = ? AND status = ?').run(String(roundId), userId, 'pending'); } catch (_) {}
   },
   settleRound: (r) => {
+    // Множитель 0 (проигрыш) должен сохраняться как 0; undefined/null — по-прежнему 1.
+    const multOf = v => (v === undefined || v === null) ? 1 : Number(v);
     const at = r.settledAt || Date.now();
     db.prepare(`
       UPDATE game_rounds
       SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?,
           item_code = ?, item_price = ?
       WHERE round_id = ? AND user_id = ?
-    `).run(String(r.game), Math.floor(r.bet || 0), Number(r.mult || 1), Math.floor(r.win || 0),
+    `).run(String(r.game), Math.floor(r.bet || 0), multOf(r.mult), Math.floor(r.win || 0),
       r.status || 'settled', at, r.itemCode || null,
       r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId);
     turso.queueQuery(`
       UPDATE game_rounds SET game = ?, bet_tokens = ?, mult = ?, win_tokens = ?, status = ?, settled_at = ?, item_code = ?, item_price = ?
       WHERE round_id = ? AND user_id = ?
-    `, [String(r.game), Math.floor(r.bet || 0), Number(r.mult || 1), Math.floor(r.win || 0),
+    `, [String(r.game), Math.floor(r.bet || 0), multOf(r.mult), Math.floor(r.win || 0),
       r.status || 'settled', at, r.itemCode || null,
       r.itemPrice != null ? Math.floor(r.itemPrice) : null, String(r.roundId), r.userId]);
     return { ok: true, roundId: String(r.roundId) };
