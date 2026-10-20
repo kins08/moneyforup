@@ -8361,6 +8361,8 @@ window.__upgraderSelectItem = function(item, targetMult){
 /* Старая версия оставлена как исторический фолбэк и не подключена к роутингу.
    Активная реализация — gameUpgradeArena() ниже: она работает с серверными
    целями, режимами риска, мульти-апгрейдом, лесенкой и серией. */
+/* A6 (AUDIT.md): НЕ ИСПОЛЬЗУЕТСЯ. Живой апгрейдер — gameUpgradeArena(). Функция сохранена,
+   так как на неё могут ссылаться старые UI-тесты; при удалении проверить ui-test.js. */
 function gameUpgraderLegacy(){
   const a = q('#gameArea');
   if(!a) return ()=>{};
@@ -8470,7 +8472,7 @@ function gameUpgraderLegacy(){
     const resMsg = q('#upgResultMsg', a);
     if(resMsg && !isSpinning){
       resMsg.className = 'result';
-      resMsg.textContent = `Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge 6%).`;
+      resMsg.textContent = `Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge ${Math.round(UPG_EDGE*100)}%).`;
     }
 
     qa('#upgMultChips button', a).forEach(b => {
@@ -8612,7 +8614,7 @@ function gameUpgraderLegacy(){
       </button>
 
       <div class="result" id="upgResultMsg" style="margin-top:12px;font-size:12px">
-        Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge 6%).
+        Множитель ×${curMult}. Шанс победы: ${curChance}% (House Edge ${Math.round(UPG_EDGE*100)}%).
       </div>
     </div>`;
 
@@ -10428,6 +10430,9 @@ function gameCaseHub(sel){ return gameCaseHubUnified(sel); }
    ══════════════════════════════════════════════════════════════════════════ */
 /* DECISIONS.md D4: один режим апгрейдера, потолок шанса 70%, режимы не показываются. */
 const UPG_CHANCE_CAP = 0.70;
+/* Комиссия (edge) единственного режима — та же, что в upgrade.js (MODES.standard.edge).
+   Вынесена, чтобы текст «House Edge» не расходился с серверной моделью (AUDIT A5). */
+const UPG_EDGE = 0.06;
 const UPG_FALLBACK_MODES = [
   {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Выберите цель дороже источника. Шанс до 70%, результат определяет сервер.',edge:0.06,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
 ];
@@ -10846,23 +10851,9 @@ function gameUpgradeArena(){
     const visible=targets.map(code=>cat.targets.find(t=>t.code===code)).filter(Boolean);
     if(!visible.length) throw new Error('Выберите цель');
     if(!(IS_TG&&API_BASE)){
-      // Демо-режим: локальная симуляция, деньги ненастоящие.
-      const src=isItem?(inv().find(x=>String(x.id)===String(itemId))||{}).price:Math.floor(Number(amt)||0);
-      if(!src||src<10) throw new Error('Некорректная сумма');
-      if(!isItem&&(S.balance||0)<src) throw new Error('Недостаточно токенов');
-      const vals=visible.map(t=>Math.min(Number(m.chanceCap),(1-m.edge)*src/t.value));
-      const agg=vals.reduce((s,x)=>s+x,0)/vals.length;
-      const pick=visible[Math.floor(Math.random()*visible.length)];
-      const won=Math.random()<Math.min(Number(m.chanceCap),(1-m.edge)*src/pick.value);
-      if(!isItem){ S.balance-=src; }
-      else { S.inventory=(S.inventory||[]).filter(x=>String(x.id)!==String(itemId)); }
-      if(won){
-        S.inventory=S.inventory||[];
-        S.inventory.unshift({id:'inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),code:pick.code,name:pick.name,icon:pick.icon,price:pick.value,tier:pick.tier,caseName:'Апгрейд'});
-      }
-      save(); syncUI();
-      const outTarget=won?Object.assign({},pick,{price:pick.value}):null;
-      return {ok:true,won,target:outTarget,sourceValue:src,chance:Math.min(Number(m.chanceCap),(1-m.edge)*src/pick.value),aggregateChance:agg,tokens:S.balance};
+      // A2 (AUDIT.md): без сервера результат и баланс НЕ считаем в браузере.
+      // Правило проекта: баланс и исход меняет только сервер.
+      throw new Error('Апгрейд проводится только на сервере. Откройте игру в Telegram.');
     }
     const body={
       mode:m.id,
@@ -11005,13 +10996,8 @@ function gameUpgradeArena(){
           selectedItemId=null;
         }
       } else {
-        const steps=[1.6,1.5,1.4,1.35,1.3,1.25,1.2,1.18,1.15,1.12].slice(0, ladderChoice);
-        let v=s;
-        const stepsData=steps.map((mult,i)=>({step:i+1,mult,chance:Math.min(Number(mode().chanceCap),(1-mode().edge)/mult),valueAfter:(v=Math.floor(v*mult))}));
-        if(sourceType==='tokens')S.balance-=s; else S.inventory=(S.inventory||[]).filter(x=>String(x.id)!==String(selectedItemId));
-        save();syncUI();
-        ladderSession={id:'demo_'+Date.now(),mode:mode().id,stepsTotal:ladderChoice,stepIndex:0,sourceValue:s,currentValue:s,status:'active'};
-        ladderPreview={steps:ladderChoice,stepsTotal:ladderChoice,sourceValue:s,stepsData,finalValue:v};
+        // A3 (AUDIT.md): без сервера лесенку не запускаем — баланс меняет только сервер.
+        throw new Error('Лесенка проводится только на сервере. Откройте игру в Telegram.');
       }
       ladderMsg='Лесенка началась. Первый шаг — ваш выбор.';
     }catch(e){ ladderMsg=(e&&e.message)||'Не удалось начать лесенку'; }
@@ -11031,13 +11017,8 @@ function gameUpgradeArena(){
         const rr=res.result||{};
         ladderMsg=rr.won?`✅ Шаг ${rr.step} пройден. Текущая стоимость: ${fmt(rr.value)} ⬦.`:`❌ Шаг ${rr.step}: лесенка оборвалась.`;
       } else {
-        const data=(ladderPreview.stepsData||[])[expected-1];
-        const won=Math.random()<data.chance;
-        const next=won?{stepIndex:expected,currentValue:data.valueAfter,status:expected>=ladderSession.stepsTotal?'completed':'active'}:{stepIndex:expected,currentValue:0,status:'lost'};
-        ladderSession=Object.assign({},ladderSession,next);
-        if(ladderSession.status==='completed'){ S.balance+=ladderSession.currentValue; }
-        save();syncUI();
-        ladderMsg=won?`✅ Шаг ${expected} пройден. Текущая стоимость: ${fmt(ladderSession.currentValue)} ⬦.`:`❌ Шаг ${expected}: лесенка оборвалась.`;
+        // A3: исход шага без сервера не считаем (Math.random и правка баланса убраны).
+        throw new Error('Шаг лесенки проводится только на сервере. Откройте игру в Telegram.');
       }
     }catch(e){ ladderMsg=(e&&e.message)||'Не удалось выполнить шаг'; }
     ladderBusy=false; render();
@@ -11053,9 +11034,8 @@ function gameUpgradeArena(){
         ladderSession=res.session; if(typeof res.tokens==='number')setTokens(res.tokens);
         ladderMsg=`💰 Кэшаут: +${fmt((res.result&&res.result.paid)||0)} ⬦.`;
       } else {
-        S.balance+=ladderSession.currentValue; save();syncUI();
-        ladderMsg=`💰 Кэшаут: +${fmt(ladderSession.currentValue)} ⬦.`;
-        ladderSession=Object.assign({},ladderSession,{status:'cashed'});
+        // A3: кэшаут без сервера не проводим — баланс меняет только сервер.
+        throw new Error('Кэшаут проводится только на сервере. Откройте игру в Telegram.');
       }
       tgHaptic('win');
     }catch(e){ ladderMsg=(e&&e.message)||'Не удалось забрать выигрыш'; }
