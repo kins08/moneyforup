@@ -26,3 +26,8 @@ data/
 # Сгенерированные/локальные данные
 bets_stats.json
 security-fixes-*.patch
+
+# установщик навыков: бинарники движка и локальные агенты (восстанавливаются установкой)
+.agents/skills/impeccable/scripts/bin/
+.claude/
+.codex/
