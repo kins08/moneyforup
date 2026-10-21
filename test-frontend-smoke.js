@@ -100,9 +100,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(!/\.game span:not\(\.game-online-badge\):not\(\.game-online-val\)(?!:not\(\.online-dot\))/.test(rubupCss),
       'rubup-catalog.css не скрывает .online-dot');
     ok(/\.game span[^{]*:not\(\.online-dot\)/.test(rubupCss), 'в CSS есть явное исключение для .online-dot');
-    ok(Boolean(d.querySelector('#fairPlay')), 'в профиле есть блок «Честная игра»');
+    ok(!d.querySelector('#fairPlay'), 'блок «Честная игра» убран из профиля');
     ok(!d.querySelector('#rtpSummary'), 'публичного блока RTP нет');
-    ok(!/RTP|House Edge/i.test(d.querySelector('#fairPlay').textContent), 'в блоке «Честная игра» нет RTP');
     eq(d.querySelectorAll('[data-chfilter]').length, 3, 'фильтры «Все / Классика / Новые режимы»');
 
     // Переключение на новый режим меняет hero.
