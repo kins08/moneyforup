@@ -210,7 +210,6 @@ setInterval(() => {
 const users = new Map();    // id → { name, code, tokens, staked, stakeSince, accruedBase, ref, refEarned, refInvited, termsAt, starsUsd }
 const byCode = new Map();   // реферальный код → id пользователя
 const orders = new Map();   // orderId → order object
-const promoCodes = new Map(); // CODE -> { code, tokens, maxUses, usedBy: Set<userId>, createdAt }
 const plategaTx = new Map(); // transactionId Platega → { userId, tokens, rub }
 let orderSeq = Date.now() % 100000;
 
@@ -1425,26 +1424,42 @@ bot.command('promo', async ctx => {
 bot.command('addpromo', async ctx => {
   if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
   const parts = (ctx.match || '').trim().split(/\s+/);
-  const [code, tokensStr, maxUsesStr] = parts;
-  if (!code || !tokensStr) {
+  const [rawCode, rubStr, maxUsesStr] = parts;
+  if (!rawCode || !rubStr) {
     return ctx.reply(
-      'ℹ️ <b>Как добавить промокод:</b>\n\n' +
+      'ℹ️ <b>Как создать промокод:</b>\n\n' +
       '<code>/addpromo КОД СУММА_₽ [МАКС_АКТИВАЦИЙ]</code>\n\n' +
-      '<b>Пример:</b>\n' +
-      '<code>/addpromo BONUS100 100 50</code> — промокод на 100 ₽ для первых 50 пользователей.',
+      '<b>Примеры:</b>\n' +
+      '<code>/addpromo BONUS100 100 50</code> — 100 ₽ первым 50 игрокам\n' +
+      '<code>/addpromo START 5</code> — 5 ₽, лимит по умолчанию 100\n\n' +
+      '<i>Код: латиница/цифры/_- от 3 до 24 символов. Один игрок может активировать код один раз. ' +
+      'Повторная команда с тем же кодом обновит сумму и лимит.</i>',
       { parse_mode: 'HTML' }
     );
   }
+  const code = String(rawCode).trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{3,24}$/.test(code)) {
+    return ctx.reply('⚠️ Код должен быть 3–24 символа: латиница, цифры, «_» или «-».');
+  }
+  const rubAmt = Number(String(rubStr).replace(',', '.'));
+  if (!Number.isFinite(rubAmt) || rubAmt < 1 || rubAmt > 10000) {
+    return ctx.reply('⚠️ Сумма — от 1 ₽ до 10 000 ₽.');
+  }
+  const maxUses = maxUsesStr ? Math.floor(Number(maxUsesStr)) : 100;
+  if (!Number.isFinite(maxUses) || maxUses < 1 || maxUses > 100000) {
+    return ctx.reply('⚠️ Лимит активаций — от 1 до 100 000.');
+  }
   try {
-    const tokens = Math.round(Number(tokensStr) * TOKENS_PER_RUB);
-    const maxUses = maxUsesStr ? Number(maxUsesStr) : 100;
-    const promo = addPromoCode(code, tokens, maxUses);
+    const tokens = Math.round(rubAmt * TOKENS_PER_RUB);
+    db.upsertPromo(code, tokens, maxUses);
+    const row = db.listPromos(300).find(x => x.code === code);
     await ctx.reply(
-      `✅ <b>Промокод создан!</b>\n\n` +
-      `├ Код: <code>${escHtml(promo.code)}</code>\n` +
-      `├ Награда: <b>${rub(promo.tokens)}</b>\n` +
-      `├ Лимит активаций: <b>${promo.maxUses}</b> человек\n` +
-      `└ Активировано сейчас: <b>${promo.usedBy.size}</b>`,
+      `✅ <b>Промокод ${row && row.used ? 'обновлён' : 'создан'}!</b>\n\n` +
+      `├ Код: <code>${escHtml(code)}</code>\n` +
+      `├ Награда: <b>${rub(tokens)}</b>\n` +
+      `├ Лимит активаций: <b>${maxUses}</b> человек\n` +
+      `└ Уже активировали: <b>${row ? row.used : 0}</b>\n\n` +
+      `<i>Игрок вводит код в приложении (Пополнение → Промокод) или командой <code>/promo ${escHtml(code)}</code>.</i>`,
       { parse_mode: 'HTML' }
     );
   } catch (e) {
@@ -1454,11 +1469,13 @@ bot.command('addpromo', async ctx => {
 
 bot.command(['promos', 'promocodes'], async ctx => {
   if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
-  if (promoCodes.size === 0) return ctx.reply('Промокодов пока нет. Создайте: /addpromo КОД ТОКЕНЫ МАКС');
-  let text = '🎟 <b>Список активных промокодов:</b>\n\n';
-  for (const [code, p] of promoCodes.entries()) {
-    const left = p.maxUses - p.usedBy.size;
-    text += `• <code>${escHtml(code)}</code>: <b>+${rub(p.tokens)}</b> | Использовано: <b>${p.usedBy.size}/${p.maxUses}</b> (осталось: ${left})\n`;
+  const list = db.listPromos(100);
+  if (!list.length) return ctx.reply('Промокодов пока нет. Создайте: /addpromo КОД СУММА_₽ [ЛИМИТ]');
+  let text = '🎟 <b>Промокоды:</b>\n\n';
+  for (const p of list) {
+    const left = Math.max(0, p.maxUses - p.used);
+    text += `• <code>${escHtml(p.code)}</code>: <b>+${rub(p.tokens)}</b> | ${p.used}/${p.maxUses}` +
+      (left > 0 ? ` (осталось ${left})` : ' — <b>исчерпан</b>') + '\n';
   }
   text += '\n<i>Удалить: /delpromo КОД</i>';
   await ctx.reply(text, { parse_mode: 'HTML' });
@@ -1468,9 +1485,9 @@ bot.command('delpromo', async ctx => {
   if (!isAdmin(ctx.from)) return ctx.reply('⛔ Доступ строго только для администратора проекта.');
   const code = (ctx.match || '').trim().toUpperCase();
   if (!code) return ctx.reply('Используйте: /delpromo КОД');
-  if (!promoCodes.has(code)) return ctx.reply(`Промокод «${code}» не найден.`);
-  promoCodes.delete(code);
-  await ctx.reply(`🗑 Промокод «${code}» успешно удалён.`);
+  const res = db.deletePromo(code);
+  if (!res.ok) return ctx.reply(`Промокод «${code}» не найден.`);
+  await ctx.reply(`🗑 Промокод «${code}» удалён. Уже активированные начисления остаются на балансах.`);
 });
 
 bot.command('pay', async ctx => {
@@ -4840,7 +4857,7 @@ function recoverPendingGameRounds() {
   startBotSafely();
 })();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
-  + ' · Промокодов активно: ' + promoCodes.size
+  + ' · Промокодов активно: ' + db.listPromos(300).length
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));
 

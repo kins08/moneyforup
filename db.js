@@ -1750,6 +1750,40 @@ module.exports = {
     );
     return r;
   },
+  listPromos: (limit = 100) => {
+    try {
+      const n = Math.max(1, Math.min(300, Math.floor(Number(limit) || 100)));
+      return db.prepare(`
+        SELECT p.code, p.tokens, p.max_uses, p.created_at,
+               (SELECT COUNT(*) FROM promo_activations a WHERE a.promo_code = p.code) AS used
+        FROM promo_codes p
+        ORDER BY p.created_at DESC
+        LIMIT ?
+      `).all(n).map(r => ({
+        code: r.code,
+        tokens: Number(r.tokens || 0),
+        maxUses: Number(r.max_uses || 0),
+        used: Number(r.used || 0),
+        createdAt: Number(r.created_at || 0)
+      }));
+    } catch (e) {
+      console.error('[DB] listPromos error:', e.message);
+      return [];
+    }
+  },
+  deletePromo: (code) => {
+    try {
+      const norm = String(code || '').trim().toUpperCase();
+      const r = db.prepare('DELETE FROM promo_codes WHERE code = ?').run(norm);
+      if (Number(r && r.changes) > 0) {
+        turso.queueQuery('DELETE FROM promo_codes WHERE code = ?', [norm]);
+      }
+      return { ok: Number(r && r.changes) > 0 };
+    } catch (e) {
+      console.error('[DB] deletePromo error:', e.message);
+      return { ok: false, error: 'Не удалось удалить промокод' };
+    }
+  },
   /** Полная аналитика по раундам конкретного пользователя */
   getUserRoundStats: (userId) => {
     try {
