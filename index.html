@@ -4607,13 +4607,13 @@ function paintModeBadges(){
    ======================================================================= */
 const WHEEL_COOLDOWN = 12 * 3600 * 1000;
 const WHEEL_SECTORS = [
-  { val: 25, label: '+2,50 ₽', color: '#3b82f6', text: '#ffffff' },
+  { val: 25, label: '+2,5 ₽', color: '#3b82f6', text: '#ffffff' },
   { val: 50, label: '+5 ₽', color: '#10b981', text: '#ffffff' },
   { val: 100, label: '+10 ₽', color: '#8b5cf6', text: '#ffffff' },
   { val: 250, label: '+25 ₽', color: '#f59e0b', text: '#ffffff' },
   { val: 50, label: '+5 ₽', color: '#06b6d4', text: '#ffffff' },
   { val: 500, label: '+50 ₽', color: '#ec4899', text: '#ffffff' },
-  { val: 25, label: '+2,50 ₽', color: '#6366f1', text: '#ffffff' },
+  { val: 25, label: '+2,5 ₽', color: '#6366f1', text: '#ffffff' },
   { val: 1000, label: '+100 ₽', color: '#ef4444', text: '#ffcf6b', jack: true }
 ];
 
@@ -8579,7 +8579,7 @@ function gameAuction(){
       <div class="auction-actions" style="margin-top:14px">
         <div class="muted small" style="margin-bottom:6px">Ваша текущая ставка: <b id="aucMyBid">${userBid ? fmt(userBid) + ' ₽' : 'нет ставки'}</b> (нужно перебить ${fmt(topBid)} ₽)</div>
         <div class="chips" style="justify-content:center;margin-bottom:10px">
-          <button class="chip auc-chip" data-amt="25">+2,50 ₽</button>
+          <button class="chip auc-chip" data-amt="25">+2,5 ₽</button>
           <button class="chip auc-chip on" data-amt="50">+5 ₽</button>
           <button class="chip auc-chip" data-amt="100">+10 ₽</button>
           <button class="chip auc-chip" data-amt="250">+25 ₽</button>
@@ -8994,7 +8994,7 @@ function gameHotDrop(){
       <div class="item" style="margin-top:14px">
         <b>Награды:</b>
         <div class="statgrid" style="margin-top:8px">
-          <div class="stat" style="text-align:center"><span class="muted small">Обычный</span><b style="color:#8b92ff">1,50–3,50 ₽</b></div>
+          <div class="stat" style="text-align:center"><span class="muted small">Обычный</span><b style="color:#8b92ff">1,50–3,5 ₽</b></div>
           <div class="stat" style="text-align:center"><span class="muted small">Редкий</span><b style="color:#ffcf6b">5–12 ₽</b></div>
           <div class="stat" style="text-align:center"><span class="muted small">Джекпот</span><b style="color:#3ddc96">25–50 ₽</b></div>
         </div>
@@ -9032,7 +9032,7 @@ function gameHotDrop(){
             return;
           }
         } else {
-          // Выбираем выпавший предмет (с весами, для игроков без депозита максимум 1,50–3,50 ₽)
+          // Выбираем выпавший предмет (с весами, для игроков без депозита максимум 1,50–3,5 ₽)
           const hasDeposits = (S.totalDepositedRub || 0) > 0;
           const weights = hasDeposits ? [35, 30, 20, 10, 5, 3, 0, 0] : [55, 35, 10, 0, 0, 0, 0, 0];
           let totW = weights.reduce((a, b) => a + b, 0);
@@ -10265,7 +10265,7 @@ function gameSafe(){
         </div>
 
         <button class="primary" id="safeSubmitBtn" style="width:100%;padding:14px;font-size:15px;font-weight:900;margin-top:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000" ${enteredCode.length<4||isGuessing?'disabled':''}>
-          ${isGuessing ? 'Подбор кода...' : '🔓 ВЗЛОМАТЬ СЕЙФ (2,50 ₽)'}
+          ${isGuessing ? 'Подбор кода...' : '🔓 ВЗЛОМАТЬ СЕЙФ (2,5 ₽)'}
         </button>
 
         ${safeOutcome ? `
@@ -10326,7 +10326,7 @@ function gameSafe(){
 
     if(S.balance < 25){
       tgHaptic('error');
-      showAppNotification('Недостаточно средств на балансе (нужно 2,50 ₽)!');
+      showAppNotification('Недостаточно средств на балансе (нужно 2,5 ₽)!');
       return;
     }
 
@@ -10410,7 +10410,7 @@ function gameSafe(){
       tgHaptic('medium');
       safeOutcome = {
         won: false,
-        text: `❌ Код <b>${guessCode}</b> не подошёл! Списано 2,50 ₽. Попробуйте другой шифр!`
+        text: `❌ Код <b>${guessCode}</b> не подошёл! Списано 2,5 ₽. Попробуйте другой шифр!`
       };
     }
 

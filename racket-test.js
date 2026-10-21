@@ -41,8 +41,8 @@ async function apiHandle(url, opts) {
     const body = JSON.parse(opts.body || '{}');
     const bet = Math.floor(Number(body.bet) || 0);
     srv.attempts++;
-    if (bet < 10) return err_(400, 'Ставка должна быть от 10 до 100000 ⬦');
-    if (bet > srv.tokens) return err_(400, 'Недостаточно токенов');
+    if (bet < 10) return err_(400, 'Ставка от 1 ₽ до 10 000 ₽');
+    if (bet > srv.tokens) return err_(400, 'Недостаточно средств');
     const win = srv.verdict === 'win' ? Math.floor(bet * RK_MULT) : 0;
     srv.tokens = srv.tokens - bet + win;
     srv.plays.push({ game: body.game, bet, verdict: srv.verdict, win, tokens: srv.tokens });
@@ -56,8 +56,8 @@ async function apiHandle(url, opts) {
     const body = JSON.parse(opts.body || '{}');
     const bet = Math.floor(Number(body.bet) || 0);
     srv.attempts++;
-    if (bet < 10) return err_(400, 'Ставка должна быть от 10 до 100000 ⬦');
-    if (bet > srv.tokens) return err_(400, 'Недостаточно токенов');
+    if (bet < 10) return err_(400, 'Ставка от 1 ₽ до 10 000 ₽');
+    if (bet > srv.tokens) return err_(400, 'Недостаточно средств');
     srv.tokens -= bet;
     srv.lastBet = bet;
     srv.plays.push({ game: 'Ракетка', bet, roundId: body.roundId, tokens: srv.tokens });
@@ -116,7 +116,7 @@ window.addEventListener('error', e => errors.push('window.error: ' + (e.error ? 
 const $ = s => doc.querySelector(s);
 const click = el => { if (!el) throw new Error('нет элемента для клика: ' + el); el.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); };
 const type = (el, v) => { el.value = v; el.dispatchEvent(new window.Event('input', { bubbles: true })); };
-const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '');
+const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG.state || {}).balance);
 
 /* ── сценарий ──────────────────────────────────────────────────────────────── */
 (async () => {
@@ -147,7 +147,7 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
       'в шапке режима виден зелёный индикатор «онлайн»: «' + (mo ? mo.textContent.trim() : 'нет') + '»');
   }
   check(showBal() === 100, 'стартовый баланс пришёл с сервера: ' + showBal() + ' ⬦');
-  type($('#b1Inp'), '60'); type($('#b2Inp'), '60');
+  type($('#b1Inp'), '6'); type($('#b2Inp'), '6');
   const tgl = el => { if (el.checked) { el.checked = false; el.dispatchEvent(new window.Event('change', { bubbles: true })); } };
   tgl($('#b1AutoChk')); tgl($('#b2AutoChk'));         // авто-кэшаут не должен стрелять раньше нас
   // клик по кнопке ставит/снимает ставку в очереди; приводим состояние к нужному
@@ -198,7 +198,7 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
   FAKE_NOW = tBet(R3);                                 // новый чистый раунд
   await sleep(80);
   check(!/ЗАБРАТЬ/.test(b1Btn.textContent), 'новый раунд начался с чистых ставок: ' + b1Btn.textContent.slice(0, 30));
-  type($('#b1Inp'), '60');
+  type($('#b1Inp'), '6');
   setQueue(b1Btn, true);
   const p2 = srv.plays.length;
   FAKE_NOW = tFly(R3);                                 // старт полёта: ставка уходит серверу и выигрывает 102 ⬦
@@ -208,8 +208,8 @@ const showBal = () => +doc.querySelector('.js-bal').textContent.replace(/\s/g, '
   click(b1Btn);                                        // кэшаут на ×1.11
   await sleep(60);
   const rr = $('#rr').textContent;
-  check(/\+102/.test(rr), 'показана выплата сервера (+102 ⬦): ' + rr.slice(0, 90));
-  check(!/\+66/.test(rr), 'нет обещания bet×кэшаут (+66 ⬦), которого сервер не начислял');
+  check(/\+10,2/.test(rr), 'показана выплата сервера (+10,2 ₽): ' + rr.slice(0, 90));
+  check(!/\+6,6/.test(rr), 'нет обещания bet×кэшаут (+6,6 ₽), которого сервер не начислял');
   check(tk.length > 0 && tk[0].mult === RK_MULT, 'тикер получил множитель сервера ×' + RK_MULT + ', а не склейку цифр из подписи: ' + JSON.stringify(tk[0] || null));
   check(tk.length > 0 && tk[0].amt === 102, 'тикер показывает фактическую сумму 102 ⬦: ' + (tk[0] && tk[0].amt));
   check(srv.tokens === 342, 'баланс на сервере сошёлся: ' + srv.tokens + ' ⬦ (300 − 60 + 102)');

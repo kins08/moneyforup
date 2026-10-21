@@ -4857,7 +4857,6 @@ function recoverPendingGameRounds() {
   startBotSafely();
 })();
 console.log('Бот запущен. Стейкинг 1 %/сутки, рефералы ' + REF_PERCENT + ' %'
-  + ' · Промокодов активно: ' + db.listPromos(300).length
   + ' · Coinso (Крипта): ' + (coinsoOn() ? 'вкл' : 'выкл')
   + (PUBLIC_URL ? ' · вебхуки: ' + PUBLIC_URL : ' · PUBLIC_URL не задан: вебхуки не придут, работает опрос статуса'));
 
