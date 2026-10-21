@@ -58,8 +58,10 @@ npm start                     # или: node --env-file=.env bot.js
 | POST | `/api/upgrade/ladder/state` | `{ initData, sessionId? }` | активная сессия после перезагрузки |
 | POST | `/api/upgrade/history` | `{ initData, limit? }` | журнал апгрейдов |
 | POST | `/api/revolver/state` | `{ initData }` | активный раунд револьвера (восстановление после сбоя) |
-| POST | `/api/withdraw` | `{ initData, rub, method, details }` | заявка на вывод (минимум 200 ₽, нужен депозит) |
-| POST | `/api/order-sbp` | `{ initData, rub, termsAcceptedAt }` | `{ order_id, tokens }` |
+| POST | `/api/withdraw` | `{ initData, rub, method, details }` | заявка на вывод (минимум 300 ₽, нужен депозит) |
+| POST | `/api/order-sbp` | `{ initData, rub, termsAcceptedAt }` | `{ order_id, tokens, expiresAt, ttlMs }` — заявка на пополнение живёт ровно 1 час |
+| POST | `/api/check-order` | `{ initData, order_id }` | `{ status, expiresAt, remainingMs, tokens, rub }` |
+| POST | `/api/my-orders` | `{ initData }` | последние заявки игрока со статусом и остатком времени (блок «Мои заявки» в профиле) |
 | POST | `/platega-webhook` | уведомление Platega (заголовки `X-MerchantId`, `X-Secret`) | `{ ok }` |
 | POST | `/coinso-webhook` | уведомление Coinso, заголовок `X-Signature = HMAC-SHA256(raw, COINSO_SECRET_KEY)` | `{ ok }` |
 
@@ -164,6 +166,14 @@ npm run check:frontend  # index.html и public/index.html идентичны; as
 Тесты поднимают мок-серверы платёжек и бота с `BOT_DRY_RUN=1` в изолированной временной БД — Telegram и боевая база не трогаются. Полный регламент аудита — `.agents/skills/security-audit/` (реестр находок: `reference/known-findings.md`).
 
 > `tg-test.js` (jsdom, `npm i` ставит dev-зависимость) написаны под прежнюю вёрстку и требуют переписывания под текущий интерфейс — сейчас они падают на устаревших ожиданиях, а не на багах продакшена.
+
+## RTP и честная игра
+
+- Единый конфиг — `rtp.js`. Каждый режим сохраняет свой прежний уровень и снижен на **3 п.п.**; уравнивания нет.
+- Шанс и выплаты считает только сервер из этого конфига; клиент не может влиять на исход.
+- RTP и house edge — внутренние параметры экономики, в интерфейсе они не публикуются.
+- Кейсы снижены перевесом весов к дешёвым предметам, Crash — масштабом точки взрыва; цены предметов не меняются.
+- Проверка: `npm run test:rtp` (1,6 млн раундов) и `node test-upgrade-math.js`.
 
 ## Безопасность
 

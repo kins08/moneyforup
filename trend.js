@@ -19,6 +19,10 @@
  */
 
 const crypto = require('crypto');
+const rtp = require('./rtp');
+
+const TREND_EDGE = rtp.edgeOf('trend');
+const TREND_MULT = Number((3 * (1 - TREND_EDGE)).toFixed(2));
 
 const SHAPES = ['wave', 'steps', 'spike', 'channel', 'v', 'double', 'saw', 'drift'];
 const VOL_REGIMES = [0.55, 1, 1.55, 2.2];
@@ -30,16 +34,16 @@ const PRICE_BASES = [1260, 2470, 3890, 6150, 12400, 24800, 48700, 73400];
 const TREND = {
   id: 'trend',
   label: 'TREND HUNTER',
-  edge: 0.08,
+  edge: TREND_EDGE,
   patterns: ['rise', 'fall', 'flat'],
   variants: SHAPES.length * VOL_REGIMES.length * PHASES.length,
   // Уровни сложности меняют ТОЛЬКО условия: длину ряда, шум и время на ответ.
   // Выплата одинакова на всех уровнях (3 паттерна → P = 1/3, множитель 3 × (1 − edge)),
-  // поэтому RTP = 92% на любом уровне и сложность не даёт скрытой выгоды.
+  // поэтому RTP одинаковый на любом уровне и сложность не даёт скрытой выгоды.
   levels: {
-    1: { label: 'Лёгкий',   points: 12, noise: 0.10, seconds: 20, mult: 2.76 },
-    2: { label: 'Средний',  points: 18, noise: 0.22, seconds: 15, mult: 2.76 },
-    3: { label: 'Сложный',  points: 24, noise: 0.35, seconds: 10, mult: 2.76 }
+    1: { label: 'Лёгкий',   points: 12, noise: 0.10, seconds: 20, mult: TREND_MULT },
+    2: { label: 'Средний',  points: 18, noise: 0.22, seconds: 15, mult: TREND_MULT },
+    3: { label: 'Сложный',  points: 24, noise: 0.35, seconds: 10, mult: TREND_MULT }
   },
   minBet: 10,
   maxBet: 5000

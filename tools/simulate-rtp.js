@@ -18,7 +18,7 @@
  * 13. challenge (Челлендж 24ч)
  * 
  * Критерии:
- * - RTP везде <= 92-95% (строго <= 0.9500)
+ * - Каждый режим ниже прежнего уровня примерно на 3 п.п.
  * - House Edge >= 5.0%
  * - Казино строго в плюсе на дистанции
  * - Положительное МО (EV) для проекта
@@ -27,25 +27,26 @@
 const crypto = require('crypto');
 const path = require('path');
 const items = require('../items.js');
+const rtp = require('../rtp');
 
 const GAMES = {
-  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.055, defaultMult: 1.95 },
-  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: 0.06,  defaultMult: 2.0 },
-  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
-  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
-  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
-  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 1.7 },
-  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
-  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
-  challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 }
+  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('dice'), defaultMult: 1.95 },
+  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: rtp.edgeOf('jumper'),  defaultMult: 2.0 },
+  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('spin'),  defaultMult: 2.0 },
+  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('drop'),  defaultMult: 2.0 },
+  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('skuf'),  defaultMult: 2.0 },
+  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('avito'),  defaultMult: 2.0 },
+  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('cases'),  defaultMult: 2.0 },
+  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('upgrader'),  defaultMult: 2.0 },
+  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('auction'),  defaultMult: 1.8 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
+  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('hotdrop'),  defaultMult: 2.0 },
+  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('wheel'),  defaultMult: 2.0 },
+  challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('challenge'),  defaultMult: 1.8 }
 };
 
 const RK = { tcap: 12, k: 0.18 };
-function sampleCrash(seedIdx) {
+function sampleCrashBase(seedIdx) {
   let r;
   if (seedIdx != null) {
     let a = (seedIdx ^ 0x6D2B79F5) >>> 0;
@@ -66,6 +67,13 @@ function sampleCrash(seedIdx) {
   const t0 = Math.log(3.5) / RK.k;
   const rLong = (r - 0.98) / 0.02;
   return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
+}
+
+/* Та же поправка, что в bot.js: RTP Crash снижен на CRASH_POINT_SCALE. */
+function sampleCrash(seedIdx) {
+  const base = sampleCrashBase(seedIdx);
+  if (base <= 1) return 1.00;
+  return Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100);
 }
 
 function simulateStandardGame(gameKey, rounds = 100000) {
@@ -275,7 +283,7 @@ async function main() {
   console.log(`Общий оборот ставок:        ${sumWagered.toLocaleString('ru-RU')} ⬦`);
   console.log(`Общие выплаты игрокам:      ${sumWon.toLocaleString('ru-RU')} ⬦`);
   console.log(`Чистый доход проекта:       +${sumProfit.toLocaleString('ru-RU')} ⬦`);
-  console.log(`Глобальный RTP:             ${globalRtp.toFixed(2)}% (требование: <= 92-95%)`);
+  console.log(`Глобальный RTP:             ${globalRtp.toFixed(2)}% (каждый режим снижен на ~3 п.п.)`);
   console.log(`Глобальный House Edge:      ${globalEdge.toFixed(2)}% (строго положительное МО проекта)`);
 
   if (allPass && globalRtp <= 95.0) {

@@ -85,7 +85,7 @@ for (const steps of [3, 5, 10]) {
   }
 }
 
-// 7. Новые кейсы: возврат игроку 82–86%, веса 100, цены в диапазоне.
+// 7. Новые кейсы: возврат игроку 80–86% (снижен на 3 п.п.), веса 100, цены в диапазоне.
 console.log('\n=== CASE MODES ===');
 const modeIds = Object.keys(caseModes.MODES);
 ok(modeIds.length === 5, 'пять новых режимов кейсов');
@@ -94,7 +94,7 @@ for (const id of modeIds) {
   const economy = caseModes.caseEconomy(id);
   ok(cm.items.length === 14, `${id}: 14 предметов`);
   ok(cm.items.reduce((s, i) => s + i.w, 0) === 100, `${id}: сумма весов = 100`);
-  ok(economy.returnRate >= 0.82 && economy.returnRate <= 0.86, `${id}: возврат ${economy.returnRate.toFixed(4)} в диапазоне 0.82–0.86`);
+  ok(economy.returnRate >= 0.80 && economy.returnRate <= 0.86, `${id}: возврат ${economy.returnRate.toFixed(4)} в диапазоне 0.80–0.86`);
   ok(cm.items.every(i => i.price >= cm.priceMin && i.price <= cm.priceMax), `${id}: цены предметов в диапазоне режима`);
   ok(cm.price >= cm.priceMin && cm.price <= cm.priceMax, `${id}: цена открытия в диапазоне`);
   ok(new Set(cm.items.map(i => i.code)).size === cm.items.length, `${id}: коды предметов уникальны`);

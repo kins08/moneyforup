@@ -47,6 +47,7 @@ if (!__nodeOk) {
 
 const db            = require('./db');
 const items         = require('./items');   // серверный каталог кейсов и предметов
+const rtp           = require('./rtp');     // единый RTP/edge для всех режимов
 const upgrade       = require('./upgrade'); // серверная модель Апгрейдера
 const pulse         = require('./pulse');   // Pulse Market: исход и выплаты (DECISIONS D5)
 const boost         = require('./boost');   // персональный буст дропа из админки
@@ -151,6 +152,11 @@ const START_TOKENS    = 50;
 const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
+/* Заявка на пополнение живёт ровно час: это окно оплаты. По истечении
+   она отменяется автоматически и в мини-аппе, и в чате админа. */
+const DEPOSIT_TTL_MS   = Math.max(5000, Number(process.env.DEPOSIT_TTL_MS) || 60 * 60 * 1000);
+const DEPOSIT_TTL_TEXT = '1 час';
+const DEPOSIT_SWEEP_MS = 30000;
 /* Все суммы игроку показываем в рублях: делим внутренние единицы на курс. */
 const rubOf = tk => Math.round((Number(tk) || 0) / TOKENS_PER_RUB * 100) / 100;
 const rub = tk => rubOf(tk).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
@@ -227,7 +233,10 @@ function reloadOrdersFromDb() {
         source: o.source,
         tx: o.tx,
         createdAt: o.created_at,
-        updatedAt: o.updated_at
+        updatedAt: o.updated_at,
+        expiresAt: o.expires_at,
+        adminMsgId: o.admin_msg_id,
+        adminChatId: o.admin_chat_id
       });
     }
   } catch (e) {
@@ -256,7 +265,10 @@ function getOrder(id) {
         source: fromDb.source,
         tx: fromDb.tx,
         createdAt: fromDb.created_at,
-        updatedAt: fromDb.updated_at
+        updatedAt: fromDb.updated_at,
+        expiresAt: fromDb.expires_at,
+        adminMsgId: fromDb.admin_msg_id,
+        adminChatId: fromDb.admin_chat_id
       };
       orders.set(String(id), ord);
     }
@@ -268,6 +280,86 @@ function setOrder(id, ord) {
   ord.id = String(id);
   orders.set(String(id), ord);
   try { db.saveOrder(ord); } catch (e) { console.error('Ошибка сохранения заказа в БД:', e.message); }
+}
+
+/* ---------- срок жизни заявок на пополнение -------------------------------
+   Ручная заявка (СБП/карта) — это окно оплаты ровно на час. Автоматические
+   счета Platega/Coinso сюда не попадают: у них свой вебхук и статус. */
+function orderExpiresAt(order) {
+  if (!order || order.type === 'withdraw') return 0;
+  const stored = Number(order.expiresAt || 0);
+  if (stored > 0) return stored;
+  const created = Number(order.createdAt || 0);
+  return created > 0 ? created + DEPOSIT_TTL_MS : 0;
+}
+
+function isManualDeposit(order) {
+  return !!order && order.type !== 'withdraw' &&
+    (order.source === 'СБП / Карта' || Boolean(order.bank) || Boolean(order.card));
+}
+
+const ordersExpiring = new Set();
+
+async function expireDepositOrder(order, now = Date.now(), opts = {}) {
+  if (!order || order.status !== 'pending' || !isManualDeposit(order)) return false;
+  const expiresAt = orderExpiresAt(order);
+  if (!expiresAt || now < expiresAt) return false;
+  const key = String(order.id);
+  if (ordersExpiring.has(key)) return false;
+  ordersExpiring.add(key);
+  const notifyUser = opts.notify !== false;
+  try {
+    order.status = 'expired';
+    order.completedAt = now;
+    try { db.updateOrderStatus(order.id, 'expired'); } catch (e) { console.error('[Orders] expire db:', e.message); }
+    const until = new Date(expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const chatId = Number(order.adminChatId || 0);
+    const msgId = Number(order.adminMsgId || 0);
+    if (chatId && msgId) {
+      bot.api.editMessageText(chatId, msgId,
+        `⌛ <b>Заявка №${escHtml(order.id)} истекла</b>\n` +
+        `├ Игрок: <code>${order.userId}</code>\n` +
+        `├ Сумма: <b>${order.rub} ₽</b>\n` +
+        `└ Срок — ${DEPOSIT_TTL_TEXT} (до ${until}). Заявка отменена, подтвердить её нельзя.`,
+        { parse_mode: 'HTML', reply_markup: { inline_keyboard: [] } }
+      ).catch(() => {});
+    }
+    if (notifyUser) {
+      bot.api.sendMessage(Number(order.userId),
+        `⌛ <b>Заявка на пополнение №${escHtml(order.id)} на ${order.rub} ₽ истекла.</b>\n\n` +
+        `Окно оплаты — ${DEPOSIT_TTL_TEXT}. Если вы уже перевели деньги, напишите @lev_god и приложите чек. ` +
+        `Иначе создайте новую заявку в приложении.`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+    }
+    console.log(`[Orders] заявка ${order.id} истекла (${order.rub} ₽, user ${order.userId}${notifyUser ? '' : ', без уведомления'})`);
+    return true;
+  } finally {
+    ordersExpiring.delete(key);
+  }
+}
+
+async function sweepExpiredDeposits(now = Date.now()) {
+  let rows = [];
+  try {
+    rows = db.listPendingManualDeposits();
+  } catch (e) {
+    console.warn('[Orders] sweep db:', e.message);
+    rows = [...orders.values()].filter(o => o.status === 'pending' && isManualDeposit(o));
+  }
+  for (const row of rows) {
+    const order = getOrder(row.id);
+    if (!order || order.status !== 'pending' || !isManualDeposit(order)) continue;
+    if (!Number(order.expiresAt || 0)) {
+      // Старые заявки до этой миграции: срок отсчитывается от создания.
+      order.expiresAt = orderExpiresAt(order);
+      try { setOrder(order.id, order); } catch (_) {}
+    }
+    const lateMs = now - orderExpiresAt(order);
+    // Заявки, просроченные давно (бот лежал/старая база), закрываем без
+    // сообщения игроку, чтобы первый запуск не рассылал пачку уведомлений.
+    await expireDepositOrder(order, now, { notify: lateMs <= 6 * 60 * 60 * 1000 });
+  }
 }
 
 /* ---------- реферальные коды -------------------------------------- */
@@ -413,24 +505,24 @@ function setBalanceTo(u, value, type, reason) {
 /* принимать от клиента, но обязательно проверять по границам игры.      */
 const GAMES = {
   // ключ (нормализованный)   границы ставки        границы множителя   edge
-  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.055, defaultMult: 1.95 },
-  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: 0.06,  defaultMult: 2.0 },
-  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 2.0 },
-  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: 0.06,  defaultMult: 2.0 },
-  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
-  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: 0.06,  defaultMult: 1.7 },
-  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
-  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 2.0 },
-  challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: 0.06,  defaultMult: 1.8 },
-  scratch:       { label: 'Скретч-карты',      minBet: 20, maxBet: 50000,  minMult: 1.5, maxMult: 200,  edge: 0.065, defaultMult: 2.0 },
-  revolver:      { label: 'Револьвер',         minBet: 10, maxBet: 50000,  minMult: 1.18, maxMult: 29,  edge: 0.06,  defaultMult: 1.5 },
-  safe:          { label: 'Взлом Сейфа',       minBet: 25, maxBet: 25,     minMult: 1.0, maxMult: 1000, edge: 0.05,  defaultMult: 1.0 },
+  dice:          { label: 'Dice',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('dice'), defaultMult: 1.95 },
+  jumper:        { label: 'Попрыгун',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 120,  edge: rtp.edgeOf('jumper'),  defaultMult: 2.0 },
+  spin:          { label: 'Спин',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('spin'),  defaultMult: 2.0 },
+  drop:          { label: 'Дроп',              minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('drop'),  defaultMult: 2.0 },
+  skuf:          { label: 'Скуф vs Альтушка',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('skuf'),  defaultMult: 2.0 },
+  avito:         { label: 'Перекуп на Авито',  minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('avito'),  defaultMult: 2.0 },
+  cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('cases'),  defaultMult: 2.0 },
+  upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('upgrader'),  defaultMult: 2.0 },
+  auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('auction'),  defaultMult: 1.8 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
+  hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('hotdrop'),  defaultMult: 2.0 },
+  wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('wheel'),  defaultMult: 2.0 },
+  challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('challenge'),  defaultMult: 1.8 },
+  scratch:       { label: 'Скретч-карты',      minBet: 20, maxBet: 50000,  minMult: 1.5, maxMult: 200,  edge: rtp.edgeOf('scratch'), defaultMult: 2.0 },
+  revolver:      { label: 'Револьвер',         minBet: 10, maxBet: 50000,  minMult: 1.18, maxMult: 29,  edge: rtp.edgeOf('revolver'),  defaultMult: 1.5 },
+  safe:          { label: 'Взлом Сейфа',       minBet: 25, maxBet: 25,     minMult: 1.0, maxMult: 1000, edge: rtp.edgeOf('safe'),  defaultMult: 1.0 },
   // Неизвестная игра: консервативный профиль вместо отказа — чтобы клиент не ломался
-  __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: 0.08,  defaultMult: 2.0 }
+  __default:     { label: 'Игра',              minBet: 10, maxBet: 10000,  minMult: 1.1, maxMult: 2,    edge: rtp.edgeOf('__default'),  defaultMult: 2.0 }
 };
 
 /* ── Ракетка (Crash Game 24/7): точка взрыва — СЕРВЕРНЫЙ секрет ──
@@ -445,7 +537,7 @@ const RACKET_WAIT_MS = 15000;
 const RACKET_SPEED = 0.58;
 
 /* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте). */
-function crashFromR(r) {
+function crashFromRBase(r) {
   if (r < 0.08) return 1.00;                                   // мгновенный взрыв
   if (r < 0.14) return +(1.01 + ((r - 0.08) / 0.06) * 0.09).toFixed(2);
   if (r < 0.29) return +(1.10 + ((r - 0.14) / 0.15) * 0.20).toFixed(2);
@@ -457,6 +549,14 @@ function crashFromR(r) {
   const t0 = Math.log(3.5) / RK.k;
   const rLong = (r - 0.98) / 0.02;
   return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
+}
+
+/* Снижение RTP Crash: точки взрыва чуть ниже, минимальный множитель остаётся 1.00.
+   Коэффициент общий с симулятором (rtp.js), поэтому проверка RTP не расходится с игрой. */
+function crashFromR(r) {
+  const base = crashFromRBase(r);
+  if (base <= 1) return 1.00;
+  return Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100);
 }
 
 /* Точка взрыва раунда живёт только на сервере и раскрывается по факту (см. /api/racket/state). */
@@ -1400,8 +1500,9 @@ bot.command('sbp', async ctx => {
   const rubAmt = Math.max(1, Math.floor(Number((ctx.match || '').trim()) || 300));
   const id = 'SBP_' + crypto.randomBytes(16).toString('hex');
   const tokens = rubAmt * TOKENS_PER_RUB;
-  const newOrder = { id, userId: ctx.from.id, tokens, rub: rubAmt, status: 'pending', source: 'СБП / Карта', createdAt: Date.now() };
+  const newOrder = { id, userId: ctx.from.id, tokens, rub: rubAmt, status: 'pending', source: 'СБП / Карта', createdAt: Date.now(), expiresAt: Date.now() + DEPOSIT_TTL_MS };
   setOrder(id, newOrder);
+  const payUntil = new Date(newOrder.expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
   let reqText = '';
   if (SBP_PHONE) reqText += `• Телефон СБП: <code>${escHtml(SBP_PHONE)}</code>${SBP_HOLDER ? ` (${escHtml(SBP_HOLDER)})` : ''}\n• Банки СБП: Т-Банк, Сбербанк, Озон Банк\n`;
@@ -1419,25 +1520,37 @@ bot.command('sbp', async ctx => {
     `💳 <b>Заявка №${escHtml(id)} на ${rubAmt} ₽</b>\n\n` +
     `<b>Реквизиты для оплаты:</b>\n` +
     reqText + `\n` +
-    `После перевода администратор проверит платёж и средства сразу зачислятся на баланс.`,
+    `⏳ Заявка действует <b>${DEPOSIT_TTL_TEXT}</b> — до <b>${payUntil}</b>. После перевода админ проверит платёж, и средства зачислятся на баланс.`,
     { parse_mode: 'HTML' }
   );
   const senderLabel = ctx.from.username ? '@' + ctx.from.username : (ctx.from.first_name || 'ID ' + ctx.from.id);
-  await bot.api.sendMessage(ADMIN_ID,
+  const sent = await bot.api.sendMessage(ADMIN_ID,
     `💳 <b>Заявка №${escHtml(id)} по СБП:</b> ${rubAmt} ₽ → <b>+${rub(tokens)}</b>\n` +
-    `От: <b>${escHtml(senderLabel)}</b> (id: <code>${ctx.from.id}</code>)`,
+    `От: <b>${escHtml(senderLabel)}</b> (id: <code>${ctx.from.id}</code>)\n` +
+    `⏳ Срок оплаты: <b>${DEPOSIT_TTL_TEXT}</b> (до ${payUntil})`,
     {
       parse_mode: 'HTML',
       reply_markup: new InlineKeyboard()
         .text('✅ Подтвердить', 'ok:' + id)
         .text('❌ Отклонить', 'no:' + id)
     }
-  );
+  ).catch(e => console.error('Не удалось отправить админу заявку СБП:', e.message));
+  if (sent && sent.message_id) {
+    newOrder.adminMsgId = sent.message_id;
+    newOrder.adminChatId = Number(ADMIN_ID) || 0;
+    try { db.setOrderMessage(id, sent.message_id, Number(ADMIN_ID) || 0); } catch (_) {}
+  }
 });
 
 async function processOrderAction(orderId, action) {
   const order = getOrder(String(orderId));
   if (!order) return { ok: false, error: 'Заявка не найдена' };
+  if (order.status === 'pending' && await expireDepositOrder(order)) {
+    return { ok: false, error: `⌛ Заявка истекла: окно оплаты — ${DEPOSIT_TTL_TEXT}. Создайте новую.` };
+  }
+  if (order.status === 'expired') {
+    return { ok: false, error: `⌛ Заявка истекла: окно оплаты — ${DEPOSIT_TTL_TEXT}. Создайте новую.` };
+  }
   if (order.status !== 'pending') return { ok: false, error: 'Заявка уже обработана (' + order.status + ')' };
 
   if (order.type === 'withdraw') {
@@ -1694,6 +1807,7 @@ bot.callbackQuery('adm_wipe_cheaters', async ctx => {
 bot.callbackQuery('adm_orders', async ctx => {
   if (!isAdmin(ctx.from)) return ctx.answerCallbackQuery({ text: '⛔ Только для администратора', show_alert: true });
   await ctx.answerCallbackQuery();
+  await sweepExpiredDeposits();
   const pending = [...orders.entries()].filter(([_, o]) => o.status === 'pending');
   if (pending.length === 0) {
     return ctx.reply('✅ Активных ожидающих заявок на пополнение или вывод сейчас нет.');
@@ -1719,10 +1833,13 @@ bot.callbackQuery('adm_orders', async ctx => {
       );
     } else {
       const pName = u.username ? '@' + u.username : (u.name || 'ID ' + o.userId);
+      const exp = orderExpiresAt(o);
+      const leftMin = exp ? Math.max(1, Math.ceil((exp - Date.now()) / 60000)) : 0;
       await ctx.reply(
         `💳 <b>Ожидает пополнения #${escHtml(id)}</b>\n` +
         `├ Игрок: <b>${escHtml(pName)}</b> (<code>${o.userId}</code>)\n` +
         `├ Сумма: <b>${o.rub} ₽</b>\n` +
+        (exp ? `├ Осталось: <b>${leftMin} мин</b>\n` : '') +
         `└ Способ: <b>${escHtml(o.bank || o.source || 'СБП')}</b>`,
         {
           parse_mode: 'HTML',
@@ -3796,7 +3913,36 @@ const server = http.createServer(async (req, res) => {
       const ordId = String(body.order_id || '');
       const ord = getOrder(ordId);
       if (!ord || ord.userId !== u.id) return send(404, { error: 'Заявка не найдена' });
-      return send(200, { status: ord.status, tokens: ord.tokens, rub: ord.rub, balance: u.tokens });
+      await expireDepositOrder(ord);
+      const expiresAt = orderExpiresAt(ord);
+      return send(200, {
+        status: ord.status, tokens: ord.tokens, rub: ord.rub, balance: u.tokens,
+        expiresAt, ttlMs: DEPOSIT_TTL_MS,
+        remainingMs: expiresAt ? Math.max(0, expiresAt - Date.now()) : 0
+      });
+    }
+
+    /* Мои заявки: статус и срок для профиля в мини-аппе */
+    if (url.pathname === '/api/my-orders' && req.method === 'POST') {
+      await sweepExpiredDeposits();
+      const now = Date.now();
+      const ordersList = db.listUserOrders(u.id, 12).map(o => {
+        const type = o.type || 'deposit';
+        const expiresAt = type === 'withdraw' ? 0 : Number(o.expires_at || 0);
+        return {
+          id: String(o.id),
+          type,
+          rub: Number(o.rub) || 0,
+          tokens: Number(o.tokens) || 0,
+          status: o.status || 'pending',
+          method: o.method || o.bank || o.source || '',
+          createdAt: Number(o.created_at) || 0,
+          updatedAt: Number(o.updated_at) || 0,
+          expiresAt,
+          remainingMs: expiresAt ? Math.max(0, expiresAt - now) : 0
+        };
+      });
+      return send(200, { ok: true, now, ttlMs: DEPOSIT_TTL_MS, orders: ordersList });
     }
 
     /* АДМИН-ПАНЕЛЬ: строго только для владельца (isAdmin) */
@@ -3808,6 +3954,7 @@ const server = http.createServer(async (req, res) => {
 
         if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
       if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
+      await sweepExpiredDeposits();
       const dbOrders = db.getAllOrders();
       const allOrders = (dbOrders.length ? dbOrders : [...orders.values()]).map(o => {
         const uId = o.user_id || o.userId;
@@ -3825,7 +3972,8 @@ const server = http.createServer(async (req, res) => {
           method: o.method || o.bank || o.source || 'СБП / Карта',
           details: o.details || o.card || '',
           status: o.status,
-          createdAt: o.created_at || o.createdAt || Date.now()
+          createdAt: o.created_at || o.createdAt || Date.now(),
+          expiresAt: Number(o.expires_at || o.expiresAt || 0)
         };
       }).slice(0, 300);
 
@@ -3839,7 +3987,7 @@ const server = http.createServer(async (req, res) => {
         stats24h: betsMonitor.getAnalytics(24),
         statsAll: betsMonitor.getAnalytics(0),
         ledger: db.listRecentLedger(300),
-        rounds: db.listRecentRounds(200),
+        rounds: db.listRecentRounds(200),
       });
     }
 
@@ -4336,12 +4484,14 @@ const server = http.createServer(async (req, res) => {
         status: 'pending',
         source: 'СБП / Карта',
         bonus: willGetBonus25 ? '25' : '',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        expiresAt: Date.now() + DEPOSIT_TTL_MS
       };
       setOrder(id, newOrder);
       if (ADMIN_ID) {
         const uLabel = tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `ID ${u.id}`);
         const bonusTagText = willGetBonus25 ? ` (+${rub(bonusTokens)} бонус +25% на 1-й деп)` : '';
+        const payUntil = new Date(newOrder.expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const msg =
           `💳 <b>Новая заявка на пополнение №${escHtml(id)}</b>\n` +
           `├ Пользователь: <b>${escHtml(uLabel)}</b> (ID: <code>${u.id}</code>)\n` +
@@ -4349,15 +4499,21 @@ const server = http.createServer(async (req, res) => {
           `├ Способ / Банк: <b>${escHtml(bank)}</b>\n` +
           (card ? `├ Реквизит: <code>${escHtml(card)}</code>\n` : '') +
           (sender ? `├ Отправитель / примечание: <code>${escHtml(sender)}</code>\n` : '') +
+          `├ Срок оплаты: <b>${DEPOSIT_TTL_TEXT}</b> (до ${payUntil})\n` +
           `└ Статус: <i>Ожидает подтверждения</i>`;
-        await bot.api.sendMessage(ADMIN_ID, msg, {
+        const sent = await bot.api.sendMessage(ADMIN_ID, msg, {
           parse_mode: 'HTML',
           reply_markup: new InlineKeyboard()
             .text('✅ Подтвердить', 'ok:' + id)
             .text('❌ Отклонить', 'no:' + id)
         }).catch(e => console.error('Не удалось отправить админу заявку СБП:', e.message));
+        if (sent && sent.message_id) {
+          newOrder.adminMsgId = sent.message_id;
+          newOrder.adminChatId = Number(ADMIN_ID) || 0;
+          try { db.setOrderMessage(id, sent.message_id, Number(ADMIN_ID) || 0); } catch (_) {}
+        }
       }
-      return send(200, { order_id: id, tokens, rub: rubAmt, bonusApplied: willGetBonus25 });
+      return send(200, { order_id: id, tokens, rub: rubAmt, bonusApplied: willGetBonus25, expiresAt: newOrder.expiresAt, ttlMs: DEPOSIT_TTL_MS });
     }
 
     /* Уведомления пользователю в бот (ежедневный кейс / шкала челленджа) */
@@ -4421,6 +4577,15 @@ async function initBotProfile() {
   }
 }
 initBotProfile();
+
+/* Заявки на пополнение живут час: свип раз в 30 секунд плюс один прогон
+   после старта, чтобы просроченные не висели в чате и в админке. */
+setInterval(() => {
+  sweepExpiredDeposits().catch(e => console.warn('[Orders] sweep:', e.message));
+}, DEPOSIT_SWEEP_MS).unref();
+setTimeout(() => {
+  sweepExpiredDeposits().catch(e => console.warn('[Orders] sweep start:', e.message));
+}, 5000).unref();
 
 bot.catch(err => {
   console.error('[Grammy Bot Error]:', err.message || err);

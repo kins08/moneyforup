@@ -100,7 +100,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(!/\.game span:not\(\.game-online-badge\):not\(\.game-online-val\)(?!:not\(\.online-dot\))/.test(rubupCss),
       'rubup-catalog.css не скрывает .online-dot');
     ok(/\.game span[^{]*:not\(\.online-dot\)/.test(rubupCss), 'в CSS есть явное исключение для .online-dot');
-    ok(!/\bRTP\b/i.test(d.body.textContent), 'в интерфейсе нет упоминаний RTP');
+    ok(Boolean(d.querySelector('#fairPlay')), 'в профиле есть блок «Честная игра»');
+    ok(!d.querySelector('#rtpSummary'), 'публичного блока RTP нет');
+    ok(!/RTP|House Edge/i.test(d.querySelector('#fairPlay').textContent), 'в блоке «Честная игра» нет RTP');
     eq(d.querySelectorAll('[data-chfilter]').length, 3, 'фильтры «Все / Классика / Новые режимы»');
 
     // Переключение на новый режим меняет hero.
@@ -149,6 +151,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(300);
     ok(d.querySelector('#play').classList.contains('active'), 'экран игры открыт');
     eq(d.querySelectorAll('.upg-mode').length, 0, 'режимы риска убраны из интерфейса (DECISIONS D4)');
+    ok(Boolean(d.querySelector('.upg-wheel')), 'круговой индикатор шанса отрисован');
+    ok(Boolean(d.querySelector('.upg-wheel__cap')), 'в апгрейдере есть подпись правил');
+    ok(!/RTP|House Edge/i.test(d.querySelector('.upg-wheel__cap').textContent), 'в подписи апгрейдера нет RTP');
     ok(/70%/.test(d.querySelector('#play').textContent), 'виден потолок шанса 70%');
     eq(d.querySelectorAll('[data-utab]').length, 4, 'четыре вкладки: одиночный/мульти/лесенка/серия');
     ok(d.querySelectorAll('[data-ut]').length > 10, 'каталог целей отрисован');
@@ -239,6 +244,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#vipCard')), 'ранги кэшбэка перенесены в профиль');
     ok(Boolean(d.querySelector('#commentsCard')), 'в профиле есть блок заработка на комментариях');
     ok(Boolean(d.querySelector('#cmDmBtn')), 'заявки на комментарии принимаются в личке');
+    ok(Boolean(d.querySelector('#myOrdersList')), 'в профиле есть блок «Мои заявки» со статусом и таймером');
+    ok(!d.querySelector('#adminLogTabs [data-admlog="comments"]'), 'вкладка «Комментарии» убрана из истории админки');
 
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();

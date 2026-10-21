@@ -19,6 +19,8 @@ try {
   }
 }
 
+const { EXTRA_COLUMNS } = require('./schema');
+
 const TURSO_URL = process.env.TURSO_DATABASE_URL || '';
 const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
 
@@ -123,6 +125,23 @@ async function pullFromTurso(dbSync) {
       console.warn('[Turso] player_boosts не создана:', e.message);
     }
 
+    // Догоняющие колонки: без них запись заказа со сроком действия
+    // (orders.expires_at и id сообщения в чате) вечно ретраилась бы в очереди.
+    for (const [table, cols] of Object.entries(EXTRA_COLUMNS)) {
+      try {
+        const info = await client.execute(`PRAGMA table_info(${table})`);
+        const have = new Set(info.rows.map(r => r.name));
+        for (const [name, type] of cols) {
+          if (!have.has(name)) {
+            await client.execute(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+            console.log(`[Turso] + колонка ${table}.${name}`);
+          }
+        }
+      } catch (e) {
+        console.warn(`[Turso] миграция ${table}:`, e.message);
+      }
+    }
+
     // 1. Users
     const uRes = await client.execute('SELECT * FROM users');
     if (uRes.rows.length > 0) {
@@ -157,14 +176,17 @@ async function pullFromTurso(dbSync) {
     const oRes = await client.execute('SELECT * FROM orders');
     if (oRes.rows.length > 0) {
       const insOrder = dbSync.prepare(`
-        INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
+        INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus, expires_at, admin_msg_id, admin_chat_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at,
+          expires_at=excluded.expires_at, admin_msg_id=excluded.admin_msg_id,
+          admin_chat_id=excluded.admin_chat_id
       `);
       for (const r of oRes.rows) {
         insOrder.run(
           r.id, r.type, r.user_id, r.tokens, r.rub, r.bank, r.card, r.sender,
-          r.method, r.details, r.status, r.source, r.tx, r.created_at, r.updated_at
+          r.method, r.details, r.status, r.source, r.tx, r.created_at, r.updated_at,
+          r.bonus ?? '', r.expires_at ?? 0, r.admin_msg_id ?? 0, r.admin_chat_id ?? 0
         );
       }
     }

@@ -14,20 +14,21 @@
  */
 
 const items = require('./items');
+const rtp = require('./rtp');
 
 const TOKENS_PER_RUB = 10;
 const rub = tk => (Number(tk) / TOKENS_PER_RUB)
   .toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
 
 /* Единственный режим апгрейдера (DECISIONS.md, D4): режимы риска убраны из UI.
-   Потолок шанса 70% для любой цели. Комиссия 6% — EV всегда −6% от источника. */
+   Потолок шанса 70% для любой цели. Комиссия берётся из общего RTP-конфига. */
 const MODES = {
   standard: {
     id: 'standard',
     label: 'АПГРЕЙД',
     title: 'Апгрейд',
     desc: 'Выберите цель дороже источника. Шанс до 70%, результат определяет сервер.',
-    edge: 0.06,
+    edge: rtp.edgeOf('upgrader'),
     chanceCap: 0.70,
     maxMult: 100,
     minTargetRatio: 1.05,

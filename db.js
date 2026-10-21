@@ -115,10 +115,21 @@ const stmts = {
   `),
   getOrder: db.prepare('SELECT * FROM orders WHERE id = ?'),
   insertOrder: db.prepare(`
-    INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus, expires_at, admin_msg_id, admin_chat_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status, updated_at = excluded.updated_at,
+      expires_at = excluded.expires_at, admin_msg_id = excluded.admin_msg_id,
+      admin_chat_id = excluded.admin_chat_id
   `),
   updateOrderStatus: db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?'),
+  setOrderMessage: db.prepare('UPDATE orders SET admin_msg_id = ?, admin_chat_id = ?, updated_at = ? WHERE id = ?'),
+  listUserOrders: db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'),
+  listPendingManualDeposits: db.prepare(`
+    SELECT * FROM orders
+    WHERE type = 'deposit' AND status = 'pending'
+      AND (source = 'СБП / Карта' OR COALESCE(expires_at, 0) > 0)
+  `),
   getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 500'),
   getPromo: db.prepare('SELECT * FROM promo_codes WHERE code = ?'),
   getPromoActivationsCount: db.prepare('SELECT COUNT(*) AS count FROM promo_activations WHERE promo_code = ?'),
@@ -1316,17 +1327,22 @@ module.exports = {
       ord.tx || null,
       ord.createdAt || Date.now(),
       Date.now(),
-      ord.bonus || ''
+      ord.bonus || '',
+      ord.expiresAt || ord.expires_at || 0,
+      ord.adminMsgId || ord.admin_msg_id || 0,
+      ord.adminChatId || ord.admin_chat_id || 0
     );
     turso.queueQuery(`
-      INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
+      INSERT INTO orders (id, type, user_id, tokens, rub, bank, card, sender, method, details, status, source, tx, created_at, updated_at, bonus, expires_at, admin_msg_id, admin_chat_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at,
+        expires_at=excluded.expires_at, admin_msg_id=excluded.admin_msg_id, admin_chat_id=excluded.admin_chat_id
     `, [
       ord.id, ord.type || 'deposit', ord.userId, ord.tokens, ord.rub, ord.bank || null,
       ord.card || null, ord.sender || null, ord.method || null, ord.details || null,
       ord.status || 'pending', ord.source || null, ord.tx || null, ord.createdAt || Date.now(), Date.now(),
-      ord.bonus || ''
+      ord.bonus || '', ord.expiresAt || ord.expires_at || 0,
+      ord.adminMsgId || ord.admin_msg_id || 0, ord.adminChatId || ord.admin_chat_id || 0
     ]);
   },
   getOrder: (id) => stmts.getOrder.get(id),
@@ -1336,6 +1352,18 @@ module.exports = {
     turso.queueQuery('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?', [status, now, id]);
     return res;
   },
+  setOrderMessage: (id, msgId, chatId) => {
+    const now = Date.now();
+    const res = stmts.setOrderMessage.run(msgId, chatId, now, id);
+    turso.queueQuery('UPDATE orders SET admin_msg_id = ?, admin_chat_id = ?, updated_at = ? WHERE id = ?',
+      [msgId, chatId, now, id]);
+    return res;
+  },
+  listUserOrders: (userId, limit = 10) => {
+    const safe = Math.min(50, Math.max(1, Math.floor(Number(limit) || 10)));
+    return stmts.listUserOrders.all(userId, safe);
+  },
+  listPendingManualDeposits: () => stmts.listPendingManualDeposits.all(),
   getAllOrders: () => stmts.getAllOrders.all(),
 
   /* ── Раунды игры ──────────────────────────────────────────────────────────
@@ -1855,6 +1883,115 @@ module.exports = {
         FROM orders WHERE type = 'deposit' AND status = 'pending'
       `).get() || { count: 0, totalRub: 0 };
 
+      // Заявки: сроки, просрочки и скорость обработки
+      const DAY_MS = 86400000;
+      const depPendingDetailed = db.prepare(`
+        SELECT COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub, MIN(created_at) AS oldest
+        FROM orders WHERE type = 'deposit' AND status = 'pending'
+      `).get() || { count: 0, totalRub: 0, oldest: 0 };
+      const depExpiringSoon = db.prepare(`
+        SELECT COUNT(*) AS count FROM orders
+        WHERE type = 'deposit' AND status = 'pending'
+          AND expires_at > 0 AND expires_at <= ?
+      `).get(now + 15 * 60000) || { count: 0 };
+      const depExpired24h = db.prepare(`
+        SELECT COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub
+        FROM orders WHERE type = 'deposit' AND status = 'expired' AND updated_at >= ?
+      `).get(now - DAY_MS) || { count: 0, totalRub: 0 };
+      const depExpiredAll = db.prepare(`
+        SELECT COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub
+        FROM orders WHERE type = 'deposit' AND status = 'expired'
+      `).get() || { count: 0, totalRub: 0 };
+      const wdPendingDetailed = db.prepare(`
+        SELECT COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub, MIN(created_at) AS oldest
+        FROM orders WHERE type = 'withdraw' AND status = 'pending'
+      `).get() || { count: 0, totalRub: 0, oldest: 0 };
+      const wdOverHour = db.prepare(`
+        SELECT COUNT(*) AS count FROM orders
+        WHERE type = 'withdraw' AND status = 'pending' AND created_at <= ?
+      `).get(now - 3600000) || { count: 0 };
+      const depPaySpeed = db.prepare(`
+        SELECT AVG(updated_at - created_at) AS avgMs FROM orders
+        WHERE type = 'deposit' AND status = 'paid' AND created_at >= ?
+      `).get(since) || { avgMs: 0 };
+      const depStatusRows = db.prepare(`
+        SELECT status, COUNT(*) AS count, COALESCE(SUM(rub), 0) AS totalRub
+        FROM orders WHERE type = 'deposit' AND created_at >= ?
+        GROUP BY status
+      `).all(since);
+      const depStatusCounts = {};
+      depStatusRows.forEach(r => {
+        depStatusCounts[r.status || 'unknown'] = { count: r.count, rub: Number(r.totalRub) || 0 };
+      });
+
+      // Аудитория и деньги
+      const active24h = Number((db.prepare(`
+        SELECT COUNT(DISTINCT user_id) AS count FROM game_rounds WHERE created_at >= ?
+      `).get(now - DAY_MS) || {}).count || 0);
+      const active7d = Number((db.prepare(`
+        SELECT COUNT(DISTINCT user_id) AS count FROM game_rounds WHERE created_at >= ?
+      `).get(now - 7 * DAY_MS) || {}).count || 0);
+      const newUsers24h = Number((db.prepare(`
+        SELECT COUNT(*) AS count FROM users WHERE created_at >= ?
+      `).get(now - DAY_MS) || {}).count || 0);
+      const newUsers7d = Number((db.prepare(`
+        SELECT COUNT(*) AS count FROM users WHERE created_at >= ?
+      `).get(now - 7 * DAY_MS) || {}).count || 0);
+      const bonusesPaid = db.prepare(`
+        SELECT COALESCE(SUM(amount), 0) AS total FROM transactions_ledger
+        WHERE amount > 0 AND (type LIKE '%bonus%' OR type = 'rakeback') AND created_at >= ?
+      `).get(since) || { total: 0 };
+      const stakedTk = Number((db.prepare(`
+        SELECT COALESCE(SUM(staked), 0) AS total FROM users
+      `).get() || {}).total || 0);
+      const refEarnedTk = Number((db.prepare(`
+        SELECT COALESCE(SUM(ref_earned), 0) AS total FROM users
+      `).get() || {}).total || 0);
+
+      const topDepositors = db.prepare(`
+        SELECT u.id, u.num_id, u.name, u.username,
+               COUNT(*) AS depositsCount,
+               COALESCE(SUM(o.rub), 0) AS totalRub
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.type = 'deposit' AND o.status = 'paid' AND o.created_at >= ?
+        GROUP BY u.id
+        ORDER BY totalRub DESC
+        LIMIT 5
+      `).all(since).map(x => ({
+        id: x.id,
+        numId: x.num_id,
+        name: x.name,
+        username: x.username,
+        label: x.username ? '@' + x.username : (x.name || 'ID ' + x.id),
+        depositsCount: x.depositsCount,
+        totalRub: Number(x.totalRub) || 0
+      }));
+
+      const hourlyRows = db.prepare(`
+        SELECT CAST((? - created_at) / 3600000 AS INTEGER) AS bucket,
+               COUNT(*) AS rounds,
+               COALESCE(SUM(bet_tokens), 0) AS wagered,
+               COALESCE(SUM(win_tokens), 0) AS payouts
+        FROM game_rounds
+        WHERE created_at >= ?
+        GROUP BY bucket
+      `).all(now, now - DAY_MS);
+      const hourlyMap = new Map(hourlyRows.map(r => [Number(r.bucket), r]));
+      const hourly = Array.from({ length: 24 }, (_, idx) => {
+        const bucket = 23 - idx;
+        const row = hourlyMap.get(bucket);
+        const wag = Number(row && row.wagered || 0);
+        const pay = Number(row && row.payouts || 0);
+        return {
+          hoursAgo: bucket,
+          rounds: Number(row && row.rounds || 0),
+          wageredTk: wag,
+          payoutTk: pay,
+          ggrRub: (wag - pay) / 10
+        };
+      });
+
       // 5. По режимам игры
       const byGame = db.prepare(`
         SELECT game,
@@ -1952,11 +2089,34 @@ module.exports = {
           balanceLiabilityTk,
           avgDepositRub: depStats.count > 0 ? Number((Number(depStats.totalRub) / depStats.count).toFixed(0)) : 0,
           arpuRub: totalUsersCount > 0 ? Number((Number(depStats.totalRub) / totalUsersCount).toFixed(0)) : 0,
+          arppuRub: payingUsersCount > 0 ? Number((Number(depStats.totalRub) / payingUsersCount).toFixed(0)) : 0,
+          payerSharePct: totalUsersCount > 0 ? Number((totalPayingUsersCount / totalUsersCount * 100).toFixed(1)) : 0,
           pendingDepositsCount: Number(depPending.count) || 0,
-          pendingDepositsRub: Number(depPending.totalRub) || 0
+          pendingDepositsRub: Number(depPending.totalRub) || 0,
+          pendingDepositsOldestAt: Number(depPendingDetailed.oldest) || 0,
+          pendingDepositsExpiringSoon: Number(depExpiringSoon.count) || 0,
+          expiredDeposits24h: Number(depExpired24h.count) || 0,
+          expiredDepositsRub24h: Number(depExpired24h.totalRub) || 0,
+          expiredDepositsTotal: Number(depExpiredAll.count) || 0,
+          expiredDepositsRubTotal: Number(depExpiredAll.totalRub) || 0,
+          withdrawalsPendingOldestAt: Number(wdPendingDetailed.oldest) || 0,
+          withdrawalsPendingOverHour: Number(wdOverHour.count) || 0,
+          avgDepositConfirmMin: depPaySpeed.avgMs
+            ? Number((Number(depPaySpeed.avgMs) / 60000).toFixed(1))
+            : 0,
+          depositStatusCounts: depStatusCounts,
+          activeUsers24h: active24h,
+          activeUsers7d: active7d,
+          newUsers24h,
+          newUsers7d,
+          bonusesPaidRub: Number(bonusesPaid.total) / 10,
+          stakedRub: stakedTk / 10,
+          referralPaidRub: refEarnedTk / 10
         },
         byGame,
         byProvider,
+        topDepositors,
+        hourly,
         recentLedger
       };
     } catch (e) {

@@ -1023,6 +1023,30 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 @media (prefers-reduced-motion: reduce){ .upg-strip,.upg-strip.spin-wait{animation:none!important;transition:none!important} }
 @media (max-width:380px){ .upg-frame{height:104px} .upg-cell{flex-basis:80px;width:80px} }
 .upg-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+/* Круговой индикатор шанса апгрейдера */
+.upg-wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;margin:4px 0 14px}
+.upg-wheel{position:relative;width:min(300px,78vw);aspect-ratio:1/1;display:grid;place-items:center;filter:drop-shadow(0 0 26px rgba(239,68,68,.14))}
+.upg-wheel__svg{width:100%;height:100%;overflow:visible}
+.upg-wheel__track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:17}
+.upg-wheel__arc{fill:none;stroke:url(#upgWheelGrad);stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .25s ease;filter:url(#upgWheelGlow)}
+.upg-wheel__ticks line{stroke:rgba(255,255,255,.2);stroke-width:2;stroke-linecap:round}
+.upg-wheel__ticks line.cap{stroke:rgba(255,207,107,.5)}
+.upg-wheel__spinner{fill:none;stroke:rgba(255,207,107,.5);stroke-width:2.5;stroke-dasharray:2 13;opacity:0;transform-box:fill-box;transform-origin:center;transition:opacity .2s ease}
+.upg-wheel.is-spinning .upg-wheel__spinner{opacity:1;animation:upgWheelSpin 1.1s linear infinite}
+.upg-wheel__center{position:absolute;inset:20%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1111,#080808 72%);border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 22px rgba(0,0,0,.45);transition:box-shadow .25s ease,border-color .25s ease}
+.upg-wheel__src{font-size:17px;line-height:1;opacity:.75;filter:grayscale(.1)}
+.upg-wheel__target{font-size:42px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
+.upg-wheel__pct{font-size:22px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
+.upg-wheel__hint{font-size:8.5px;text-transform:uppercase;letter-spacing:.16em;color:#8b94ab;font-weight:800}
+.upg-wheel__pointer{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid #ffcf6b;filter:drop-shadow(0 0 7px rgba(255,207,107,.8))}
+.upg-wheel.is-win .upg-wheel__arc{stroke:#3ddc96;filter:drop-shadow(0 0 10px rgba(61,220,150,.55))}
+.upg-wheel.is-lose .upg-wheel__arc{stroke:#ef4444;filter:drop-shadow(0 0 10px rgba(239,68,68,.55))}
+.upg-wheel.is-win .upg-wheel__center{border-color:rgba(61,220,150,.35);box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 26px rgba(61,220,150,.18)}
+.upg-wheel.is-lose .upg-wheel__center{border-color:rgba(239,68,68,.4);box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 26px rgba(239,68,68,.18)}
+.upg-wheel__cap{font-size:10px;color:#8b94ab}
+.upg-wheel__cap b{color:#ffcf6b}
+@keyframes upgWheelSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.upg-wheel__spinner{animation:none!important}.upg-wheel__arc{transition:none!important}}
 .upg-panel{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(155deg,#111111,#0a0a0a);padding:14px;margin-bottom:11px}
 .upg-label{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .upg-label span{color:#ffcf6b;text-transform:none;letter-spacing:0}
@@ -1289,6 +1313,18 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <button class="pillbtn" id="sndToggle" aria-pressed="true" style="min-width:74px;padding:8px 12px;font-size:11.5px">ВКЛ</button>
 </div>
 
+<!-- Мои заявки: статус и срок действия -->
+<div class="section" style="margin-top:16px"><b>🧾 Мои заявки</b><span class="muted small">срок пополнения — 1 час</span></div>
+<div class="item" style="padding:12px">
+  <div id="myOrdersList" class="list"><div class="muted small">Загрузка…</div></div>
+</div>
+
+<!-- Честная игра: правила расчёта без публикации RTP -->
+<div class="section" id="fairPlay" style="margin-top:16px"><b>🎲 Честная игра</b><span class="muted small">как считаются шансы</span></div>
+<div class="item" style="padding:12px">
+  <div class="muted small" style="line-height:1.55">Шанс и выплаты рассчитывает сервер по одинаковым для всех правилам. Клиент не влияет на исход. Внутренние параметры экономики не публикуются.</div>
+</div>
+
 <!-- Ранги кэшбэка по пополнениям -->
 <div class="section" style="margin-top:16px"><b>👑 Ранги и кэшбэк</b></div>
 <div class="vip-card" id="vipCard" title="Нажмите, чтобы посмотреть все ранги">
@@ -1484,7 +1520,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <button class="chip" data-admlog="rounds">Раунды</button>
     <button class="chip" data-admlog="deposits">Пополнения</button>
     <button class="chip" data-admlog="withdrawals">Выводы</button>
-    <button class="chip" data-admlog="comments">Комментарии</button>
   </div>
   <div id="adminLogList" class="list" style="max-height:460px;overflow:auto"><div class="muted small">Загрузка...</div></div>
 </div>
@@ -1881,8 +1916,10 @@ if(IS_TG&&API_BASE){
       const o = await tgCall('/api/order-sbp', { rub, tokens: tk, bonus: curBonus, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
       if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
       const bonusNote = o.bonusApplied ? ' (включая бонус +25%!)' : '';
+      const payUntil = o.expiresAt ? new Date(o.expiresAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) : '';
       msg.className='result';
-      msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> (зачислится '+fmt(o.tokens)+' ₽'+bonusNote+') отправлена администратору!<br>Ожидайте подтверждения перевода на <b>'+curB.name+'</b> — как только администратор подтвердит платёж, средства зачислятся автоматически.';
+      msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> (зачислится '+fmt(o.tokens)+' ₽'+bonusNote+') отправлена администратору!<br>⏳ Действует <b>1 час</b>'+(payUntil?' — до <b>'+payUntil+'</b>':'')+'. Переведите точную сумму на <b>'+curB.name+'</b> и ожидайте подтверждения — после него средства зачислятся автоматически.';
+      loadMyOrders();
       tgHaptic('light');
       (async()=>{
         for(let i=0;i<120;i++){
@@ -1899,6 +1936,13 @@ if(IS_TG&&API_BASE){
               msg.className='result bad';
               msg.innerHTML='❌ Заявка №'+o.order_id+' была отклонена администратором.';
               tgHaptic('lose');
+              loadMyOrders();
+              break;
+            }else if(st&&st.status==='expired'){
+              msg.className='result bad';
+              msg.innerHTML='⌛ Заявка №'+o.order_id+' истекла: окно оплаты — 1 час. Создайте новую заявку.';
+              tgHaptic('lose');
+              loadMyOrders();
               break;
             }
           }catch(_){}
@@ -2229,6 +2273,101 @@ function tgProfile(){
   return { name, sub: un && full && un !== full ? full : '', avatar: av.toUpperCase() };
 }
 let __mfuLastBalance = null;
+
+/* ---------- Мои заявки: статус и срок действия ---------- */
+let __myOrders = [];
+let __myOrdersTick = null;
+let __myOrdersRefreshing = false;
+
+function orderStatusMeta(order) {
+  const type = order.type === 'withdraw' ? 'withdraw' : 'deposit';
+  if (order.status === 'pending') {
+    return type === 'withdraw'
+      ? { label: 'В обработке', color: '#ffcf6b', bg: 'rgba(255,207,107,.14)' }
+      : { label: 'Ожидает оплаты', color: '#93c5fd', bg: 'rgba(96,165,250,.16)' };
+  }
+  if (order.status === 'paid') {
+    return { label: type === 'withdraw' ? 'Выплачена' : 'Зачислена', color: '#3ddc96', bg: 'rgba(61,220,150,.16)' };
+  }
+  if (order.status === 'expired') return { label: 'Истекла', color: '#fca5a5', bg: 'rgba(239,68,68,.18)' };
+  if (order.status === 'rejected') return { label: 'Отклонена', color: '#fca5a5', bg: 'rgba(239,68,68,.18)' };
+  if (order.status === 'canceled') return { label: 'Отменена', color: '#94a3b8', bg: 'rgba(148,163,184,.16)' };
+  return { label: order.status || '—', color: '#94a3b8', bg: 'rgba(148,163,184,.16)' };
+}
+
+function fmtOrderLeft(ms) {
+  const total = Math.max(0, Math.floor(Number(ms) / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function renderMyOrders() {
+  const box = q('#myOrdersList');
+  if (!box) return;
+  if (!__myOrders.length) {
+    box.innerHTML = '<div class="muted small" style="padding:2px 0">Пока нет заявок на пополнение или вывод.</div>';
+    return;
+  }
+  const now = Date.now();
+  box.innerHTML = __myOrders.slice(0, 8).map(o => {
+    const meta = orderStatusMeta(o);
+    const kind = o.type === 'withdraw' ? '💸 Вывод' : '💳 Пополнение';
+    let line = '';
+    if (o.status === 'pending' && o.expiresAt) {
+      const left = o.expiresAt - now;
+      line = left > 0
+        ? `<div class="muted small" style="margin-top:3px;color:#93c5fd">Осталось <b>${fmtOrderLeft(left)}</b> · до ${new Date(o.expiresAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>`
+        : `<div class="muted small" style="margin-top:3px;color:#fca5a5">Истекла — обновляем статус…</div>`;
+    } else {
+      const stamp = o.updatedAt || o.createdAt;
+      if (stamp) line = `<div class="muted small" style="margin-top:3px">${new Date(stamp).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`;
+    }
+    return `<div class="item row" style="padding:9px 0;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div style="min-width:0">
+        <b style="font-size:12.5px">${kind} · ${fmtInt(o.rub)} ₽</b>
+        <div class="muted small" style="margin-top:2px;word-break:break-all">№${cmEsc(o.id)}${o.method ? ' · ' + cmEsc(o.method) : ''}</div>
+        ${line}
+      </div>
+      <span class="pill" style="background:${meta.bg};color:${meta.color};white-space:nowrap;font-size:10px">${meta.label}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadMyOrders() {
+  if (!IS_TG || !API_BASE || __myOrdersRefreshing) return;
+  __myOrdersRefreshing = true;
+  try {
+    const res = await tgCall('/api/my-orders', {});
+    if (res && res.ok) {
+      __myOrders = res.orders || [];
+      renderMyOrders();
+    }
+  } catch (_) {} finally {
+    __myOrdersRefreshing = false;
+  }
+}
+
+function startMyOrders() {
+  if (!IS_TG || !API_BASE) {
+    const box = q('#myOrdersList');
+    if (box) box.innerHTML = '<div class="muted small">Заявки доступны в Telegram Mini App.</div>';
+    return;
+  }
+  loadMyOrders();
+  if (__myOrdersTick) return;
+  let tick = 0;
+  __myOrdersTick = setInterval(() => {
+    tick++;
+    renderMyOrders();
+    const hasExpired = __myOrders.some(o => o.status === 'pending' && o.expiresAt && Date.now() >= o.expiresAt);
+    // Раз в 30 секунд подтягиваем статусы: админ мог подтвердить или отклонить заявку.
+    if (hasExpired || tick % 30 === 0) loadMyOrders();
+  }, 1000);
+}
+
+function stopMyOrders() {
+  if (__myOrdersTick) { clearInterval(__myOrdersTick); __myOrdersTick = null; }
+}
+
 function syncUI(){
   const pr=tgProfile();
   const pn=q('#pname');if(pn)pn.textContent=pr.name;
@@ -3050,7 +3189,12 @@ function screen(id){
   if(id==='casehub'){
     cleanup=gameCaseHub('#caseHubArea');
   }
-  if(id==='profile'&&typeof tgLoadRequisites==='function')tgLoadRequisites();
+  if(id==='profile'){
+    if(typeof tgLoadRequisites==='function')tgLoadRequisites();
+    startMyOrders();
+  } else {
+    stopMyOrders();
+  }
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
@@ -3348,6 +3492,7 @@ async function startWithdrawal(){
       tgHaptic('win');
       m.className='result good';
       m.innerHTML='✅ Заявка на вывод <b>'+rub+' ₽</b> принята (ID: '+(d.orderId||'')+'). Как только администратор выполнит перевод и поставит отметку, вам придёт уведомление в Telegram!';
+      loadMyOrders();
     }catch(e){
       m.className='result bad';
       m.textContent='Ошибка вывода: '+(e&&e.message?e.message:e);
@@ -3458,6 +3603,67 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
         </div>`;
     }).join('') : '<div class="muted small">Операций в журнале пока нет</div>';
 
+    // 4. Заявки: сроки, просрочки, скорость обработки
+    const depStatuses = m.depositStatusCounts || {};
+    const depStatusCount = key => Number((depStatuses[key] || {}).count || 0);
+    const depStatusRub = key => Number((depStatuses[key] || {}).rub || 0);
+    const oldestPendingMin = m.pendingDepositsOldestAt
+      ? Math.max(0, Math.round((Date.now() - m.pendingDepositsOldestAt) / 60000)) : 0;
+    const oldestWdMin = m.withdrawalsPendingOldestAt
+      ? Math.max(0, Math.round((Date.now() - m.withdrawalsPendingOldestAt) / 60000)) : 0;
+    const ordersHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+        <div>Ждут оплаты: <b>${m.pendingDepositsCount || 0}</b> · <b>${fmtInt(m.pendingDepositsRub || 0)} ₽</b></div>
+        <div>Истекают ≤15 мин: <b style="color:#fca5a5">${m.pendingDepositsExpiringSoon || 0}</b></div>
+        <div>Старейшая ждёт: <b>${oldestPendingMin} мин</b></div>
+        <div>Истекли за 24ч: <b>${m.expiredDeposits24h || 0}</b> · ${fmtInt(m.expiredDepositsRub24h || 0)} ₽</div>
+        <div>Ждут вывода: <b>${m.withdrawalsPendingCount || 0}</b> · <b>${fmtInt(m.withdrawalsPendingRub || 0)} ₽</b></div>
+        <div>Вывод старейший: <b>${oldestWdMin} мин</b> (＞1ч: ${m.withdrawalsPendingOverHour || 0})</div>
+        <div>Среднее подтверждение: <b>${m.avgDepositConfirmMin || 0} мин</b></div>
+        <div>Всего истекло: <b>${m.expiredDepositsTotal || 0}</b> · ${fmtInt(m.expiredDepositsRubTotal || 0)} ₽</div>
+      </div>
+      <div class="muted small" style="margin-top:6px;font-size:10px">
+        За период: оплачено ${depStatusCount('paid')} (${fmtInt(depStatusRub('paid'))} ₽) · ждёт ${depStatusCount('pending')} · истекло ${depStatusCount('expired')} · отклонено ${depStatusCount('rejected')}
+      </div>`;
+
+    // 5. Активность за 24 часа
+    const hourly = Array.isArray(res.adminMetrics && res.adminMetrics.hourly) ? res.adminMetrics.hourly : [];
+    const maxRounds = Math.max(1, ...hourly.map(h => Number(h.rounds) || 0));
+    const hourlyBars = hourly.map(h => {
+      const hh = new Date(Date.now() - (Number(h.hoursAgo) || 0) * 3600000)
+        .toLocaleTimeString('ru-RU', { hour: '2-digit' });
+      const height = Math.max(2, Math.round((Number(h.rounds) || 0) / maxRounds * 30));
+      const color = (h.ggrRub || 0) >= 0 ? '#3ddc96' : '#ef4444';
+      return `<div title="${hh}:00 · ${h.rounds} раундов · GGR ${Number(h.ggrRub || 0).toFixed(1)} ₽"
+        style="flex:1;min-width:0;height:${height}px;background:${color};opacity:${h.rounds ? .85 : .2};border-radius:2px 2px 0 0"></div>`;
+    }).join('');
+    const activityHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+        <div>Активных 24ч: <b>${m.activeUsers24h || 0}</b></div>
+        <div>Активных 7д: <b>${m.activeUsers7d || 0}</b></div>
+        <div>Новых 24ч: <b style="color:#3ddc96">+${m.newUsers24h || 0}</b></div>
+        <div>Новых 7д: <b style="color:#3ddc96">+${m.newUsers7d || 0}</b></div>
+      </div>
+      <div class="muted small" style="margin-top:6px;font-size:10px">Раунды по часам за сутки (слева — 24 ч назад, справа — сейчас):</div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:34px;margin-top:2px">${hourlyBars || ''}</div>`;
+
+    // 6. Экономика и топ депозиторов
+    const topDeps = (res.adminMetrics && res.adminMetrics.topDepositors) || [];
+    const topDepsHtml = topDeps.length ? topDeps.map((t, i) => `
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:11px">
+        <span>${i + 1}. <b>${cmEsc(t.label)}</b> <span class="muted small">${t.depositsCount} деп.</span></span>
+        <b style="color:#3ddc96">${fmtInt(t.totalRub)} ₽</b>
+      </div>`).join('') : '<div class="muted small">Нет оплаченных пополнений за период</div>';
+    const ecoHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+        <div>ARPPU: <b>${fmtInt(m.arppuRub || 0)} ₽</b></div>
+        <div>Доля платящих: <b>${m.payerSharePct || 0}%</b></div>
+        <div>Бонусы за период: <b style="color:#ffcf6b">+${fmtInt(m.bonusesPaidRub || 0)} ₽</b></div>
+        <div>В стейкинге: <b>${fmtInt(m.stakedRub || 0)} ₽</b></div>
+        <div>Выплаты рефералам: <b>${fmtInt(m.referralPaidRub || 0)} ₽</b></div>
+        <div>Обязательства: <b>${fmt(m.balanceLiabilityTk || 0)} ₽</b></div>
+      </div>`;
+
     // Рендерим панель PnL и аналитики
     pnlBox.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -3524,6 +3730,39 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
           <div>Ждут пополнения: <b>${m.pendingDepositsCount || 0}</b></div>
           <div>Сумма в ожидании: <b>${fmtInt(m.pendingDepositsRub || 0)} ₽</b></div>
         </div>
+      </div>
+
+      <!-- Заявки и сроки -->
+      <div style="background:rgba(255,255,255,.03);padding:8px;border-radius:8px;font-size:11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:#fca5a5">⏳ Заявки и сроки</b>
+          <span class="muted small">пополнение — 1 час</span>
+        </div>
+        ${ordersHtml}
+      </div>
+
+      <!-- Активность за 24 часа -->
+      <div style="background:rgba(255,255,255,.03);padding:8px;border-radius:8px;font-size:11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:#86efac">📈 Активность за 24 часа</b>
+          <span class="muted small">по раундам</span>
+        </div>
+        ${activityHtml}
+      </div>
+
+      <!-- Экономика -->
+      <div style="background:rgba(255,255,255,.03);padding:8px;border-radius:8px;font-size:11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b style="color:#c4b5fd">💎 Экономика и обязательства</b>
+          <span class="muted small">за период</span>
+        </div>
+        ${ecoHtml}
+      </div>
+
+      <!-- Топ депозиторов -->
+      <div style="background:rgba(255,255,255,.02);padding:6px 8px;border-radius:8px;margin-bottom:8px">
+        <b style="font-size:11.5px;color:#fcd34d;display:block;margin-bottom:2px">🏆 Топ депозиторов за период:</b>
+        ${topDepsHtml}
       </div>
 
       <!-- Сводка 3: Пользователи и Конверсия -->
@@ -3601,21 +3840,33 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
         const bonusTag = d.bonus === '25'
           ? `<span style="background:rgba(239,68,68,.25);color:#fca5a5;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800">🔥 +25% БОНУС</span>`
           : '';
+        const exp = Number(d.expiresAt || 0);
+        const leftMin = exp ? Math.max(0, Math.ceil((exp - Date.now()) / 60000)) : 0;
+        const expTag = d.status === 'pending' && exp
+          ? `<span style="background:rgba(96,165,250,.18);color:#93c5fd;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800">⏳ ${leftMin > 0 ? leftMin + ' мин' : 'истекает'}</span>`
+          : '';
+        const statusLabel = d.status === 'paid' ? '✅ Зачислено'
+          : d.status === 'expired' ? '⌛ Истекла'
+          : d.status === 'canceled' ? '⛔ Отменена'
+          : '❌ Отклонено';
+        const statusColor = d.status === 'paid' ? '#86efac' : '#fca5a5';
+        const statusBg = d.status === 'paid' ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)';
         return `
         <div class="item" style="padding:10px;background:rgba(0,0,0,.25);border-color:${d.status==='pending'?'rgba(96,165,250,.5)':'rgba(255,255,255,.06)'}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                 <b style="font-size:13px;color:#fff">№${d.id} · +${d.rub} ₽ → зачислится +${fmt(d.tokens)} ₽</b>
-                ${bonusTag}
+                ${bonusTag}${expTag}
               </div>
               <div class="muted small">${d.userName} · ${d.method}</div>
+              ${exp ? `<div class="muted small" style="font-size:10px">До ${new Date(exp).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>` : ''}
             </div>
             <div>
               ${d.status === 'pending' ? `
                 <button class="chip" data-adm-act="ok" data-adm-id="${d.id}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Подтвердить</button>
                 <button class="chip" data-adm-act="no" data-adm-id="${d.id}" style="color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
-              ` : `<span class="pill" style="background:${d.status==='paid'?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};color:${d.status==='paid'?'#86efac':'#fca5a5'}">${d.status==='paid'?'✅ Зачислено':'❌ Отклонено'}</span>`}
+              ` : `<span class="pill" style="background:${statusBg};color:${statusColor}">${statusLabel}</span>`}
             </div>
           </div>
         </div>`;
@@ -3679,10 +3930,11 @@ function renderAdminLog(tab){
       </div>`);
   }else if(tab==='deposits'||tab==='withdrawals'){
     const src=tab==='deposits'?(res.deposits||[]):(res.withdrawals||[]);
+    const statusRu={pending:'ожидает',paid:'оплачено',rejected:'отклонено',expired:'истекла',canceled:'отменена'};
     rows=src.map(o=>`
       <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
         <div><b>№${cmEsc(String(o.id))}</b><div class="muted small">${new Date(o.createdAt).toLocaleString('ru-RU')} · ${cmEsc(o.userName||'')} · ${cmEsc(o.method||'')}</div></div>
-        <div style="text-align:right;white-space:nowrap"><b>${fmtInt(o.rub||0)} ₽</b><div class="muted small">${cmEsc(o.status||'')}</div></div>
+        <div style="text-align:right;white-space:nowrap"><b>${fmtInt(o.rub||0)} ₽</b><div class="muted small" style="color:${o.status==='expired'||o.status==='rejected'?'#fca5a5':o.status==='paid'?'#86efac':'#93c5fd'}">${statusRu[o.status]||cmEsc(o.status||'')}</div></div>
       </div>`);
   }
   box.innerHTML=rows.length?rows.join(''):'<div class="muted small">Записей нет.</div>';
@@ -4756,7 +5008,7 @@ const MINCASH=1.01;                     // забрать можно с само
    дальше 1.10-1.30 — 15 %, 1.30-1.55 — 24 %, 1.55-1.75 — 20 %, 1.75-2.00 — 6 %,
    2.00-2.30 — 10 %, 2.30-3.00 — 9 %, редкий длинный полёт 3.50-8.67 — 2 %.
    Полоса 3.00-3.50 вырезана. Пик отдачи — 94.6 % на ×1.10, в долгую игрок в минусе. */
-function sampleCrash(seedIdx){
+function sampleCrashBase(seedIdx){
   let r;
   if(seedIdx!=null){
     let a=(seedIdx^0x6D2B79F5)>>>0;
@@ -4777,6 +5029,14 @@ function sampleCrash(seedIdx){
   const t0=Math.log(3.5)/RK.k;                             // редкий длинный полёт 3.50-8.67
   const rLong=(r-0.98)/0.02;
   return +Math.exp(RK.k*(t0+rLong*(RK.tcap-t0))).toFixed(2);
+}
+
+/* Та же поправка, что на сервере (rtp.js): RTP Crash снижен на 3 п.п. */
+const CRASH_POINT_SCALE=0.977;
+function sampleCrash(seedIdx){
+  const base=sampleCrashBase(seedIdx);
+  if(base<=1)return 1.00;
+  return Math.max(1.00,Math.round(base*CRASH_POINT_SCALE*100)/100);
 }
 
 function gameRacket(){
@@ -10620,11 +10880,8 @@ function gameCaseHub(sel){ return gameCaseHubUnified(sel); }
    ══════════════════════════════════════════════════════════════════════════ */
 /* DECISIONS.md D4: один режим апгрейдера, потолок шанса 70%, режимы не показываются. */
 const UPG_CHANCE_CAP = 0.70;
-/* Комиссия (edge) единственного режима — та же, что в upgrade.js (MODES.standard.edge).
-   Вынесена, чтобы текст «House Edge» не расходился с серверной моделью (AUDIT A5). */
-const UPG_EDGE = 0.06;
 const UPG_FALLBACK_MODES = [
-  {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Цель дороже источника · шанс до 70%.',edge:0.06,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
+  {id:'standard',label:'АПГРЕЙД',title:'Апгрейд',desc:'Цель дороже источника · шанс до 70%.',edge:0.09,chanceCap:UPG_CHANCE_CAP,maxMult:100,minTargetRatio:1.05,color:'#ffcf6b'}
 ];
 /* Оффлайн-демо: те же множители лесенки, что отдаёт сервер в ladderTables.
    В онлайн-режиме используется серверная таблица, эта — только фолбэк. */
@@ -10697,7 +10954,7 @@ function gameUpgradeArena(){
   function chanceFor(t){
     const m=mode(), s=sourceValue();
     if(!m||!t||s<=0)return 0;
-    return Math.min(UPG_CHANCE_CAP,(1-(Number(m.edge)||0.06))*s/Number(t.value));
+    return Math.min(UPG_CHANCE_CAP,(1-(Number(m.edge)||0.09))*s/Number(t.value));
   }
   function validTarget(t){
     const m=mode(), s=sourceValue();
@@ -10808,7 +11065,7 @@ function gameUpgradeArena(){
     const s=sourceValue();
     return `
     <div class="upg-panel">
-      <div class="upg-label">${tab==='multi'?'Цели мульти-апгрейда':'Целевой предмет'} <span>${selectedTargets.size}/${tab==='multi'?(cat.maxTargets||5):1}</span></div>
+      <div class="upg-label">${tab==='multi'?'Цели мульти-апгрейда':'Целевой предмет'} <span id="upgSelCount">${selectedTargets.size}/${tab==='multi'?(cat.maxTargets||5):1}</span></div>
       <div class="upg-target-tools">
         ${[['all','Все'],['cheap','Cheap'],['low','Low'],['profit','Profit'],['high','High'],['jackpot','Jackpot']].map(([k,n])=>`<button data-utf="${k}" class="${filterTier===k?'on':''}">${n}</button>`).join('')}
         <button data-utc="low" class="${costBand==='low'?'on':''}">&lt;1k</button>
@@ -10965,14 +11222,15 @@ function gameUpgradeArena(){
 
   function render(){
     if(dead)return;
-    if(sourceType==='tokens') amount=clampAmount(Math.min(amount,Math.max(10,maxAmount())));
+    if(sourceType==='tokens'&&!result) amount=clampAmount(Math.min(amount,Math.max(10,maxAmount())));
     const m=mode();
     const s=sourceValue();
     a.innerHTML = `<div class="upg-shell${entered?'':' mfu-enter'}">
+      ${(tab==='single'||tab==='multi')?wheelHtml():`
       <div class="upg-panel">
         <div class="upg-label">Шанс до <span>70%</span></div>
-        <div class="small" style="color:#b8c1d4;line-height:1.5">Цель дороже источника — шанс ниже.</div>
-      </div>
+        <div class="small" style="color:#b8c1d4;line-height:1.5">В лесенке и серии шанс каждого шага указан в таблице.</div>
+      </div>`}
       <div class="upg-panel">
         <div class="upg-label">Источник апгрейда</div>
         <div class="upg-source-row">
@@ -10994,15 +11252,24 @@ function gameUpgradeArena(){
     </div>`;
     if(!entered&&!enterScheduled){ enterScheduled=true; requestAnimationFrame(()=>{ entered=true; }); }
     attach();
+    animateWheel();
   }
 
   function refreshPreview(){
+    result=null;
     const list=selectedList();
     const ch=q('#upgChance',a), pot=q('#upgPot',a), run=q('#upgRun',a);
     const pct=(Math.round(aggregateChance()*10000)/100).toFixed(2)+'%';
     if(ch) ch.textContent=pct;
     if(pot) pot.textContent=list.length?(tab==='multi'?'до '+fmt(Math.max(...list.map(t=>t.value)))+' ₽':fmt(list[0].value)+' ₽'):'—';
     if(run){ run.disabled=busy||!list.length; run.textContent=busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(sourceValue())+' ₽'; }
+    const sc=q('#upgSelCount',a); if(sc) sc.textContent=`${selectedTargets.size}/${tab==='multi'?(cat.maxTargets||5):1}`;
+    const wp=q('.upg-wheel__pct',a); if(wp) wp.textContent=pct;
+    const wt=q('.upg-wheel__target',a);
+    if(wt) wt.textContent=list.length===1?(list[0].icon||'📦'):(list.length>1?'🎯':'⚡');
+    const ws=q('.upg-wheel__src',a);
+    if(ws) ws.textContent=(sourceType==='item'?((sourceItem()||{}).icon||'📦'):'🪙')+' →';
+    animateWheel();
     a.querySelectorAll('[data-ut]').forEach(b=>{
       const t=cat.targets.find(x=>x.code===b.dataset.ut);
       if(!t)return;
@@ -11065,6 +11332,75 @@ function gameUpgradeArena(){
      Анимация никогда не выбирает результат сама. */
   const UPG_CELL_W=92, UPG_CELL_N=36, UPG_STOP_AT=30, UPG_SPIN_MS=3200;
   let strip={cells:[],offset:0,cls:'',wait:false};
+  let wheelChance=0;
+  const UPG_WHEEL_R=86;
+  const UPG_WHEEL_C=2*Math.PI*UPG_WHEEL_R;
+
+  /* Круговой индикатор: дуга заполнена ровно на выбранный шанс (не больше 70%).
+     При смене цели/суммы дуга плавно перетекает из прошлого значения, а при
+     первом выборе — раскручивается от 70% вниз, как в референсе. */
+  function wheelHtml(){
+    const chance=Math.max(0,Math.min(UPG_CHANCE_CAP,aggregateChance()||0));
+    const dashOffset=UPG_WHEEL_C*(1-chance);
+    const list=selectedList();
+    const target=list.length===1?list[0]:null;
+    const src=sourceType==='item'?(sourceItem()||{}):{icon:'🪙'};
+    const targetIcon=target?(target.icon||'📦'):(list.length>1?'🎯':'⚡');
+    const srcIcon=src.icon||'🪙';
+    const ticks=Array.from({length:36},(_,i)=>{
+      const cap=i<=Math.round(36*UPG_CHANCE_CAP)?' class="cap"':'';
+      return `<line x1="110" y1="4" x2="110" y2="11" transform="rotate(${i*10} 110 110)"${cap}></line>`;
+    }).join('');
+    const cls=[busy?'is-spinning':'',result?(result.won?'is-win':'is-lose'):''].filter(Boolean).join(' ');
+    return `<div class="upg-wheel-wrap">
+      <div class="upg-wheel ${cls}" id="upgWheel">
+        <svg class="upg-wheel__svg" viewBox="0 0 220 220" aria-hidden="true">
+          <defs>
+            <linearGradient id="upgWheelGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffcf6b"></stop>
+              <stop offset="50%" stop-color="#f97316"></stop>
+              <stop offset="100%" stop-color="#ef4444"></stop>
+            </linearGradient>
+            <filter id="upgWheelGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+          </defs>
+          <circle cx="110" cy="110" r="96" class="upg-wheel__spinner"></circle>
+          <g class="upg-wheel__ticks">${ticks}</g>
+          <circle cx="110" cy="110" r="94" class="upg-wheel__track"></circle>
+          <circle cx="110" cy="110" r="${UPG_WHEEL_R}" class="upg-wheel__arc" id="upgArc" data-c="${UPG_WHEEL_C}" stroke-dasharray="${UPG_WHEEL_C}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 110 110)"></circle>
+          <circle cx="110" cy="110" r="72" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"></circle>
+        </svg>
+        <div class="upg-wheel__center">
+          <div class="upg-wheel__src">${srcIcon} →</div>
+          <div class="upg-wheel__target">${targetIcon}</div>
+          <div class="upg-wheel__pct">${(Math.round(chance*10000)/100).toFixed(2)}%</div>
+          <div class="upg-wheel__hint">шанс</div>
+        </div>
+        <div class="upg-wheel__pointer"></div>
+      </div>
+      <div class="upg-wheel__cap">Шанс до 70% · серверный расчёт</div>
+    </div>`;
+  }
+
+  function animateWheel(){
+    const arc=q('#upgArc',a);
+    if(!arc)return;
+    const chance=Math.max(0,Math.min(UPG_CHANCE_CAP,aggregateChance()||0));
+    const C=Number(arc.dataset.c)||UPG_WHEEL_C;
+    const prev=wheelChance;
+    const from=(prev===0&&chance>0)?UPG_CHANCE_CAP:prev;
+    wheelChance=chance;
+    if(Math.abs(from-chance)<0.0001)return;
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce){ arc.style.strokeDashoffset=String(C*(1-chance)); return; }
+    arc.style.transition='none';
+    arc.style.strokeDashoffset=String(C*(1-from));
+    void arc.getBoundingClientRect();
+    arc.style.transition='stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1), stroke .25s ease';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ arc.style.strokeDashoffset=String(C*(1-chance)); }));
+  }
   function stripHtml(){
     const cells=strip.cells.map(c=>`<div class="upg-cell ${c.cls||''}"><span>${c.icon}</span><small>${esc(c.name)}</small></div>`).join('');
     return `<div class="upg-frame ${strip.cls}" id="upgFrame">
@@ -11273,8 +11609,8 @@ function gameUpgradeArena(){
   }
 
   function attach(){
-    a.querySelectorAll('[data-umode]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; modeId=b.dataset.umode; selectedTargets.clear(); clearInvalid(); ladderPreview=null; notice=''; render(); });
-    a.querySelectorAll('[data-usrc]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; sourceType=b.dataset.usrc; selectedTargets.clear(); render(); });
+    a.querySelectorAll('[data-umode]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; modeId=b.dataset.umode; selectedTargets.clear(); clearInvalid(); ladderPreview=null; notice=''; result=null; render(); });
+    a.querySelectorAll('[data-usrc]').forEach(b=>b.onclick=()=>{ if(busy||ladderBusy)return; sourceType=b.dataset.usrc; selectedTargets.clear(); result=null; render(); });
     a.querySelectorAll('[data-utab]').forEach(b=>b.onclick=()=>{
       if(busy||ladderBusy||serialRunning)return;
       tab=b.dataset.utab;
@@ -11288,7 +11624,10 @@ function gameUpgradeArena(){
     const amountEl=q('#upgAmount',a), rangeEl=q('#upgRange',a);
     if(amountEl){
       amountEl.oninput=()=>{ const v=clampAmount(fromRub(amountEl.value)); amount=v; if(rangeEl)rangeEl.value=rubInput(Math.min(v,maxAmount())); clearInvalid(); refreshPreview(); };
-      amountEl.onblur=()=>{ amount=clampAmount(fromRub(amountEl.value)); clearInvalid(); render(); };
+      // onblur раньше делал полный render прямо во время клика по кнопке:
+      // браузер в этот момент ещё снимает фокус, и innerHTML падал с
+      // «node to be removed is no longer a child». Значение уже обновлено
+      // в oninput, поэтому blur ничего не пересобирает.
     }
     if(rangeEl){
       rangeEl.oninput=()=>{ amount=clampAmount(fromRub(rangeEl.value)); if(amountEl)amountEl.value=rubInput(amount); clearInvalid(); refreshPreview(); };

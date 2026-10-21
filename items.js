@@ -2230,13 +2230,37 @@ function getItem(caseId, index) {
  * Бросает предмет по весам. random01 — значение [0,1) от вызывающего,
  * чтобы источник случайности оставался в bot.js (crypto CSPRNG).
  */
+/* Снижение RTP кейсов на 1 п.п.: для каждого кейса свой коэффициент,
+   подобранный симуляцией. Цены и каталог не меняются, меняются только шансы. */
+const CASE_WEIGHT_TILT = {
+  case_500: 0.136489,
+  case_750: 0.134581,
+  case_1000: 0.130343,
+  case_1500: 0.119665,
+  case_2000: 0.117538,
+  case_2500: 0.11582,
+  case_3000: 0.114067,
+  case_4000: 0.115033,
+  case_5000: 0.114278,
+  case_6000: 0.112213,
+  case_7000: 0.11183,
+  case_8000: 0.110114,
+  case_9000: 0.110337,
+  case_9500: 0.10927,
+  case_10000: 0.098489
+};
+function effectiveWeight(item, cost, caseId) {
+  const tilt = CASE_WEIGHT_TILT[caseId] || 0;
+  return item.w * Math.pow(item.price / cost, -tilt);
+}
+
 function rollItem(caseId, random01) {
   const c = CASES[caseId];
   if (!c) return null;
-  const total = c.items.reduce((s, it) => s + it.w, 0);
+  const total = c.items.reduce((s, it) => s + effectiveWeight(it, c.cost, c.id), 0);
   let target = random01 * total, cum = 0;
   for (let i = 0; i < c.items.length; i++) {
-    cum += c.items[i].w;
+    cum += effectiveWeight(c.items[i], c.cost, c.id);
     if (target < cum) return { ...c.items[i], index: i, caseId: c.id, caseName: c.name, cost: c.cost };
   }
   const last = c.items.length - 1;
@@ -2247,8 +2271,9 @@ function rollItem(caseId, random01) {
 function caseEconomy(caseId) {
   const c = CASES[caseId];
   if (!c) return null;
-  const total = c.items.reduce((s, it) => s + it.w, 0);
-  const ev = c.items.reduce((s, it) => s + (it.w / total) * it.price, 0);
+  const weights = c.items.map(it => effectiveWeight(it, c.cost, c.id));
+  const total = weights.reduce((s, w) => s + w, 0);
+  const ev = c.items.reduce((s, it, i) => s + (weights[i] / total) * it.price, 0);
   return { cost: c.cost, ev, returnRate: ev / c.cost };
 }
 

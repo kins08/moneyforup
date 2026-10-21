@@ -71,7 +71,10 @@ CREATE TABLE IF NOT EXISTS orders (
   tx TEXT,
   created_at INTEGER,
   updated_at INTEGER,
-  bonus TEXT DEFAULT ''
+  bonus TEXT DEFAULT '',
+  expires_at INTEGER DEFAULT 0,
+  admin_msg_id INTEGER DEFAULT 0,
+  admin_chat_id INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS transactions_ledger (
@@ -274,7 +277,12 @@ const EXTRA_COLUMNS = {
     ['last_wheel_spin', 'INTEGER DEFAULT 0'],
     ['last_streak_at', 'INTEGER DEFAULT 0']
   ],
-  orders: [['bonus', "TEXT DEFAULT ''"]],
+  orders: [
+    ['bonus', "TEXT DEFAULT ''"],
+    ['expires_at', 'INTEGER DEFAULT 0'],
+    ['admin_msg_id', 'INTEGER DEFAULT 0'],
+    ['admin_chat_id', 'INTEGER DEFAULT 0']
+  ],
   game_rounds: [['item_code', 'TEXT'], ['item_price', 'INTEGER'], ['seed', 'TEXT'], ['params', 'TEXT']],
   user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0']]
 };

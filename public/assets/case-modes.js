@@ -206,14 +206,28 @@
    * Взвешенный ролл предмета. random01 — число [0,1) от вызывающей стороны.
    * Возвращает предмет + index/modeId/modeName/cost или null для неизвестного id.
    */
+  // Та же поправка, что в items.js: цены не меняются, шансы перевешиваются
+  // к дешёвым предметам. Для каждого режима коэффициент свой (RTP −1 п.п.).
+  const CASE_WEIGHT_TILT = {
+    starter_drop: 0.531386,
+    cyber_rush: 1.683587,
+    golden_vault: 0.936925,
+    glitch_mode: 2.410864,
+    omega_core: 0.936925
+  };
+  function effectiveWeight(item, cost, modeId) {
+    const tilt = CASE_WEIGHT_TILT[modeId] || 0;
+    return item.w * Math.pow(item.price / cost, -tilt);
+  }
+
   function rollItem(modeId, random01) {
     const mode = getMode(modeId);
     if (!mode) return null;
-    const total = mode.items.reduce((sum, item) => sum + item.w, 0);
+    const total = mode.items.reduce((sum, item) => sum + effectiveWeight(item, mode.price, mode.id), 0);
     let target = random01 * total;
     let cumulative = 0;
     for (let i = 0; i < mode.items.length; i++) {
-      cumulative += mode.items[i].w;
+      cumulative += effectiveWeight(mode.items[i], mode.price, mode.id);
       if (target < cumulative) {
         return { ...mode.items[i], index: i, modeId: mode.id, modeName: mode.name, cost: mode.price };
       }
@@ -226,8 +240,9 @@
   function caseEconomy(modeId) {
     const mode = getMode(modeId);
     if (!mode) return null;
-    const total = mode.items.reduce((sum, item) => sum + item.w, 0);
-    const ev = mode.items.reduce((sum, item) => sum + (item.w / total) * item.price, 0);
+    const weights = mode.items.map(item => effectiveWeight(item, mode.price, mode.id));
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    const ev = mode.items.reduce((sum, item, i) => sum + (weights[i] / total) * item.price, 0);
     return { cost: mode.price, ev, returnRate: ev / mode.price };
   }
 
