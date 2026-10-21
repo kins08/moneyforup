@@ -259,6 +259,28 @@ CREATE TABLE IF NOT EXISTS idempotent_results (
   result_json TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+
+-- Заявки на оплату комментариев: игрок оставляет комментарий с упоминанием
+-- сервиса/дропов под игровым видео, присылает ссылку, админ проверяет.
+-- likes_ok = 1, когда админ подтвердил минимум 5 лайков на комментарии.
+CREATE TABLE IF NOT EXISTS comment_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  platform TEXT NOT NULL,
+  video_url TEXT NOT NULL,
+  nickname TEXT DEFAULT '',
+  comment_text TEXT DEFAULT '',
+  likes_ok INTEGER DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  reward_tokens INTEGER DEFAULT 0,
+  bonus_tokens INTEGER DEFAULT 0,
+  reject_reason TEXT DEFAULT '',
+  created_at INTEGER NOT NULL,
+  reviewed_at INTEGER DEFAULT 0,
+  reviewed_by INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_comment_submissions_user ON comment_submissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_comment_submissions_status ON comment_submissions(status);
 `;
 
 /* Колонки, которые добавляются к уже существующим (старым) таблицам.

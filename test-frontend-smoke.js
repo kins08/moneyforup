@@ -231,12 +231,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(!d.querySelector('[data-game="trend"]'), 'карточки Trend Hunter нет в играх');
     eq(d.querySelectorAll('.cards .game').length, 14, 'в сетке осталось 14 режимов');
 
-    console.log('\n4d) Прогресс в профиле');
+    console.log('\n4d) Профиль: ранги и комментарии');
     d.querySelector('.nav button[data-nav="profile"]').click();
     await wait(150);
-    ok(Boolean(d.querySelector('#progressBlock')), 'блок «Прогресс» есть в профиле');
-    ok(/Прогресс доступен|Прогресс пока|Загрузка|Не удалось/.test(d.querySelector('#progressBlock').textContent), 'блок прогресса показывает состояние без Telegram');
-    ok(!/токен|⬦ начисл|бонус токен/i.test((d.querySelector('#progressBlock')||{}).textContent || ''), 'в блоке прогресса нет начисления токенов');
+    ok(!d.querySelector('#progressBlock'), 'блок «Прогресс» убран из профиля');
+    ok(!d.querySelector('#userRankPill'), 'пилюля «Новичок» убрана');
+    ok(Boolean(d.querySelector('#vipCard')), 'ранги кэшбэка перенесены в профиль');
+    ok(Boolean(d.querySelector('#commentsCard')), 'в профиле есть блок заработка на комментариях');
+    ok(Boolean(d.querySelector('#cmSubmit')), 'есть форма заявки на оплату комментария');
 
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();

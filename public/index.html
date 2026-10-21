@@ -156,8 +156,8 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 /* ======== SPLASH, ПРЕВЬЮ ИГР, БУСТ-ИГРЫ, АВАТАРКА ======== */
 .mup-splash{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;transition:opacity .5s ease,visibility .5s ease}
 .mup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-.mup-splash-card{position:relative;width:100%;max-width:420px;background:#000;border:1.5px solid rgba(255,255,255,.10);border-radius:24px;padding:30px 22px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.9);overflow:hidden;animation:splashPopIn .5s cubic-bezier(.16,1,.3,1)}
-.mup-splash-badge{width:100%;max-width:300px;height:auto;display:block;margin:0 auto 14px}
+.mup-splash-card{position:relative;width:100%;max-width:420px;background:#000;border:1.5px solid rgba(255,255,255,.10);border-radius:24px;padding:18px 22px 26px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.9);overflow:hidden;animation:splashPopIn .5s cubic-bezier(.16,1,.3,1)}
+.mup-splash-badge{width:100%;max-width:300px;height:auto;display:block;margin:0 auto 12px}
 .mup-splash-logo{font-size:38px;font-weight:950;letter-spacing:.08em;color:#fff;margin-bottom:3px}
 .mup-splash-logo span{color:#ef4444}
 .mup-splash-sub{color:#c9c9c9;font-size:12.5px;font-weight:600;letter-spacing:.04em;margin-bottom:16px}
@@ -1185,22 +1185,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<!-- Обособленный верхний блок: Челлендж 24ч -->
-<div class="challenge-featured-card" data-game="challenge24">
-  <div class="cfc-cover">
-    <img src="assets/game_challenge.jpg" alt="Челлендж 24ч">
-  </div>
-  <div class="cfc-body">
-    <div class="cfc-badge">🎯 ОСОБЫЙ РЕЖИМ · 24 ЧАСА</div>
-    <div class="cfc-title">Ежедневный Челлендж и Стрик Наград</div>
-    <div class="cfc-desc">Заходите каждый день за растущим бонусом (до +25 ₽) и выполняйте 3 ежедневных квеста!</div>
-    <div class="cfc-foot">
-      <span class="cfc-pill">🔥 Стрик до +25 ₽</span>
-      <span class="cfc-link">Открыть челлендж →</span>
-    </div>
-  </div>
-</div>
-
 <!-- Акция: Бесплатный кейс за первый депозит от 150 ₽ -->
 <div class="item" id="promoFirstDepCard" style="display:none;margin-bottom:12px;background:linear-gradient(135deg,rgba(255,207,107,.15),rgba(255,140,0,.08));border:1px solid rgba(255,207,107,.45);border-radius:16px;padding:12px 14px;cursor:pointer">
   <div style="display:flex;align-items:center;gap:12px">
@@ -1213,21 +1197,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
       <div class="muted small" style="margin-top:3px;font-size:11.5px" id="promoFirstDepDesc">Пополните счет от 150 ₽ и получите гарантированный подарочный кейс!</div>
     </div>
     <button class="pillbtn" id="promoFirstDepBtn" style="background:#ffcf6b;color:#101010;font-weight:800;border:none;padding:7px 12px;font-size:12px;border-radius:10px;white-space:nowrap">Забрать</button>
-  </div>
-</div>
-
-<!-- Ранги кэшбэка по пополнениям -->
-<div class="vip-card" id="vipCard" title="Нажмите, чтобы посмотреть все ранги">
-  <div class="vip-top">
-    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Бронза</span> <span class="vip-tag">Все ранги ℹ️</span></div>
-    <div class="vip-perks" id="vipPerks">Кэшбэк 2.0% за депозит</div>
-  </div>
-  <div class="vip-bar-wrap">
-    <div class="vip-bar" id="vipBar" style="width:0%"></div>
-  </div>
-  <div class="vip-sub">
-    <span id="vipWagered">Пополнено: 0 ₽</span>
-    <span id="vipNext">До ранга «Серебро»: 500 ₽</span>
   </div>
 </div>
 
@@ -1320,15 +1289,53 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   <button class="pillbtn" id="sndToggle" aria-pressed="true" style="min-width:74px;padding:8px 12px;font-size:11.5px">ВКЛ</button>
 </div>
 
-<!-- Прогресс: миссии, титул, сезон, Market Replay (DECISIONS D7/D8, без токенов) -->
-<div class="section" style="margin-top:16px"><b>📈 Прогресс</b></div>
-<div class="item" style="padding:14px" id="progressBlock"><div class="muted small">Загрузка прогресса…</div></div>
+<!-- Ранги кэшбэка по пополнениям -->
+<div class="section" style="margin-top:16px"><b>👑 Ранги и кэшбэк</b></div>
+<div class="vip-card" id="vipCard" title="Нажмите, чтобы посмотреть все ранги">
+  <div class="vip-top">
+    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Бронза</span> <span class="vip-tag">Все ранги ℹ️</span></div>
+    <div class="vip-perks" id="vipPerks">Кэшбэк 2.0% за депозит</div>
+  </div>
+  <div class="vip-bar-wrap">
+    <div class="vip-bar" id="vipBar" style="width:0%"></div>
+  </div>
+  <div class="vip-sub">
+    <span id="vipWagered">Пополнено: 0 ₽</span>
+    <span id="vipNext">До ранга «Серебро»: 500 ₽</span>
+  </div>
+</div>
+
+<!-- Заработок на комментариях с упоминанием сервиса -->
+<div class="section" style="margin-top:16px"><b>💬 Заработок на комментариях</b></div>
+<div class="item" style="padding:14px" id="commentsCard">
+  <div class="muted small" style="line-height:1.55">
+    Оставляйте комментарии с упоминанием <b>MoneyForUp</b> и дропов под игровыми видео (CS:GO и другие).
+    За каждый подтверждённый комментарий — <b>3 ₽</b>, минимум <b>5 лайков</b>.
+    За <b>20</b> таких комментариев — бонус <b>+100 ₽</b>.
+  </div>
+  <div class="muted small" id="commentProgress" style="margin-top:8px">Заявок нет</div>
+  <div style="display:grid;gap:8px;margin-top:10px">
+    <select id="cmPlatform" aria-label="Платформа" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
+      <option value="YouTube">YouTube</option>
+      <option value="TikTok">TikTok</option>
+      <option value="Instagram">Instagram</option>
+      <option value="VK">VK Видео</option>
+      <option value="Twitch">Twitch</option>
+      <option value="Другое">Другое</option>
+    </select>
+    <input id="cmVideoUrl" type="url" maxlength="400" placeholder="Ссылка на видео" aria-label="Ссылка на видео" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
+    <input id="cmNick" type="text" maxlength="64" placeholder="Ваш ник в комментариях" aria-label="Ник в комментариях" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
+    <textarea id="cmText" maxlength="500" rows="3" placeholder="Текст комментария с упоминанием сервиса" aria-label="Текст комментария" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px;resize:vertical"></textarea>
+    <button class="control" id="cmSubmit" style="margin:0;padding:12px;font-size:13.5px">Отправить на проверку</button>
+    <div class="muted small" id="cmMsg" style="min-height:16px"></div>
+  </div>
+  <div id="cmList" class="list" style="margin-top:10px"></div>
+</div>
 
 <!-- Игровая статистика пользователя -->
 <div class="section" style="margin-top:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
     <b>🎮 Игровая статистика</b>
-    <span class="pill" id="userRankPill" style="font-size:11px;padding:3px 8px;background:rgba(139,146,255,0.15);color:#8b92ff;border:1px solid rgba(139,146,255,0.3)">Новичок</span>
   </div>
 </div>
 <div class="item" style="padding:14px">
@@ -1405,7 +1412,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
       <button class="chip on" data-pa="150">150 ₽</button>
       <button class="chip" data-pa="300">300 ₽</button>
       <button class="chip" data-pa="500">500 ₽</button>
-      <button class="chip" data-pa="1000">1000 ₽</button>
+      <button class="chip" data-pa="1000">1 000 ₽</button>
     </div>
     <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
       <input class="betinput" id="payRub" type="number" min="150" step="10" inputmode="numeric" value="150" aria-label="Сумма в рублях">
@@ -1483,6 +1490,24 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
       <div id="admLuckList" class="list"><div class="muted small">Загрузка...</div></div>
     </div>
   </div>
+
+  <div class="item" style="border-color:rgba(245,158,11,.45);background:linear-gradient(145deg,#1a1410,#121010);margin-top:12px">
+    <b style="color:#ffcf6b;font-size:13.5px">💬 Заявки на оплату комментариев</b>
+    <div class="muted small" style="margin-top:2px;line-height:1.5">Проверьте, что комментарий виден, упоминает сервис и набрал 5+ лайков. По умолчанию 3 ₽; каждые 20 одобренных с лайками дают бонус +100 ₽.</div>
+    <div id="adminCommentsList" class="list" style="margin-top:10px"><div class="muted small">Загрузка...</div></div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px"><b>🧾 Полная история</b><span class="muted small">движения баланса · раунды · заявки</span></div>
+<div class="item" style="padding:12px">
+  <div class="chips" id="adminLogTabs" style="margin-bottom:10px">
+    <button class="chip on" data-admlog="ledger">Баланс</button>
+    <button class="chip" data-admlog="rounds">Раунды</button>
+    <button class="chip" data-admlog="deposits">Пополнения</button>
+    <button class="chip" data-admlog="withdrawals">Выводы</button>
+    <button class="chip" data-admlog="comments">Комментарии</button>
+  </div>
+  <div id="adminLogList" class="list" style="max-height:460px;overflow:auto"><div class="muted small">Загрузка...</div></div>
 </div>
 
 <div class="section"><b>Вывод средств</b><span class="muted small">мин. 300 ₽</span></div>
@@ -2965,70 +2990,15 @@ function renderProfileInventory(){
 
 /* Блок «Прогресс» профиля (DECISIONS D7/D8): миссии, титул, сезон, Replay.
    Все данные — с сервера из game_rounds. Награды — только косметика. */
-async function renderProgressBlock(){
-  const box=q('#progressBlock');
-  if(!box) return;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  if(!(IS_TG&&API_BASE)){
-    box.innerHTML='<div class="muted small">Прогресс доступен в Telegram-приложении.</div>';
-    return;
-  }
-  let d=null;
-  try{ d=await tgCall('/api/progress',{}); }catch(e){
-    box.innerHTML=`<div class="muted small">Не удалось загрузить прогресс: ${esc((e&&e.message)||'ошибка')}</div>`;
-    return;
-  }
-  if(!d||!d.ok){ box.innerHTML='<div class="muted small">Прогресс пока недоступен.</div>'; return; }
-  const t=d.title||{}, cur=t.current||{name:'—',icon:'🔰'}, nxt=t.next;
-  const missions=(d.missions||[]).map(m=>`
-    <div class="uhr">
-      <span>${m.done?'✅':'⬜'}</span>
-      <b>${esc(m.title)}</b>
-      <span class="muted small">${m.progress}/${m.need}</span>
-    </div>`).join('');
-  const replay=(d.replay||[]).slice(0,5).map(r=>`
-    <div class="uhr">
-      <span>${r.won?'🟢':'🔴'}</span>
-      <b>Pulse · ставка ${fmt(r.bet)} ₽</b>
-      <span class="${r.won?'win':'lose'}">${r.won?'+'+fmt(r.payout):'−'+fmt(r.bet)} ₽</span>
-    </div>`).join('');
-  const season=d.season||{};
-  const seasonNext=season.next?`до награды «${esc((season.next.reward||{}).name||'')}»: ещё ${season.next.left} раундов`:'все награды сезона получены';
-  box.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <b>${cur.icon||''} ${esc(cur.name)}</b>
-      <span class="muted small">${nxt?'до «'+esc(nxt.name)+'»: '+t.leftToNext+' раундов':'максимальный титул'}</span>
-    </div>
-    <div class="muted small" style="margin-bottom:10px">Раундов Pulse/Trend: <b>${(d.stats||{}).rounds||0}</b> · точность: <b>${(d.stats||{}).accuracy||0}%</b></div>
-    <div class="muted small" style="margin:6px 0 4px;font-weight:800">ЕЖЕДНЕВНЫЕ МИССИИ</div>
-    ${missions||'<div class="muted small">Миссий нет</div>'}
-    <div class="muted small" style="margin:10px 0 4px;font-weight:800">${esc(season.season||'СЕЗОН')} · раундов: ${season.rounds||0}</div>
-    <div class="muted small">${seasonNext}</div>
-    <div class="muted small" style="margin:10px 0 4px;font-weight:800">MARKET REPLAY · последние раунды</div>
-    ${replay||'<div class="muted small">Пока нет завершённых раундов Pulse Market</div>'}
-    <div class="muted small" style="margin-top:10px">Награды — косметика и титулы. Рубли в прогрессии не начисляются.</div>`;
-  if(!box.dataset.mfuEntered){
-    box.dataset.mfuEntered='1';
-    box.classList.add('mfu-enter');
-    setTimeout(()=>box.classList.remove('mfu-enter'),700);
-  }
-}
-
 function renderUserStatsUI(){
-  const rankPill = q('#userRankPill');
   const maxWinEl = q('#uStatMaxWin');
   const maxGameEl = q('#uStatMaxGame');
   const favGameEl = q('#uStatFavGame');
   const favSubEl = q('#uStatFavGameSub');
-  renderProgressBlock();
 
   if(!maxWinEl && !favGameEl) return;
 
   const st = S.userStats || null;
-
-  if(rankPill) {
-    rankPill.textContent = (st && st.gamerRank) ? st.gamerRank : 'Новичок';
-  }
 
   // 1. Лучший дроп пользователя
   let maxWinTk = (st && typeof st.maxSingleWinTk === 'number') ? st.maxSingleWinTk : 0;
@@ -3102,6 +3072,7 @@ function screen(id){
     cleanup=gameCaseHub('#caseHubArea');
   }
   if(id==='profile'&&typeof tgLoadRequisites==='function')tgLoadRequisites();
+  if(id==='profile'&&typeof loadCommentsBlock==='function')loadCommentsBlock();
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
@@ -3689,8 +3660,127 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
       if(el.tagName === 'INPUT') el.onchange = handler;
       else el.onclick = handler;
     });
+
+    window.__adminCache = res;
+    renderAdminExtras(res);
   }catch(_){}
 }
+
+function renderAdminExtras(res){
+  const cList=q('#adminCommentsList');
+  if(cList){
+    const all=res.comments||[];
+    const pending=all.filter(c=>c.status==='pending');
+    const recent=all.filter(c=>c.status!=='pending').slice(0,5);
+    const row=c=>`
+      <div class="item" style="padding:10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="min-width:0;flex:1">
+            <b>№${c.id} · ${cmEsc(c.platform)} · ${cmEsc(c.username?'@'+c.username:(c.name||c.user_id))}</b>
+            <div class="muted small" style="word-break:break-all">${cmEsc(c.video_url)}</div>
+            <div class="muted small">${cmEsc(c.comment_text).slice(0,180)}</div>
+            <div class="muted small">${c.nickname?'Ник: '+cmEsc(c.nickname)+' · ':''}${new Date(Number(c.created_at)).toLocaleString('ru-RU')}</div>
+          </div>
+          ${c.status==='pending'?`
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:150px">
+            <label class="muted small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="admcmLikes${c.id}"> 5+ лайков</label>
+            <input type="number" min="0" max="100" step="1" value="3" id="admcmReward${c.id}" class="upg-input" style="padding:6px;font-size:12px;text-align:center" aria-label="Выплата, ₽">
+            <button class="chip" data-cm-ok="${c.id}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Начислить</button>
+            <button class="chip" data-cm-no="${c.id}" style="color:#fca5a5;border-color:rgba(239,68,68,.4)">✕ Отклонить</button>
+          </div>`:`
+          <div style="text-align:right;white-space:nowrap">
+            ${cmStatusBadge(c.status)}
+            <div class="muted small">+${fmt(c.reward_tokens||0)} ₽${Number(c.bonus_tokens)?' +'+fmt(c.bonus_tokens)+' ₽':''}</div>
+          </div>`}
+        </div>
+      </div>`;
+    cList.innerHTML = (pending.length?pending.map(row).join('') : '<div class="muted small">Новых заявок нет.</div>')
+      + (recent.length?`<div class="muted small" style="margin:8px 0 4px;font-weight:800">Последние обработанные</div>`+recent.map(row).join(''):'');
+    qa('[data-cm-ok],[data-cm-no]', cList).forEach(btn=>{
+      btn.onclick=async()=>{
+        const okId=btn.dataset.cmOk;
+        const noId=btn.dataset.cmNo;
+        const id=okId||noId;
+        btn.disabled=true;
+        try{
+          if(okId){
+            const likesEl=q('#admcmLikes'+id), rewardEl=q('#admcmReward'+id);
+            const rr=await tgCall('/api/admin/comments/review',{
+              id:Number(id), action:'approve',
+              likesOk:!!(likesEl&&likesEl.checked),
+              rewardRub:Number(rewardEl&&rewardEl.value||3)
+            });
+            if(rr&&rr.ok){
+              showAppNotification(`✅ Комментарий №${id} оплачен: +${rr.rewardRub} ₽${rr.bonusRub?` и бонус +${rr.bonusRub} ₽`:''}`);
+              loadAdminOverview(window.__adminCurPeriod||'all');
+            } else showAppNotification((rr&&rr.error)||'Не удалось начислить');
+          }else{
+            const rr=await tgCall('/api/admin/comments/review',{ id:Number(id), action:'reject', reason:'Комментарий не подтверждён' });
+            if(rr&&rr.ok){ showAppNotification(`❌ Заявка №${id} отклонена`); loadAdminOverview(window.__adminCurPeriod||'all'); }
+            else showAppNotification((rr&&rr.error)||'Не удалось отклонить');
+          }
+        }catch(e){ showAppNotification((e&&e.message)||'Ошибка'); }
+      };
+    });
+  }
+  renderAdminLog(window.__adminLogTab||'ledger');
+}
+
+function renderAdminLog(tab){
+  window.__adminLogTab=tab;
+  qa('#adminLogTabs [data-admlog]').forEach(b=>b.classList.toggle('on',b.dataset.admlog===tab));
+  const box=q('#adminLogList');
+  const res=window.__adminCache;
+  if(!box||!res) return;
+  let rows=[];
+  if(tab==='ledger'){
+    rows=(res.ledger||[]).map(l=>`
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+        <div style="min-width:0">
+          <b>${l.username?'@'+l.username:(l.name||'ID '+l.userId)}</b>
+          <div class="muted small">${new Date(l.createdAt).toLocaleString('ru-RU')} · ${l.type}</div>
+          <div class="muted small" style="word-break:break-word">${cmEsc(l.reason||'')}</div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">
+          <b style="color:${l.amount>=0?'#3ddc96':'#ef4444'}">${l.amount>=0?'+':''}${fmt(l.amount)} ₽</b>
+          <div class="muted small">итог: ${fmt(l.balanceAfter)} ₽</div>
+        </div>
+      </div>`);
+  }else if(tab==='rounds'){
+    rows=(res.rounds||[]).map(r=>`
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+        <div><b>${cmEsc(r.game)}</b><div class="muted small">${new Date(r.createdAt).toLocaleString('ru-RU')} · ${r.username?'@'+r.username:(r.name||'ID '+r.userId)}</div></div>
+        <div style="text-align:right;white-space:nowrap">
+          <b style="color:${r.win>0?'#3ddc96':'#ef4444'}">${r.win>0?'+'+fmt(r.win):'−'+fmt(r.bet)} ₽</b>
+          <div class="muted small">×${r.mult||0} · ${cmEsc(r.status)}</div>
+        </div>
+      </div>`);
+  }else if(tab==='deposits'||tab==='withdrawals'){
+    const src=tab==='deposits'?(res.deposits||[]):(res.withdrawals||[]);
+    rows=src.map(o=>`
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+        <div><b>№${cmEsc(String(o.id))}</b><div class="muted small">${new Date(o.createdAt).toLocaleString('ru-RU')} · ${cmEsc(o.userName||'')} · ${cmEsc(o.method||'')}</div></div>
+        <div style="text-align:right;white-space:nowrap"><b>${fmtInt(o.rub||0)} ₽</b><div class="muted small">${cmEsc(o.status||'')}</div></div>
+      </div>`);
+  }else{
+    rows=(res.comments||[]).map(c=>`
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+        <div style="min-width:0">
+          <b>№${c.id} · ${cmEsc(c.platform)}</b>
+          <div class="muted small">${new Date(Number(c.created_at)).toLocaleString('ru-RU')} · ${c.username?'@'+c.username:(c.name||'ID '+c.user_id)}</div>
+          <div class="muted small" style="word-break:break-all">${cmEsc(c.video_url)}</div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">${cmStatusBadge(c.status)}<div class="muted small">+${fmt(c.reward_tokens||0)} ₽</div></div>
+      </div>`);
+  }
+  box.innerHTML=rows.length?rows.join(''):'<div class="muted small">Записей нет.</div>';
+}
+
+const adminLogTabsEl=q('#adminLogTabs');
+if(adminLogTabsEl) adminLogTabsEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-admlog]');
+  if(b) renderAdminLog(b.dataset.admlog);
+});
 
 /* ---------- БУСТ ДРОПА: поиск игрока, удача 0–100% ---------- */
 let __admLuckSelected = null;
@@ -4302,6 +4392,76 @@ function showVipRanksModal(){
 
 const vipCardEl = q('#vipCard');
 if(vipCardEl) vipCardEl.addEventListener('click', showVipRanksModal);
+
+/* =====================================================================
+   ЗАРАБОТОК НА КОММЕНТАРИЯХ С УПОМИНАНИЕМ СЕРВИСА
+   ===================================================================== */
+let __cmBusy = false;
+function cmEsc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function cmStatusBadge(s){
+  if(s==='approved') return '<span style="color:#3ddc96;font-weight:800">✅ Оплачен</span>';
+  if(s==='rejected') return '<span style="color:#ef4444;font-weight:800">❌ Отклонён</span>';
+  return '<span style="color:#ffcf6b;font-weight:800">⏳ На проверке</span>';
+}
+async function loadCommentsBlock(){
+  const list=q('#cmList'), prog=q('#commentProgress');
+  if(!list) return;
+  if(!(IS_TG && API_BASE)){
+    if(prog) prog.textContent='Доступно в Telegram-приложении.';
+    return;
+  }
+  try{
+    const d=await tgCall('/api/comments/my',{});
+    if(!d||!d.ok) throw new Error((d&&d.error)||'ошибка');
+    if(prog){
+      prog.innerHTML=`Одобрено с ${d.likesMin}+ лайками: <b>${d.approvedLiked}</b> из <b>${d.milestone}</b> · за комментарий: <b>${fmtInt(d.rewardRub)} ₽</b> · бонус на рубеже: <b>+${fmtInt(d.milestoneRub)} ₽</b>`;
+    }
+    const rows=d.submissions||[];
+    list.innerHTML=rows.length?rows.map(r=>`
+      <div class="item row" style="align-items:flex-start;gap:10px">
+        <div style="min-width:0">
+          <b>№${r.id} · ${cmEsc(r.platform)}</b>
+          <div class="muted small" style="word-break:break-all">${cmEsc(r.videoUrl)}</div>
+          <div class="muted small">${cmEsc(r.commentText).slice(0,140)}</div>
+          ${r.rejectReason?`<div class="muted small" style="color:#fca5a5">Причина: ${cmEsc(r.rejectReason)}</div>`:''}
+        </div>
+        <div style="text-align:right;white-space:nowrap">
+          ${cmStatusBadge(r.status)}
+          ${r.status==='approved'?`<div class="muted small">+${fmtInt(r.rewardRub)} ₽${r.bonusRub?` +${fmtInt(r.bonusRub)} ₽`:''}</div>`:''}
+        </div>
+      </div>`).join(''):'<div class="muted small">Заявок пока нет.</div>';
+  }catch(e){
+    if(prog) prog.textContent='Не удалось загрузить заявки: '+((e&&e.message)||'ошибка');
+  }
+}
+const cmSubmitBtn=q('#cmSubmit');
+if(cmSubmitBtn) cmSubmitBtn.onclick=async()=>{
+  if(__cmBusy) return;
+  const msg=q('#cmMsg');
+  const platform=q('#cmPlatform')?q('#cmPlatform').value:'';
+  const videoUrl=q('#cmVideoUrl')?q('#cmVideoUrl').value.trim():'';
+  const nickname=q('#cmNick')?q('#cmNick').value.trim():'';
+  const commentText=q('#cmText')?q('#cmText').value.trim():'';
+  const say=(t,c)=>{ if(msg){ msg.textContent=t; msg.style.color=c||'#94a3b8'; } };
+  if(!/^https?:\/\/\S+\.\S+/i.test(videoUrl)) return say('Вставьте ссылку на видео (http/https)','#fca5a5');
+  if(commentText.length<10) return say('Опишите комментарий — минимум 10 символов','#fca5a5');
+  if(!(IS_TG&&API_BASE)) return say('Отправка доступна в Telegram-приложении.','#fca5a5');
+  __cmBusy=true; cmSubmitBtn.disabled=true; say('Отправляем…');
+  try{
+    const r=await tgCall('/api/comments/submit',{platform,videoUrl,nickname,commentText});
+    if(!r||!r.ok) throw new Error((r&&r.error)||'не удалось отправить');
+    say(`Заявка №${r.id} отправлена. Проверка обычно занимает до 24 часов.`,'#3ddc96');
+    if(q('#cmVideoUrl'))q('#cmVideoUrl').value='';
+    if(q('#cmText'))q('#cmText').value='';
+    loadCommentsBlock();
+  }catch(e){
+    say((e&&e.message)||'Ошибка отправки','#fca5a5');
+  }finally{
+    __cmBusy=false; cmSubmitBtn.disabled=false;
+  }
+};
 
 /* =======================================================================
    ОНЛАЙН РЕЖИМОВ (каждые 5 минут, Ракетка и Кейсы в топе)
@@ -10367,7 +10527,7 @@ function gameCaseHubUnified(sel){
     const m=current();
     if(!m)return;
     warmupBusy=true; clearTimers(); render();
-    setStatus('Демо-прокрут: показываем хороший дроп…','');
+    setStatus('Пробный прокрут…','');
     let res=null, err=null;
     try{
       if(IS_TG&&API_BASE){
@@ -10393,9 +10553,7 @@ function gameCaseHubUnified(sel){
   }
 
   function demoRoll(m){
-    const items=[...(m.items||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0));
-    const top=items.slice(0,Math.max(1,Math.ceil(items.length*0.25)));
-    return top[Math.floor(Math.random()*top.length)] || items[0] || null;
+    return localRoll(m);
   }
 
   async function openCase(){

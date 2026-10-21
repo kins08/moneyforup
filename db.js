@@ -119,7 +119,7 @@ const stmts = {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateOrderStatus: db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?'),
-  getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100'),
+  getAllOrders: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 500'),
   getPromo: db.prepare('SELECT * FROM promo_codes WHERE code = ?'),
   getPromoActivationsCount: db.prepare('SELECT COUNT(*) AS count FROM promo_activations WHERE promo_code = ?'),
   checkUserPromo: db.prepare('SELECT 1 FROM promo_activations WHERE promo_code = ? AND user_id = ?'),
@@ -177,6 +177,59 @@ const stmts = {
     WHERE CAST(id AS TEXT) = ? OR CAST(num_id AS TEXT) = ? OR lower(username) = lower(?)
        OR lower(name) LIKE lower(?) ESCAPE '\\'
     ORDER BY id DESC
+    LIMIT ?
+  `),
+  insertCommentSubmission: db.prepare(`
+    INSERT INTO comment_submissions (user_id, platform, video_url, nickname, comment_text, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `),
+  listUserComments: db.prepare(
+    'SELECT * FROM comment_submissions WHERE user_id = ? ORDER BY id DESC LIMIT ?'
+  ),
+  listPendingComments: db.prepare(`
+    SELECT c.*, u.num_id, u.name, u.username
+    FROM comment_submissions c
+    LEFT JOIN users u ON u.id = c.user_id
+    WHERE c.status = 'pending'
+    ORDER BY c.id ASC
+    LIMIT ?
+  `),
+  listAllComments: db.prepare(`
+    SELECT c.*, u.num_id, u.name, u.username
+    FROM comment_submissions c
+    LEFT JOIN users u ON u.id = c.user_id
+    ORDER BY c.id DESC
+    LIMIT ?
+  `),
+  getCommentSubmission: db.prepare('SELECT * FROM comment_submissions WHERE id = ?'),
+  reviewCommentSubmission: db.prepare(`
+    UPDATE comment_submissions
+    SET status = ?, reward_tokens = ?, bonus_tokens = ?, reject_reason = ?,
+        likes_ok = ?, reviewed_at = ?, reviewed_by = ?
+    WHERE id = ? AND status = 'pending'
+  `),
+  countApprovedLiked: db.prepare(`
+    SELECT COUNT(*) AS count FROM comment_submissions
+    WHERE user_id = ? AND status = 'approved' AND likes_ok = 1
+  `),
+  countUserCommentsSince: db.prepare(
+    'SELECT COUNT(*) AS count FROM comment_submissions WHERE user_id = ? AND created_at >= ?'
+  ),
+  listRecentLedger: db.prepare(`
+    SELECT l.id, l.user_id, l.amount, l.type, l.reason, l.balance_after, l.created_at,
+           u.num_id, u.name, u.username
+    FROM transactions_ledger l
+    LEFT JOIN users u ON u.id = l.user_id
+    ORDER BY l.id DESC
+    LIMIT ?
+  `),
+  listRecentRounds: db.prepare(`
+    SELECT r.round_id, r.user_id, r.game, r.bet_tokens, r.mult, r.win_tokens,
+           r.status, r.created_at, r.settled_at,
+           u.num_id, u.name, u.username
+    FROM game_rounds r
+    LEFT JOIN users u ON u.id = r.user_id
+    ORDER BY r.created_at DESC
     LIMIT ?
   `)
 };
@@ -1234,6 +1287,154 @@ module.exports = {
       }));
     } catch (e) {
       console.error('[DB] searchUsersForAdmin error:', e.message);
+      return [];
+    }
+  },
+
+  /* ── Комментарии с упоминанием сервиса ────────────────────────────────
+     Игрок присылает ссылку на видео и текст комментария, админ проверяет
+     факт комментария и лайки. Выплата — только после approve. */
+  addCommentSubmission: (userId, data) => {
+    const uid = Math.floor(Number(userId));
+    if (!Number.isFinite(uid) || uid <= 0) return { ok: false, error: 'Некорректный ID игрока' };
+    const platform = String(data && data.platform || '').trim().slice(0, 24);
+    const videoUrl = String(data && data.videoUrl || '').trim().slice(0, 400);
+    const nickname = String(data && data.nickname || '').trim().slice(0, 64);
+    const commentText = String(data && data.commentText || '').trim().slice(0, 500);
+    if (!platform) return { ok: false, error: 'Выберите платформу' };
+    if (!/^https?:\/\/\S+\.\S+/i.test(videoUrl)) return { ok: false, error: 'Нужна ссылка на видео (http/https)' };
+    if (commentText.length < 10) return { ok: false, error: 'Опишите комментарий (минимум 10 символов)' };
+    try {
+      const now = Date.now();
+      const res = stmts.insertCommentSubmission.run(uid, platform, videoUrl, nickname, commentText, now);
+      const id = Number(res.lastInsertRowid || 0);
+      turso.queueQuery(
+        'INSERT INTO comment_submissions (id, user_id, platform, video_url, nickname, comment_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, uid, platform, videoUrl, nickname, commentText, now]
+      );
+      return { ok: true, id };
+    } catch (e) {
+      console.error('[DB] addCommentSubmission error:', e.message);
+      return { ok: false, error: 'Не удалось сохранить заявку' };
+    }
+  },
+  listUserComments: (userId, limit = 30) => {
+    try {
+      const n = Math.max(1, Math.min(100, Math.floor(Number(limit) || 30)));
+      return stmts.listUserComments.all(Math.floor(Number(userId)), n);
+    } catch (e) {
+      console.error('[DB] listUserComments error:', e.message);
+      return [];
+    }
+  },
+  listPendingComments: (limit = 50) => {
+    try {
+      const n = Math.max(1, Math.min(200, Math.floor(Number(limit) || 50)));
+      return stmts.listPendingComments.all(n);
+    } catch (e) {
+      console.error('[DB] listPendingComments error:', e.message);
+      return [];
+    }
+  },
+  listAllComments: (limit = 100) => {
+    try {
+      const n = Math.max(1, Math.min(500, Math.floor(Number(limit) || 100)));
+      return stmts.listAllComments.all(n);
+    } catch (e) {
+      console.error('[DB] listAllComments error:', e.message);
+      return [];
+    }
+  },
+  getCommentSubmission: (id) => {
+    try {
+      return stmts.getCommentSubmission.get(Math.floor(Number(id))) || null;
+    } catch (e) {
+      console.error('[DB] getCommentSubmission error:', e.message);
+      return null;
+    }
+  },
+  reviewCommentSubmission: ({ id, status, rewardTokens, bonusTokens, likesOk, adminId, reason }) => {
+    try {
+      const res = stmts.reviewCommentSubmission.run(
+        String(status),
+        Math.floor(Number(rewardTokens) || 0),
+        Math.floor(Number(bonusTokens) || 0),
+        String(reason || '').slice(0, 300),
+        likesOk ? 1 : 0,
+        Date.now(),
+        Math.floor(Number(adminId) || 0),
+        Math.floor(Number(id))
+      );
+      if (!res || Number(res.changes) < 1) return { ok: false, error: 'Заявка уже обработана' };
+      turso.queueQuery(
+        `UPDATE comment_submissions SET status = ?, reward_tokens = ?, bonus_tokens = ?, reject_reason = ?, likes_ok = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?`,
+        [String(status), Math.floor(Number(rewardTokens) || 0), Math.floor(Number(bonusTokens) || 0),
+         String(reason || '').slice(0, 300), likesOk ? 1 : 0, Date.now(), Math.floor(Number(adminId) || 0), Math.floor(Number(id))]
+      );
+      return { ok: true };
+    } catch (e) {
+      console.error('[DB] reviewCommentSubmission error:', e.message);
+      return { ok: false, error: 'Не удалось обновить заявку' };
+    }
+  },
+  countApprovedLiked: (userId) => {
+    try {
+      const r = stmts.countApprovedLiked.get(Math.floor(Number(userId)));
+      return Number(r && r.count || 0);
+    } catch (e) {
+      console.error('[DB] countApprovedLiked error:', e.message);
+      return 0;
+    }
+  },
+  countUserCommentsSince: (userId, since) => {
+    try {
+      const r = stmts.countUserCommentsSince.get(Math.floor(Number(userId)), Math.floor(Number(since) || 0));
+      return Number(r && r.count || 0);
+    } catch (e) {
+      console.error('[DB] countUserCommentsSince error:', e.message);
+      return 0;
+    }
+  },
+  /* Полные логи для админки: последние движения баланса и раунды. */
+  listRecentLedger: (limit = 200) => {
+    try {
+      const n = Math.max(1, Math.min(1000, Math.floor(Number(limit) || 200)));
+      return stmts.listRecentLedger.all(n).map(r => ({
+        id: Number(r.id),
+        userId: Number(r.user_id),
+        amount: Number(r.amount),
+        type: r.type || '',
+        reason: r.reason || '',
+        balanceAfter: Number(r.balance_after),
+        createdAt: Number(r.created_at),
+        numId: Number(r.num_id || 0),
+        name: r.name || '',
+        username: r.username || ''
+      }));
+    } catch (e) {
+      console.error('[DB] listRecentLedger error:', e.message);
+      return [];
+    }
+  },
+  listRecentRounds: (limit = 200) => {
+    try {
+      const n = Math.max(1, Math.min(1000, Math.floor(Number(limit) || 200)));
+      return stmts.listRecentRounds.all(n).map(r => ({
+        roundId: r.round_id,
+        userId: Number(r.user_id),
+        game: r.game || '',
+        bet: Number(r.bet_tokens || 0),
+        mult: Number(r.mult || 0),
+        win: Number(r.win_tokens || 0),
+        status: r.status || '',
+        createdAt: Number(r.created_at || 0),
+        settledAt: Number(r.settled_at || 0),
+        numId: Number(r.num_id || 0),
+        name: r.name || '',
+        username: r.username || ''
+      }));
+    } catch (e) {
+      console.error('[DB] listRecentRounds error:', e.message);
       return [];
     }
   },

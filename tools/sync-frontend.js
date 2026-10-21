@@ -46,32 +46,37 @@ for (const [srcRel, dstRel] of PAIRS) {
   console.log(`✓ ${dstRel} обновлён из ${srcRel} (${src.length} байт)`);
 }
 
-/* Обложки кейсов: assets/cases/*.jpg -> public/assets/cases/*.jpg. */
-const coversSrc = path.join(ROOT, 'assets', 'cases');
-const coversDst = path.join(ROOT, 'public', 'assets', 'cases');
-if (fs.existsSync(coversSrc)) {
-  const files = fs.readdirSync(coversSrc).filter(f => /\.jpe?g$/i.test(f)).sort();
+/* Картинки: assets/*.{jpg,png} и assets/cases/*.{jpg,png} -> public/assets/…
+   Раньше синхронизировались только обложки кейсов, из-за чего новые обложки
+   игр (game_pulse.jpg, game_trend.jpg) не попадали в public/ и в проде
+   карточки были с битой картинкой. */
+for (const sub of ['', 'cases']) {
+  const srcDir = path.join(ROOT, 'assets', sub);
+  const dstDir = path.join(ROOT, 'public', 'assets', sub);
+  if (!fs.existsSync(srcDir)) continue;
+  const label = sub ? `обложки кейсов` : 'картинки assets/';
+  const files = fs.readdirSync(srcDir).filter(f => /\.jpe?g|\.png$/i.test(f)).sort();
   let bad = 0;
   for (const f of files) {
-    const srcPath = path.join(coversSrc, f);
-    const dstPath = path.join(coversDst, f);
+    const srcPath = path.join(srcDir, f);
+    const dstPath = path.join(dstDir, f);
     const src = fs.readFileSync(srcPath);
     const dst = fs.existsSync(dstPath) ? fs.readFileSync(dstPath) : null;
     if (dst && src.equals(dst)) continue;
     if (checkOnly) {
-      console.error(`✗ Обложка разошлась: assets/cases/${f} != public/assets/cases/${f}`);
+      console.error(`✗ Картинка разошлась: assets/${sub ? sub + '/' : ''}${f} != public/assets/${sub ? sub + '/' : ''}${f}`);
       failed = true;
       bad++;
       continue;
     }
-    fs.mkdirSync(coversDst, { recursive: true });
+    fs.mkdirSync(dstDir, { recursive: true });
     fs.writeFileSync(dstPath, src);
     bad++;
   }
   if (checkOnly) {
-    if (!bad) console.log(`✓ обложки кейсов синхронизированы (${files.length} шт.)`);
+    if (!bad) console.log(`✓ ${label} синхронизированы (${files.length} шт.)`);
   } else {
-    console.log(`✓ обложки кейсов: ${files.length} шт., обновлено ${bad}`);
+    console.log(`✓ ${label}: ${files.length} шт., обновлено ${bad}`);
   }
 }
 
