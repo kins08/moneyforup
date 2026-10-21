@@ -1305,7 +1305,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
 </div>
 
-<!-- Заработок на комментариях с упоминанием сервиса -->
+<!-- Заработок на комментариях: заявки принимаются в личке -->
 <div class="section" style="margin-top:16px"><b>💬 Заработок на комментариях</b></div>
 <div class="item" style="padding:14px" id="commentsCard">
   <div class="muted small" style="line-height:1.55">
@@ -1313,23 +1313,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     За каждый подтверждённый комментарий — <b>3 ₽</b>, минимум <b>5 лайков</b>.
     За <b>20</b> таких комментариев — бонус <b>+100 ₽</b>.
   </div>
-  <div class="muted small" id="commentProgress" style="margin-top:8px">Заявок нет</div>
-  <div style="display:grid;gap:8px;margin-top:10px">
-    <select id="cmPlatform" aria-label="Платформа" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
-      <option value="YouTube">YouTube</option>
-      <option value="TikTok">TikTok</option>
-      <option value="Instagram">Instagram</option>
-      <option value="VK">VK Видео</option>
-      <option value="Twitch">Twitch</option>
-      <option value="Другое">Другое</option>
-    </select>
-    <input id="cmVideoUrl" type="url" maxlength="400" placeholder="Ссылка на видео" aria-label="Ссылка на видео" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
-    <input id="cmNick" type="text" maxlength="64" placeholder="Ваш ник в комментариях" aria-label="Ник в комментариях" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px">
-    <textarea id="cmText" maxlength="500" rows="3" placeholder="Текст комментария с упоминанием сервиса" aria-label="Текст комментария" style="width:100%;box-sizing:border-box;background:#212121;border:1px solid var(--line);color:#fff;border-radius:11px;padding:10px;font-family:inherit;font-size:13px;resize:vertical"></textarea>
-    <button class="control" id="cmSubmit" style="margin:0;padding:12px;font-size:13.5px">Отправить на проверку</button>
-    <div class="muted small" id="cmMsg" style="min-height:16px"></div>
-  </div>
-  <div id="cmList" class="list" style="margin-top:10px"></div>
+  <div class="muted small" style="margin-top:8px">Присылайте ссылки на комментарии в личку — проверяем вручную и начисляем на баланс.</div>
+  <button class="control" id="cmDmBtn" style="margin-top:12px;padding:12px;font-size:13.5px">Написать в личку</button>
 </div>
 
 <!-- Игровая статистика пользователя -->
@@ -1489,12 +1474,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
       <b style="font-size:12px;color:#86efac;display:block;margin-bottom:6px">Сейчас с бустом:</b>
       <div id="admLuckList" class="list"><div class="muted small">Загрузка...</div></div>
     </div>
-  </div>
-
-  <div class="item" style="border-color:rgba(245,158,11,.45);background:linear-gradient(145deg,#1a1410,#121010);margin-top:12px">
-    <b style="color:#ffcf6b;font-size:13.5px">💬 Заявки на оплату комментариев</b>
-    <div class="muted small" style="margin-top:2px;line-height:1.5">Проверьте, что комментарий виден, упоминает сервис и набрал 5+ лайков. По умолчанию 3 ₽; каждые 20 одобренных с лайками дают бонус +100 ₽.</div>
-    <div id="adminCommentsList" class="list" style="margin-top:10px"><div class="muted small">Загрузка...</div></div>
   </div>
 </div>
 
@@ -3072,7 +3051,6 @@ function screen(id){
     cleanup=gameCaseHub('#caseHubArea');
   }
   if(id==='profile'&&typeof tgLoadRequisites==='function')tgLoadRequisites();
-  if(id==='profile'&&typeof loadCommentsBlock==='function')loadCommentsBlock();
 }
 qa('[data-nav]').forEach(b=>b.addEventListener('click',()=>screen(b.dataset.nav)));
 q('#back').addEventListener('click',()=>screen('games'));
@@ -3667,62 +3645,6 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
 }
 
 function renderAdminExtras(res){
-  const cList=q('#adminCommentsList');
-  if(cList){
-    const all=res.comments||[];
-    const pending=all.filter(c=>c.status==='pending');
-    const recent=all.filter(c=>c.status!=='pending').slice(0,5);
-    const row=c=>`
-      <div class="item" style="padding:10px;margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <div style="min-width:0;flex:1">
-            <b>№${c.id} · ${cmEsc(c.platform)} · ${cmEsc(c.username?'@'+c.username:(c.name||c.user_id))}</b>
-            <div class="muted small" style="word-break:break-all">${cmEsc(c.video_url)}</div>
-            <div class="muted small">${cmEsc(c.comment_text).slice(0,180)}</div>
-            <div class="muted small">${c.nickname?'Ник: '+cmEsc(c.nickname)+' · ':''}${new Date(Number(c.created_at)).toLocaleString('ru-RU')}</div>
-          </div>
-          ${c.status==='pending'?`
-          <div style="display:flex;flex-direction:column;gap:6px;min-width:150px">
-            <label class="muted small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="admcmLikes${c.id}"> 5+ лайков</label>
-            <input type="number" min="0" max="100" step="1" value="3" id="admcmReward${c.id}" class="upg-input" style="padding:6px;font-size:12px;text-align:center" aria-label="Выплата, ₽">
-            <button class="chip" data-cm-ok="${c.id}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Начислить</button>
-            <button class="chip" data-cm-no="${c.id}" style="color:#fca5a5;border-color:rgba(239,68,68,.4)">✕ Отклонить</button>
-          </div>`:`
-          <div style="text-align:right;white-space:nowrap">
-            ${cmStatusBadge(c.status)}
-            <div class="muted small">+${fmt(c.reward_tokens||0)} ₽${Number(c.bonus_tokens)?' +'+fmt(c.bonus_tokens)+' ₽':''}</div>
-          </div>`}
-        </div>
-      </div>`;
-    cList.innerHTML = (pending.length?pending.map(row).join('') : '<div class="muted small">Новых заявок нет.</div>')
-      + (recent.length?`<div class="muted small" style="margin:8px 0 4px;font-weight:800">Последние обработанные</div>`+recent.map(row).join(''):'');
-    qa('[data-cm-ok],[data-cm-no]', cList).forEach(btn=>{
-      btn.onclick=async()=>{
-        const okId=btn.dataset.cmOk;
-        const noId=btn.dataset.cmNo;
-        const id=okId||noId;
-        btn.disabled=true;
-        try{
-          if(okId){
-            const likesEl=q('#admcmLikes'+id), rewardEl=q('#admcmReward'+id);
-            const rr=await tgCall('/api/admin/comments/review',{
-              id:Number(id), action:'approve',
-              likesOk:!!(likesEl&&likesEl.checked),
-              rewardRub:Number(rewardEl&&rewardEl.value||3)
-            });
-            if(rr&&rr.ok){
-              showAppNotification(`✅ Комментарий №${id} оплачен: +${rr.rewardRub} ₽${rr.bonusRub?` и бонус +${rr.bonusRub} ₽`:''}`);
-              loadAdminOverview(window.__adminCurPeriod||'all');
-            } else showAppNotification((rr&&rr.error)||'Не удалось начислить');
-          }else{
-            const rr=await tgCall('/api/admin/comments/review',{ id:Number(id), action:'reject', reason:'Комментарий не подтверждён' });
-            if(rr&&rr.ok){ showAppNotification(`❌ Заявка №${id} отклонена`); loadAdminOverview(window.__adminCurPeriod||'all'); }
-            else showAppNotification((rr&&rr.error)||'Не удалось отклонить');
-          }
-        }catch(e){ showAppNotification((e&&e.message)||'Ошибка'); }
-      };
-    });
-  }
   renderAdminLog(window.__adminLogTab||'ledger');
 }
 
@@ -3761,16 +3683,6 @@ function renderAdminLog(tab){
       <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
         <div><b>№${cmEsc(String(o.id))}</b><div class="muted small">${new Date(o.createdAt).toLocaleString('ru-RU')} · ${cmEsc(o.userName||'')} · ${cmEsc(o.method||'')}</div></div>
         <div style="text-align:right;white-space:nowrap"><b>${fmtInt(o.rub||0)} ₽</b><div class="muted small">${cmEsc(o.status||'')}</div></div>
-      </div>`);
-  }else{
-    rows=(res.comments||[]).map(c=>`
-      <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
-        <div style="min-width:0">
-          <b>№${c.id} · ${cmEsc(c.platform)}</b>
-          <div class="muted small">${new Date(Number(c.created_at)).toLocaleString('ru-RU')} · ${c.username?'@'+c.username:(c.name||'ID '+c.user_id)}</div>
-          <div class="muted small" style="word-break:break-all">${cmEsc(c.video_url)}</div>
-        </div>
-        <div style="text-align:right;white-space:nowrap">${cmStatusBadge(c.status)}<div class="muted small">+${fmt(c.reward_tokens||0)} ₽</div></div>
       </div>`);
   }
   box.innerHTML=rows.length?rows.join(''):'<div class="muted small">Записей нет.</div>';
@@ -4393,75 +4305,13 @@ function showVipRanksModal(){
 const vipCardEl = q('#vipCard');
 if(vipCardEl) vipCardEl.addEventListener('click', showVipRanksModal);
 
-/* =====================================================================
-   ЗАРАБОТОК НА КОММЕНТАРИЯХ С УПОМИНАНИЕМ СЕРВИСА
-   ===================================================================== */
-let __cmBusy = false;
+/* Заработок на комментариях: заявки принимаем в личке, поэтому в
+   приложении остаётся только кнопка перехода в чат. */
 function cmEsc(v){
   return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function cmStatusBadge(s){
-  if(s==='approved') return '<span style="color:#3ddc96;font-weight:800">✅ Оплачен</span>';
-  if(s==='rejected') return '<span style="color:#ef4444;font-weight:800">❌ Отклонён</span>';
-  return '<span style="color:#ffcf6b;font-weight:800">⏳ На проверке</span>';
-}
-async function loadCommentsBlock(){
-  const list=q('#cmList'), prog=q('#commentProgress');
-  if(!list) return;
-  if(!(IS_TG && API_BASE)){
-    if(prog) prog.textContent='Доступно в Telegram-приложении.';
-    return;
-  }
-  try{
-    const d=await tgCall('/api/comments/my',{});
-    if(!d||!d.ok) throw new Error((d&&d.error)||'ошибка');
-    if(prog){
-      prog.innerHTML=`Одобрено с ${d.likesMin}+ лайками: <b>${d.approvedLiked}</b> из <b>${d.milestone}</b> · за комментарий: <b>${fmtInt(d.rewardRub)} ₽</b> · бонус на рубеже: <b>+${fmtInt(d.milestoneRub)} ₽</b>`;
-    }
-    const rows=d.submissions||[];
-    list.innerHTML=rows.length?rows.map(r=>`
-      <div class="item row" style="align-items:flex-start;gap:10px">
-        <div style="min-width:0">
-          <b>№${r.id} · ${cmEsc(r.platform)}</b>
-          <div class="muted small" style="word-break:break-all">${cmEsc(r.videoUrl)}</div>
-          <div class="muted small">${cmEsc(r.commentText).slice(0,140)}</div>
-          ${r.rejectReason?`<div class="muted small" style="color:#fca5a5">Причина: ${cmEsc(r.rejectReason)}</div>`:''}
-        </div>
-        <div style="text-align:right;white-space:nowrap">
-          ${cmStatusBadge(r.status)}
-          ${r.status==='approved'?`<div class="muted small">+${fmtInt(r.rewardRub)} ₽${r.bonusRub?` +${fmtInt(r.bonusRub)} ₽`:''}</div>`:''}
-        </div>
-      </div>`).join(''):'<div class="muted small">Заявок пока нет.</div>';
-  }catch(e){
-    if(prog) prog.textContent='Не удалось загрузить заявки: '+((e&&e.message)||'ошибка');
-  }
-}
-const cmSubmitBtn=q('#cmSubmit');
-if(cmSubmitBtn) cmSubmitBtn.onclick=async()=>{
-  if(__cmBusy) return;
-  const msg=q('#cmMsg');
-  const platform=q('#cmPlatform')?q('#cmPlatform').value:'';
-  const videoUrl=q('#cmVideoUrl')?q('#cmVideoUrl').value.trim():'';
-  const nickname=q('#cmNick')?q('#cmNick').value.trim():'';
-  const commentText=q('#cmText')?q('#cmText').value.trim():'';
-  const say=(t,c)=>{ if(msg){ msg.textContent=t; msg.style.color=c||'#94a3b8'; } };
-  if(!/^https?:\/\/\S+\.\S+/i.test(videoUrl)) return say('Вставьте ссылку на видео (http/https)','#fca5a5');
-  if(commentText.length<10) return say('Опишите комментарий — минимум 10 символов','#fca5a5');
-  if(!(IS_TG&&API_BASE)) return say('Отправка доступна в Telegram-приложении.','#fca5a5');
-  __cmBusy=true; cmSubmitBtn.disabled=true; say('Отправляем…');
-  try{
-    const r=await tgCall('/api/comments/submit',{platform,videoUrl,nickname,commentText});
-    if(!r||!r.ok) throw new Error((r&&r.error)||'не удалось отправить');
-    say(`Заявка №${r.id} отправлена. Проверка обычно занимает до 24 часов.`,'#3ddc96');
-    if(q('#cmVideoUrl'))q('#cmVideoUrl').value='';
-    if(q('#cmText'))q('#cmText').value='';
-    loadCommentsBlock();
-  }catch(e){
-    say((e&&e.message)||'Ошибка отправки','#fca5a5');
-  }finally{
-    __cmBusy=false; cmSubmitBtn.disabled=false;
-  }
-};
+const cmDmBtn=q('#cmDmBtn');
+if(cmDmBtn) cmDmBtn.addEventListener('click', openSupport);
 
 /* =======================================================================
    ОНЛАЙН РЕЖИМОВ (каждые 5 минут, Ракетка и Кейсы в топе)

@@ -151,12 +151,6 @@ const START_TOKENS    = 50;
 const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
-/* Оплата комментариев с упоминанием сервиса под игровыми видео. */
-const COMMENT_REWARD_TOKENS   = 30;    // 3 ₽ за одобренный комментарий
-const COMMENT_LIKES_MIN       = 5;     // минимум лайков на комментарии
-const COMMENT_MILESTONE       = 20;    // столько комментариев с 5+ лайками
-const COMMENT_MILESTONE_TOKENS = 1000; // → +100 ₽ сверху
-const COMMENT_DAILY_LIMIT     = 5;     // заявок в сутки
 /* Все суммы игроку показываем в рублях: делим внутренние единицы на курс. */
 const rubOf = tk => Math.round((Number(tk) || 0) / TOKENS_PER_RUB * 100) / 100;
 const rub = tk => rubOf(tk).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
@@ -3812,135 +3806,7 @@ const server = http.createServer(async (req, res) => {
       return send(200, db.getAdminMetrics(period));
     }
 
-    /* ── Комментарии с упоминанием сервиса ─────────────────────────────
-       Игрок оставляет комментарий под игровым видео (CS:GO и др.) с
-       упоминанием MoneyForUp/дропов и присылает ссылку. Админ проверяет
-       факт комментария и 5+ лайков, после чего начисляет выплату.
-       Условие бонуса: 20 одобренных комментариев с 5+ лайками → +100 ₽. */
-    if (url.pathname === '/api/comments/submit' && req.method === 'POST') {
-      if (!checkRateLimit(`comments-submit:${u.id}`, 6, 60000)) {
-        return send(429, { error: 'Слишком часто. Подождите минуту.' });
-      }
-      const dayAgo = Date.now() - 86400000;
-      if (db.countUserCommentsSince(u.id, dayAgo) >= COMMENT_DAILY_LIMIT) {
-        return send(429, { error: `Не больше ${COMMENT_DAILY_LIMIT} заявок в сутки` });
-      }
-      const res = db.addCommentSubmission(u.id, body);
-      if (!res.ok) return send(400, { error: res.error });
-      if (ADMIN_ID) {
-        bot.api.sendMessage(ADMIN_ID,
-          `💬 <b>Новая заявка на оплату комментария</b>\n` +
-          `├ Игрок: <code>${u.id}</code>${u.username ? ' @' + u.username : ''}\n` +
-          `├ Платформа: ${String(body.platform || '').slice(0, 24)}\n` +
-          `├ Ссылка: ${String(body.videoUrl || '').slice(0, 300)}\n` +
-          `└ Заявка №${res.id} · проверьте в админ-панели`,
-          { parse_mode: 'HTML', disable_web_page_preview: true }
-        ).catch(() => {});
-      }
-      return send(200, {
-        ok: true, id: res.id, status: 'pending',
-        rewardRub: COMMENT_REWARD_TOKENS / TOKENS_PER_RUB,
-        likesMin: COMMENT_MIN_LIKES,
-        milestone: COMMENT_MILESTONE,
-        milestoneRub: COMMENT_MILESTONE_TOKENS / TOKENS_PER_RUB
-      });
-    }
-
-    if (url.pathname === '/api/comments/my' && req.method === 'POST') {
-      const rows = db.listUserComments(u.id, 30).map(r => ({
-        id: Number(r.id),
-        platform: r.platform,
-        videoUrl: r.video_url,
-        nickname: r.nickname || '',
-        commentText: r.comment_text || '',
-        likesOk: !!Number(r.likes_ok),
-        status: r.status,
-        rewardRub: Math.round(Number(r.reward_tokens || 0)) / TOKENS_PER_RUB,
-        bonusRub: Math.round(Number(r.bonus_tokens || 0)) / TOKENS_PER_RUB,
-        rejectReason: r.reject_reason || '',
-        createdAt: Number(r.created_at || 0),
-        reviewedAt: Number(r.reviewed_at || 0)
-      }));
-      return send(200, {
-        ok: true,
-        submissions: rows,
-        approvedLiked: db.countApprovedLiked(u.id),
-        likesMin: COMMENT_MIN_LIKES,
-        milestone: COMMENT_MILESTONE,
-        rewardRub: COMMENT_REWARD_TOKENS / TOKENS_PER_RUB,
-        milestoneRub: COMMENT_MILESTONE_TOKENS / TOKENS_PER_RUB,
-        dailyLimit: COMMENT_DAILY_LIMIT
-      });
-    }
-
-    if (url.pathname === '/api/admin/comments/list' && req.method === 'POST') {
-      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
-      return send(200, {
-        ok: true,
-        pending: db.listPendingComments(100),
-        all: db.listAllComments(200)
-      });
-    }
-
-    if (url.pathname === '/api/admin/comments/review' && req.method === 'POST') {
-      if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
-      const id = Math.floor(Number(body.id));
-      const action = String(body.action || '');
-      const sub = db.getCommentSubmission(id);
-      if (!sub) return send(404, { error: 'Заявка не найдена' });
-      if (sub.status !== 'pending') return send(400, { error: 'Заявка уже обработана' });
-      const likesOk = body.likesOk === true || body.likesOk === 1 || body.likesOk === '1';
-      if (action === 'reject') {
-        const upd = db.reviewCommentSubmission({
-          id, status: 'rejected', rewardTokens: 0, bonusTokens: 0, likesOk: false,
-          adminId: tgUser.id, reason: String(body.reason || '').slice(0, 300)
-        });
-        if (!upd.ok) return send(400, { error: upd.error });
-        bot.api.sendMessage(Number(sub.user_id),
-          `❌ Заявка на оплату комментария №${id} отклонена.\n` +
-          (body.reason ? `Причина: ${String(body.reason).slice(0, 200)}` : 'Проверьте, что комментарий виден и содержит упоминание сервиса.'),
-          { parse_mode: 'HTML' }
-        ).catch(() => {});
-        return send(200, { ok: true, status: 'rejected' });
-      }
-      if (action !== 'approve') return send(400, { error: 'Неизвестное действие' });
-      const rewardRub = Math.max(0, Math.min(100, Number(body.rewardRub != null ? body.rewardRub : 3)));
-      const rewardTokens = Math.round(rewardRub * TOKENS_PER_RUB);
-      const likedBefore = db.countApprovedLiked(sub.user_id);
-      let bonusTokens = 0;
-      if (likesOk && likedBefore + 1 === COMMENT_MILESTONE) bonusTokens = COMMENT_MILESTONE_TOKENS;
-      const upd = db.reviewCommentSubmission({
-        id, status: 'approved', rewardTokens, bonusTokens, likesOk,
-        adminId: tgUser.id, reason: ''
-      });
-      if (!upd.ok) return send(400, { error: upd.error });
-      const totalTokens = rewardTokens + bonusTokens;
-      if (totalTokens > 0) {
-        try {
-          db.atomicBalanceChange(sub.user_id, totalTokens, 'comment_reward',
-            `Комментарий #${id}${bonusTokens ? ` + бонус за ${COMMENT_MILESTONE} комментариев с ${COMMENT_MIN_LIKES}+ лайками` : ''}`,
-            `comment:${id}`);
-        } catch (e) {
-          db.db.prepare(`UPDATE comment_submissions SET status = 'pending', reward_tokens = 0, bonus_tokens = 0, reviewed_at = 0, reviewed_by = 0 WHERE id = ?`).run(id);
-          return send(500, { error: 'Не удалось начислить выплату: ' + e.message });
-        }
-        bot.api.sendMessage(Number(sub.user_id),
-          `✅ <b>Комментарий №${id} принят!</b>\n` +
-          `Начислено: <b>${rub(totalTokens)}</b>` +
-          (bonusTokens ? `\n🎁 Бонус за ${COMMENT_MILESTONE} комментариев с ${COMMENT_MIN_LIKES}+ лайками: <b>+${rub(bonusTokens)}</b>` : '') +
-          `\nСпасибо — продолжайте в том же духе!`,
-          { parse_mode: 'HTML' }
-        ).catch(() => {});
-      }
-      return send(200, {
-        ok: true, status: 'approved',
-        rewardRub: rewardTokens / TOKENS_PER_RUB,
-        bonusRub: bonusTokens / TOKENS_PER_RUB,
-        approvedLiked: likedBefore + (likesOk ? 1 : 0)
-      });
-    }
-
-    if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
+        if (url.pathname === '/api/admin/overview' && req.method === 'POST') {
       if (!isAdmin(tgUser)) return send(403, { error: '⛔ Доступ запрещён: только для администратора' });
       const dbOrders = db.getAllOrders();
       const allOrders = (dbOrders.length ? dbOrders : [...orders.values()]).map(o => {
@@ -3973,8 +3839,7 @@ const server = http.createServer(async (req, res) => {
         stats24h: betsMonitor.getAnalytics(24),
         statsAll: betsMonitor.getAnalytics(0),
         ledger: db.listRecentLedger(300),
-        rounds: db.listRecentRounds(200),
-        comments: db.listAllComments(100)
+        rounds: db.listRecentRounds(200),
       });
     }
 

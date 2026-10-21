@@ -238,7 +238,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(!d.querySelector('#userRankPill'), 'пилюля «Новичок» убрана');
     ok(Boolean(d.querySelector('#vipCard')), 'ранги кэшбэка перенесены в профиль');
     ok(Boolean(d.querySelector('#commentsCard')), 'в профиле есть блок заработка на комментариях');
-    ok(Boolean(d.querySelector('#cmSubmit')), 'есть форма заявки на оплату комментария');
+    ok(Boolean(d.querySelector('#cmDmBtn')), 'заявки на комментарии принимаются в личке');
 
     console.log('\n5) Повторный вход и очистка');
     d.querySelector('.nav button[data-nav="profile"]').click();
