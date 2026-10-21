@@ -16,7 +16,8 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const PAIRS = [
   ['index.html', path.join('public', 'index.html')],
-  [path.join('assets', 'case-modes.js'), path.join('public', 'assets', 'case-modes.js')]
+  [path.join('assets', 'case-modes.js'), path.join('public', 'assets', 'case-modes.js')],
+  [path.join('assets', 'rubup-catalog.css'), path.join('public', 'assets', 'rubup-catalog.css')]
 ];
 const checkOnly = process.argv.includes('--check');
 let failed = false;

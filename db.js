@@ -17,6 +17,10 @@ const path = require('path');
 const crypto = require('crypto');
 const turso = require('./turso');
 
+const TOKENS_PER_RUB = 10;
+const rub = tk => (Number(tk) / TOKENS_PER_RUB)
+  .toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+
 let DatabaseSync;
 try {
   ({ DatabaseSync } = require('node:sqlite'));
@@ -228,7 +232,7 @@ function warnBalanceDrift(userId, memTokens, dbTokens) {
   if (driftWarned.has(userId)) return;
   driftWarned.add(userId);
   console.warn(
-    `[Ledger] Рассинхрон баланса игрока ${userId}: в памяти ${memTokens} ⬦, в БД ${dbTokens} ⬦. ` +
+    `[Ledger] Рассинхрон баланса игрока ${userId}: в памяти ${rub(memTokens)}, в БД ${rub(dbTokens)}. ` +
     `Взят баланс из БД. Меняйте баланс только через atomicBalanceChange().`
   );
 }
@@ -345,7 +349,7 @@ function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = ''
     const balanceAfter = balanceBefore + deltaTokens;
 
     if (balanceAfter < 0) {
-      throw new Error(`Недостаточно средств: баланс ${balanceBefore} ⬦, списание ${Math.abs(deltaTokens)} ⬦`);
+      throw new Error(`Недостаточно средств: баланс ${rub(balanceBefore)}, списание ${rub(Math.abs(deltaTokens))}`);
     }
 
     db.prepare('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
@@ -557,7 +561,7 @@ function atomicOpenCase(args) {
     if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
     if (Number(row.tokens) < Number(price)) {
       db.exec('ROLLBACK');
-      return { ok: false, error: 'Недостаточно токенов' };
+      return { ok: false, error: 'Недостаточно средств' };
     }
     const at = Date.now();
     const chosen = item;
@@ -633,18 +637,18 @@ function atomicUpgradeRun(args) {
     if (sourceType === 'tokens') {
       const amount = Math.floor(Number(sourceAmount) || 0);
       if (!Number.isFinite(amount) || amount < 10) {
-        db.exec('ROLLBACK'); return { ok: false, error: 'Минимальная сумма апгрейда — 10 ⬦' };
+        db.exec('ROLLBACK'); return { ok: false, error: `Минимальная сумма апгрейда — ${rub(10)}` };
       }
       if (amount > 100000) {
-        db.exec('ROLLBACK'); return { ok: false, error: 'Максимальная сумма апгрейда — 100 000 ⬦' };
+        db.exec('ROLLBACK'); return { ok: false, error: `Максимальная сумма апгрейда — ${rub(100000)}` };
       }
       if (balBefore < amount) {
-        db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' };
+        db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно средств' };
       }
       sourceValue = amount;
       balAfter = balBefore - amount;
       __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
-      led = __ledger(userId, -amount, 'upgrade_stake', `Апгрейд (${mode}) · ставка ${amount} ⬦`, requestId, balBefore, balAfter, at);
+      led = __ledger(userId, -amount, 'upgrade_stake', `Апгрейд (${mode}) · ставка ${rub(amount)}`, requestId, balBefore, balAfter, at);
     } else {
       const it = __q('SELECT * FROM user_inventory WHERE id = ? AND user_id = ? AND sold_at IS NULL')
         .get(Math.floor(Number(sourceItemId) || 0), userId);
@@ -686,7 +690,7 @@ function atomicUpgradeRun(args) {
 
     if (led) {
       __queueBalance(userId, balAfter, led.lastInsertRowid, -Math.floor(sourceValue), 'upgrade_stake',
-        `Апгрейд (${mode}) · ставка ${sourceValue} ⬦`, requestId, balBefore, balAfter, at);
+        `Апгрейд (${mode}) · ставка ${rub(sourceValue)}`, requestId, balBefore, balAfter, at);
     }
     const queue = [
       { sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price)
@@ -758,13 +762,13 @@ function atomicLadderStart(args) {
     const at = Date.now();
     if (sourceType === 'tokens') {
       const amount = Math.floor(Number(sourceAmount) || 0);
-      if (!Number.isFinite(amount) || amount < 10) { db.exec('ROLLBACK'); return { ok: false, error: 'Минимальная сумма — 10 ⬦' }; }
-      if (amount > 100000) { db.exec('ROLLBACK'); return { ok: false, error: 'Максимальная сумма — 100 000 ⬦' }; }
-      if (balBefore < amount) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' }; }
+      if (!Number.isFinite(amount) || amount < 10) { db.exec('ROLLBACK'); return { ok: false, error: `Минимальная сумма — ${rub(10)}` }; }
+      if (amount > 100000) { db.exec('ROLLBACK'); return { ok: false, error: `Максимальная сумма — ${rub(100000)}` }; }
+      if (balBefore < amount) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно средств' }; }
       sourceValue = amount;
       balAfter = balBefore - amount;
       __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
-      led = __ledger(userId, -amount, 'ladder_stake', `Лесенка ${stepsTotal} шагов · ставка ${amount} ⬦`, sessionId, balBefore, balAfter, at);
+      led = __ledger(userId, -amount, 'ladder_stake', `Лесенка ${stepsTotal} шагов · ставка ${rub(amount)}`, sessionId, balBefore, balAfter, at);
     } else {
       const it = __q('SELECT * FROM user_inventory WHERE id = ? AND user_id = ? AND sold_at IS NULL')
         .get(Math.floor(Number(sourceItemId) || 0), userId);
@@ -787,7 +791,7 @@ function atomicLadderStart(args) {
 
     if (led) {
       __queueBalance(userId, balAfter, led.lastInsertRowid, -Math.floor(sourceValue), 'ladder_stake',
-        `Лесенка ${stepsTotal} шагов · ставка ${sourceValue} ⬦`, sessionId, balBefore, balAfter, at);
+        `Лесенка ${stepsTotal} шагов · ставка ${rub(sourceValue)}`, sessionId, balBefore, balAfter, at);
     }
     const queue = [
       { sql: `INSERT OR IGNORE INTO upgrade_sessions
@@ -855,7 +859,7 @@ function atomicLadderStep(args) {
       const balBefore = balanceAfter;
       balanceAfter = balBefore + nextValue;
       __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
-      led = __ledger(userId, nextValue, 'ladder_win', `Лесенка пройдена: ${s.steps_total} шагов (+${nextValue} ⬦)`, sessionId, balBefore, balanceAfter, at);
+      led = __ledger(userId, nextValue, 'ladder_win', `Лесенка пройдена: ${s.steps_total} шагов (+${rub(nextValue)})`, sessionId, balBefore, balanceAfter, at);
     } else {
       currentValue = nextValue;
     }
@@ -881,7 +885,7 @@ function atomicLadderStep(args) {
 
     if (led) {
       __queueBalance(userId, balanceAfter, led.lastInsertRowid, nextValue, 'ladder_win',
-        `Лесенка пройдена: ${s.steps_total} шагов (+${nextValue} ⬦)`, sessionId, balanceAfter - nextValue, balanceAfter, at);
+        `Лесенка пройдена: ${s.steps_total} шагов (+${rub(nextValue)})`, sessionId, balanceAfter - nextValue, balanceAfter, at);
     }
     turso.queueBatch([
       { sql: `UPDATE upgrade_sessions SET step_index = ?, current_value = ?, status = ?, updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`,
@@ -921,7 +925,7 @@ function atomicLadderCashout(args) {
     const balBefore = Number(row.tokens);
     const balAfter = balBefore + win;
     __q('UPDATE users SET tokens = ? WHERE id = ?').run(balAfter, userId);
-    const led = __ledger(userId, win, 'ladder_cashout', `Лесенка: кэшаут на шаге ${s.step_index} (+${win} ⬦)`, sessionId, balBefore, balAfter, at);
+    const led = __ledger(userId, win, 'ladder_cashout', `Лесенка: кэшаут на шаге ${s.step_index} (+${rub(win)})`, sessionId, balBefore, balAfter, at);
     __q(`UPDATE upgrade_sessions SET status = 'cashed', updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`)
       .run(at, at, String(sessionId), userId);
     __q(`UPDATE game_rounds SET win_tokens = ?, mult = ?, status = 'settled', settled_at = ? WHERE round_id = ? AND user_id = ?`)
@@ -936,7 +940,7 @@ function atomicLadderCashout(args) {
     db.exec('COMMIT');
 
     __queueBalance(userId, balAfter, led.lastInsertRowid, win, 'ladder_cashout',
-      `Лесенка: кэшаут на шаге ${s.step_index} (+${win} ⬦)`, sessionId, balBefore, balAfter, at);
+      `Лесенка: кэшаут на шаге ${s.step_index} (+${rub(win)})`, sessionId, balBefore, balAfter, at);
     turso.queueBatch([
       { sql: `UPDATE upgrade_sessions SET status = 'cashed', updated_at = ?, settled_at = ? WHERE id = ? AND user_id = ?`,
         args: [at, at, String(sessionId), userId] },
@@ -987,11 +991,11 @@ function atomicScratchPlay(args) {
     if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
     const at = Date.now();
     const balBefore = Number(row.tokens);
-    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно токенов' }; }
+    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: 'Недостаточно средств' }; }
     const afterDebit = balBefore - Number(cost);
     __q('UPDATE users SET tokens = ? WHERE id = ?').run(afterDebit, userId);
     const led1 = __ledger(userId, -Number(cost), 'scratch_buy',
-      `Скретч-билет (${bet} ⬦${cost > bet ? ' + страховка 15%' : ''})`, roundId, balBefore, afterDebit, at);
+      `Скретч-билет (${rub(bet)}${cost > bet ? ' + страховка 15%' : ''})`, roundId, balBefore, afterDebit, at);
 
     let balanceAfter = afterDebit;
     let led2 = null;
@@ -1000,7 +1004,7 @@ function atomicScratchPlay(args) {
       balanceAfter += Math.floor(winTokens);
       __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
       led2 = __ledger(userId, Math.floor(winTokens), 'scratch_win',
-        `Скретч-карты: 3x ${winSymbol || ''} (+${winTokens} ⬦)`, roundId, before, balanceAfter, at);
+        `Скретч-карты: 3x ${winSymbol || ''} (+${rub(winTokens)})`, roundId, before, balanceAfter, at);
     }
     let led3 = null;
     if (insuredReturn > 0) {
@@ -1008,7 +1012,7 @@ function atomicScratchPlay(args) {
       balanceAfter += Math.floor(insuredReturn);
       __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
       led3 = __ledger(userId, Math.floor(insuredReturn), 'insurance_refund',
-        `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, roundId, before, balanceAfter, at);
+        `🛡️ Страховка ставки: возврат 20% (+${rub(insuredReturn)})`, roundId, before, balanceAfter, at);
     }
     __round(roundId, userId, 'Скретч-карты', bet, winMult || 0, winTokens || 0, 'settled', at, null, null);
     const result = {
@@ -1025,14 +1029,14 @@ function atomicScratchPlay(args) {
       { sql: 'UPDATE users SET tokens = ? WHERE id = ?', args: [balanceAfter, userId] },
       { sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         args: [Number(led1.lastInsertRowid), userId, -Number(cost), 'scratch_buy',
-          `Скретч-билет (${bet} ⬦${cost > bet ? ' + страховка 15%' : ''})`, String(roundId), balBefore, afterDebit, at] }
+          `Скретч-билет (${rub(bet)}${cost > bet ? ' + страховка 15%' : ''})`, String(roundId), balBefore, afterDebit, at] }
     ];
     if (led2) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       args: [Number(led2.lastInsertRowid), userId, Math.floor(winTokens), 'scratch_win',
-        `Скретч-карты: 3x ${winSymbol || ''} (+${winTokens} ⬦)`, String(roundId), afterDebit, afterDebit + Math.floor(winTokens), at] });
+        `Скретч-карты: 3x ${winSymbol || ''} (+${rub(winTokens)})`, String(roundId), afterDebit, afterDebit + Math.floor(winTokens), at] });
     if (led3) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       args: [Number(led3.lastInsertRowid), userId, Math.floor(insuredReturn), 'insurance_refund',
-        `🛡️ Страховка ставки: возврат 20% (+${insuredReturn} ⬦)`, String(roundId), balanceAfter - Math.floor(insuredReturn), balanceAfter, at] });
+        `🛡️ Страховка ставки: возврат 20% (+${rub(insuredReturn)})`, String(roundId), balanceAfter - Math.floor(insuredReturn), balanceAfter, at] });
     queue.push({ sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [String(roundId), userId, 'Скретч-карты', Math.floor(bet), Number(winMult || 0), Math.floor(winTokens || 0), 'settled', at, at, null, null] });
     queue.push({ sql: `INSERT OR IGNORE INTO idempotent_results (request_id, user_id, kind, result_json, created_at) VALUES (?, ?, 'scratch', ?, ?)`,
@@ -1069,7 +1073,7 @@ function atomicSafeGuess(userId, code, cost, requestId) {
     const row = stmts.getUser.get(userId);
     if (!row) { db.exec('ROLLBACK'); return { ok: false, error: 'Пользователь не найден' }; }
     const balBefore = Number(row.tokens);
-    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: 'Для попытки требуется 25 ⬦' }; }
+    if (balBefore < Number(cost)) { db.exec('ROLLBACK'); return { ok: false, error: `Для попытки требуется ${rub(25)}` }; }
 
     const secret = String(safe.secret_code);
     const guess = String(code);
@@ -1105,7 +1109,7 @@ function atomicSafeGuess(userId, code, cost, requestId) {
       if (winTokens > 0) {
         balanceAfter = afterDebit + winTokens;
         __q('UPDATE users SET tokens = ? WHERE id = ?').run(balanceAfter, userId);
-        led2 = __ledger(userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${winTokens} ⬦!`, 'safe' + at, afterDebit, balanceAfter, at);
+        led2 = __ledger(userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${rub(winTokens)}!`, 'safe' + at, afterDebit, balanceAfter, at);
       }
     } else {
       __q('UPDATE vault_safe SET jackpot_tokens = jackpot_tokens + 15, guesses_count = guesses_count + 1 WHERE id = 1').run();
@@ -1133,7 +1137,7 @@ function atomicSafeGuess(userId, code, cost, requestId) {
         args: [Number(led1.lastInsertRowid), userId, -Number(cost), 'safe_guess', `Попытка взлома сейфа [${guess}]`, 'safe' + at, balBefore, afterDebit, at] }
     ];
     if (led2) queue.push({ sql: 'INSERT OR IGNORE INTO transactions_ledger (id, user_id, amount, type, reason, reference_id, balance_before, balance_after, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      args: [Number(led2.lastInsertRowid), userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${winTokens} ⬦!`, 'safe' + at, afterDebit, balanceAfter, at] });
+      args: [Number(led2.lastInsertRowid), userId, winTokens, 'safe_jackpot', `🎉 ВЗЛОМ СЕЙФА: ДЖЕКПОТ +${rub(winTokens)}!`, 'safe' + at, afterDebit, balanceAfter, at] });
     queue.push({ sql: `INSERT OR IGNORE INTO game_rounds (round_id, user_id, game, bet_tokens, mult, win_tokens, status, created_at, settled_at, item_code, item_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [String(safeRoundId), userId, 'Взлом Сейфа', Math.floor(cost), won ? winTokens / cost : 0,
         Math.floor(winTokens), 'settled', at, at, null, null] });

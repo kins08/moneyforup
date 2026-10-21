@@ -56,9 +56,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   try {
     await wait(2200);
     console.log('\n0) Загрузочный экран');
-    ok(Boolean(d.querySelector('#mupSplash .mup-splash-word')), 'загрузочный экран нарисован кодом');
-    ok(!d.querySelector('#mupSplash img'), 'в загрузочном экране нет JPG-логотипа');
-    ok(/MONEY/.test(d.querySelector('#mupSplash').textContent), 'на загрузочном экране есть вордмарк');
+    ok(Boolean(d.querySelector('#mupSplash .mup-splash-card')), 'загрузочный экран нарисован кодом');
+    ok(Boolean(d.querySelector('#mupSplash svg.mup-splash-badge')), 'логотип — векторный SVG без картинки');
+    ok(/MONEYFORUP/i.test(d.querySelector('#mupSplash').textContent), 'на загрузочном экране есть название бренда');
 
     console.log('\n1) Навигация и раздел кейсов');
     const nav = [...d.querySelectorAll('.nav button')].map(b => b.dataset.nav);

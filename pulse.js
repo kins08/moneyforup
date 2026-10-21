@@ -35,6 +35,10 @@ const PULSE = {
 
 const OUTCOMES = ['up', 'down', 'range'];
 
+const TOKENS_PER_RUB = 10;
+const rub = tk => (Number(tk) / TOKENS_PER_RUB)
+  .toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+
 /** Множитель выплаты для плеча: N исходов × (1 − edge). */
 function payoutMultiplier(leverage) {
   const n = leverage === 2 ? 2 : 3;
@@ -80,7 +84,7 @@ function validateBet({ direction, leverage, duration, bet }) {
   }
   const b = Math.floor(Number(bet));
   if (!Number.isFinite(b) || b < PULSE.minBet || b > PULSE.maxBet) {
-    return { ok: false, error: `Ставка от ${PULSE.minBet} до ${PULSE.maxBet} ⬦` };
+    return { ok: false, error: `Ставка от ${rub(PULSE.minBet)} до ${rub(PULSE.maxBet)}` };
   }
   return { ok: true, bet: b, leverage: Number(leverage), duration: Number(duration) };
 }

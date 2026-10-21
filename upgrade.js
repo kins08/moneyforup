@@ -15,6 +15,10 @@
 
 const items = require('./items');
 
+const TOKENS_PER_RUB = 10;
+const rub = tk => (Number(tk) / TOKENS_PER_RUB)
+  .toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+
 /* Единственный режим апгрейдера (DECISIONS.md, D4): режимы риска убраны из UI.
    Потолок шанса 70% для любой цели. Комиссия 6% — EV всегда −6% от источника. */
 const MODES = {
@@ -103,7 +107,7 @@ function minChance(mode) {
 function validateTargets(mode, sourceValue, rawCodes) {
   if (!mode) return { ok: false, error: 'Неизвестный режим апгрейда' };
   if (!Number.isFinite(sourceValue) || sourceValue < 10) {
-    return { ok: false, error: 'Минимальная стоимость источника — 10 ⬦' };
+    return { ok: false, error: `Минимальная стоимость источника — ${rub(10)}` };
   }
   const codes = Array.isArray(rawCodes) ? rawCodes : [];
   if (!codes.length) return { ok: false, error: 'Выберите хотя бы одну цель' };

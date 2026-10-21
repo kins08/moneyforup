@@ -171,7 +171,7 @@ function recordBet({ userId, name, game, betTokens, winTokens, balanceAfter, tot
         userId,
         name: p.name,
         reason: 'Высокий профит без депозита',
-        details: `+${p.netPlayerTk} ⬦ в ${gameClean}`
+        details: `+${(p.netPlayerTk / TOKENS_PER_RUB).toFixed(2)} ₽ в ${gameClean}`
       });
     }
   }
@@ -505,9 +505,9 @@ function formatTelegramReport(hours = 12) {
     `📈 <b>Статистика ставок (${periodLabel}):</b>\n` +
     `├ Всего сыграно: <b>${periodStats.betsCount}</b> ставок (игроков: ${periodStats.activePlayers})\n` +
     `├ Побед игроков: <b>${periodStats.wonCount}</b> шт. | Сливов: <b>${periodStats.lostCount}</b> шт.\n` +
-    `├ Оборот ставок: <b>${periodStats.wageredRub} ₽</b> (${periodStats.wageredTk} ⬦)\n` +
+    `├ Оборот ставок: <b>${periodStats.wageredRub} ₽</b>\n` +
     `├ Выплачено выигрышей: <b>${periodStats.payoutRub} ₽</b> (доля выплат: <b>${periodStats.rtpOverallPct}%</b> от оборота)\n` +
-    `└ Чистый доход казино по играм: <b>${signRub(periodStats.projectNetRub)}</b> (${sign(periodStats.projectNetTk)} ⬦)\n` +
+    `└ Чистый доход казино по играм: <b>${signRub(periodStats.projectNetRub)}</b>\n` +
     gameLines +
     `\n🏦 <b>Общая касса проекта за всё время:</b>\n` +
     `├ По играм (всего ${allStats.betsCount} ст.): ${allStatusEmoji} <b>${signRub(allStats.projectNetRub)}</b>\n` +
@@ -540,8 +540,8 @@ function formatGamesReport(hours = 0) {
       `\n<b>${icon} ${escHtml(gName)}</b>\n` +
       `├ Ставок: <b>${g.count}</b> (Побед: ${g.wonCount} / Сливов: ${g.lostCount} · WinRate: <b>${g.winRatePct}%</b>)\n` +
       `├ Оборот: <b>${wagRub} ₽</b> | Выплаты: <b>${payRub} ₽</b> (доля выплат: <b>${g.rtpPct}%</b>)\n` +
-      `├ Макс. занос игрока: <b>${maxRub} ₽</b> (${g.maxWinTk} ⬦ — ${escHtml(g.maxWinUser || '—')})\n` +
-      `└ Доход проекта: <b>${g.netProject >= 0 ? '+' : ''}${netRub} ₽</b> (${g.netProject >= 0 ? '+' : ''}${g.netProject} ⬦)\n`;
+      `├ Макс. занос игрока: <b>${maxRub} ₽</b> — ${escHtml(g.maxWinUser || '—')}\n` +
+      `└ Доход проекта: <b>${g.netProject >= 0 ? '+' : ''}${netRub} ₽</b>\n`;
   }
   return out;
 }
@@ -602,7 +602,7 @@ function formatPlayersReport(usersMap) {
 
     out +=
       `\n👤 <b>${escHtml(p.name)}</b> (<code>${p.uid}</code>)\n` +
-      `├ Баланс: <b>${p.currentBalanceTk} ⬦</b> (${balRub} ₽) | ${depBadge}\n` +
+      `├ Баланс: <b>${balRub} ₽</b> | ${depBadge}\n` +
       `├ Ставок: <b>${p.betsCount}</b> (Вин: ${p.wonCount} / Слив: ${p.lostCount}) | Профит игрока: <b>${p.netPlayerTk >= 0 ? '+' : ''}${netRub} ₽</b>\n` +
       `└ Игры: <i>${escHtml(topGames)}</i>${warn}\n`;
   }
@@ -615,7 +615,7 @@ function formatPlayersReport(usersMap) {
 function formatAuditReport(usersMap) {
   let out = `🛡 <b>АНТИЧИТ И АУДИТ БЕЗОПАСНОСТИ</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
   out += `✅ <b>Активные защиты:</b>\n`;
-  out += `• Лимит баланса без депозита: <b>макс. 400 ⬦ (40 ₽)</b>\n`;
+  out += `• Лимит баланса без депозита: <b>макс. 40 ₽</b>\n`;
   out += `• Запрет вывода средств при <b>0 ₽ пополнений</b>\n`;
   out += `• Защита от смены ставки во время раунда (Ракетка, Скуф, Попрыгун, Авито)\n`;
   out += `• Защита от прикормки на больших кэфах (×20 Апгрейдер / ×95 Dice)\n\n`;
@@ -636,11 +636,11 @@ function formatAuditReport(usersMap) {
   }
 
   if (suspiciousUsers.length > 0) {
-    out += `🚨 <b>Обнаружены аккаунты с балансом > 450 ⬦ без депозитов:</b>\n`;
+    out += `🚨 <b>Обнаружены аккаунты с балансом > 45 ₽ без депозитов:</b>\n`;
     for (const su of suspiciousUsers) {
-      out += `• <b>${escHtml(su.name)}</b> (<code>${su.uid}</code>): <b>${Math.round(su.tokens)} ⬦</b> при 0 ₽ депозитов\n`;
+      out += `• <b>${escHtml(su.name)}</b> (<code>${su.uid}</code>): <b>${(su.tokens / TOKENS_PER_RUB).toFixed(1)} ₽</b> при 0 ₽ депозитов\n`;
     }
-    out += `\n<i>Нажмите кнопку «🧹 Обнулить накрутчиков (0 деп)» ниже, чтобы сбросить им баланс до стартовых 50 ⬦.</i>\n\n`;
+    out += `\n<i>Нажмите кнопку «🧹 Обнулить накрутчиков (0 деп)» ниже, чтобы сбросить им баланс до стартовых 5 ₽.</i>\n\n`;
   } else {
     out += `🟢 <b>Аномальных балансов без депозита сейчас нет.</b>\n\n`;
   }
