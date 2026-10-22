@@ -1058,10 +1058,10 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-cell.lose small{color:#ffb3bf;font-weight:800}
 @media (prefers-reduced-motion: reduce){ .upg-strip,.upg-strip.spin-wait{animation:none!important;transition:none!important} }
 @media (max-width:380px){ .upg-frame{height:104px} .upg-cell{flex-basis:80px;width:80px} }
-.upg-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.upg-head{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
 /* Круговой индикатор шанса апгрейдера */
-.upg-wheel-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:4px auto 14px;width:100%;text-align:center}
-.upg-wheel{position:relative;width:min(300px,78vw);aspect-ratio:1/1;display:grid;place-items:center;filter:drop-shadow(0 0 26px rgba(239,68,68,.14))}
+.upg-wheel-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin:2px auto 9px;width:100%;text-align:center}
+.upg-wheel{position:relative;width:min(210px,56vw);aspect-ratio:1/1;display:grid;place-items:center;filter:drop-shadow(0 0 26px rgba(239,68,68,.14))}
 .upg-wheel__svg{width:100%;height:100%;overflow:visible}
 .upg-wheel__track{fill:none;stroke:rgba(255,255,255,.10);stroke-width:17}
 .upg-wheel__track-inner{fill:none;stroke:rgba(255,255,255,.09);stroke-width:15}
@@ -1074,9 +1074,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-wheel.is-spinning .upg-wheel__spinner{opacity:.95;stroke:rgba(255,207,107,.9);animation:upgWheelSpin 1.1s linear infinite}
 .upg-wheel.is-spinning .upg-wheel__spinner--alt{opacity:.8;animation:upgWheelSpinRev 1.7s linear infinite}
 .upg-wheel__center{position:absolute;inset:20%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1111,#080808 72%);border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 22px rgba(0,0,0,.45);transition:box-shadow .25s ease,border-color .25s ease}
-.upg-wheel__src{font-size:17px;line-height:1;opacity:.75;filter:grayscale(.1)}
-.upg-wheel__target{font-size:42px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
-.upg-wheel__pct{font-size:22px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
+.upg-wheel__src{font-size:14px;line-height:1;opacity:.75;filter:grayscale(.1)}
+.upg-wheel__target{font-size:33px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
+.upg-wheel__pct{font-size:18px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
 .upg-wheel__hint{font-size:8.5px;text-transform:uppercase;letter-spacing:.16em;color:#8b94ab;font-weight:800}
 .upg-wheel__pointer{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid #ffcf6b;filter:drop-shadow(0 0 7px rgba(255,207,107,.8))}
 .upg-wheel.is-win .upg-wheel__arc{stroke:#3ddc96;filter:drop-shadow(0 0 10px rgba(61,220,150,.55))}
@@ -1088,13 +1088,13 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 @keyframes upgWheelSpin{to{transform:rotate(360deg)}}
 @keyframes upgWheelSpinRev{to{transform:rotate(-360deg)}}
 @media (prefers-reduced-motion: reduce){.upg-wheel__spinner{animation:none!important}.upg-wheel__arc{transition:none!important}}
-.upg-panel{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(155deg,#111111,#0a0a0a);padding:14px;margin-bottom:11px}
+.upg-panel{border-radius:16px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(155deg,#111111,#0a0a0a);padding:10px 12px;margin-bottom:7px}
 .upg-label{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .upg-label span{color:#ffcf6b;text-transform:none;letter-spacing:0}
 .upg-source-row{display:flex;gap:7px;margin-bottom:9px}
 .upg-source-btn{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#b9c2d6;font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
 .upg-source-btn.on{border-color:#ffcf6b;color:#ffcf6b;background:rgba(255,207,107,.09)}
-.upg-input{width:100%;box-sizing:border-box;background:#0b0b0b;border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;padding:12px;font-size:17px;font-weight:900;font-family:inherit;text-align:right}
+.upg-input{width:100%;box-sizing:border-box;background:#0b0b0b;border:1px solid rgba(255,255,255,.14);border-radius:11px;color:#fff;padding:9px 11px;font-size:16px;font-weight:900;font-family:inherit;text-align:right}
 .upg-input:focus{outline:none;border-color:var(--accent)}.upg-input:focus-visible,.pm-chip:focus-visible,.pm-dir:focus-visible,.tr-answers button:focus-visible,[data-tlev]:focus-visible,[data-pdir]:focus-visible,[data-plev]:focus-visible,[data-pdur]:focus-visible,[data-pbet]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .upg-quick{display:flex;gap:6px;margin-top:7px}
 .upg-quick button{flex:1;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#cfd6e6;font-family:inherit;font-size:10.5px;font-weight:800;padding:8px 4px;cursor:pointer}
@@ -1103,7 +1103,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-target-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .upg-target-tools button{border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aeb8ce;font-family:inherit;font-size:10px;font-weight:700;padding:6px 8px;cursor:pointer}
 .upg-target-tools button.on{border-color:#8b92ff;color:#cfd3ff;background:rgba(139,146,255,.12)}
-.upg-target-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:300px;overflow-y:auto;padding-right:2px}
+.upg-target-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:168px;overflow-y:auto;padding-right:2px}
 .upg-target{position:relative;display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-width:0;font-family:inherit;text-align:left;color:#fff}
 .upg-target.on{border-color:#ffcf6b;background:rgba(255,207,107,.09)}
 .upg-target .ut-i{font-size:20px;flex-shrink:0}
@@ -1113,7 +1113,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-target .ut-p{font-size:9.5px;font-weight:900;color:#ffcf6b;display:block;margin-top:1px}
 .upg-target .ut-check{position:absolute;top:4px;right:5px;font-size:10px;color:#ffcf6b}
 .upg-target.disabled{opacity:.38;cursor:not-allowed}
-.upg-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.upg-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
 .upg-stat{border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);padding:9px 10px}
 .upg-stat small{display:block;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .upg-stat b{display:block;font-size:15px;color:#fff;margin-top:3px;font-weight:950}
@@ -1124,7 +1124,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-dist .udr b{color:#fff;font-variant-numeric:tabular-nums}
 .upg-dist .udbar{height:5px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;flex:1;max-width:90px}
 .upg-dist .udbar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#ef4444)}
-.upg-run{margin-top:11px!important;background:linear-gradient(135deg,#f59e0b,#d97706)!important;color:#111!important;font-weight:950!important;font-size:15px!important}
+.upg-run{margin-top:8px!important;background:linear-gradient(135deg,#f59e0b,#d97706)!important;color:#111!important;font-weight:950!important;font-size:15px!important}
 .upg-ladder-steps{display:flex;gap:4px;margin:9px 0;flex-wrap:wrap}
 .upg-ladder-steps .uls{flex:1;min-width:38px;border-radius:9px;padding:8px 4px;text-align:center;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03)}
 .upg-ladder-steps .uls.done{border-color:#3ddc96;background:rgba(61,220,150,.12)}
@@ -6481,19 +6481,19 @@ const JP_MODES = {
   lite: {
     name: 'Лайт',
     desc: 'Надёжный старт · максимум ×4.5',
-    p: [0.78, 0.65, 0.40, 0.20, 0.15, 0.12, 0.09, 0.07, 0.05, 0.04, 0.03, 0.02],
+    p: [0.78, 0.60, 0.30, 0.12, 0.08, 0.06, 0.045, 0.03, 0.02, 0.015, 0.01, 0.006],
     pay: [1.15, 1.30, 1.50, 1.75, 2.05, 2.40, 2.80, 3.25, 3.70, 4.05, 4.30, 4.50]
   },
   med: {
     name: 'Средний',
     desc: 'Крутой барьер после 2-й ступени · максимум ×7.0',
-    p: [0.70, 0.46, 0.20, 0.12, 0.08, 0.055, 0.038, 0.025, 0.018, 0.012, 0.008, 0.005],
+    p: [0.70, 0.42, 0.16, 0.075, 0.05, 0.035, 0.022, 0.015, 0.01, 0.007, 0.004, 0.002],
     pay: [1.25, 1.40, 1.68, 2.15, 2.75, 3.45, 4.25, 5.10, 5.85, 6.35, 6.75, 7.00]
   },
   crit: {
     name: 'Критический',
     desc: 'Максимальный риск · максимум ×10.0',
-    p: [0.58, 0.36, 0.15, 0.07, 0.045, 0.03, 0.018, 0.012, 0.008, 0.005, 0.003, 0.002],
+    p: [0.56, 0.32, 0.12, 0.05, 0.03, 0.018, 0.012, 0.008, 0.005, 0.003, 0.002, 0.001],
     pay: [1.35, 1.60, 2.05, 2.85, 3.85, 5.05, 6.35, 7.65, 8.80, 9.40, 9.75, 10.0]
   }
 };
@@ -6555,11 +6555,11 @@ function gameJumper(){
       const sp=d.querySelector('span');if(sp)sp.style.color=on||next?c:hexA(c,.7);
     });
     jj.disabled=busy;
-    jt.disabled=!(level>0&&phase==='run')||busy;
+    jt.disabled=true;
     jj.textContent = phase==='idle'?'ПРЫЖОК · '+fmtRub(S.bet)
       : phase==='done'?'НОВЫЙ ЗАХОД · '+fmtRub(S.bet)
       : 'ПРЫЖОК → уровень '+(level+1);
-    jt.textContent = level>0?'ЗАБРАТЬ ×'+fx(xn(level))+' (+'+fmt(activeBet*xn(level))+' ₽)':'ЗАБРАТЬ';
+    jt.textContent = phase==='run' ? 'ЦЕЛЬ ×'+fx(xn(jumperTarget||1)) : 'ЗАБРАТЬ';
   }
   function positionBall(){ball.style.bottom=ballTop(level)+'px'}
   function reset(){
@@ -6567,7 +6567,8 @@ function gameJumper(){
     positionBall();refresh();
   }
   let jumperRnd = null;
-  function jump(){
+  let jumperTarget = 0;
+  async function jump(){
     if(busy)return;
     if(phase==='done')reset();
     if(phase==='idle'){
@@ -6578,10 +6579,20 @@ function gameJumper(){
         return;
       }
       roundBet=S.bet;
-      jumperRnd = place(roundBet,'Попрыгун');
+      // Целевая ступень тянется по вероятностям режима: каждая следующая
+      // ступень заметно труднее, поэтому серия из 4+ успехов — редкость.
+      const mm=curM();
+      let target=1, rollT=Math.random(), acc=0;
+      for(let i=0;i<12;i++){ acc+=(mm.p[i]||0); target=i+1; if(rollT<=acc) break; }
+      jumperTarget=target;
+      // Сервер платит ровно за эту цель — исход раунда определяет он,
+      // а не клиентская анимация.
+      jumperRnd = place(roundBet,'Попрыгун', xn(target));
+      if(jumperRnd && jumperRnd.promise){ try{ await jumperRnd.promise; }catch(_){} }
+      if(dead) return;
       phase='run';
     }
-    if(level>=12)return;
+    if(level>=jumperTarget)return;
     busy=true;refresh();
     const from=ballTop(level),to=ballTop(level+1);
     const dur=540,st=performance.now(),sway=Math.random()<.5?-1:1;
@@ -6617,20 +6628,16 @@ function gameJumper(){
     ball.style.transform='translateX(0)';
     ball.classList.remove('land'); void ball.offsetWidth; ball.classList.add('land');
     setTimeout(()=>ball.classList.remove('land'), 340);
-    const m=curM();
-    const stepP = (m.p && m.p[level]) ? m.p[level] : 0.03;
-    const nextMult = xn(level + 1);
-    const naturalStepWin = Math.random() < stepP;
-    let willLand;
-    if(jumperRnd && jumperRnd.verdict){
-      willLand = (jumperRnd.verdict === 'win');
-    } else {
-      willLand = evalBaitTrap('jumper', naturalStepWin, roundBet, nextMult);
-    }
+    // До цели шарик доходит всегда; на самой цели исход решает сервер.
+    // Поэтому серия успехов ограничена вытянутой целью, а не удачей клиента.
+    const targetWin = jumperRnd
+      ? jumperRnd.verdict === 'win'
+      : Math.random() < Math.min(0.75, 0.94 / Math.max(1.01, xn(jumperTarget)));
+    const willLand = (level + 1 < jumperTarget) ? true : targetWin;
     if(willLand){
       level++;
       positionBall();
-      if(level>=12){busy=false;auto();return}
+      if(level>=jumperTarget){busy=false;autoTarget();return}
       busy=false;phase='run';
       jr.className='result good';
       jr.innerHTML='Уровень '+level+' пройден · множитель <b style="color:'+band(xn(level))+'">×'+fx(xn(level))+'</b>';
@@ -6670,6 +6677,17 @@ function gameJumper(){
     jr.className='result good';
     jr.innerHTML='Верхний уровень — авто-забор <b style="color:'+band(xn(12))+'">×'+fx(xn(12))+'</b> → <b>+'+fmtRub(amount)+'</b>.';
     roundVerdict(true, amount, 'Попрыгун · верхний уровень ×' + fx(xn(12)));
+    refresh();
+  }
+  function autoTarget(){
+    const amount=Math.floor(roundBet*xn(jumperTarget));
+    win(amount,'Попрыгун','цель ×'+fx(xn(jumperTarget)), jumperRnd);
+    phase='done'; busy=false;
+    const paid=(jumperRnd && Number(jumperRnd.win)>0) ? Number(jumperRnd.win) : amount;
+    jr.className='result good';
+    jr.innerHTML='Цель <b style="color:'+band(xn(jumperTarget))+'">×'+fx(xn(jumperTarget))+'</b> достигнута — зачислено <b>+'+fmtRub(paid)+'</b>.';
+    roundVerdict(true, paid, 'Попрыгун · цель ×'+fx(xn(jumperTarget)));
+    tgHaptic('win');
     refresh();
   }
   function take(){
@@ -11313,7 +11331,6 @@ function gameUpgradeArena(){
         <div class="upg-stat"><small>Потолок шанса</small><b>70%</b></div>
       </div>
       <div class="upg-dist" id="upgDist">${selectedList().length>1?selectedList().map(t=>`<div class="udr"><span>${esc(t.name)}</span><div class="udbar"><i style="width:${Math.min(100,chanceFor(t)*100)}%"></i></div><b>${(Math.round(chanceFor(t)/selectedList().length*10000)/100).toFixed(2)}%</b></div>`).join(''):''}</div>
-      <button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ₽'}</button>
       <div class="result" id="upgNotice" aria-live="polite">${notice||(selectedList().length?'Шанс зависит от выбранной цели.':'Выберите цель из списка.')}</div>
     </div>`;
   }
@@ -11466,6 +11483,7 @@ function gameUpgradeArena(){
         </div>
       </div>
       ${renderSource()}
+      ${(tab==='single'||tab==='multi')?`<button class="control upg-run" id="upgRun" ${(busy||!selectedList().length)?'disabled':''}>${busy?'АПГРЕЙДИМ…':'⚡ АПГРЕЙД · '+fmt(s)+' ₽'}</button>`:''}
       <div class="upg-tabs">
         <button data-utab="single" class="${tab==='single'?'on':''}">Одиночный</button>
         <button data-utab="multi" class="${tab==='multi'?'on':''}">Мульти</button>
