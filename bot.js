@@ -4407,7 +4407,7 @@ const server = http.createServer(async (req, res) => {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!plategaOn()) return send(503, { error: 'Platega не настроена' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
-      if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
+      if (rub < 50) return send(400, { error: 'Минимальная сумма пополнения — 50 ₽' });
       const baseTokens = Math.floor(rub * TOKENS_PER_RUB);
       const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
                          (!u.lastDeposit || u.lastDeposit <= 0) &&
@@ -4443,7 +4443,7 @@ const server = http.createServer(async (req, res) => {
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       if (!coinsoOn()) return send(503, { error: 'Coinso не настроен' });
       const rub = Math.max(0, Math.floor(Number(body.rub) || 0));
-      if (rub < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
+      if (rub < 50) return send(400, { error: 'Минимальная сумма пополнения — 50 ₽' });
       const baseTokens = Math.floor(rub * TOKENS_PER_RUB);
       const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
                          (!u.lastDeposit || u.lastDeposit <= 0) &&
@@ -4474,7 +4474,7 @@ const server = http.createServer(async (req, res) => {
         return send(429, { error: 'Слишком много заявок на пополнение. Подождите минуту.' });
       }
       const rubAmt = Math.max(0, Math.floor(Number(body.rub) || 0));
-      if (rubAmt < 150) return send(400, { error: 'Минимальная сумма пополнения — 150 ₽' });
+      if (rubAmt < 50) return send(400, { error: 'Минимальная сумма пополнения — 50 ₽' });
       const baseTokens = Math.floor(rubAmt * TOKENS_PER_RUB);
       const isEligible = (!u.totalDepositedRub || u.totalDepositedRub <= 0) &&
                          (!u.lastDeposit || u.lastDeposit <= 0) &&

@@ -1463,15 +1463,15 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
     <div class="muted small" style="margin-top:8px;line-height:1.4">Промокоды имеют ограниченное количество активаций. Введите промокод и нажмите <b>«Активировать промокод»</b>.</div>
   </div>
   <div id="paySumBlock">
-    <div class="muted small" style="margin:12px 0 8px">Сумма пополнения (мин. 150 ₽)</div>
+    <div class="muted small" style="margin:12px 0 8px">Сумма пополнения (мин. 50 ₽)</div>
     <div class="chips" id="payAmounts">
-      <button class="chip on" data-pa="150">150 ₽</button>
+      <button class="chip" data-pa="50">50 ₽</button><button class="chip on" data-pa="150">150 ₽</button>
       <button class="chip" data-pa="300">300 ₽</button>
       <button class="chip" data-pa="500">500 ₽</button>
       <button class="chip" data-pa="1000">1 000 ₽</button>
     </div>
     <div class="betrow" style="margin:12px 0 0"><span class="muted small">Своя сумма</span>
-      <input class="betinput" id="payRub" type="number" min="150" step="10" inputmode="numeric" value="150" aria-label="Сумма в рублях">
+      <input class="betinput" id="payRub" type="number" min="50" step="10" inputmode="numeric" value="150" aria-label="Сумма в рублях">
       <span class="muted small">₽</span></div>
   </div>
   <div class="muted small" id="payPreview" style="margin-top:8px"></div>
@@ -7252,7 +7252,7 @@ function gameSkuf(){
     ${betHTML()}
     <div class="actions" style="margin-top:10px">
       <button class="control" id="skufGo" style="margin:0">${phase==='run'?'СТАВКА '+fmtRub(roundBet)+' В ИГРЕ':'НАЧАТЬ · '+fmtRub(S.bet)}</button>
-      <button class="control ghost" id="skufTake" style="margin:0" ${phase!=='run'||opened===0?'disabled':''}>ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ₽)</button>
+      <button class="control ghost" id="skufTake" style="margin:0" disabled>${phase==='run'?'ЦЕЛЬ ×'+fx(getMult(skufTarget)):'ЗАБРАТЬ'}</button>
     </div>
     <div class="result" id="skufRes">${curM.desc}</div>`;
 
@@ -7277,6 +7277,7 @@ function gameSkuf(){
     }
 
     let skufRnd = null;
+    let skufTarget = 1;
 
     grid.addEventListener('click', e => {
       const cell = e.target.closest('.skuf-cell');
@@ -7286,38 +7287,18 @@ function gameSkuf(){
 
       const nextMultCand = getMult(opened + 1);
       const naturalSafe = !skufIndices.has(idx);
-      let allowedSafe;
-      if(skufRnd && skufRnd.verdict){
-        if(skufRnd.verdict === 'win'){
-          allowedSafe = true;
-        } else {
-          // Проигрышный раунд: на All-in / крупной ставке даём естественно открыть 2 клетки (до ×1.5–1.8),
-          // чтобы игрок почувствовал занос, и драматично завершаем на 3-й клетке — без подвоха!
-          if(isNearMissEligible(roundBet)){
-            if(opened < 2){
-              allowedSafe = true;
-              if(skufIndices.has(idx)){
-                skufIndices.delete(idx);
-                for(let k = 0; k < 25; k++){
-                  if(k !== idx && !openedSet.has(k) && !skufIndices.has(k)){
-                    skufIndices.add(k);
-                    break;
-                  }
-                }
-              }
-            } else {
-              allowedSafe = false;
-            }
-          } else {
-            allowedSafe = false;
-          }
+      const targetWin = skufRnd
+        ? skufRnd.verdict === 'win'
+        : evalBaitTrap('skuf', naturalSafe, roundBet, nextMultCand);
+      // До цели любые клетки безопасны; на цели исход решает сервер.
+      const allowedSafe = (opened + 1 < skufTarget) ? true : targetWin;
+      if(allowedSafe && skufIndices.has(idx)){
+        skufIndices.delete(idx);
+        for(let k = 0; k < 25; k++){
+          if(k !== idx && !openedSet.has(k) && !skufIndices.has(k)){ skufIndices.add(k); break; }
         }
-      } else {
-        allowedSafe = evalBaitTrap('skuf', naturalSafe, roundBet, nextMultCand);
       }
-      if(!allowedSafe && naturalSafe){
-        skufIndices.add(idx);
-      }
+      if(!allowedSafe && !skufIndices.has(idx)){ skufIndices.add(idx); }
 
       if(skufIndices.has(idx)){
         busy = true;
@@ -7349,8 +7330,17 @@ function gameSkuf(){
         const winAmt = Math.floor(roundBet * nextMult);
         res.className = 'result good';
         res.innerHTML = `<span style="color:#3ddc96;font-weight:800">🟢 Попытка #${opened}:</span> Альтушка найдена! Множитель <b style="color:${band(nextMult)}">×${fx(nextMult)}</b> (<b>+${fmt(winAmt)} ₽</b>).`;
-        take.disabled = false;
-        take.textContent = `ЗАБРАТЬ ×${fx(nextMult)} (+${fmt(winAmt)} ₽)`;
+        take.disabled = true;
+        take.textContent = 'ЦЕЛЬ ×' + fx(getMult(skufTarget));
+
+        if(opened >= skufTarget){
+          win(winAmt, 'Скуф vs Альтушка', 'цель ×' + fx(nextMult), skufRnd);
+          phase = 'done';
+          res.innerHTML = `🎯 <b>ЦЕЛЬ ×${fx(nextMult)} ДОСТИГНУТА!</b> Зачислено <b>+${fmt(winAmt)} ₽</b>.`;
+          roundVerdict(true, winAmt, 'Скуф vs Альтушка · цель ×' + fx(nextMult));
+          go.textContent = 'НАЧАТЬ СНОВА · ' + fmtRub(S.bet);
+          return;
+        }
 
         const safeTotal = 25 - SKUF_MODES[curSkufMode].skufs;
         if(opened >= safeTotal){
@@ -7373,7 +7363,14 @@ function gameSkuf(){
         return;
       }
       roundBet = S.bet;
-      skufRnd = place(roundBet, 'Скуф vs Альтушка');
+      // Цель по числу безопасных открытий: каждая следующая клетка труднее,
+      // поэтому длинные серии — редкость, а не гарантия.
+      const M0 = SKUF_MODES[curSkufMode].skufs;
+      const pSafe = (25 - M0) / 25;
+      let tgt = 1;
+      while(tgt < 12 && Math.random() < pSafe && getMult(tgt + 1) <= 100) tgt++;
+      skufTarget = tgt;
+      skufRnd = place(roundBet, 'Скуф vs Альтушка', getMult(skufTarget));
       phase = 'run';
       opened = 0;
       openedSet.clear();
@@ -7496,7 +7493,7 @@ function gameAvito(){
     ${betHTML()}
     <div class="actions" style="margin-top:10px">
       <button class="control" id="avitoDeal" style="margin:0">${phase==='run'?(step<3?'ТОРГОВАТЬСЯ → ЭТАП '+(step+1):'ФИНАЛ'):'КУПИТЬ ЛОТ · '+fmtRub(S.bet)}</button>
-      <button class="control ghost" id="avitoTake" style="margin:0" ${phase!=='run'||step===0?'disabled':''}>ПРОДАТЬ И ЗАБРАТЬ ×${fx(mult)} (+${fmt(curWin)} ₽)</button>
+      <button class="control ghost" id="avitoTake" style="margin:0" disabled>${phase==='run'?'ЦЕЛЬ ×'+fx(curLot.steps[avitoTarget-1].mult):'ЗАБРАТЬ'}</button>
     </div>
     <div class="${resClass}" id="avitoRes">${resMsg}</div>`;
 
@@ -7515,6 +7512,7 @@ function gameAvito(){
     }
 
     let avitoRnd = null;
+    let avitoTarget = 3;
 
     dealBtn.addEventListener('click', () => {
       if(busy) return;
@@ -7527,7 +7525,14 @@ function gameAvito(){
           return;
         }
         roundBet = S.bet;
-        avitoRnd = place(roundBet, 'Перекуп на Авито');
+        // Сколько этапов вытянет сделка — решает вероятность лота,
+        // а не один вердикт на все шаги. Сервер платит за эту цель.
+        const p1=curLot.steps[0].p, p2=curLot.steps[1].p, p3=curLot.steps[2].p;
+        const rollT=Math.random();
+        avitoTarget = 1;
+        if(rollT < p1*p2*p3) avitoTarget = 3;
+        else if(rollT < p1*p2) avitoTarget = 2;
+        avitoRnd = place(roundBet, 'Перекуп на Авито', curLot.steps[avitoTarget-1].mult);
         phase = 'run';
         step = 0;
         boxState = '';
@@ -7544,12 +7549,11 @@ function gameAvito(){
       setTimeout(() => {
         busy = false;
         const natAvitoWin = Math.random() < stepData.p;
-        let willAvitoWin;
-        if(avitoRnd && avitoRnd.verdict){
-          willAvitoWin = (avitoRnd.verdict === 'win');
-        } else {
-          willAvitoWin = evalBaitTrap('avito', natAvitoWin, roundBet, stepData.mult);
-        }
+        const targetWin = avitoRnd
+          ? avitoRnd.verdict === 'win'
+          : evalBaitTrap('avito', natAvitoWin, roundBet, stepData.mult);
+        // До цели торг проходит всегда; на цели исход решает сервер.
+        const willAvitoWin = (step + 1 < avitoTarget) ? true : targetWin;
         if(willAvitoWin){
           step++;
           tgHaptic('light');
@@ -7559,10 +7563,11 @@ function gameAvito(){
           resClass = 'result good';
           resMsg = `🤝 <b>Сделка успешна!</b> ${stepData.name} пройден · Множитель <b style="color:${band(curMult)}">×${fx(curMult)}</b> (+${fmt(winAmt)} ₽).`;
 
-          if(step >= 3){
+          if(step >= avitoTarget){
             win(winAmt, 'Перекуп на Авито', 'финальная перепродажа ×' + fx(curMult), avitoRnd);
             phase = 'done';
-            resMsg = `🏆 <b>СУПЕР-ПЕРЕКУП!</b> Товар продан с максимальной наценкой: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ₽</b>!`;
+            resMsg = `🏆 <b>СДЕЛКА ЗАКРЫТА!</b> Товар продан: <b style="color:${band(curMult)}">×${fx(curMult)}</b> → <b>+${fmt(winAmt)} ₽</b>!`;
+            roundVerdict(true, winAmt, 'Авито · ×' + fx(curMult));
           }
           render();
         } else {
