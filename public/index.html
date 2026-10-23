@@ -38,6 +38,8 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .big{font-size:30px;line-height:1.05;font-weight:850;letter-spacing:-.045em;margin-top:6px;color:#fff}
 .muted{color:var(--muted)}.small{font-size:12px}
 .balance{font-size:34px;font-weight:850;margin:7px 0 15px;color:#fff}
+/* Табличные цифры: суммы и множители не «дёргаются» при обновлении */
+.balance,.js-bal,.js-rub,.xbig,.rrt-val,.upg-wheel__pct,.upg-stat b,.dice-roll-num,.lt-win,.lt-mult,.bot-bet-amt,.ut-v{font-variant-numeric:tabular-nums lining-nums}
 .actions{display:flex;gap:8px}
 .primary,.secondary{padding:12px 15px;border-radius:14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
 .primary{background:linear-gradient(135deg,#ef4444,#dc2626);color:#ffffff;border:0;box-shadow:0 6px 16px rgba(220,38,38,.35)}
@@ -287,6 +289,17 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .mode-online.off .online-dot{background:#94a3b8;box-shadow:none;animation:none}
 
 /* VIP Ранги кэшбэка */
+/* Прогресс до минимальной суммы вывода */
+.wdp{padding:12px;border-radius:14px;background:linear-gradient(135deg,rgba(255,207,107,.10),rgba(239,68,68,.06));border:1px solid rgba(255,207,107,.28);margin-bottom:12px}
+.wdp.locked{background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(0,0,0,.2));border-color:rgba(239,68,68,.35)}
+.wdp.done{background:linear-gradient(135deg,rgba(61,220,150,.14),rgba(0,0,0,.2));border-color:rgba(61,220,150,.4)}
+.wdp-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;font-weight:800;color:#fff}
+.wdp-top b{color:#ffcf6b;font-variant-numeric:tabular-nums}
+.wdp.done .wdp-top b{color:#3ddc96}
+.wdp-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+.wdp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ef4444,#ffcf6b);transition:width .45s cubic-bezier(.16,1,.3,1)}
+.wdp.done .wdp-bar i{background:linear-gradient(90deg,#16a34a,#3ddc96)}
+.wdp.locked .wdp-bar i{background:linear-gradient(90deg,#7a1010,#ef4444);opacity:.6}
 .vip-card{background:linear-gradient(135deg,#1d1d1d,#161616);border:1px solid rgba(168,85,247,.32);border-radius:20px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;transition:transform .2s,border-color .2s}
 .vip-card:hover{transform:translateY(-1px);border-color:rgba(168,85,247,.65)}
 .vip-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -1464,6 +1477,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
   <div id="paySumBlock">
     <div class="muted small" style="margin:12px 0 8px">Сумма пополнения (мин. 50 ₽)</div>
+    <div class="muted small" style="margin:-2px 0 8px;font-size:10.5px">Повторные пополнения: <b style="color:#ffcf6b">+15%</b> на второе и <b style="color:#ffcf6b">+10%</b> на третье</div>
     <div class="chips" id="payAmounts">
       <button class="chip" data-pa="50">50 ₽</button><button class="chip on" data-pa="150">150 ₽</button>
       <button class="chip" data-pa="300">300 ₽</button>
@@ -1561,7 +1575,12 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 <div class="section"><b>Вывод средств</b><span class="muted small">мин. 300 ₽</span></div>
 <div class="item">
-  <div class="muted small" style="margin-bottom:8px">Способ получения</div>
+  <div class="wdp" id="wdProgress">
+    <div class="wdp-top"><span id="wdProgressLabel">До вывода осталось 0 ₽</span><b id="wdProgressValue">0%</b></div>
+    <div class="wdp-bar"><i id="wdProgressFill" style="width:0%"></i></div>
+    <div class="muted small" id="wdProgressHint" style="margin-top:6px">Минимум 300 ₽</div>
+  </div>
+  <div class="muted small" style="margin:12px 0 8px">Способ получения</div>
   <div class="chips" id="withdrawMethods">
     <button class="chip on" data-wm="sbp">📱 СБП / Карта</button>
     <button class="chip" data-wm="crypto">🪙 Криптовалюта (USDT / TON)</button>
@@ -1950,7 +1969,7 @@ if(IS_TG&&API_BASE){
       const curB = window.__curBankInfo ? window.__curBankInfo() : { name: 'СБП / Карта', val: '' };
       const o = await tgCall('/api/order-sbp', { rub, tokens: tk, bonus: curBonus, bank: curB.name, card: curB.val, termsAcceptedAt: S.termsAt });
       if(!o || !o.order_id) throw new Error((o && o.error) || 'не удалось создать заявку');
-      const bonusNote = o.bonusApplied ? ' (включая бонус +25%!)' : '';
+      const bonusNote = o.bonusApplied ? ' (включая бонус!)' : '';
       const payUntil = o.expiresAt ? new Date(o.expiresAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) : '';
       msg.className='result';
       msg.innerHTML='⏳ Заявка <b>№'+o.order_id+'</b> на <b>'+rub+' ₽</b> (зачислится '+fmt(o.tokens)+' ₽'+bonusNote+') отправлена администратору!<br>⏳ Действует <b>1 час</b>'+(payUntil?' — до <b>'+payUntil+'</b>':'')+'. Переведите точную сумму на <b>'+curB.name+'</b> и ожидайте подтверждения — после него средства зачислятся автоматически.';
@@ -3476,6 +3495,37 @@ q('#payGo').addEventListener('click',startPayment);
 
 /* ---------- вывод средств (профиль, минимум 300 ₽) ---------- */
 const WITHDRAW={m:'sbp',amt:300,names:{'sbp':'СБП / Карта','crypto':'Криптовалюта (USDT / TON)'}};
+/* Прогресс до минимальной суммы вывода: видимая цель вместо «накопите 300 ₽». */
+function updateWithdrawProgress(){
+  const box=q('#wdProgress'); if(!box) return;
+  const label=q('#wdProgressLabel'), val=q('#wdProgressValue');
+  const fill=q('#wdProgressFill'), hint=q('#wdProgressHint');
+  const balRub=Math.max(0,Number(S.balance)||0)/RATE;
+  const hasDep=(Number(S.totalDepositedRub)||0)>0;
+  box.classList.remove('locked','done');
+  if(!hasDep){
+    box.classList.add('locked');
+    if(label)label.textContent='Вывод откроется после пополнения';
+    if(val)val.textContent='🔒';
+    if(fill)fill.style.width=Math.min(100,(balRub/300)*100).toFixed(1)+'%';
+    if(hint)hint.textContent='Пополните от 50 ₽ — и вывод станет доступен. Минимум 300 ₽.';
+    return;
+  }
+  const left=Math.max(0,300-balRub);
+  if(left<=0){
+    box.classList.add('done');
+    if(label)label.textContent='Вывод доступен';
+    if(val)val.textContent='100%';
+    if(fill)fill.style.width='100%';
+    if(hint)hint.textContent='Можно вывести от 300 ₽ на СБП, карту или крипту.';
+    return;
+  }
+  const pct=Math.min(100,(balRub/300)*100);
+  if(label)label.textContent='До вывода осталось '+fmtRub(left*RATE);
+  if(val)val.textContent=Math.round(pct)+'%';
+  if(fill)fill.style.width=pct.toFixed(1)+'%';
+  if(hint)hint.textContent='Минимум 300 ₽ · сейчас '+fmtRub(S.balance)+'.';
+}
 function withdrawSync(){
   const wMeth=q('#withdrawMethods');
   if(!wMeth)return;
@@ -3502,6 +3552,7 @@ function withdrawSync(){
       btn.disabled=false;
     }
   }
+  updateWithdrawProgress();
 }
 const wMethEl=q('#withdrawMethods');
 if(wMethEl){
@@ -9584,60 +9635,67 @@ function gameDice(){
    LIVE-ТАКЕР ВЫИГРЫШЕЙ (FOMO-ЛЕНТА)
    ======================================================================= */
 function initLiveTicker(){
+  const wrap = q('.live-ticker-wrap');
   const track = q('#liveTickerTrack');
-  if(!track) return;
+  if(!track || !wrap) return;
 
-  const gamesList = [
-    { name: 'Ракетка', minX: 1.25, maxX: 12.0 },
-    { name: 'Dice', minX: 1.15, maxX: 9.8 },
-    { name: 'Кейсы', minX: 1.5, maxX: 15.0 },
-    { name: 'Попрыгун', minX: 1.3, maxX: 4.5 },
-    { name: 'Hot Drop', minX: 1.0, maxX: 5.0 },
-    { name: 'Аукцион', minX: 2.0, maxX: 6.0 }
-  ];
+  const seen = new Set();
+  const queue = [];
+  let pumping = false;
+  const palette = ['#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4', '#ec4899'];
 
-  function addWinItem(name, gameName, amt, mult){
+  function addWinItem(name, gameName, amtTk, mult){
     const el = document.createElement('div');
     el.className = 'lt-item';
-    const clean = name.replace(/^@/,'').trim();
-    const initials = (clean.slice(0, 2) || 'TG').toUpperCase();
-    const col = BOT_PALETTES[Math.floor(Math.random() * BOT_PALETTES.length)];
-    el.innerHTML = `
-      <span class="lt-avatar" style="background:${col}">${initials}</span>
-      <span class="lt-name">${clean}</span>
-      <span class="lt-game">${gameName}</span>
-      <span class="lt-win">+${fmt(amt)} ₽</span>
-      <span class="lt-mult">×${fx(mult)}</span>
-    `;
+    const clean = String(name || 'Игрок').replace(/^@/, '').trim() || 'Игрок';
+    const safe = (typeof esc === 'function') ? esc(clean) : clean.replace(/[<>&"']/g, '');
+    const initials = clean.slice(0, 2).toUpperCase();
+    const col = palette[Math.abs(clean.length + clean.charCodeAt(0)) % palette.length];
+    el.innerHTML =
+      '<span class="lt-avatar" style="background:' + col + '">' + initials + '</span>' +
+      '<span class="lt-name">' + safe + '</span>' +
+      '<span class="lt-game">' + (typeof esc === 'function' ? esc(gameName) : gameName) + '</span>' +
+      '<span class="lt-win">+' + fmt(amtTk) + ' ₽</span>' +
+      '<span class="lt-mult">×' + fx(mult) + '</span>';
     track.prepend(el);
     while(track.children.length > 25){
       track.removeChild(track.lastChild);
     }
+    wrap.style.display = '';
   }
 
-  for(let i = 0; i < 8; i++){
-    const botName = BOT_NAMES_RAW[Math.floor(Math.random() * BOT_NAMES_RAW.length)];
-    const gm = gamesList[Math.floor(Math.random() * gamesList.length)];
-    const mult = +(gm.minX + Math.random() * (gm.maxX - gm.minX)).toFixed(2);
-    const amt = Math.round((50 + Math.random() * 450) * mult);
-    addWinItem(botName, gm.name, amt, mult);
+  function pump(){
+    if(pumping || !queue.length) return;
+    pumping = true;
+    const it = queue.shift();
+    addWinItem(it.name, it.game, it.win, it.mult);
+    setTimeout(() => { pumping = false; pump(); }, 4000);
   }
 
-  function scheduleNext(){
-    const delay = 2200 + Math.random() * 2500;
-    setTimeout(() => {
-      const botName = BOT_NAMES_RAW[Math.floor(Math.random() * BOT_NAMES_RAW.length)];
-      const gm = gamesList[Math.floor(Math.random() * gamesList.length)];
-      const mult = +(gm.minX + Math.random() * (gm.maxX - gm.minX)).toFixed(2);
-      const amt = Math.round((40 + Math.random() * 600) * mult);
-      addWinItem(botName, gm.name, amt, mult);
-      scheduleNext();
-    }, delay);
+  function enqueue(list){
+    let added = false;
+    for(const w of list || []){
+      if(!w || seen.has(w.id)) continue;
+      seen.add(w.id);
+      queue.push(w);
+      added = true;
+    }
+    if(added) pump();
   }
-  scheduleNext();
+
+  async function load(){
+    if(!(IS_TG && API_BASE)) return;
+    try{
+      const d = await tgCall('/api/live-wins', {});
+      if(d && d.ok) enqueue(d.wins || []);
+    }catch(_){}
+  }
+
+  load();
+  setInterval(load, 20000);
 
   window.pushLiveTickerWin = function(name, gameName, amt, mult){
-    addWinItem(name, gameName, amt, mult);
+    enqueue([{ id: 'self' + Date.now() + Math.random(), name, game: gameName, win: amt, mult }]);
   };
 }
 

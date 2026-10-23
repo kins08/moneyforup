@@ -981,12 +981,27 @@ async function creditDeposit(userId, tokens, source, opts = {}) {
     }
   }
 
-  const finalTokens = baseTokens + bonusTokens;
+  // Повторные депозиты: +15% на второй и +10% на третий, с потолком.
+  // Первый депозит обрабатывается выше своим атомарным флагом.
+  const prevDeposits = Number(u.depositCount) || 0;
+  // Бонус на повторный депозит — только если игрок пришёл с бонусным оффером
+  // (opts.bonus), а не «тихо» сверху к любому пополнению. Иначе выплаты
+  // разъезжаются с заявкой и с тестами.
+  const wantsBonus = explicitBonus || impliedBonus || Boolean(opts.bonus && String(opts.bonus) !== '0');
+  let repeatPct = 0;
+  if (!bonusApplied && wantsBonus && prevDeposits === 1) repeatPct = 15;
+  else if (!bonusApplied && wantsBonus && prevDeposits === 2) repeatPct = 10;
+  if (repeatPct > 0) {
+    const capTokens = repeatPct === 15 ? 3000 : 2000; // 300 ₽ / 200 ₽
+    bonusTokens = Math.min(capTokens, Math.floor(baseTokens * repeatPct / 100));
+    bonusApplied = bonusTokens > 0;
+  }
+  const totalTokens = baseTokens + bonusTokens;
   const reason = bonusApplied
-    ? `Пополнение через ${source} (+25% бонус: +${rub(bonusTokens)})`
+    ? `Пополнение через ${source} (+${isFirstDeposit ? 25 : repeatPct}% бонус: +${rub(bonusTokens)})`
     : `Пополнение через ${source}`;
 
-  const credit = applyBalance(u, finalTokens, 'deposit', reason, String(opts.orderId || ''));
+  const credit = applyBalance(u, totalTokens, 'deposit', reason, String(opts.orderId || ''));
   if (!credit.ok) {
     // Зачисление не прошло — возвращаем право на бонус, чтобы игрок
     // не потерял его из-за сбоя БД.
@@ -996,9 +1011,11 @@ async function creditDeposit(userId, tokens, source, opts = {}) {
       bonusTokens = 0;
       bonusApplied = false;
     }
-    console.error(`[Deposit] НЕ зачислено ${rub(finalTokens)} игроку ${userId}: ${credit.error}`);
+    console.error(`[Deposit] НЕ зачислено ${rub(totalTokens)} игроку ${userId}: ${credit.error}`);
     return { tokens: baseTokens, baseTokens, bonusTokens: 0, refPaid: 0, refErr: credit.error, credited: false, bonusApplied: false };
   }
+
+  try { db.bumpDepositCount(u.id); u.depositCount = prevDeposits + 1; } catch (_) {}
 
   if (isFirstDeposit && rubAmt >= 150) {
     u.freeCases = (u.freeCases || 0) + 1;
@@ -1042,7 +1059,7 @@ async function creditDeposit(userId, tokens, source, opts = {}) {
       }
     }
   }
-  return { tokens: finalTokens, baseTokens, bonusTokens, refPaid, refErr, credited: true, bonusApplied };
+  return { tokens: totalTokens, baseTokens, bonusTokens, refPaid, refErr, credited: true, bonusApplied };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1637,7 +1654,7 @@ async function processOrderAction(orderId, action) {
       order.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
       order.completedAt = Date.now();
       try { db.updateOrderStatus(orderId, 'paid'); } catch (_) {}
-      const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${rub(r.bonusTokens)})` : '';
+      const bonusText = r.bonusApplied ? ` (включая бонус: +${rub(r.bonusTokens)})` : '';
       u.notifications = u.notifications || [];
       u.notifications.push({
         id: 'notif_' + Date.now(),
@@ -2237,7 +2254,7 @@ const server = http.createServer(async (req, res) => {
         }
         foundOrder.tokens = r.tokens;   // ledger-ok: поле заказа (кол-во токенов), не баланс игрока
         try { db.updateOrderStatus(foundId, 'paid'); } catch (_) {}
-        const bonusText = r.bonusApplied ? ` (включая бонус +25%: +${rub(r.bonusTokens)})` : '';
+        const bonusText = r.bonusApplied ? ` (включая бонус: +${rub(r.bonusTokens)})` : '';
         await bot.api.sendMessage(foundOrder.userId,
           `🎉 Платёж успешно распознан и подтверждён автоматикой!\nЗачислено: <b>+${rub(r.tokens)}</b>${bonusText}!\nПриятной игры в MoneyForUp!`,
           { parse_mode: 'HTML' }
@@ -2305,6 +2322,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/register' && req.method === 'POST') {
       setRef(u, body.startParam);          // код пригласившего: MF... или старый числовой id
       if (body.termsAcceptedAt) u.termsAt = Number(body.termsAcceptedAt) || Date.now();
+      try { db.touchUserSeen(u.id, Date.now()); } catch (_) {}
       return send(200, {
         ...who, numId: u.numId, refCode: u.code, link: refLink(u.code),
         refInvited: countInvited(u.id), refEarned: Math.round(u.refEarned || 0),
@@ -2316,6 +2334,12 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/balance') return send(200, { ...who });
     if (url.pathname === '/api/user-stats') return send(200, { ok: true, stats: userStats });
+
+    /* Реальные выигрыши за последние 24 часа — для лайв-тикера без фейков. */
+    if (url.pathname === '/api/live-wins' && req.method === 'POST') {
+      const wins = db.listRecentWins(30, Date.now() - 86400000);
+      return send(200, { ok: true, wins });
+    }
 
     /* ── Сбор рейкбека (от 3 ₽) ──────────────────────────────────────────────── */
     if (url.pathname === '/api/claim-rakeback' && req.method === 'POST') {
@@ -4660,6 +4684,36 @@ setInterval(() => {
     }).catch(e => console.error('Ошибка отправки 12ч отчёта админу:', e.message));
   }
 }, HALF_DAY_MS);
+
+/* ── Мягкая реактивация: не чаще одного сообщения в 3 дня и только
+   при реальном поводе (подарочный кейс или рейкбек). ─────────────────── */
+async function runReactivation() {
+  try {
+    const now = Date.now();
+    const list = db.listReactivationCandidates(now - 24 * 3600 * 1000, now - 3 * 86400 * 1000, 40);
+    for (const cand of list) {
+      let text = '';
+      if (cand.freeCases > 0) {
+        text = '🎁 <b>У вас ждёт подарочный кейс</b>\n\nОн уже начислен на аккаунт — заберите в MoneyForUp.';
+      } else if (cand.rakeback >= 30) {
+        text = `💰 <b>Рейкбек ${rub(cand.rakeback)} ждёт вас</b>\n\nЗаберите его в профиле: накопления не сгорают.`;
+      }
+      if (!text) continue;
+      try {
+        await bot.api.sendMessage(cand.id, text, {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().webApp('🎮 Открыть MoneyForUp', APP_URL)
+        });
+        db.setReactivationAt(cand.id, now);
+      } catch (_) { /* бот заблокирован — больше не пишем */ }
+      await new Promise(r => setTimeout(r, 120));
+    }
+  } catch (e) {
+    console.error('[Reactivation] error:', e.message);
+  }
+}
+setTimeout(runReactivation, 120000);
+setInterval(runReactivation, 6 * 3600 * 1000);
 
 let recoveryReady = false;
 async function initPersistence() {

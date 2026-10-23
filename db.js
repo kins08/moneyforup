@@ -168,6 +168,10 @@ const stmts = {
   insertChallengeClaim: db.prepare(
     'INSERT OR IGNORE INTO challenge_claims (user_id, quest_id, claim_date, created_at) VALUES (?, ?, ?, ?)'
   ),
+  bumpDepositCount: db.prepare('UPDATE users SET deposit_count = deposit_count + 1 WHERE id = ?'),
+  setDepositCount: db.prepare('UPDATE users SET deposit_count = ? WHERE id = ?'),
+  touchUserSeen: db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?'),
+  setReactivationAt: db.prepare('UPDATE users SET last_reactivation_at = ? WHERE id = ?'),
   getPlayerBoost: db.prepare('SELECT luck FROM player_boosts WHERE user_id = ?'),
   setPlayerBoost: db.prepare(`
     INSERT INTO player_boosts (user_id, luck, updated_at) VALUES (?, ?, ?)
@@ -247,6 +251,9 @@ function getUser(id) {
     freeCases: Number(row.free_cases || 0),
     freeCase5RefClaimed: Number(row.free_case_5ref_claimed || 0),
     firstDepositBonusClaimed: Number(row.first_deposit_bonus_claimed || 0),
+    depositCount: Number(row.deposit_count || 0),
+    lastSeenAt: Number(row.last_seen_at || 0),
+    lastReactivationAt: Number(row.last_reactivation_at || 0),
     lastHotDrop: Number(row.last_hot_drop || 0),
     lastWheelSpin: Number(row.last_wheel_spin || 0),
     lastStreakAt: Number(row.last_streak_at || 0)
@@ -1196,6 +1203,43 @@ module.exports = {
 
   /* Персональный буст дропа: 0..100. Ошибка чтения не должна ронять игру —
      возвращаем 0 (без буста), а проблема остаётся в логе. */
+  bumpDepositCount: (userId) => {
+    try {
+      const uid = Math.floor(Number(userId));
+      const row = stmts.getUser.get(uid);
+      const next = Number(row && row.deposit_count || 0) + 1;
+      stmts.bumpDepositCount.run(uid);
+      turso.queueQuery('UPDATE users SET deposit_count = deposit_count + 1 WHERE id = ?', [uid]);
+      return next;
+    } catch (e) { console.error('[DB] bumpDepositCount error:', e.message); return 0; }
+  },
+  setDepositCount: (userId, value) => {
+    try {
+      const uid = Math.floor(Number(userId));
+      const n = Math.max(0, Math.floor(Number(value) || 0));
+      stmts.setDepositCount.run(n, uid);
+      turso.queueQuery('UPDATE users SET deposit_count = ? WHERE id = ?', [n, uid]);
+      return true;
+    } catch (e) { console.error('[DB] setDepositCount error:', e.message); return false; }
+  },
+  touchUserSeen: (userId, at) => {
+    try {
+      const uid = Math.floor(Number(userId));
+      const ts = Math.floor(Number(at) || Date.now());
+      stmts.touchUserSeen.run(ts, uid);
+      turso.queueQuery('UPDATE users SET last_seen_at = ? WHERE id = ?', [ts, uid]);
+      return true;
+    } catch (e) { return false; }
+  },
+  setReactivationAt: (userId, at) => {
+    try {
+      const uid = Math.floor(Number(userId));
+      const ts = Math.floor(Number(at) || Date.now());
+      stmts.setReactivationAt.run(ts, uid);
+      turso.queueQuery('UPDATE users SET last_reactivation_at = ? WHERE id = ?', [ts, uid]);
+      return true;
+    } catch (e) { return false; }
+  },
   getPlayerBoost: (userId) => {
     try {
       const row = stmts.getPlayerBoost.get(userId);
@@ -1266,7 +1310,63 @@ module.exports = {
     }
   },
 
+  /* Кандидаты на мягкую реактивацию: давно не открывали приложение,
+     есть реальный повод вернуться (подарочный кейс или рейкбек), и мы
+     не писали им последние 3 дня. */
+  listReactivationCandidates: (inactiveBefore, cooldownBefore, limit = 50) => {
+    try {
+      const n = Math.max(1, Math.min(100, Math.floor(Number(limit) || 50)));
+      return db.prepare(`
+        SELECT id, username, name, tokens, free_cases, rakeback, last_seen_at
+        FROM users
+        WHERE last_seen_at > 0
+          AND last_seen_at < ?
+          AND (last_reactivation_at = 0 OR last_reactivation_at < ?)
+          AND (COALESCE(free_cases, 0) > 0 OR COALESCE(rakeback, 0) >= 30)
+        ORDER BY last_seen_at ASC
+        LIMIT ?
+      `).all(Math.floor(Number(inactiveBefore) || 0), Math.floor(Number(cooldownBefore) || 0), n)
+        .map(r => ({
+          id: Number(r.id),
+          username: r.username || '',
+          name: r.name || '',
+          tokens: Number(r.tokens || 0),
+          freeCases: Number(r.free_cases || 0),
+          rakeback: Number(r.rakeback || 0),
+          lastSeenAt: Number(r.last_seen_at || 0)
+        }));
+    } catch (e) {
+      console.error('[DB] listReactivationCandidates error:', e.message);
+      return [];
+    }
+  },
   /* Полные логи для админки: последние движения баланса и раунды. */
+  listRecentWins: (limit = 30, since = 0) => {
+    try {
+      const n = Math.max(1, Math.min(50, Math.floor(Number(limit) || 30)));
+      const from = Math.floor(Number(since) || 0);
+      return db.prepare(`
+        SELECT r.round_id, r.game, r.win_tokens, r.bet_tokens, r.mult, r.created_at,
+               u.username, u.name
+        FROM game_rounds r
+        LEFT JOIN users u ON u.id = r.user_id
+        WHERE r.win_tokens > r.bet_tokens AND r.created_at >= ?
+        ORDER BY r.created_at DESC
+        LIMIT ?
+      `).all(from, n).map(r => ({
+        id: String(r.round_id),
+        name: r.username ? '@' + r.username : (r.name || 'Игрок'),
+        game: r.game || '',
+        win: Number(r.win_tokens || 0),
+        bet: Number(r.bet_tokens || 0),
+        mult: Number(r.mult || 0),
+        at: Number(r.created_at || 0)
+      }));
+    } catch (e) {
+      console.error('[DB] listRecentWins error:', e.message);
+      return [];
+    }
+  },
   listRecentLedger: (limit = 200) => {
     try {
       const n = Math.max(1, Math.min(1000, Math.floor(Number(limit) || 200)));

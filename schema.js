@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS users (
   free_cases INTEGER DEFAULT 0,
   free_case_5ref_claimed INTEGER DEFAULT 0,
   first_deposit_bonus_claimed INTEGER DEFAULT 0,
+  deposit_count INTEGER DEFAULT 0,
+  last_seen_at INTEGER DEFAULT 0,
+  last_reactivation_at INTEGER DEFAULT 0,
   last_hot_drop INTEGER DEFAULT 0,
   last_wheel_spin INTEGER DEFAULT 0,
   last_streak_at INTEGER DEFAULT 0
@@ -273,6 +276,9 @@ const EXTRA_COLUMNS = {
     ['free_cases', 'INTEGER DEFAULT 0'],
     ['free_case_5ref_claimed', 'INTEGER DEFAULT 0'],
     ['first_deposit_bonus_claimed', 'INTEGER DEFAULT 0'],
+    ['deposit_count', 'INTEGER DEFAULT 0'],
+    ['last_seen_at', 'INTEGER DEFAULT 0'],
+    ['last_reactivation_at', 'INTEGER DEFAULT 0'],
     ['last_hot_drop', 'INTEGER DEFAULT 0'],
     ['last_wheel_spin', 'INTEGER DEFAULT 0'],
     ['last_streak_at', 'INTEGER DEFAULT 0']
