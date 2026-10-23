@@ -532,7 +532,7 @@ const GAMES = {
    а точка взрыва раскрывается клиенту только когда полёт до неё уже дошёл. */
 const RK = { tcap: 12, k: 0.18 };
 const RACKET_ROUND_MS = 30000;
-const RACKET_WAIT_MS = 15000;
+const RACKET_WAIT_MS = 10000;
 const RACKET_SPEED = 0.58;
 
 /* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте). */
@@ -2227,14 +2227,28 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Не удалось определить сумму из текста сообщения', text });
       }
 
-      // Ищем заявку по сумме среди ожидающих (pending)
+      // Ищем заявку по сумме среди ожидающих (pending). Если подходящих
+      // несколько — не угадываем: зачисление на чужой баланс хуже, чем
+      // ручное подтверждение админом.
+      const candidates = [];
+      for (const [id, ord] of orders.entries()) {
+        if (ord.status === 'pending' && Number(ord.rub) === amountRub) candidates.push([id, ord]);
+      }
       let foundOrder = null;
       let foundId = null;
-      for (const [id, ord] of orders.entries()) {
-        if (ord.status === 'pending' && Number(ord.rub) === amountRub) {
-          foundOrder = ord;
-          foundId = id;
-          break;
+      if (candidates.length === 1) {
+        [foundId, foundOrder] = candidates[0];
+      } else if (candidates.length > 1) {
+        const senderDigits = senderPhone.replace(/\D/g, '').slice(-10);
+        const bySender = candidates.filter(([, ord]) => {
+          const d = String(ord.sender || ord.card || '').replace(/\D/g, '');
+          return senderDigits && d && d.endsWith(senderDigits);
+        });
+        if (bySender.length === 1) {
+          [foundId, foundOrder] = bySender[0];
+        } else {
+          console.warn(`[Payment Webhook] ${candidates.length} заявок на ${amountRub} ₽ — автозачисление остановлено, нужно подтверждение админа`);
+          return send(409, { error: 'several pending orders with the same amount; manual review required' });
         }
       }
 
@@ -4405,6 +4419,11 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`invoice:${u.id}`, 10, 60000)) return send(429, { error: 'Слишком много счетов. Подождите минуту.' });
       if (!u.termsAt && !body.termsAcceptedAt) return send(403, { error: 'Сначала примите пользовательское соглашение' });
       const tokens = Math.max(10, Math.floor(Number(body.tokens) || 0));
+      // Единый минимум пополнения 50 ₽ действует и для Stars: иначе через
+      // прямой вызов API можно было пополнить на 1 ₽ в обход правила.
+      if (tokens < 50 * TOKENS_PER_RUB) {
+        return send(400, { error: 'Минимальная сумма пополнения — 50 ₽' });
+      }
       const link = await starsInvoiceLink(u.id, tokens);
       return send(200, { invoice_link: link, tokens });
     }
@@ -4489,6 +4508,11 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/check-coinso' && req.method === 'POST') {
       if (!checkRateLimit(`check-pay:${u.id}`, 90, 60000)) return send(429, { error: 'Слишком много проверок оплаты. Подождите минуту.' });
+      // Чужой счёт нельзя ни проверить, ни «дёрнуть» на зачисление.
+      const [ordKey, savedOrder] = findCoinsoOrder(String(body.order_id || ''), String(body.invoice_id || ''));
+      if (savedOrder && Number(savedOrder.userId) !== Number(u.id)) {
+        return send(404, { error: 'Заявка не найдена' });
+      }
       const r = await checkCoinsoInvoice(body.invoice_id, body.order_id);
       return send(200, { ...r, balance: u.tokens, staked: u.staked });
     }

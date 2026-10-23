@@ -26,7 +26,7 @@ vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
 const unhandled = [];
 process.on('unhandledRejection', e => unhandled.push((e && e.message) || String(e)));
 
-const ROUND_MS = 30000, WAIT_MS = 15000;
+const ROUND_MS = 30000, WAIT_MS = 10000;
 const RK_MULT = 1.7;                                  // defaultMult Ракетки на сервере
 let FAKE_NOW = 0;                                     // управляемые часы для фаз раунда
 
