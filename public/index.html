@@ -307,7 +307,7 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .wdp.locked .wdp-bar i{background:linear-gradient(90deg,#7a1010,#ef4444);opacity:.6}
 .vip-card{background:linear-gradient(135deg,#1d1d1d,#161616);border:1px solid rgba(168,85,247,.32);border-radius:20px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;transition:transform .2s,border-color .2s}
 .vip-card:hover{transform:translateY(-1px);border-color:rgba(168,85,247,.65)}
-.vip-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.vip-top{display:flex;justify-content:flex-start;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .vip-title{font-size:15px;font-weight:850;color:#fff;display:flex;align-items:center;gap:5px;margin-left:0;padding-left:0}
 .vip-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(168,85,247,.2);color:#c084fc;border:1px solid rgba(168,85,247,.4);letter-spacing:.04em}
 .vip-perks{font-size:11px;color:#a855f7;font-weight:700}
@@ -374,9 +374,10 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 /* Live Win Ticker (FOMO-лента) */
 .live-ticker-wrap{width:100%;margin-bottom:12px;background:rgba(20,16,28,.82);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:6px 10px;overflow:hidden;box-shadow:inset 0 0 16px rgba(0,0,0,.5);backdrop-filter:blur(10px)}
 .live-ticker-bar{display:flex;align-items:center;gap:8px;font-size:11.5px;white-space:nowrap;overflow:hidden}
-.live-ticker-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:850;padding:2px 7px;border-radius:7px;background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.38);flex-shrink:0}
+.live-ticker-badge{position:relative;z-index:2;display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:850;padding:2px 7px;border-radius:7px;background:rgba(31,18,22,.97);color:#fca5a5;border:1px solid rgba(239,68,68,.38);flex-shrink:0;box-shadow:6px 0 10px 4px rgba(20,16,28,.9)}
 .live-ticker-badge .lt-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:onlinePulse 1.4s infinite ease-in-out}
-.live-ticker-track{display:flex;align-items:center;gap:18px;animation:tickerScroll 26s linear infinite;will-change:transform}
+.live-ticker-view{flex:1;min-width:0;overflow:hidden;padding-right:6px;mask-image:linear-gradient(90deg,transparent 0,#000 52px,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 52px,#000 100%)}
+.live-ticker-track{display:flex;align-items:center;gap:18px;width:max-content;animation:tickerScroll 26s linear infinite;will-change:transform}
 .live-ticker-track:hover{animation-play-state:paused}
 @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .lt-item{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);padding:3px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.06);font-size:11px}
@@ -1255,7 +1256,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="live-ticker-wrap" style="display:none">
   <div class="live-ticker-bar">
     <div class="live-ticker-badge"><span class="lt-dot"></span>LIVE ВЫИГРЫШИ</div>
-    <div class="live-ticker-track" id="liveTickerTrack"></div>
+    <div class="live-ticker-view">
+      <div class="live-ticker-track" id="liveTickerTrack"></div>
+    </div>
   </div>
 </div>
 
@@ -1354,9 +1357,9 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 <!-- Ранги кэшбэка по пополнениям -->
 <div class="section" style="margin-top:16px"><b>👑 Ранги и кэшбэк</b></div>
-<div class="vip-card" id="vipCard" title="Нажмите, чтобы посмотреть все ранги">
+<div class="vip-card" id="vipCard" title="Ранги и кэшбэк">
   <div class="vip-top">
-    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Бронза</span> <span class="vip-tag">Все ранги ℹ️</span></div>
+    <div class="vip-title"><span id="vipIcon">🥉</span> <span id="vipName">Бронза</span></div>
     <div class="vip-perks" id="vipPerks">Кэшбэк 2.0% за депозит</div>
   </div>
   <div class="vip-bar-wrap">
@@ -1608,7 +1611,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
   </div>
   <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
   <div>
-    <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px">
       <b>Кэшбэк за пополнение</b>
       <span class="pill" id="cbRankBadge" style="color:#ffcf6b;font-weight:800">2.0%</span>
     </div>
@@ -2800,7 +2803,7 @@ function openBoostHubModal(){
       </div>
 
       <button class="control ghost" id="btnBoostViewVip" style="width:100%;margin:0;font-size:12px;padding:9px;border-color:rgba(255,207,107,0.4);color:#ffcf6b">
-        👑 Все ранги кэшбэка & Рейкбек
+        👑 Кэшбэк и рейкбек
       </button>
     </div>
   `;
