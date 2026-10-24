@@ -11866,6 +11866,7 @@ function gameUpgradeArena(){
   let wheelChance=0;
   let arrowAngle=0;
   let arrowRaf=0;
+  let arrowGen=0;
   const UPG_WHEEL_R=88;
   const UPG_WHEEL_C=2*Math.PI*UPG_WHEEL_R;
 
@@ -11874,19 +11875,21 @@ function gameUpgradeArena(){
     if(g) g.setAttribute('transform', `rotate(${Number(deg)||0} 110 110)`);
   }
   function stopArrowSweep(){
+    arrowGen++;
     if(arrowRaf){ cancelAnimationFrame(arrowRaf); arrowRaf=0; }
     const w=q('#upgWheel',a);
     if(w) w.classList.remove('is-spinning');
   }
   function startArrowSweep(){
     stopArrowSweep();
+    const gen=arrowGen;
     const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(reduce) return;
     const w=q('#upgWheel',a);
     if(w) w.classList.add('is-spinning');
     let last=performance.now();
     const step=(t)=>{
-      if(dead||!busy){ arrowRaf=0; return; }
+      if(gen!==arrowGen||dead||!busy){ arrowRaf=0; return; }
       const dt=Math.min(52, Math.max(0, t-last));
       last=t;
       arrowAngle=(arrowAngle+dt*0.42)%360;
@@ -11895,27 +11898,56 @@ function gameUpgradeArena(){
     };
     arrowRaf=requestAnimationFrame(step);
   }
-  async function settleArrow(won){
+  /* Дуга — это зона выигрыша. Стрелка обязана остановиться ВНУТРИ неё при
+     победе и В ТЁМНОМ ПРОМЕЖУТКЕ при поражении: иначе игрок видит одно,
+     а итог получает другое. Углы считаются от 12 часов по часовой. */
+  function upgArcGeometry(chance){
+    const c=Math.max(0,Math.min(UPG_CHANCE_CAP,Number(chance)||0));
+    const start=180-c*180;
+    const size=c*360;
+    return {start, size, end:start+size};
+  }
+  function upgLandingAngle(chance, won){
+    const {start,size,end}=upgArcGeometry(chance);
+    if(won){
+      if(size<=0.2) return start;
+      const margin=Math.min(5, size*0.14);
+      return start+margin+Math.random()*Math.max(0.1,size-2*margin);
+    }
+    const gap=Math.max(0.5,360-size);
+    const margin=Math.min(7, gap*0.18);
+    return end+margin+Math.random()*Math.max(0.1,gap-2*margin);
+  }
+  async function settleArrow(won, chance){
     stopArrowSweep();
-    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(reduce){ setArrowAngle(arrowAngle); return; }
+    const gen=arrowGen;
+    const desired=upgLandingAngle(chance, won);
     const from=arrowAngle;
-    const target=from + 2.2*360 + 110 + Math.random()*210;
+    const remain=((desired-from)%360+360)%360;
+    const target=from + remain + (3+Math.floor(Math.random()*2))*360;
     const dur=2600;
-    const t0=performance.now();
-    await new Promise(resolve=>{
-      const frame=(t)=>{
-        if(dead) return resolve();
-        const p=Math.min(1,(t-t0)/dur);
-        const e=1-Math.pow(1-p,4.2);
-        arrowAngle=from+(target-from)*e;
-        setArrowAngle(arrowAngle);
-        if(p<1) requestAnimationFrame(frame); else resolve();
-      };
-      requestAnimationFrame(frame);
-    });
-    arrowAngle=((target%360)+360)%360;
-    setArrowAngle(arrowAngle);
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduce){
+      const t0=performance.now();
+      const anim=new Promise(resolve=>{
+        const frame=(t)=>{
+          if(gen!==arrowGen||dead) return resolve();
+          const p=Math.min(1,(t-t0)/dur);
+          const e=1-Math.pow(1-p,4.2);
+          arrowAngle=from+(target-from)*e;
+          setArrowAngle(arrowAngle);
+          if(p<1) requestAnimationFrame(frame); else resolve();
+        };
+        requestAnimationFrame(frame);
+      });
+      // Резервный таймер: если вкладка/приложение ушло в фон, rAF замирает,
+      // но результат всё равно должен отрисоваться после возвращения.
+      await Promise.race([anim, new Promise(r=>setTimeout(r,dur+600))]);
+    }
+    if(gen===arrowGen){
+      arrowAngle=((target%360)+360)%360;
+      setArrowAngle(arrowAngle);
+    }
   }
 
   /* Дуга заполнена ровно на выбранный шанс (не больше 70%) и отцентрована
@@ -12009,6 +12041,7 @@ function gameUpgradeArena(){
     if(s<10){ setNotice('Минимальная сумма — 1 ₽.','bad'); return; }
     if(sourceType==='tokens'&&s>(S.balance||0)){ setNotice('Сумма больше баланса.','bad'); return; }
     if(sourceType==='item'&&!sourceItem()){ setNotice('Выберите предмет.','bad'); return; }
+    const spinChance=Math.max(0,Math.min(UPG_CHANCE_CAP,aggregateChance()||0));
     busy=true; result=null; markBusy('АПГРЕЙДИМ…');
     render();
     startArrowSweep();
@@ -12018,8 +12051,10 @@ function gameUpgradeArena(){
     const waited=Date.now()-startedAt;
     if(waited<1100) await sleepLocal(1100-waited);
     if(res&&res.ok){
-      // Стрелка замедляется и останавливается; цвет кольца задаёт ответ сервера.
-      await settleArrow(Boolean(res.won));
+      // Стрелка останавливается в зоне, которая соответствует ответу сервера:
+      // победа — внутри золотой дуги, поражение — в тёмном промежутке.
+      try{ await settleArrow(Boolean(res.won), spinChance); }
+      catch(_){ stopArrowSweep(); }
     } else {
       stopArrowSweep();
     }
@@ -12037,23 +12072,28 @@ function gameUpgradeArena(){
     result=res;
     history.unshift({mode:mode().label,sourceValue:res.sourceValue||s,won:Boolean(res.won),target:res.target||null,chance:res.chance,createdAt:Date.now()});
     if(history.length>30)history=history.slice(0,30);
-    if(res.won){
-      tgHaptic('win');
-      showAppNotification('🎉 Апгрейд успешен: '+((res.target&&res.target.name)||'цель')+' ('+fmt((res.target&&res.target.price)||0)+' ₽)');
-    } else {
-      tgHaptic('lose');
-    }
-    if(typeof loadInventory==='function')loadInventory();
+    // Сначала показываем итог, и только потом — звук/уведомление/инвентарь:
+    // сбой любого из побочных вызовов не должен скрывать результат спина.
     render();
+    const shownChance=Number(res.aggregateChance!=null?res.aggregateChance:res.chance)||0;
     setNotice(res.won
-      ? `🎉 <b>УСПЕХ!</b> Получено: <b>${esc((res.target&&res.target.name)||'цель')}</b> · ${fmt((res.target&&res.target.price)||0)} ₽. Шанс был ${(Math.round((res.chance||0)*10000)/100).toFixed(2)}%.`
-      : `❌ <b>АПГРЕЙД НЕ УДАЛСЯ.</b> Источник списан. Шанс был ${(Math.round((res.chance||0)*10000)/100).toFixed(2)}%.`,
+      ? `🎉 <b>УСПЕХ!</b> Получено: <b>${esc((res.target&&res.target.name)||'цель')}</b> · ${fmt((res.target&&res.target.price)||0)} ₽. Шанс был ${(Math.round(shownChance*10000)/100).toFixed(2)}%.`
+      : `❌ <b>АПГРЕЙД НЕ УДАЛСЯ.</b> Источник списан. Шанс был ${(Math.round(shownChance*10000)/100).toFixed(2)}%.`,
       res.won?'good':'bad');
     roundVerdict(
       Boolean(res.won),
       res.won ? ((res.target&&res.target.price)||0) : (res.sourceValue||s),
       res.won ? 'Апгрейд · ' + esc((res.target&&res.target.name)||'цель') : 'Апгрейд · источник сгорел'
     );
+    try{
+      if(res.won){
+        tgHaptic('win');
+        showAppNotification('🎉 Апгрейд успешен: '+((res.target&&res.target.name)||'цель')+' ('+fmt((res.target&&res.target.price)||0)+' ₽)');
+      } else {
+        tgHaptic('lose');
+      }
+    }catch(_){}
+    try{ if(typeof loadInventory==='function')loadInventory(); }catch(_){}
   }
 
   async function startLadder(){
@@ -12246,6 +12286,7 @@ function gameUpgradeArena(){
   loadCatalog();
   return ()=>{
     dead=true; busy=false; ladderBusy=false; serialRunning=false;
+    stopArrowSweep();
     timers.forEach(t=>clearTimeout(t)); timers=[];
   };
 }

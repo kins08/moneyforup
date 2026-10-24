@@ -7,6 +7,7 @@
  */
 const assert = require('assert');
 const boost = require('./boost');
+const upgrade = require('./upgrade');
 const { startServer } = require('./.agents/skills/security-audit/scripts/lib/server-harness');
 
 const ADMIN = 990001;
@@ -112,6 +113,29 @@ const eq = (a, b, msg) => ok(a === b, `${msg} (${a} === ${b})`);
     eq(res.status, 200, 'результат Pulse раскрыт после таймера');
     eq(res.body.result.won, true, 'с бустом 100% Pulse засчитан как победа');
     eq(res.body.result.outcome, 'up', 'исход совпал с выбранным направлением');
+
+    // Буст 100% обязан форсировать победу и в новом серверном апгрейдере:
+    // клиент рисует стрелку по ответу сервера, поэтому won должен быть true.
+    const upgCat = await asPlayer('/api/upgrade/catalog', {});
+    eq(upgCat.status, 200, 'каталог апгрейдера доступен');
+    const validTargets = upgCat.body.targets
+      .filter(t => t.value > 105 && t.value <= 10000)
+      .sort((a, b) => a.value - b.value);
+    ok(validTargets.length >= 2, 'есть минимум две цели для апгрейда');
+    const cheap = validTargets[0];
+    const expensive = validTargets[validTargets.length - 1];
+    const upgBefore = srv.bal(PLAYER);
+    const upg = await asPlayer('/api/upgrade/run', {
+      mode: 'standard', sourceType: 'tokens', amount: 100,
+      targets: [cheap.code, expensive.code], requestId: 'boost-upg-0001'
+    });
+    eq(upg.status, 200, 'апгрейд с бустом принят');
+    eq(upg.body.won, true, 'с бустом апгрейд всегда успешен');
+    eq(upg.body.target && upg.body.target.code, expensive.code, 'буст выбирает самую дорогую цель');
+    eq(srv.bal(PLAYER), upgBefore - 100, 'источник апгрейда списан ровно один раз');
+    ok(upg.body.drop && upg.body.drop.id, 'выигрышный предмет выдан с серверным id');
+    const upgInv = await asPlayer('/api/inventory', {});
+    ok(upgInv.body.items.some(x => x.id === upg.body.drop.id), 'выигрышный предмет лежит в инвентаре');
 
     // Снятие буста: список пустеет, поиск показывает 0.
     const reset = await asAdmin('/api/admin/luck/set', { userId: PLAYER, luck: 0 });
