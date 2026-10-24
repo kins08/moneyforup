@@ -61,6 +61,10 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit;transition:all .2s}
 .nav button .ni{font-size:20px;display:block;margin-bottom:3px}
 .nav button.active{background:#352026;color:#ffffff;box-shadow:inset 0 0 12px rgba(239,68,68,.25)}
+.nav button{position:relative}
+.free-chip{display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:950;letter-spacing:.07em;padding:2px 5px;border-radius:5px;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#15100a;box-shadow:0 2px 8px rgba(255,207,107,.35);line-height:1.15;vertical-align:middle}
+.free-chip[hidden]{display:none}
+.nav .nav-free{position:absolute;top:3px;left:50%;transform:translateX(10px);font-size:7.5px;padding:1.5px 4px}
 .gameTop{display:flex;align-items:center;gap:10px;margin-bottom:15px}.back{width:42px;height:42px;border-radius:14px;font-size:28px;background:var(--panel2);border:1px solid var(--line);color:#fff;cursor:pointer}
 .gameTitle{font-size:24px;font-weight:850;color:#fff}
 .control{margin-top:10px;width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,var(--cta1),var(--cta2));font-weight:850;border:0;color:var(--ctaText);cursor:pointer;font-family:inherit;font-size:14.5px;box-shadow:0 12px 26px -10px rgba(220,38,38,.8);transition:transform .12s,box-shadow .2s,filter .2s}
@@ -276,6 +280,7 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .tg-avatar-round-img{width:100%;height:100%;object-fit:cover;display:block}
 
 @media(max-width:430px){.app{padding-left:12px;padding-right:12px}.big{font-size:27px}.cards{gap:8px}.game{padding:13px;min-height:158px}.crashbox{height:320px}.jumpstage{height:300px}.dropwrap{height:250px}.wheel{width:196px;height:196px}.slot{font-size:9.5px;padding:6px 0}.xbig{font-size:29px}.betinput{width:84px}.skuf-cell{font-size:18px;border-radius:10px}}
+@media(max-width:380px){#topSupport{padding:7px 9px!important;font-size:11px!important}.top .pillbtn[data-nav="tokens"]{white-space:nowrap;padding:8px 10px}}
 
 /* Онлайн бейдж на карточках игр */
 .game{position:relative}
@@ -329,14 +334,14 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .turbo-offer-banner:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,68,68,.3)}
 
 /* Колесо Фортуны карточка на витрине */
-.wheel-featured-card{background:linear-gradient(145deg,#1d1d1d,#121212);border:1.5px solid rgba(168,85,247,.38);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s,border-color .2s;padding:15px 16px}
-.wheel-featured-card:hover{transform:translateY(-2px);border-color:rgba(168,85,247,.65)}
+.wheel-featured-card{background:linear-gradient(145deg,#1a1211,#0b0b0b);border:1.5px solid rgba(255,207,107,.34);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s,border-color .2s;padding:15px 16px}
+.wheel-featured-card:hover{transform:translateY(-2px);border-color:rgba(255,207,107,.62)}
 .wfc-body{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.wfc-badge{display:inline-block;font-size:10px;font-weight:800;color:#c084fc;background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);padding:3px 8px;border-radius:8px;margin-bottom:6px}
+.wfc-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:#ffcf6b;background:rgba(255,207,107,.1);border:1px solid rgba(255,207,107,.34);padding:3px 8px;border-radius:8px;margin-bottom:6px}
 .wfc-title{font-size:17px;font-weight:850;color:#fff;margin-bottom:4px}
 .wfc-desc{font-size:11.5px;color:var(--muted);line-height:1.4}
 .wfc-right{text-align:center;flex-shrink:0}
-.wfc-wheel-icon{font-size:38px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 10px rgba(168,85,247,.5))}
+.wfc-wheel-icon{font-size:38px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 10px rgba(239,68,68,.5))}
 .wfc-status{font-size:10.5px;font-weight:850;color:#3ddc96;background:rgba(61,220,150,.15);border:1px solid rgba(61,220,150,.35);padding:3px 8px;border-radius:8px}
 .wfc-status.wait{color:#ffcf6b;background:rgba(255,207,107,.15);border-color:rgba(255,207,107,.35)}
 
@@ -915,6 +920,60 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-promo .cp-b small{display:block;font-size:9.5px;color:#b8c1d4;margin-top:2px;line-height:1.35}
 .casehub-promo button{border:0;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:10px;font-weight:900;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;cursor:pointer;white-space:nowrap}
 .casehub-promo button:disabled{opacity:.5;cursor:default}
+/* FREE-кейсы: три карточки над каталогом */
+.free-cases-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 8px}
+.free-cases-head b{font-size:12px;font-weight:950;letter-spacing:.08em;color:#fff}
+.free-cases-head span{font-size:9.5px;color:#9aa3b8}
+.free-cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:13px}
+.free-case{position:relative;display:block;padding:0;border-radius:16px;overflow:hidden;background:#0c0c0c;border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;cursor:pointer;min-width:0;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.free-case:active{transform:scale(.978)}
+.free-case.is-ready{border-color:rgba(255,207,107,.55);box-shadow:0 8px 24px -12px rgba(255,207,107,.55)}
+.free-case.is-claimed{opacity:.55}
+.free-case__cover{position:relative;display:block;width:100%;aspect-ratio:3/4;overflow:hidden;background:radial-gradient(circle at 50% 38%,#241a12,#080808 72%)}
+.free-case__cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.free-case__cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 38%,rgba(8,8,8,.82) 100%);pointer-events:none}
+.free-case__free{position:absolute;top:6px;left:6px;z-index:3}
+.free-case__lock{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:rgba(0,0,0,.42);font-size:23px;color:#ffcf6b;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.free-case__body{position:relative;display:block;z-index:2;padding:7px 8px 9px}
+.free-case__name{display:block;font-size:10.5px;font-weight:950;line-height:1.2;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.free-case__status{display:block;font-size:9px;color:#ffcf6b;font-weight:800;margin-top:3px;line-height:1.25;min-height:23px}
+.free-case__bar{display:block;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}
+.free-case__bar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#f59e0b);border-radius:99px}
+.free-case__done{position:absolute;right:6px;bottom:6px;font-size:8px;font-weight:950;color:#0b0b0b;background:#3ddc96;border-radius:5px;padding:2px 5px;z-index:4}
+/* Модалка открытия FREE-кейса */
+.free-modal{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.74);backdrop-filter:blur(7px);animation:fcmIn .18s ease}
+.free-modal[hidden]{display:none}
+@keyframes fcmIn{from{opacity:0}to{opacity:1}}
+.fcm-box{position:relative;width:min(410px,100%);max-height:92vh;overflow:auto;background:linear-gradient(160deg,#151010,#080808);border:1px solid rgba(255,207,107,.34);border-radius:22px;padding:16px 15px 15px;box-shadow:0 26px 90px rgba(0,0,0,.8)}
+.fcm-close{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#cfd6e6;font-size:14px;line-height:1;cursor:pointer;z-index:2}
+.fcm-close:disabled{opacity:.35;cursor:default}
+.fcm-badge{display:inline-flex;font-size:9px;font-weight:950;letter-spacing:.1em;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#101010;border-radius:6px;padding:3px 8px;margin-bottom:8px}
+.fcm-title{font-size:17px;font-weight:950;color:#fff;line-height:1.2;padding-right:24px}
+.fcm-sub{font-size:10.5px;color:#9aa3b8;line-height:1.45;margin-top:4px}
+.fcm-roulette{position:relative;overflow:hidden;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:#0a0a0a;padding:10px 0;margin:13px 0}
+.fcm-roulette:before,.fcm-roulette:after{content:'';position:absolute;top:0;bottom:0;width:28px;z-index:2;pointer-events:none}
+.fcm-roulette:before{left:0;background:linear-gradient(90deg,#0a0a0a,transparent)}
+.fcm-roulette:after{right:0;background:linear-gradient(270deg,#0a0a0a,transparent)}
+.fcm-pointer{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #ffcf6b;z-index:3;filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))}
+.fcm-strip{display:flex;gap:8px;will-change:transform;padding:5px 0}
+.fcm-card{flex:0 0 84px;border-radius:12px;padding:9px 5px;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.1);min-width:0}
+.fcm-card.is-win{border-color:#ffcf6b;box-shadow:0 0 0 2px rgba(255,207,107,.75),0 0 26px rgba(255,207,107,.45)}
+.fcm-card .fci{font-size:25px;line-height:1.1}
+.fcm-card .fcn{font-size:9px;font-weight:800;color:#fff;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fcm-card .fcv{font-size:9.5px;color:#ffcf6b;font-weight:900;margin-top:2px}
+.fcm-open{width:100%;margin:0;border:0;border-radius:12px;padding:13px;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;font-family:inherit;font-size:13px;font-weight:950;cursor:pointer;box-shadow:0 8px 22px -10px rgba(255,207,107,.7)}
+.fcm-open:disabled{opacity:.55;cursor:default}
+.fcm-open.ghost{background:rgba(255,255,255,.05);color:#ffcf6b;border:1px solid rgba(255,207,107,.45);box-shadow:none}
+.fcm-progress{margin-top:10px}
+.fcm-progress .fcm-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.fcm-progress .fcm-bar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#3ddc96)}
+.fcm-progress small{display:flex;justify-content:space-between;font-size:9.5px;color:#9aa3b8;margin-top:4px}
+.fcm-result{display:none;text-align:center;padding:11px 10px;border-radius:12px;margin-top:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.fcm-result.show{display:block}
+.fcm-result b{display:block;font-size:13px;color:#fff;line-height:1.3}
+.fcm-result span{display:block;font-size:17px;font-weight:950;color:#ffcf6b;margin-top:3px}
+.fcm-result small{display:block;font-size:9.5px;color:#9aa3b8;margin-top:4px;line-height:1.35}
+@media (max-width:380px){.free-cases{gap:6px}.free-case__name{font-size:9.5px}.free-case__status{font-size:8px}.fcm-card{flex-basis:76px}}
 .casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
 .casehub-warmup{margin-top:10px}
@@ -1054,50 +1113,34 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .pm-stage.lost{border-color:rgba(239,68,68,.4)}
 .mfu-chart-wrap{position:relative;margin:8px auto 2px;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.32);border:1px solid rgba(148,163,184,.10);max-width:560px}
 .mfu-chart{width:100%;height:auto;display:block;aspect-ratio:360/200}
-/* Лента прокрутки апгрейда: одна полоса, указатель по центру, цвет = результат сервера. */
-.upg-frame{position:relative;overflow:hidden;height:118px;border-radius:15px;background:var(--panel2);border:1px solid var(--line);margin:6px 0 10px;transition:border-color var(--mfu-t-base) ease,box-shadow var(--mfu-t-base) ease}
-.upg-frame.spin-win{border-color:rgba(61,220,150,.7);box-shadow:0 0 0 1px rgba(61,220,150,.25) inset}
-.upg-frame.spin-lose{border-color:rgba(255,115,134,.7);box-shadow:0 0 0 1px rgba(255,115,134,.25) inset}
-.upg-pointer-line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffcf6b;z-index:2;pointer-events:none;box-shadow:0 0 10px rgba(255,207,107,.75)}
-.upg-pointer-line::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#ffcf6b;box-shadow:0 0 14px rgba(255,207,107,.9);animation:upgPointer 1.6s ease-in-out infinite}
-@keyframes upgPointer{0%,100%{transform:scale(.8);opacity:.7}50%{transform:scale(1.15);opacity:1}}
-.upg-strip{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;will-change:transform}
-.upg-strip.spin-wait{animation:upgWait .45s linear infinite}
-@keyframes upgWait{from{transform:translateX(0)}to{transform:translateX(-92px)}}
-.upg-cell{flex:0 0 92px;width:92px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(255,255,255,.05);padding:6px;box-sizing:border-box;text-align:center}
-.upg-cell span{font-size:26px;line-height:1}
-.upg-cell small{font-size:11px;color:var(--muted);line-height:1.2;max-height:24px;overflow:hidden}
-.upg-cell.win{background:rgba(61,220,150,.12)}
-.upg-cell.win small{color:#8ff0c4;font-weight:800}
-.upg-cell.lose{background:rgba(255,115,134,.12)}
-.upg-cell.lose small{color:#ffb3bf;font-weight:800}
-@media (prefers-reduced-motion: reduce){ .upg-strip,.upg-strip.spin-wait{animation:none!important;transition:none!important} }
-@media (max-width:380px){ .upg-frame{height:104px} .upg-cell{flex-basis:80px;width:80px} }
 .upg-head{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
-/* Круговой индикатор шанса апгрейдера */
-.upg-wheel-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin:2px auto 9px;width:100%;text-align:center}
-.upg-wheel{position:relative;width:min(210px,56vw);aspect-ratio:1/1;display:grid;place-items:center;filter:drop-shadow(0 0 26px rgba(239,68,68,.14))}
+/* Круговой индикатор шанса: дуга = шанс, стрелка бежит по кольцу. */
+.upg-wheel-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:2px auto 10px;width:100%;text-align:center}
+.upg-wheel{position:relative;width:min(228px,60vw);aspect-ratio:1/1;display:grid;place-items:center;filter:drop-shadow(0 10px 30px rgba(0,0,0,.55))}
 .upg-wheel__svg{width:100%;height:100%;overflow:visible}
-.upg-wheel__track{fill:none;stroke:rgba(255,255,255,.10);stroke-width:17}
-.upg-wheel__track-inner{fill:none;stroke:rgba(255,255,255,.09);stroke-width:15}
-.upg-wheel__arc{fill:none;stroke:url(#upgWheelGrad);stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .25s ease;filter:url(#upgWheelGlow)}
-.upg-wheel__ticks line{stroke:rgba(255,255,255,.2);stroke-width:2;stroke-linecap:round}
-.upg-wheel__ticks line.cap{stroke:rgba(255,207,107,.5)}
-.upg-wheel__start{fill:#ffcf6b;filter:drop-shadow(0 0 7px rgba(255,207,107,.95))}
-.upg-wheel__spinner{fill:none;stroke:rgba(255,207,107,.6);stroke-width:2.5;stroke-dasharray:2 13;opacity:.2;transform-box:fill-box;transform-origin:center;transition:opacity .2s ease,stroke .2s ease}
-.upg-wheel__spinner--alt{stroke:rgba(239,68,68,.55);stroke-dasharray:1 20;stroke-width:2;opacity:.14}
-.upg-wheel.is-spinning .upg-wheel__spinner{opacity:.95;stroke:rgba(255,207,107,.9);animation:upgWheelSpin 1.1s linear infinite}
-.upg-wheel.is-spinning .upg-wheel__spinner--alt{opacity:.8;animation:upgWheelSpinRev 1.7s linear infinite}
-.upg-wheel__center{position:absolute;inset:20%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1111,#080808 72%);border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 22px rgba(0,0,0,.45);transition:box-shadow .25s ease,border-color .25s ease}
-.upg-wheel__src{font-size:14px;line-height:1;opacity:.75;filter:grayscale(.1)}
-.upg-wheel__target{font-size:33px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
-.upg-wheel__pct{font-size:18px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
-.upg-wheel__hint{font-size:8.5px;text-transform:uppercase;letter-spacing:.16em;color:#8b94ab;font-weight:800}
-.upg-wheel__pointer{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid #ffcf6b;filter:drop-shadow(0 0 7px rgba(255,207,107,.8))}
-.upg-wheel.is-win .upg-wheel__arc{stroke:#3ddc96;filter:drop-shadow(0 0 10px rgba(61,220,150,.55))}
-.upg-wheel.is-lose .upg-wheel__arc{stroke:#ef4444;filter:drop-shadow(0 0 10px rgba(239,68,68,.55))}
-.upg-wheel.is-win .upg-wheel__center{border-color:rgba(61,220,150,.35);box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 26px rgba(61,220,150,.18)}
-.upg-wheel.is-lose .upg-wheel__center{border-color:rgba(239,68,68,.4);box-shadow:inset 0 0 34px rgba(0,0,0,.85),0 0 26px rgba(239,68,68,.18)}
+.upg-wheel__track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:16}
+.upg-wheel__track-inner{fill:none;stroke:rgba(255,255,255,.045);stroke-width:2}
+.upg-wheel__arc{fill:none;stroke:url(#upgWheelGrad);stroke-width:13;stroke-linecap:round;filter:url(#upgWheelGlow);transform-box:view-box;transform-origin:110px 110px;transition:stroke-dashoffset .95s cubic-bezier(.22,.8,.22,1),transform .95s cubic-bezier(.22,.8,.22,1),stroke .3s ease}
+.upg-wheel__ticks line{stroke:rgba(255,255,255,.17);stroke-width:2;stroke-linecap:round}
+.upg-wheel__ticks line.cap{stroke:rgba(255,207,107,.42)}
+.upg-wheel__spinner{fill:none;stroke:rgba(255,207,107,.5);stroke-width:2;stroke-dasharray:1 15;opacity:.16;transform-box:fill-box;transform-origin:center;transition:opacity .2s ease,stroke .2s ease}
+.upg-wheel__spinner--alt{stroke:rgba(239,68,68,.45);stroke-dasharray:1 23;stroke-width:1.6;opacity:.1}
+.upg-wheel.is-spinning .upg-wheel__spinner{opacity:.7;stroke:rgba(255,207,107,.75);animation:upgWheelSpin 2.2s linear infinite}
+.upg-wheel.is-spinning .upg-wheel__spinner--alt{opacity:.5;animation:upgWheelSpinRev 3.4s linear infinite}
+.upg-wheel__arrow{pointer-events:none;will-change:transform}
+.upg-wheel__arrow path{fill:url(#upgArrowGrad);stroke:rgba(255,255,255,.55);stroke-width:1;filter:drop-shadow(0 0 8px rgba(255,207,107,.85))}
+.upg-wheel.is-spinning .upg-wheel__arrow path{filter:drop-shadow(0 0 14px rgba(255,207,107,1))}
+.upg-wheel__center{position:absolute;inset:23%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1411,#080808 74%);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 38px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.5);transition:box-shadow .25s ease,border-color .25s ease}
+.upg-wheel__src{font-size:13px;line-height:1;opacity:.72;filter:grayscale(.1)}
+.upg-wheel__target{font-size:35px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
+.upg-wheel__pct{font-size:19px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
+.upg-wheel__hint{font-size:8px;text-transform:uppercase;letter-spacing:.17em;color:#8b94ab;font-weight:800}
+.upg-wheel.is-win .upg-wheel__arc{stroke:#3ddc96;filter:drop-shadow(0 0 12px rgba(61,220,150,.65))}
+.upg-wheel.is-lose .upg-wheel__arc{stroke:#ef4444;filter:drop-shadow(0 0 12px rgba(239,68,68,.65))}
+.upg-wheel.is-win .upg-wheel__arrow path{fill:#3ddc96;stroke:#c9ffe7;filter:drop-shadow(0 0 14px rgba(61,220,150,.85))}
+.upg-wheel.is-lose .upg-wheel__arrow path{fill:#ef4444;stroke:#ffd0d0;filter:drop-shadow(0 0 14px rgba(239,68,68,.8))}
+.upg-wheel.is-win .upg-wheel__center{border-color:rgba(61,220,150,.4);box-shadow:inset 0 0 38px rgba(0,0,0,.9),0 0 30px rgba(61,220,150,.22)}
+.upg-wheel.is-lose .upg-wheel__center{border-color:rgba(239,68,68,.45);box-shadow:inset 0 0 38px rgba(0,0,0,.9),0 0 30px rgba(239,68,68,.2)}
 .upg-wheel__cap{font-size:10px;color:#8b94ab}
 .upg-wheel__cap b{color:#ffcf6b}
 @keyframes upgWheelSpin{to{transform:rotate(360deg)}}
@@ -1218,95 +1261,29 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 
 <!-- ======== ИГРЫ ======== -->
 <section class="screen active" id="games">
-<div class="hero">
-<div class="eyebrow">Баланс</div><div class="balance js-bal">5</div>
-<div class="muted small" style="margin:-8px 0 14px">Все суммы в рублях · <b class="js-rub">5,00 ₽</b></div>
-<div class="actions"><button class="primary" data-nav="tokens">Пополнить</button><button class="secondary" data-nav="profile">Профиль</button></div>
-</div>
-
-<!-- Динамический оффер: Горячий бонус +25% на депозит (10 минут) -->
-<div class="turbo-offer-banner" id="gamesTurboOfferCard" style="background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(245,158,11,.15));border:1.5px solid rgba(239,68,68,.55);border-radius:20px;padding:13px 15px;margin-bottom:14px;cursor:pointer;box-shadow:0 8px 24px rgba(239,68,68,.25)">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
-      <div style="font-size:32px;line-height:1;animation:pulseTease .6s infinite alternate">🔥</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;font-weight:900;background:#ef4444;color:#fff;padding:2px 7px;border-radius:6px;letter-spacing:.04em">ГОРЯЧИЙ ОФФЕР</span>
-          <b style="color:#fff;font-size:13.5px">+25% НА ДЕПОЗИТ</b>
-        </div>
-        <div class="muted small" style="margin-top:3px;font-size:11.5px;color:#fca5a5">Пополни от 150 ₽ в течение 10 мин и забери +25% к пополнению или Золотой кейс!</div>
-      </div>
-    </div>
-    <div style="text-align:right;flex-shrink:0">
-      <div class="turbo-timer-span" style="font-size:15px;font-weight:900;color:#ffcf6b;font-variant-numeric:tabular-nums;letter-spacing:.03em">09:59</div>
-      <button class="pillbtn" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:6px 11px;font-size:11.5px;font-weight:850;border-radius:10px;margin-top:4px">Забрать</button>
-    </div>
-  </div>
-</div>
-
-<!-- Акция: Приглашение друзей (Реферальная программа 15% + Кейс за 5 друзей) -->
-<div class="ref-invite-banner" id="gamesRefPromoBanner" style="background:linear-gradient(135deg,rgba(168,85,247,.22),rgba(99,102,241,.14));border:1.5px solid rgba(168,85,247,.55);border-radius:20px;padding:13px 15px;margin-bottom:14px;cursor:pointer;box-shadow:0 8px 24px rgba(168,85,247,.22)">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
-      <div style="font-size:30px;line-height:1">👥</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;font-weight:900;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;padding:2px 7px;border-radius:6px;letter-spacing:.04em">РЕФЕРАЛЫ</span>
-          <b style="color:#fff;font-size:13.5px">Приглашай друзей</b>
-        </div>
-        <div class="muted small" style="margin-top:3px;font-size:11.5px;color:#e9d5ff">
-          Получай <b>15%</b> с каждого пополнения + секретный кейс за 5 друзей
-        </div>
-      </div>
-    </div>
-    <div style="text-align:right;flex-shrink:0">
-      <button class="pillbtn" id="btnGamesInviteFriends" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;border:none;padding:7px 12px;font-size:11.5px;font-weight:850;border-radius:10px">Пригласить ➔</button>
-    </div>
-  </div>
-</div>
-
-<!-- Акция: Бесплатный кейс за первый депозит от 150 ₽ -->
-<div class="item" id="promoFirstDepCard" style="display:none;margin-bottom:12px;background:linear-gradient(135deg,rgba(255,207,107,.15),rgba(255,140,0,.08));border:1px solid rgba(255,207,107,.45);border-radius:16px;padding:12px 14px;cursor:pointer">
-  <div style="display:flex;align-items:center;gap:12px">
-    <div style="font-size:32px;line-height:1">🎁</div>
-    <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:10px;font-weight:900;background:#ffcf6b;color:#111;padding:2px 6px;border-radius:6px;text-transform:uppercase">Акция</span>
-        <b style="color:#ffcf6b;font-size:13.5px" id="promoFirstDepTitle">Бесплатный кейс за первый депозит</b>
-      </div>
-      <div class="muted small" style="margin-top:3px;font-size:11.5px" id="promoFirstDepDesc">Пополните счет от 150 ₽ и получите гарантированный подарочный кейс!</div>
-    </div>
-    <button class="pillbtn" id="promoFirstDepBtn" style="background:#ffcf6b;color:#101010;font-weight:800;border:none;padding:7px 12px;font-size:12px;border-radius:10px;white-space:nowrap">Забрать</button>
-  </div>
-</div>
-
-<!-- Колесо Фортуны (Отдельный режим) -->
+<!-- Колесо Фортуны (единственный промо-блок на экране игр) -->
 <div class="wheel-featured-card" data-game="wheel" id="btnOpenWheel">
   <div class="wfc-body">
     <div class="wfc-left">
-      <div class="wfc-badge">🎁 БЕСПЛАТНЫЙ СПИН РАЗ В 12 ЧАСОВ</div>
+      <div class="wfc-badge"><span class="free-chip" id="wheelFreeChip">FREE</span> СПИН РАЗ В 12 ЧАСОВ</div>
       <div class="wfc-title">Колесо Фортуны</div>
       <div class="wfc-desc">Вращайте отдельное колесо и забирайте гарантированные призы в рублях!</div>
     </div>
     <div class="wfc-right">
-      <div class="wfc-wheel-icon">🎡</div>
+      <div class="wfc-wheel-icon" aria-hidden="true"><svg viewBox="0 0 64 64" width="46" height="46">
+        <circle cx="32" cy="32" r="24" fill="#15100c" stroke="#ffcf6b" stroke-width="4"></circle>
+        <g stroke="#ffcf6b" stroke-width="1.6" opacity=".5">
+          <path d="M32 8v48M8 32h48M15 15l34 34M49 15L15 49"></path>
+        </g>
+        <circle cx="32" cy="32" r="24" fill="none" stroke="#ef4444" stroke-width="4" stroke-dasharray="20 131" transform="rotate(-90 32 32)"></circle>
+        <path d="M32 2l5 9h-10z" fill="#ffcf6b"></path>
+        <circle cx="32" cy="32" r="6.5" fill="#ef4444"></circle>
+        <circle cx="32" cy="32" r="2.5" fill="#ffcf6b"></circle>
+      </svg></div>
       <div class="wfc-status" id="wfcStatus">ГОТОВО!</div>
     </div>
   </div>
 </div>
-
-<button class="casehub-card cases-promo" data-nav="casehub" style="--cm-accent:#ffcf6b;--cm-border:rgba(255,207,107,.45);--cm-glow:rgba(255,207,107,.28)">
-  <span class="cp-fan" aria-hidden="true">
-    <img src="assets/cases/case_500.jpg" alt="" loading="lazy" decoding="async">
-    <img src="assets/cases/cyber_rush.jpg" alt="" loading="lazy" decoding="async">
-    <img src="assets/cases/case_10000.jpg" alt="" loading="lazy" decoding="async">
-  </span>
-  <span class="cp-copy">
-    <span class="ch-name">КЕЙСЫ · 20 ШТУК</span>
-    <span class="ch-tag">15 классических + 5 новых режимов · от 25 до 3 500 ₽</span>
-  </span>
-  <span class="cp-go">→</span>
-</button>
 
 <div class="section"><b>Игры</b><span class="muted small">14 режимов</span></div>
 <div class="cards">
@@ -1725,7 +1702,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <div class="nav">
 <button data-nav="profile"><span class="ni">○</span>Профиль</button>
 <button data-nav="games" class="active"><span class="ni">◈</span>Игры</button>
-<button data-nav="casehub"><span class="ni">📦</span>Кейсы</button>
+<button data-nav="casehub"><span class="ni">📦</span>Кейсы<span class="free-chip nav-free" id="navCasesFree" hidden>FREE</span></button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 </div>
 
@@ -1913,6 +1890,10 @@ function tgApplyServer(d){
   if(typeof d.rakeback==='number')S.rakeback=d.rakeback;
   if(typeof d.freeCases==='number')S.freeCases=d.freeCases;
   if(typeof d.freeCase5RefClaimed==='number')S.freeCase5RefClaimed=d.freeCase5RefClaimed;
+  if(typeof d.freeCase3RefClaimed==='number')S.freeCase3RefClaimed=d.freeCase3RefClaimed;
+  if(typeof d.freeDailyAt==='number')S.freeDailyAt=d.freeDailyAt;
+  if(typeof d.lastWheelSpin==='number')S.lastWheelSpin=d.lastWheelSpin;
+  if(typeof d.lastHotDrop==='number')S.lastHotDrop=d.lastHotDrop;
   if(typeof d.refQualified==='number')S.refQualified=d.refQualified;
   if(typeof d.isAdmin==='boolean')S.isAdmin=d.isAdmin;
   if(d.stats && typeof d.stats === 'object')S.userStats=d.stats;
@@ -2081,7 +2062,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,freeCase5RefClaimed:0,refQualified:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,inventory:[],soundOn:true,lastBet:0,lastTrendBet:0,lastPulseBet:0,lastRacketBet1:0,lastRacketBet2:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,freeCase5RefClaimed:0,freeCase3RefClaimed:0,freeDailyAt:0,refQualified:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,lastHotDrop:0,inventory:[],soundOn:true,lastBet:0,lastTrendBet:0,lastPulseBet:0,lastRacketBet1:0,lastRacketBet2:0};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -2424,6 +2405,19 @@ function stopMyOrders() {
   if (__myOrdersTick) { clearInterval(__myOrdersTick); __myOrdersTick = null; }
 }
 
+function freeCasesReady(){
+  const now = Date.now();
+  const daily = !S.freeDailyAt || now - Number(S.freeDailyAt) >= 24*3600*1000;
+  const ref3 = !S.freeCase3RefClaimed && Number(S.refQualified||0) >= 3;
+  const ref5 = !S.freeCase5RefClaimed && Number(S.refQualified||0) >= 5;
+  return daily || ref3 || ref5 || Number(S.freeCases||0) > 0;
+}
+function updateFreeBadges(){
+  const nav = q('#navCasesFree');
+  if(nav) nav.hidden = !freeCasesReady();
+  const wheelChip = q('#wheelFreeChip');
+  if(wheelChip) wheelChip.hidden = Boolean(S.lastWheelSpin) && (Date.now() - Number(S.lastWheelSpin) < 12*3600*1000);
+}
 function syncUI(){
   const pr=tgProfile();
   const pn=q('#pname');if(pn)pn.textContent=pr.name;
@@ -2453,6 +2447,7 @@ function syncUI(){
   withdrawSync();
   if(typeof syncVipUI==='function') syncVipUI();
   if(typeof updateModesOnline==='function') updateModesOnline();
+  updateFreeBadges();
   renderProfileInventory();
   if(typeof renderUserStatsUI==='function') renderUserStatsUI();
   if(onBetChange)onBetChange();
@@ -2929,7 +2924,8 @@ function loadInventory(){
   if(!IS_TG||!API_BASE) return Promise.resolve(S.inventory||[]);
   return tgCall('/api/inventory').then(r=>{
     S.inventory=(r.items||[]).map(it=>({ id:it.id, name:it.name, icon:it.icon,
-      price:it.price, tier:it.tier, caseName:it.caseName, wonAt:it.wonAt }));
+      price:it.price, tier:it.tier, caseName:it.caseName, wonAt:it.wonAt,
+      upgrade_only:Boolean(it.upgrade_only), collectible:Boolean(it.collectible) }));
     if(typeof r.tokens==='number'){
       S.balance=r.tokens;
       try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
@@ -2945,6 +2941,10 @@ function loadInventory(){
 function sellInventoryItem(itemId){
   const item = (S.inventory||[]).find(it => String(it.id) === String(itemId));
   if(!item) return;
+  if(item.collectible){
+    showAppNotification('Коллекционный предмет нельзя продать — он остаётся в инвентаре на память.');
+    return;
+  }
   if(item.upgrade_only){
     showAppNotification('Этот скин нельзя продать — только проапгрейдить в Upgrader!');
     return;
@@ -2975,9 +2975,9 @@ function sellInventoryItem(itemId){
 }
 
 function sellAllInventory(){
-  const list = (S.inventory || []).filter(it => !it.upgrade_only);
+  const list = (S.inventory || []).filter(it => !it.upgrade_only && !it.collectible);
   if(!list.length){
-    showAppNotification('В инвентаре нет предметов для прямой продажи (скин за 5 друзей можно только проапгрейдить!)');
+    showAppNotification('В инвентаре нет предметов для продажи — коллекционные и акционные вещи не продаются.');
     return;
   }
   const totalVal = list.reduce((sum, it) => sum + (it.price || 0), 0);
@@ -2985,7 +2985,7 @@ function sellAllInventory(){
   if(!IS_TG||!API_BASE){        // демо-режим
     if(confirm(`Продать все доступные ${list.length} предметов за +${fmtRub(totalVal)}?`)){
       S.balance += totalVal;
-      S.inventory = (S.inventory || []).filter(it => it.upgrade_only);
+      S.inventory = (S.inventory || []).filter(it => it.upgrade_only || it.collectible);
       save(); syncUI(); tgHaptic('win');
     }
     return;
@@ -2997,7 +2997,7 @@ function sellAllInventory(){
       S.balance=r.tokens;
       try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
     }
-    S.inventory=(S.inventory||[]).filter(it => it.upgrade_only);
+    S.inventory=(S.inventory||[]).filter(it => it.upgrade_only || it.collectible);
     save(); syncUI(); tgHaptic('win');
     showAppNotification(`Продано ${r.count} предмет(ов) · +${fmt(r.total)} ₽`);
   }).catch(err=>{
@@ -3010,8 +3010,8 @@ function openItemDetailModal(it){
   const existing = q('.inv-modal-wrap');
   if(existing) existing.remove();
 
-  const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
-  const tierName = it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий');
+  const col = it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff');
+  const tierName = it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий'));
   const rubVal = fmtRub(it.price);
   const modal = document.createElement('div');
   modal.className = 'inv-modal-wrap';
@@ -3034,6 +3034,13 @@ function openItemDetailModal(it){
       </div>
     </div>
 
+    ${it.collectible ? `
+      <div style="background:linear-gradient(135deg,rgba(255,207,107,.1),rgba(245,158,11,.04));border:1px solid rgba(255,207,107,.35);border-radius:14px;padding:14px 12px;margin-bottom:6px;text-align:center">
+        <div style="font-size:22px;margin-bottom:6px">🔒</div>
+        <div style="font-size:12.5px;font-weight:900;color:#ffcf6b;margin-bottom:4px">Коллекционный предмет</div>
+        <div style="font-size:11px;color:#b8c1d4;line-height:1.45">Хранится в инвентаре на память. Его нельзя продать, вывести, обменять или улучшить.</div>
+      </div>
+    ` : `
     <div style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(217,119,6,.06));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:10px 12px;margin-bottom:18px;text-align:left">
       <div style="font-size:11.5px;font-weight:800;color:#ffcf6b;margin-bottom:6px">⚡ В Апгрейдере этот предмет можно умножить:</div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#d1d5db;margin-bottom:3px">
@@ -3064,6 +3071,7 @@ function openItemDetailModal(it){
         </button>
       `}
     </div>
+    `}
   </div>`;
 
   document.body.appendChild(modal);
@@ -3093,7 +3101,7 @@ function renderProfileInventory(){
   if(!grid) return;
   S.inventory = S.inventory || [];
 
-  const sellable = S.inventory.filter(it => !it.upgrade_only);
+  const sellable = S.inventory.filter(it => !it.upgrade_only && !it.collectible);
   const totalVal = sellable.reduce((sum, it) => sum + (it.price || 0), 0);
   if(countEl){
     countEl.textContent = `${S.inventory.length} шт. (к продаже: ${fmtRub(totalVal)})`;
@@ -3115,18 +3123,20 @@ function renderProfileInventory(){
   }
 
   grid.innerHTML = S.inventory.map(it => {
-    const col = (typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff';
-    const tierName = it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий');
+    const col = it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff');
+    const tierName = it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий'));
     return `
-    <div class="inv-card" style="--inv-tier-col:${it.upgrade_only ? '#f59e0b' : col}" data-card-id="${it.id}">
-      <span class="inv-tier-tag" style="${it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : ''}">${tierName}</span>
+    <div class="inv-card" style="--inv-tier-col:${it.collectible ? '#ffcf6b' : (it.upgrade_only ? '#f59e0b' : col)}" data-card-id="${it.id}">
+      <span class="inv-tier-tag" style="${it.collectible ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : '')}">${tierName}</span>
       <div class="inv-icon-aura">
         <div class="inv-icon">${it.icon || '📦'}</div>
       </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
       <div class="inv-val">${fmtRub(it.price)}</div>
       <div class="inv-acts">
-        ${it.upgrade_only ? `
+        ${it.collectible ? `
+          <div style="grid-column:1/-1;text-align:center;font-size:10px;font-weight:800;color:#ffcf6b;border:1px solid rgba(255,207,107,.28);border-radius:9px;padding:7px 4px;background:rgba(255,207,107,.07)">🔒 НЕ ПРОДАЁТСЯ</div>
+        ` : it.upgrade_only ? `
           <button class="inv-btn-up" data-up-id="${it.id}" style="grid-column:1/-1;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:900" title="Только апгрейд">⚡ В АПГРЕЙДЕР</button>
         ` : `
           <button class="inv-btn-sell" data-sell-id="${it.id}" title="Продать за ${fmtRub(it.price)}">💰 +${fmt(it.price)} ₽</button>
@@ -10764,9 +10774,9 @@ function gameCaseHubUnified(sel){
   let statusText = '';
   let lastDrop = null;
   let catalogError = '';
-  let fiveRef = null;
   let freeBusy = false;
   let warmupBusy = false;
+  let wasDailyReady = null;
 
   function clearTimers(){
     timeouts.forEach(t=>clearTimeout(t));
@@ -10797,6 +10807,225 @@ function gameCaseHubUnified(sel){
     </div>`;
   }
 
+  /* ── FREE-кейсы ────────────────────────────────────────────────────────── */
+  const FREE_DAILY_MS = 24*3600*1000;
+  function freeMeta(){
+    const now=Date.now();
+    const dailyLeft=Math.max(0, Number(S.freeDailyAt||0)+FREE_DAILY_MS-now);
+    const q=Number(S.refQualified||0);
+    return {
+      daily:{ready: !S.freeDailyAt || dailyLeft<=0, leftMs:dailyLeft},
+      ref3:{claimed:Boolean(S.freeCase3RefClaimed), qualified:q, needed:3, canClaim:!S.freeCase3RefClaimed && q>=3},
+      ref5:{claimed:Boolean(S.freeCase5RefClaimed), qualified:q, needed:5, canClaim:!S.freeCase5RefClaimed && q>=5}
+    };
+  }
+  function freeCasesHtml(){
+    const fm=freeMeta();
+    const card=(kind,cover,name,status,opt)=>{
+      opt=opt||{};
+      const lock=Boolean(opt.lock)&&!opt.claimed;
+      return `<button class="free-case${opt.ready?' is-ready':''}${opt.claimed?' is-claimed':''}" data-free="${kind}" aria-label="${esc(name)}">
+        <span class="free-case__cover">
+          <img src="${cover}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <span class="free-case__free free-chip">FREE</span>
+          ${lock?'<span class="free-case__lock">🔒</span>':''}
+        </span>
+        <span class="free-case__body">
+          <span class="free-case__name">${esc(name)}</span>
+          <span class="free-case__status">${status}</span>
+          ${opt.progress!=null?`<span class="free-case__bar"><i style="width:${Math.round(Math.min(1,opt.progress)*100)}%"></i></span>`:''}
+          ${opt.claimed?'<span class="free-case__done">ПОЛУЧЕНО</span>':''}
+        </span>
+      </button>`;
+    };
+    const d=fm.daily, r3=fm.ref3, r5=fm.ref5;
+    const dStatus=d.ready?'<b style="color:#3ddc96">ГОТОВ · 1–6 ₽</b>':`через ${fmtHms(d.leftMs)}`;
+    const r3Status=r3.claimed?'Предмет в коллекции':(r3.canClaim?'<b style="color:#3ddc96">ГОТОВ · открыть</b>':`${r3.qualified} из 3 друзей`);
+    const r5Status=r5.claimed?'Предмет в коллекции':(r5.canClaim?'<b style="color:#3ddc96">ГОТОВ · открыть</b>':`${r5.qualified} из 5 друзей`);
+    return `<div class="free-cases-head"><b>FREE</b><span>бесплатно · без депозита</span></div>
+      <div class="free-cases">
+        ${card('daily','assets/cases/free_daily.jpg','Ежедневный',dStatus,{ready:d.ready})}
+        ${card('ref3','assets/cases/free_squad3.jpg','За 3 друзей',r3Status,{ready:r3.canClaim,claimed:r3.claimed,lock:!r3.canClaim,progress:r3.qualified/3})}
+        ${card('ref5','assets/cases/free_squad5.jpg','За 5 друзей',r5Status,{ready:r5.canClaim,claimed:r5.claimed,lock:!r5.canClaim,progress:r5.qualified/5})}
+      </div>`;
+  }
+
+  let freeModal=null;
+  function closeFreeModal(){
+    if(freeModal){ freeModal.remove(); freeModal=null; }
+  }
+  function freeCardLabel(icon,name,val){
+    return `<div class="fci">${icon||'📦'}</div><div class="fcn">${esc(name||'')}</div><div class="fcv">${val||''}</div>`;
+  }
+  function freePool(kind,winner){
+    if(kind==='daily'){
+      return [1,2,3,4,5,6].map(n=>({icon:'💸',name:`+${n} ₽`,val:`${n} ₽`}));
+    }
+    if(kind==='ref3') return [
+      {icon:'🔫',name:'AK-47 | Crimson',val:'170 ₽'},
+      {icon:'🎖️',name:'Squad Badge',val:'КОЛЛЕКЦИЯ'},
+      {icon:'🧿',name:'Charm | Red',val:'КОЛЛЕКЦИЯ'},
+      {icon:'🪙',name:'Gold Token',val:'КОЛЛЕКЦИЯ'}
+    ];
+    return [
+      {icon:'🎯',name:'AWP | Gold',val:'240 ₽'},
+      {icon:'🗡️',name:'Night Dagger',val:'КОЛЛЕКЦИЯ'},
+      {icon:'🥇',name:'Gold Medal',val:'КОЛЛЕКЦИЯ'},
+      {icon:'🪙',name:'Gold Token',val:'КОЛЛЕКЦИЯ'}
+    ];
+  }
+  function openFreeModal(kind){
+    closeFreeModal();
+    const fm=freeMeta();
+    const isDaily=kind==='daily';
+    const ref=fm[kind];
+    const meta=isDaily
+      ? {title:'Ежедневный FREE-кейс', sub:'Раз в 24 часа · приз от 1 до 6 ₽ сразу на баланс', ready:fm.daily.ready, claimed:false}
+      : {title:kind==='ref3'?'FREE-кейс за 3 друзей':'FREE-кейс за 5 друзей', sub:kind==='ref3'?'Одноразовый коллекционный предмет за 3 активных друга':'Одноразовый коллекционный предмет за 5 активных друзей', ready:ref.canClaim, claimed:ref.claimed};
+    const need=isDaily?0:ref.needed;
+    const q=isDaily?0:ref.qualified;
+    const pool=freePool(kind);
+    const previewCards=Array.from({length:16},(_,i)=>pool[i%pool.length]);
+    let status='';
+    if(meta.claimed) status='Этот кейс уже открыт. Второй раз его получить нельзя.';
+    else if(!meta.ready && !isDaily) status=`Доступно после ${need} активных друзей: ${q}/${need}.`;
+    else if(!meta.ready) status='Кейс перезаряжается. Загляните позже.';
+    const actionLabel=meta.claimed?'ЗАКРЫТЬ':(!meta.ready&&!isDaily?'ПРИГЛАСИТЬ ДРУЗЕЙ':'ОТКРЫТЬ БЕСПЛАТНО');
+    const modal=document.createElement('div');
+    modal.className='free-modal';
+    modal.innerHTML=`<div class="fcm-box" role="dialog" aria-modal="true" aria-label="${esc(meta.title)}">
+      <button class="fcm-close" id="fcmClose" aria-label="Закрыть">✕</button>
+      <div class="fcm-badge">FREE</div>
+      <div class="fcm-title">${esc(meta.title)}</div>
+      <div class="fcm-sub">${esc(meta.sub)}</div>
+      <div class="fcm-roulette">
+        <div class="fcm-pointer"></div>
+        <div class="fcm-strip" id="fcmStrip">${previewCards.map(c=>`<div class="fcm-card">${freeCardLabel(c.icon,c.name,c.val)}</div>`).join('')}</div>
+      </div>
+      <div class="fcm-progress">
+        <div class="fcm-bar"><i style="width:${isDaily?(fm.daily.ready?100:0):Math.round(Math.min(1,q/need)*100)}%"></i></div>
+        <small><span>${isDaily?'Обновление раз в 24 часа':`Активных друзей: ${q}/${need}`}</span><span>${isDaily?'1–6 ₽':(kind==='ref3'?'170 ₽':'240 ₽')}</span></small>
+      </div>
+      <div class="fcm-result" id="fcmResult"></div>
+      <div class="fcm-status small" id="fcmStatus" style="margin:8px 2px 0;color:#fca5a5;min-height:14px;font-size:10px">${esc(status)}</div>
+      <button class="fcm-open${meta.ready?'':' ghost'}" id="fcmOpen" style="margin-top:10px" ${meta.claimed?'disabled':''}>${actionLabel}</button>
+    </div>`;
+    document.body.appendChild(modal);
+    freeModal=modal;
+    const closeBtn=modal.querySelector('#fcmClose');
+    const action=modal.querySelector('#fcmOpen');
+    if(closeBtn) closeBtn.onclick=closeFreeModal;
+    modal.onclick=(e)=>{ if(e.target===modal) closeFreeModal(); };
+
+    if(meta.claimed){
+      if(action) action.onclick=closeFreeModal;
+      return;
+    }
+    if(!meta.ready){
+      if(action) action.onclick=()=>{
+        const link=refLinkFor(ensureRefCode());
+        const shareUrl='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Заходи в MoneyForUp — забери бесплатные кейсы и крути вместе со мной!');
+        try{
+          if(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.openTelegramLink) window.Telegram.WebApp.openTelegramLink(shareUrl);
+          else window.open(shareUrl,'_blank','noopener');
+        }catch(_){}
+        closeFreeModal();
+      };
+      return;
+    }
+    if(action) action.onclick=()=>startFreeSpin(kind,modal);
+  }
+  async function startFreeSpin(kind,modal){
+    if(freeBusy) return;
+    freeBusy=true;
+    const action=modal.querySelector('#fcmOpen');
+    const statusEl=modal.querySelector('#fcmStatus');
+    const closeBtn=modal.querySelector('#fcmClose');
+    const resultEl=modal.querySelector('#fcmResult');
+    if(action){ action.disabled=true; action.textContent='КРУТИМ…'; }
+    if(closeBtn) closeBtn.disabled=true;
+    if(statusEl) statusEl.textContent='';
+    if(resultEl) resultEl.className='fcm-result';
+
+    let res=null, err=null;
+    try{
+      if(IS_TG && API_BASE){
+        res = kind==='daily'
+          ? await tgCall('/api/free-case/daily',{})
+          : await tgCall('/api/free-case/ref',{level:kind==='ref5'?5:3});
+      } else {
+        if(kind==='daily'){
+          const n=1+Math.floor(Math.random()*6);
+          res={ok:true,prize:n*10,prizeRub:n,tokens:(S.balance||0)+n*10,drop:{name:`+${n} ₽`,icon:'💸',price:n*10,cash:true}};
+        } else {
+          const price=kind==='ref3'?1700:2400;
+          const name=kind==='ref3'?'AK-47 | Crimson Circuit':'AWP | Blackout Gold';
+          res={ok:true,drop:{id:'free_'+Date.now(),name,icon:kind==='ref3'?'🔫':'🎯',price,collectible:true,caseName:'FREE'}};
+        }
+      }
+    }catch(e){ err=e; }
+    if(!res||!res.ok){
+      freeBusy=false;
+      if(action){ action.disabled=false; action.textContent='ОТКРЫТЬ БЕСПЛАТНО'; }
+      if(closeBtn) closeBtn.disabled=false;
+      if(statusEl) statusEl.textContent=(err&&err.message)||(res&&res.error)||'Не удалось открыть кейс. Попробуйте ещё раз.';
+      return;
+    }
+    const drop=res.drop||{};
+    const isCash=Boolean(drop.cash)||kind==='daily';
+    const winCard=isCash
+      ? {icon:'💸',name:(drop.name||`+${res.prizeRub||1} ₽`),val:`${res.prizeRub||Math.round((res.prize||10)/10)} ₽`}
+      : {icon:drop.icon||'🗡️',name:drop.name||'Коллекционный предмет',val:fmt(drop.price||0)+' ₽'};
+    const strip=modal.querySelector('#fcmStrip');
+    if(strip){
+      const basePool=freePool(kind).filter(c=>c.name!==winCard.name);
+      const cards=Array.from({length:52},(_,i)=>i===40?winCard:(basePool[i%basePool.length]||winCard));
+      strip.innerHTML=cards.map(c=>`<div class="fcm-card">${freeCardLabel(c.icon,c.name,c.val)}</div>`).join('');
+      strip.style.transition='none'; strip.style.transform='translateX(0px)';
+      const winnerEl=strip.children[40];
+      const box=modal.querySelector('.fcm-roulette');
+      const left=winnerEl?winnerEl.offsetLeft:40*92;
+      const width=winnerEl?(winnerEl.offsetWidth||84):84;
+      const boxW=box?box.clientWidth:320;
+      const targetX=Math.round(left+width/2-boxW/2);
+      void strip.offsetWidth;
+      requestAnimationFrame(()=>{
+        strip.style.transition='transform 4.15s cubic-bezier(.08,.86,.1,1)';
+        strip.style.transform=`translateX(-${targetX}px)`;
+      });
+      [180,360,600,900,1280,1700,2200,2800,3400].forEach(t=>setTimeout(()=>{ if(freeModal===modal) tgHaptic('light'); },t));
+      await sleep(4250);
+      if(winnerEl) winnerEl.classList.add('is-win');
+      tgHaptic(isCash?'win':'win');
+    }
+    // Обновляем состояние только после успешного ответа сервера.
+    if(isCash){
+      if(typeof res.tokens==='number') S.balance=res.tokens;
+      S.freeDailyAt=Date.now();
+      if(res.prizeRub) showAppNotification(`🎁 FREE-кейс: +${res.prizeRub} ₽ на баланс`);
+    } else {
+      if(kind==='ref3') S.freeCase3RefClaimed=1; else S.freeCase5RefClaimed=1;
+      S.inventory=S.inventory||[];
+      if(drop.id) S.inventory.unshift(Object.assign({},drop,{wonAt:Date.now()}));
+      lastDrop=drop;
+      history.unshift({item:drop,createdAt:Date.now()});
+      if(history.length>50) history=history.slice(0,50);
+      if(typeof loadInventory==='function') loadInventory();
+    }
+    save(); syncUI();
+    freeBusy=false;
+    if(action){ action.disabled=false; action.textContent='ЗАКРЫТЬ'; action.onclick=closeFreeModal; }
+    if(closeBtn) closeBtn.disabled=false;
+    const statusText=modal.querySelector('#fcmStatus'); if(statusText) statusText.textContent='';
+    if(resultEl){
+      resultEl.className='fcm-result show';
+      resultEl.innerHTML=isCash
+        ? `<b>Приз зачислен на баланс</b><span>+${res.prizeRub||1} ₽</span><small>Следующий бесплатный кейс — через 24 часа</small>`
+        : `<b>${esc(drop.name||'Коллекционный предмет')}</b><span>${fmt(drop.price||0)} ₽</span><small>Коллекция · нельзя продать, вывести или улучшить</small>`;
+    }
+    render();
+  }
+
   function render(){
     if(dead) return;
     const m = current();
@@ -10806,30 +11035,17 @@ function gameCaseHubUnified(sel){
     }
     const hist = history.slice(0,10);
     const freeCount = Math.max(0, Number(S.freeCases || 0));
-    const fr = fiveRef || {
-      claimed: Boolean(S.freeCase5RefClaimed),
-      qualified: Number(S.refQualified || 0),
-      canClaim: !S.freeCase5RefClaimed && Number(S.refQualified || 0) >= 5
-    };
     const promos = [];
     if(freeCount > 0){
       promos.push(`<div class="casehub-promo">
         <div class="cp-ic">🎁</div>
-        <div class="cp-b"><b>Бесплатный кейс за депозит</b><small>Доступно: ${freeCount}. Откройте без списания средств.</small></div>
+        <div class="cp-b"><b>Подарочный кейс за пополнение</b><small>Доступно: ${freeCount}. Откройте без списания средств.</small></div>
         <button id="chFreeOpen" ${(freeBusy||busy)?'disabled':''}>ОТКРЫТЬ</button>
-      </div>`);
-    }
-    if(!fr.claimed){
-      promos.push(`<div class="casehub-promo" style="border-color:rgba(168,85,247,.4);background:linear-gradient(135deg,rgba(168,85,247,.13),rgba(99,102,241,.05))">
-        <div class="cp-ic">🗡️</div>
-        <div class="cp-b"><b style="color:#c4b5fd">Кейс за 5 друзей</b><small>Приглашено активных: ${fr.qualified||0}/5. Скин Cyber-Dagger идёт под апгрейд.</small></div>
-        ${(fr.canClaim||fr.qualified>=5)
-          ? `<button id="ch5RefOpen" ${(freeBusy||busy)?'disabled':''}>ЗАБРАТЬ</button>`
-          : `<span style="font-size:10px;color:#c4b5fd;font-weight:800">${fr.qualified||0}/5</span>`}
       </div>`);
     }
     const visible = visibleCases();
     a.innerHTML = `
+    ${freeCasesHtml()}
     ${promos.join('')}
     <div class="casehub-tools">
       <button data-chfilter="all" class="${filterKind==='all'?'on':''}">Все · ${catalog.length}</button>
@@ -10880,10 +11096,12 @@ function gameCaseHubUnified(sel){
         </div>
         <div class="result" id="chRes" ${statusText?'':'hidden'}>${statusText||''}</div>
         ${lastDrop?`<div class="casehub-meta" style="margin-top:8px"><span>Последний дроп: <b>${esc(lastDrop.name)}</b> · ${fmt(lastDrop.price)} ₽</span></div>
-          <div class="casehub-case-actions">
+          ${lastDrop.collectible
+            ? `<div class="casehub-meta" style="margin-top:8px"><span>🔒 Коллекционный предмет: хранится в инвентаре, нельзя продать или улучшить</span></div>`
+            : `<div class="casehub-case-actions">
             <button class="control" id="chUpgrade">⚡ В АПГРЕЙДЕР</button>
             <button class="control ghost" id="chSell">💰 ПРОДАТЬ +${fmt(lastDrop.price||0)} ₽</button>
-          </div>`:''}
+          </div>`}`:''}
       </div>
     </div>
     <div class="section"><b>Содержимое «${esc(m.name)}»</b><span class="muted small">${m.items.length} предметов</span></div>
@@ -10933,7 +11151,7 @@ function gameCaseHubUnified(sel){
     if(openBtn) openBtn.onclick=()=>openCase();
     if(repeatBtn) repeatBtn.onclick=()=>openCase();
     const freeBtn=q('#chFreeOpen',a); if(freeBtn) freeBtn.onclick=openFreeCase;
-    const refBtn=q('#ch5RefOpen',a); if(refBtn) refBtn.onclick=open5RefCase;
+    a.querySelectorAll('[data-free]').forEach(b=>b.onclick=()=>{ if(busy) return; openFreeModal(b.dataset.free); });
     const warmBtn=q('#chWarmup',a); if(warmBtn) warmBtn.onclick=openWarmup;
     const upBtn=q('#chUpgrade',a);
     if(upBtn) upBtn.onclick=()=>{
@@ -11079,35 +11297,6 @@ function gameCaseHubUnified(sel){
     animate(base||{name:'Бесплатный кейс',price:0,items:[]},drop);
   }
 
-  async function open5RefCase(){
-    if(freeBusy||busy)return;
-    freeBusy=true; render();
-    setStatus('Открываем кейс за 5 друзей…','');
-    const base=catalog.find(c=>c.id==='case_500')||current();
-    let res=null, err=null;
-    try{
-      if(IS_TG&&API_BASE) res=await tgCall('/api/5ref-case/open',{});
-      else{
-        res={ok:true,claimed:true,drop:{id:'inv_'+Date.now(),code:'ref5_cyber_dagger',name:'Cyber-Dagger | Neon Fade',icon:'🗡️',price:2400,tier:'secret',upgrade_only:true,caseName:'Кейс за 5 друзей'}};
-        S.inventory=S.inventory||[]; S.inventory.unshift(res.drop); save(); syncUI();
-      }
-    }catch(e){ err=e; }
-    freeBusy=false;
-    if(!res||!res.ok){
-      setStatus((err&&err.message)||(res&&res.error)||'Не удалось открыть кейс за 5 друзей.','bad');
-      render(); return;
-    }
-    S.freeCase5RefClaimed=1;
-    if(fiveRef) fiveRef.claimed=true;
-    save(); syncUI();
-    const drop=res.drop||{};
-    lastDrop=drop;
-    history.unshift({item:drop,createdAt:Date.now()});
-    if(typeof tgLoadBalance==='function')tgLoadBalance();
-    busy=true; render();
-    animate(base||{name:'Кейс за 5 друзей',price:0,items:[]},drop);
-  }
-
   function animate(m,drop,opts){
     opts=opts||{};
     const strip=q('#chStrip',a);
@@ -11162,11 +11351,16 @@ function gameCaseHubUnified(sel){
     },4400);
   }
 
-  async function loadFiveRef(){
-    if(!(IS_TG&&API_BASE))return;
+  async function loadFreeStatus(){
+    if(!(IS_TG && API_BASE)) return;
     try{
-      const d=await tgCall('/api/5ref-case/status',{});
-      if(d&&d.ok) fiveRef={claimed:Boolean(d.claimed),qualified:Number(d.qualified||0),canClaim:Boolean(d.canClaim)};
+      const d=await tgCall('/api/free-case/status',{});
+      if(!d||!d.ok) return;
+      S.refQualified=Number((d.ref3&&d.ref3.qualified)||S.refQualified||0);
+      S.freeCase3RefClaimed=(d.ref3&&d.ref3.claimed)?1:0;
+      S.freeCase5RefClaimed=(d.ref5&&d.ref5.claimed)?1:0;
+      S.freeDailyAt=(d.daily&&d.daily.ready)?0:Math.max(0,Number(d.daily&&d.daily.nextAt||0)-24*3600*1000);
+      save(); updateFreeBadges();
     }catch(_){}
   }
 
@@ -11182,19 +11376,33 @@ function gameCaseHubUnified(sel){
           if(typeof d.tokens==='number') setTokens(d.tokens);
           catalogError='';
         }
-        await loadFiveRef();
       }catch(e){
         catalogError='Каталог с сервера не загружен: '+((e&&e.message)||'ошибка')+'. Показаны локальные данные.';
       }
     }
+    await loadFreeStatus();
     gridMotion=true; heroMotion=true;
     render();
   }
+
+  wasDailyReady = freeMeta().daily.ready;
+  const freeTick = setInterval(()=>{
+    if(dead) return;
+    const fm=freeMeta();
+    const dEl=a.querySelector('[data-free="daily"] .free-case__status');
+    if(dEl && !fm.daily.ready) dEl.textContent='через '+fmtHms(fm.daily.leftMs);
+    if(fm.daily.ready!==wasDailyReady){
+      wasDailyReady=fm.daily.ready;
+      if(!busy&&!freeBusy) render();
+    }
+    updateFreeBadges();
+  }, 1000);
 
   render();
   load();
   return ()=>{
     dead=true; busy=false; freeBusy=false; clearTimers();
+    clearInterval(freeTick); closeFreeModal();
   };
 }
 
@@ -11573,7 +11781,6 @@ function gameUpgradeArena(){
         <button data-utab="ladder" class="${tab==='ladder'?'on':''}">Лесенка</button>
         <button data-utab="serial" class="${tab==='serial'?'on':''}">Серия</button>
       </div>
-      ${(tab==='single'||tab==='multi')?stripHtml():''}
       ${tab==='ladder'?renderLadder():tab==='serial'?renderSerial():renderTargets()}
       ${renderHistory()}
       ${notice&&tab!=='ladder'&&tab!=='serial'?'':''}
@@ -11652,24 +11859,73 @@ function gameUpgradeArena(){
     return callUpgrade('/api/upgrade/run',body);
   }
 
-  /* ── Прокрутка ленты апгрейда ─────────────────────────────────────────────
-     1) после клика лента крутится в режиме ожидания (без результата);
-     2) сервер возвращает результат;
-     3) лента останавливается на цели, которую вернул СЕРВЕР, и окрашивается
-        по его результату: зелёный = выигрыш, красный = проигрыш.
-     Анимация никогда не выбирает результат сама. */
-  const UPG_CELL_W=92, UPG_CELL_N=36, UPG_STOP_AT=30, UPG_SPIN_MS=3200;
-  let strip={cells:[],offset:0,cls:'',wait:false};
+  /* ── Стрелка по кольцу шанса ─────────────────────────────────────────────
+     Дуга заливки = шанс успеха. Стрелка бежит по кольцу, пока сервер считает
+     исход, затем плавно замедляется и останавливается. Исход и цвет кольца
+     задаёт только ответ сервера — анимация его не подменяет. */
   let wheelChance=0;
-  const UPG_WHEEL_R=86;
+  let arrowAngle=0;
+  let arrowRaf=0;
+  const UPG_WHEEL_R=88;
   const UPG_WHEEL_C=2*Math.PI*UPG_WHEEL_R;
 
-  /* Круговой индикатор: дуга заполнена ровно на выбранный шанс (не больше 70%).
-     При смене цели/суммы дуга плавно перетекает из прошлого значения, а при
-     первом выборе — раскручивается от 70% вниз, как в референсе. */
+  function setArrowAngle(deg){
+    const g=q('#upgArrow',a);
+    if(g) g.setAttribute('transform', `rotate(${Number(deg)||0} 110 110)`);
+  }
+  function stopArrowSweep(){
+    if(arrowRaf){ cancelAnimationFrame(arrowRaf); arrowRaf=0; }
+    const w=q('#upgWheel',a);
+    if(w) w.classList.remove('is-spinning');
+  }
+  function startArrowSweep(){
+    stopArrowSweep();
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce) return;
+    const w=q('#upgWheel',a);
+    if(w) w.classList.add('is-spinning');
+    let last=performance.now();
+    const step=(t)=>{
+      if(dead||!busy){ arrowRaf=0; return; }
+      const dt=Math.min(52, Math.max(0, t-last));
+      last=t;
+      arrowAngle=(arrowAngle+dt*0.42)%360;
+      setArrowAngle(arrowAngle);
+      arrowRaf=requestAnimationFrame(step);
+    };
+    arrowRaf=requestAnimationFrame(step);
+  }
+  async function settleArrow(won){
+    stopArrowSweep();
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce){ setArrowAngle(arrowAngle); return; }
+    const from=arrowAngle;
+    const target=from + 2.2*360 + 110 + Math.random()*210;
+    const dur=2600;
+    const t0=performance.now();
+    await new Promise(resolve=>{
+      const frame=(t)=>{
+        if(dead) return resolve();
+        const p=Math.min(1,(t-t0)/dur);
+        const e=1-Math.pow(1-p,4.2);
+        arrowAngle=from+(target-from)*e;
+        setArrowAngle(arrowAngle);
+        if(p<1) requestAnimationFrame(frame); else resolve();
+      };
+      requestAnimationFrame(frame);
+    });
+    arrowAngle=((target%360)+360)%360;
+    setArrowAngle(arrowAngle);
+  }
+
+  /* Дуга заполнена ровно на выбранный шанс (не больше 70%) и отцентрована
+     снизу. При смене цели/суммы плавно перетекает, при первом выборе —
+     раскручивается от 70% вниз, как в референсе. */
   function wheelHtml(){
     const chance=Math.max(0,Math.min(UPG_CHANCE_CAP,aggregateChance()||0));
-    const dashOffset=UPG_WHEEL_C*(1-chance);
+    const arcLen=UPG_WHEEL_C*chance;
+    const dashOffset=UPG_WHEEL_C-arcLen;
+    const startDeg=90-chance*180;
     const list=selectedList();
     const target=list.length===1?list[0]:null;
     const src=sourceType==='item'?(sourceItem()||{}):{icon:'🪙'};
@@ -11689,19 +11945,25 @@ function gameUpgradeArena(){
               <stop offset="50%" stop-color="#f97316"></stop>
               <stop offset="100%" stop-color="#ef4444"></stop>
             </linearGradient>
+            <linearGradient id="upgArrowGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fff7df"></stop>
+              <stop offset="45%" stop-color="#ffcf6b"></stop>
+              <stop offset="100%" stop-color="#f59e0b"></stop>
+            </linearGradient>
             <filter id="upgWheelGlow" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="3" result="b"></feGaussianBlur>
               <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
             </filter>
           </defs>
-          <circle cx="110" cy="110" r="96" class="upg-wheel__spinner"></circle>
-          <circle cx="110" cy="110" r="102" class="upg-wheel__spinner upg-wheel__spinner--alt"></circle>
+          <circle cx="110" cy="110" r="98" class="upg-wheel__spinner"></circle>
+          <circle cx="110" cy="110" r="104" class="upg-wheel__spinner upg-wheel__spinner--alt"></circle>
           <g class="upg-wheel__ticks" transform="rotate(90 110 110)">${ticks}</g>
-          <circle cx="110" cy="110" r="94" class="upg-wheel__track"></circle>
-          <circle cx="110" cy="110" r="86" class="upg-wheel__track-inner"></circle>
-          <circle cx="110" cy="110" r="${UPG_WHEEL_R}" class="upg-wheel__arc" id="upgArc" data-c="${UPG_WHEEL_C}" stroke-dasharray="${UPG_WHEEL_C}" stroke-dashoffset="${dashOffset}" transform="rotate(90 110 110)"></circle>
-          <circle cx="110" cy="196" r="4.2" class="upg-wheel__start"></circle>
-          <circle cx="110" cy="110" r="72" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"></circle>
+          <circle cx="110" cy="110" r="96" class="upg-wheel__track"></circle>
+          <circle cx="110" cy="110" r="68" class="upg-wheel__track-inner"></circle>
+          <circle cx="110" cy="110" r="${UPG_WHEEL_R}" class="upg-wheel__arc" id="upgArc" data-c="${UPG_WHEEL_C}" style="stroke-dasharray:${UPG_WHEEL_C};stroke-dashoffset:${dashOffset};transform:rotate(${startDeg}deg)"></circle>
+          <g class="upg-wheel__arrow" id="upgArrow" transform="rotate(${arrowAngle} 110 110)">
+            <path d="M110 7 L100.5 30 L110 24.5 L119.5 30 Z"></path>
+          </g>
         </svg>
         <div class="upg-wheel__center">
           <div class="upg-wheel__src">${srcIcon} →</div>
@@ -11709,9 +11971,8 @@ function gameUpgradeArena(){
           <div class="upg-wheel__pct">${(Math.round(chance*10000)/100).toFixed(2)}%</div>
           <div class="upg-wheel__hint">шанс</div>
         </div>
-        <div class="upg-wheel__pointer"></div>
       </div>
-      <div class="upg-wheel__cap">Шанс до 70% · серверный расчёт</div>
+      <div class="upg-wheel__cap">Шанс до 70% · стрелка идёт по кольцу · серверный расчёт</div>
     </div>`;
   }
 
@@ -11720,74 +11981,25 @@ function gameUpgradeArena(){
     if(!arc)return;
     const chance=Math.max(0,Math.min(UPG_CHANCE_CAP,aggregateChance()||0));
     const C=Number(arc.dataset.c)||UPG_WHEEL_C;
-    const prev=wheelChance;
-    const from=(prev===0&&chance>0)?UPG_CHANCE_CAP:prev;
+    const from=wheelChance;
     wheelChance=chance;
     if(Math.abs(from-chance)<0.0001)return;
     const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(reduce){ arc.style.strokeDashoffset=String(C*(1-chance)); return; }
-    arc.style.transition='none';
-    arc.style.strokeDashoffset=String(C*(1-from));
-    void arc.getBoundingClientRect();
-    arc.style.transition='stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1), stroke .25s ease';
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ arc.style.strokeDashoffset=String(C*(1-chance)); }));
-  }
-  function stripHtml(){
-    let cells = strip.cells;
-    let offset = strip.offset;
-    // Лента и линия видны всегда: до запуска показываем превью каталога,
-    // чтобы игрок понимал, где именно остановится апгрейд.
-    if(!cells || !cells.length){
-      const pool = (cat.targets && cat.targets.length)
-        ? cat.targets
-        : [{ code: 'x', name: '—', icon: '📦' }];
-      cells = Array.from({ length: UPG_CELL_N }, (_, i) => {
-        const t = pool[(i * 5 + 2) % pool.length];
-        return { icon: t.icon || '📦', name: t.name || '', cls: '' };
-      });
-      offset = -(UPG_STOP_AT * UPG_CELL_W);
-    }
-    const html = cells.map(c => `<div class="upg-cell ${c.cls||''}"><span>${c.icon}</span><small>${esc(c.name)}</small></div>`).join('');
-    return `<div class="upg-frame ${strip.cls}" id="upgFrame">
-      <div class="upg-pointer-line"></div>
-      <div class="upg-strip ${strip.wait?'spin-wait':''}" id="upgStrip" style="transform:translateX(${offset}px)">${html}</div>
-    </div>`;
-  }
-  function buildStrip(winCode, won, fallbackCode){
-    const pool=(cat.targets&&cat.targets.length)?cat.targets:[{code:'x',name:'—',icon:'📦',value:0}];
-    const winner=pool.find(x=>x.code===winCode)||pool.find(x=>x.code===fallbackCode)||pool[0];
-    const cells=[];
-    for(let i=0;i<UPG_CELL_N;i++){
-      if(i===UPG_STOP_AT){
-        cells.push({icon:winner.icon||'📦',name:winner.name||'',cls:won?'win':'lose'});
-      } else {
-        const t=pool[(i*7+3)%pool.length];
-        cells.push({icon:t.icon||'📦',name:t.name||'',cls:''});
-      }
-    }
-    return cells;
-  }
-  function stopOffset(){
-    const fr=q('#upgFrame',a);
-    const w=fr?fr.clientWidth:0;
-    return -(UPG_STOP_AT*UPG_CELL_W)+w/2-UPG_CELL_W/2;
-  }
-  async function animateStop(won){
-    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const target=stopOffset();
-    const st=q('#upgStrip',a), fr=q('#upgFrame',a);
-    if(!st||!fr||reduce){
-      strip.offset=target; strip.cls=won?'spin-win':'spin-lose'; strip.wait=false;
+    const fromDeg=90-from*180, toDeg=90-chance*180;
+    if(reduce){
+      arc.style.strokeDashoffset=String(C*(1-chance));
+      arc.style.transform=`rotate(${toDeg}deg)`;
       return;
     }
-    st.style.transition='none';
-    st.style.transform='translateX(0px)';
-    void st.offsetWidth;
-    st.style.transition=`transform ${UPG_SPIN_MS}ms cubic-bezier(.08,.8,.1,1)`;
-    st.style.transform=`translateX(${target}px)`;
-    await sleepLocal(UPG_SPIN_MS+80);
-    strip.offset=target; strip.cls=won?'spin-win':'spin-lose'; strip.wait=false;
-    const fr2=q('#upgFrame',a); if(fr2) fr2.classList.add(won?'spin-win':'spin-lose');
+    arc.style.transition='none';
+    arc.style.strokeDashoffset=String(C*(1-from));
+    arc.style.transform=`rotate(${fromDeg}deg)`;
+    void arc.getBoundingClientRect();
+    arc.style.transition='stroke-dashoffset .95s cubic-bezier(.22,.8,.22,1),transform .95s cubic-bezier(.22,.8,.22,1),stroke .3s ease';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      arc.style.strokeDashoffset=String(C*(1-chance));
+      arc.style.transform=`rotate(${toDeg}deg)`;
+    }));
   }
 
   async function runUpgrade(){
@@ -11798,24 +12010,18 @@ function gameUpgradeArena(){
     if(sourceType==='tokens'&&s>(S.balance||0)){ setNotice('Сумма больше баланса.','bad'); return; }
     if(sourceType==='item'&&!sourceItem()){ setNotice('Выберите предмет.','bad'); return; }
     busy=true; result=null; markBusy('АПГРЕЙДИМ…');
-    const fallbackCode=selectedList()[0]?selectedList()[0].code:null;
-    // Фаза ожидания: лента крутится, результат ещё неизвестен.
-    strip={cells:buildStrip(null,true,fallbackCode),offset:0,cls:'',wait:true};
     render();
+    startArrowSweep();
     const startedAt=Date.now();
     let res=null, err=null;
     try{ res=await runOnce(); }catch(e){ err=e; }
     const waited=Date.now()-startedAt;
-    if(waited<1200) await sleepLocal(1200-waited);
+    if(waited<1100) await sleepLocal(1100-waited);
     if(res&&res.ok){
-      // Фаза остановки: лента встаёт на цели, которую вернул сервер.
-      const winCode=(res.won&&res.target&&res.target.code)||fallbackCode;
-      strip={cells:buildStrip(winCode,Boolean(res.won),fallbackCode),offset:0,cls:'',wait:false};
-      render();
-      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-      await animateStop(Boolean(res.won));
+      // Стрелка замедляется и останавливается; цвет кольца задаёт ответ сервера.
+      await settleArrow(Boolean(res.won));
     } else {
-      strip={cells:[],offset:0,cls:'',wait:false};
+      stopArrowSweep();
     }
     busy=false;
     if(!res||!res.ok){
@@ -12021,6 +12227,10 @@ function gameUpgradeArena(){
   // Публичный мост из инвентаря/кейсов: выбрать предмет и открыть арену.
   window.__upgraderSelectItem=function(item){
     if(!item)return;
+    if(item.collectible){
+      showAppNotification('Коллекционный предмет нельзя улучшить — он остаётся в инвентаре на память.');
+      return;
+    }
     if(item.id!=null){
       sourceType='item';
       selectedItemId=item.id;
@@ -12560,6 +12770,7 @@ setInterval(()=>{if(IS_TG&&API_BASE&&!document.hidden)tgLoadBalance();},20000); 
 initLiveTicker();
 updateWheelCardStatus();
 setInterval(updateWheelCardStatus, 1000);
+setInterval(updateFreeBadges, 30000);
 updateModesOnline();
 paintModeBadges();
 setInterval(()=>{ updateModesOnline(); paintModeBadges(); }, 30000);

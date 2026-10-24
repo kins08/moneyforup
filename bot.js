@@ -97,6 +97,73 @@ function rollCaseDrop(userId, caseId, classic) {
   return boost.boostDrop(playerLuck(userId), rnd01(), roll);
 }
 
+/* Два одноразовых FREE-кейса за друзей. Предметы коллекционные:
+   их нельзя продать, апгрейднуть или обменять — только хранить. */
+const FREE_REF_CASES = {
+  3: {
+    level: 3, needed: 3, caseId: 'case_free3', caseName: 'FREE · Кейс за 3 друзей',
+    code: 'ref3_ak_crimson', name: 'AK-47 | Crimson Circuit', icon: '🔫',
+    price: 1700, tier: 'secret'
+  },
+  5: {
+    level: 5, needed: 5, caseId: 'case_free5', caseName: 'FREE · Кейс за 5 друзей',
+    code: 'ref5_awp_blackout', name: 'AWP | Blackout Gold', icon: '🎯',
+    price: 2400, tier: 'secret'
+  }
+};
+function publicFreeRefItem(def) {
+  return {
+    code: def.code, name: def.name, icon: def.icon, price: def.price,
+    priceRub: Math.round(def.price / TOKENS_PER_RUB),
+    tier: def.tier, needed: def.needed, collectible: 1, upgradeOnly: 0
+  };
+}
+function grantReferralFreeCase(u, level) {
+  const def = FREE_REF_CASES[level];
+  if (!def) return { ok: false, error: 'Неизвестный бесплатный кейс' };
+  const claimed = level === 3 ? Number(u.freeCase3RefClaimed || 0) : Number(u.freeCase5RefClaimed || 0);
+  if (claimed) return { ok: false, error: 'Этот бесплатный кейс уже открыт — он одноразовый.' };
+  const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
+  if (qualified < def.needed) {
+    return { ok: false, error: `Нужно пригласить ${def.needed} активных друзей (сейчас ${qualified}/${def.needed}).` };
+  }
+  const claimedNow = level === 3 ? db.claim3RefCase(u.id) : db.claim5RefCase(u.id);
+  if (!claimedNow) return { ok: false, error: 'Этот бесплатный кейс уже открыт — он одноразовый.' };
+  if (level === 3) u.freeCase3RefClaimed = 1; else u.freeCase5RefClaimed = 1;
+
+  const roundId = 'FREE' + level + '_' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
+  let itemId = null;
+  try {
+    const saved = db.addInventoryItem({
+      userId: u.id, itemCode: def.code, name: def.name, icon: def.icon,
+      price: def.price, tier: def.tier, caseId: def.caseId, caseName: def.caseName,
+      roundId, collectible: 1
+    });
+    itemId = saved.id;
+  } catch (e) {
+    console.error(`[Inventory] FREE-предмет ${def.code} не сохранён игроку ${u.id}: ${e.message}`);
+    if (level === 3) { db.release3RefCase(u.id); u.freeCase3RefClaimed = 0; }
+    else { db.release5RefCase(u.id); u.freeCase5RefClaimed = 0; }
+    try { db.saveUser(u); } catch (_) {}
+    return { ok: false, error: 'Не удалось выдать предмет, право на кейс сохранено.' };
+  }
+  try { db.saveUser(u); } catch (_) {}
+  try {
+    db.saveRound({
+      roundId, userId: u.id, game: def.caseName, bet: 0, mult: 1, win: 0,
+      status: 'settled', itemCode: def.code, itemPrice: def.price
+    });
+  } catch (e) { console.error('[Round] FREE-кейс не сохранён:', e.message); }
+  return {
+    ok: true, roundId,
+    drop: {
+      id: itemId, code: def.code, name: def.name, icon: def.icon,
+      price: def.price, tier: def.tier, caseName: def.caseName,
+      collectible: true, upgradeOnly: 0
+    }
+  };
+}
+
 const escHtml = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 /* Сравнение секретов за константное время (P1/P3): обычный !== завершается
    на первом несовпавшем символе и позволяет подбирать секрет по времени ответа. */
@@ -423,6 +490,10 @@ function user(id, name, username) {
       u.rakeback = Number(u.rakeback || 0);
       u.freeCases = Number(u.freeCases || 0);
       u.freeCase5RefClaimed = Number(u.freeCase5RefClaimed || 0);
+      u.freeCase3RefClaimed = Number(u.freeCase3RefClaimed || 0);
+      u.freeDailyAt = Number(u.freeDailyAt || 0);
+      u.freeNotifiedAt = Number(u.freeNotifiedAt || 0);
+      u.freeNotifyDay = String(u.freeNotifyDay || '');
       u.notifications = [];
       users.set(id, u);
       if (u.code) byCode.set(u.code, id);
@@ -435,7 +506,9 @@ function user(id, name, username) {
         ref: null, refEarned: 0, refInvited: 0, termsAt: 0, starsUsd: 0,
         totalDepositedRub: 0, lastDeposit: 0, lastDepositId: 0,
         cashbackClaimedDepositId: 0, lastCashbackAt: 0,
-        easycashClaimed: false, rakeback: 0, freeCases: 0, freeCase5RefClaimed: 0, notifications: []
+        easycashClaimed: false, rakeback: 0, freeCases: 0, freeCase5RefClaimed: 0,
+        freeCase3RefClaimed: 0, freeDailyAt: 0, freeNotifiedAt: 0, freeNotifyDay: '',
+        notifications: []
       };
       users.set(id, u);
       byCode.set(code, id);
@@ -790,6 +863,9 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
       }
       if (it.sold_at) {
         return { ok: false, error: 'Предмет уже продан или использован' };
+      }
+      if (it.collectible) {
+        return { ok: false, error: 'Коллекционный предмет нельзя использовать в игре — он остаётся на память' };
       }
       invItem = it;
     }
@@ -2321,6 +2397,9 @@ const server = http.createServer(async (req, res) => {
       rakeback: +(Number(u.rakeback || 0).toFixed(2)),
       freeCases: Math.floor(Number(u.freeCases || 0)),
       freeCase5RefClaimed: Number(u.freeCase5RefClaimed || 0),
+      freeCase3RefClaimed: Number(u.freeCase3RefClaimed || 0),
+      freeDailyAt: Number(u.freeDailyAt || 0),
+      freeDailyNextAt: Number(u.freeDailyAt || 0) ? Number(u.freeDailyAt) + 24 * 3600 * 1000 : 0,
       refQualified: db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0,
       lastHotDrop: u.lastHotDrop || 0,
       lastWheelSpin: u.lastWheelSpin || 0,
@@ -2452,115 +2531,104 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    /* ── Акция: Бесплатный кейс за 5 активных друзей (скин под апгрейд) ──────── */
-    if (url.pathname === '/api/5ref-case/status') {
+    /* ── FREE-кейсы: один ежедневный (1–6 ₽) и два за друзей ──────────────── */
+    if (url.pathname === '/api/free-case/status') {
       const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
-      const claimed = Boolean(u.freeCase5RefClaimed);
+      const now = Date.now();
+      const dailyReady = !u.freeDailyAt || now - Number(u.freeDailyAt) >= 24 * 3600 * 1000;
       return send(200, {
         ok: true,
-        claimed,
-        qualified,
-        needed: 5,
-        canClaim: !claimed && qualified >= 5,
+        daily: {
+          ready: dailyReady,
+          nextAt: dailyReady ? 0 : Number(u.freeDailyAt) + 24 * 3600 * 1000,
+          prizeMin: 1, prizeMax: 6
+        },
+        ref3: {
+          level: 3, qualified, needed: 3,
+          claimed: Boolean(u.freeCase3RefClaimed),
+          canClaim: !u.freeCase3RefClaimed && qualified >= 3,
+          item: publicFreeRefItem(FREE_REF_CASES[3])
+        },
+        ref5: {
+          level: 5, qualified, needed: 5,
+          claimed: Boolean(u.freeCase5RefClaimed),
+          canClaim: !u.freeCase5RefClaimed && qualified >= 5,
+          item: publicFreeRefItem(FREE_REF_CASES[5])
+        },
         refCode: u.code,
-        refLink: refLink(u.code),
-        item: {
-          code: 'ref5_cyber_dagger',
-          name: 'Cyber-Dagger | Neon Fade',
-          icon: '🗡️',
-          price: 2400,
-          priceRub: 240,
-          tier: 'secret',
-          upgradeOnly: 1
+        refLink: refLink(u.code)
+      });
+    }
+
+    if (url.pathname === '/api/free-case/daily' && req.method === 'POST') {
+      if (!checkRateLimit(`free-daily:${u.id}`, 8, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Подождите немного.' });
+      }
+      const now = Date.now();
+      const prevDaily = Number(u.freeDailyAt || 0);
+      if (!db.claimDailyFreeCase(u.id, now, now - 24 * 3600 * 1000)) {
+        const nextAt = prevDaily + 24 * 3600 * 1000;
+        const leftH = Math.max(1, Math.ceil((nextAt - now) / 3600000));
+        return send(400, { error: `Следующий бесплатный кейс будет доступен через ${leftH} ч.`, nextAt });
+      }
+      const prizeRub = 1 + rndInt(6);
+      const prize = prizeRub * TOKENS_PER_RUB;
+      const r = applyBalance(u, prize, 'bonus_daily_case', 'Ежедневный FREE-кейс');
+      if (!r.ok) {
+        db.releaseDailyFreeCase(u.id, prevDaily);
+        u.freeDailyAt = prevDaily;
+        return send(500, { error: 'Не удалось начислить приз, попробуйте позже.' });
+      }
+      u.freeDailyAt = now;
+      try { db.saveUser(u); } catch (_) {}
+      const roundId = 'DAILY_' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+      try {
+        db.saveRound({
+          roundId, userId: u.id, game: 'Ежедневный FREE-кейс',
+          bet: 0, mult: prize / TOKENS_PER_RUB, win: prize,
+          status: 'settled', itemCode: 'daily_cash_' + prizeRub, itemPrice: prize
+        });
+      } catch (e) { console.error('[Round] daily free не сохранён:', e.message); }
+      return send(200, {
+        ok: true, roundId,
+        prize, prizeRub,
+        tokens: u.tokens,
+        nextAt: now + 24 * 3600 * 1000,
+        drop: {
+          code: 'daily_cash_' + prizeRub, name: `+${prizeRub} ₽ на баланс`,
+          icon: '💸', price: prize, tier: 'cash', cash: true
         }
       });
     }
 
+    if (url.pathname === '/api/free-case/ref' && req.method === 'POST') {
+      if (!checkRateLimit(`free-ref:${u.id}`, 8, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Подождите немного.' });
+      }
+      const level = Number(body.level) === 5 ? 5 : 3;
+      const granted = grantReferralFreeCase(u, level);
+      if (!granted.ok) return send(400, { error: granted.error });
+      return send(200, { ok: true, level, ...granted });
+    }
+
+    /* Совместимость со старым клиентом: те же кейсы, только 5-й уровень. */
+    if (url.pathname === '/api/5ref-case/status') {
+      const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
+      const claimed = Boolean(u.freeCase5RefClaimed);
+      return send(200, {
+        ok: true, claimed, qualified, needed: 5,
+        canClaim: !claimed && qualified >= 5,
+        refCode: u.code, refLink: refLink(u.code),
+        item: publicFreeRefItem(FREE_REF_CASES[5])
+      });
+    }
     if (url.pathname === '/api/5ref-case/open' && req.method === 'POST') {
       if (!checkRateLimit(`ref5case:${u.id}`, 10, 60000)) {
         return send(429, { error: 'Слишком много запросов. Подождите немного.' });
       }
-      if (u.freeCase5RefClaimed) {
-        return send(400, { error: 'Вы уже открыли и забрали кейс за 5 друзей!' });
-      }
-      const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
-      if (qualified < 5) {
-        return send(400, { error: `Необходимо пригласить 5 активных друзей (сейчас ${qualified}/5). Друг должен зайти по ссылке и сделать хотя бы 1 прокрут/ставку.` });
-      }
-
-      // Атомарный claim: два параллельных запроса не выдадут скин дважды.
-      if (!db.claim5RefCase(u.id)) {
-        u.freeCase5RefClaimed = 1;
-        return send(400, { error: 'Вы уже открыли и забрали кейс за 5 друзей!' });
-      }
-      u.freeCase5RefClaimed = 1;
-      try { db.saveUser(u); } catch (_) {}
-
-      const drop = {
-        code: 'ref5_cyber_dagger',
-        name: 'Cyber-Dagger | Neon Fade',
-        icon: '🗡️',
-        price: 2400,
-        tier: 'secret',
-        upgradeOnly: 1
-      };
-
-      const roundId = 'REF5_' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
-      let itemId = null;
-      try {
-        const saved = db.addInventoryItem({
-          userId: u.id,
-          itemCode: drop.code,
-          name: drop.name,
-          icon: drop.icon,
-          price: drop.price,
-          tier: drop.tier,
-          caseId: 'case_5ref',
-          caseName: 'Кейс за 5 друзей',
-          roundId,
-          upgradeOnly: 1
-        });
-        itemId = saved.id;
-      } catch (e) {
-        console.error(`[Inventory] предмет за 5 друзей не сохранён игроку ${u.id}: ${e.message}`);
-        db.release5RefCase(u.id);
-        u.freeCase5RefClaimed = 0;
-        try { db.saveUser(u); } catch (_) {}
-        return send(500, { error: 'Не удалось выдать скин, право на кейс сохранено' });
-      }
-
-      try {
-        db.saveRound({
-          roundId,
-          userId: u.id,
-          game: 'Кейс за 5 друзей',
-          bet: 0,
-          mult: 1,
-          win: 0,
-          status: 'settled',
-          itemCode: drop.code,
-          itemPrice: drop.price
-        });
-      } catch (e) {
-        console.error('[Round] раунд кейса за 5 друзей не сохранён:', e.message);
-      }
-
-      return send(200, {
-        ok: true,
-        claimed: true,
-        roundId,
-        drop: {
-          id: itemId,
-          code: drop.code,
-          name: drop.name,
-          icon: drop.icon,
-          price: drop.price,
-          tier: drop.tier,
-          caseName: 'Кейс за 5 друзей',
-          upgrade_only: true,
-          upgradeOnly: 1
-        }
-      });
+      const granted = grantReferralFreeCase(u, 5);
+      if (!granted.ok) return send(400, { error: granted.error });
+      return send(200, { ok: true, claimed: true, ...granted });
     }
 
     /* ── Pulse Market: микрораунды крипто-рынка (DECISIONS.md D5) ──────────────
@@ -3129,7 +3197,8 @@ const server = http.createServer(async (req, res) => {
         items: list.map(it => ({
           id: it.id, code: it.item_code, name: it.name, icon: it.icon,
           price: it.price, tier: it.tier, caseName: it.case_name, wonAt: it.acquired_at,
-          upgrade_only: Boolean(it.upgrade_only)
+          upgrade_only: Boolean(it.upgrade_only),
+          collectible: Boolean(it.collectible)
         })),
         count: tot.count,
         value: tot.value,
@@ -3149,6 +3218,9 @@ const server = http.createServer(async (req, res) => {
       // игроку, какие id существуют у других.
       if (!it || Number(it.user_id) !== Number(u.id)) return send(404, { error: 'Предмет не найден' });
       if (it.sold_at) return send(400, { error: 'Предмет уже продан' });
+      if (it.collectible) {
+        return send(400, { error: 'Коллекционный предмет нельзя продать — он остаётся в инвентаре на память.' });
+      }
       if (it.upgrade_only) {
         return send(400, { error: 'Этот предмет нельзя продать — его можно только проапгрейдить в Upgrader!' });
       }
@@ -3175,12 +3247,13 @@ const server = http.createServer(async (req, res) => {
       let total = 0;
       const sold = [];
       for (const it of list) {
+        if (it.collectible) continue;   // коллекционные предметы не продаются и не апгрейдятся
         if (it.upgrade_only) continue;   // акционные предметы только для апгрейда, не продаются
         if (!db.markInventorySold(it.id, u.id, it.price)) continue;   // продали параллельно — пропускаем
         total += it.price;
         sold.push({ id: it.id, name: it.name, price: it.price });
       }
-      if (!total) return send(400, { error: 'В инвентаре нет предметов для продажи (акционные скины можно только проапгрейдить)' });
+      if (!total) return send(400, { error: 'В инвентаре нет предметов для продажи — коллекционные и акционные вещи не продаются' });
       const r = applyBalance(u, total, 'inventory_sale', `Продажа инвентаря: ${sold.length} шт`, 'invall' + Date.now());
       if (!r.ok) {
         for (const it of sold) {
@@ -3357,7 +3430,7 @@ const server = http.createServer(async (req, res) => {
           10: upgrade.ladderPreview(upgrade.MODES.standard, 10, 1000)
         },
         ladderTables: upgrade.LADDER_MULTS,
-        inventory: db.listInventory(u.id).map(it => ({
+        inventory: db.listInventory(u.id).filter(it => !it.collectible).map(it => ({
           id: it.id, code: it.item_code, name: it.name, icon: it.icon,
           price: it.price, tier: it.tier, caseName: it.case_name,
           upgrade_only: Boolean(it.upgrade_only)
@@ -3407,6 +3480,9 @@ const server = http.createServer(async (req, res) => {
         const it = db.getInventoryItem(sourceItemId);
         if (!it || Number(it.user_id) !== Number(u.id) || it.sold_at) {
           return send(400, { error: 'Предмет не найден в вашем инвентаре' });
+        }
+        if (it.collectible) {
+          return send(400, { error: 'Коллекционный предмет нельзя апгрейдить — он остаётся на память.' });
         }
         sourceValue = Math.floor(Number(it.price) || 0);
       } else {
@@ -3515,6 +3591,9 @@ const server = http.createServer(async (req, res) => {
         const it = db.getInventoryItem(sourceItemId);
         if (!it || Number(it.user_id) !== Number(u.id) || it.sold_at) {
           return send(400, { error: 'Предмет не найден в вашем инвентаре' });
+        }
+        if (it.collectible) {
+          return send(400, { error: 'Коллекционный предмет нельзя апгрейдить — он остаётся на память.' });
         }
         sourceValue = Math.floor(Number(it.price) || 0);
       } else {
@@ -4738,6 +4817,57 @@ async function runReactivation() {
 }
 setTimeout(runReactivation, 120000);
 setInterval(runReactivation, 6 * 3600 * 1000);
+
+/* ── Уведомления о закончившихся кулдаунах ────────────────────────────────
+   Пишем только тем, кто не был в приложении последние 30 минут и чей кд
+   действительно истёк. Одно сообщение на игрока, дедупликация в БД. */
+async function runCooldownNotifications() {
+  try {
+    const now = Date.now();
+    const day = new Date(now).toISOString().slice(0, 10);
+    const list = db.listCooldownNotifyCandidates(now, day, 50);
+    for (const cand of list) {
+      // Не чаще одного сообщения в 3 часа: кулдауны не сгорают, а спам не нужен.
+      if (cand.free_notified_at && now - cand.free_notified_at < 3 * 3600 * 1000) continue;
+      const dailyReady = cand.free_daily_at > 0
+        && now - cand.free_daily_at >= 86400000
+        && cand.free_notified_at < cand.free_daily_at + 86400000;
+      const wheelReady = cand.last_wheel_spin > 0
+        && now - cand.last_wheel_spin >= 12 * 3600000
+        && cand.free_notified_at < cand.last_wheel_spin + 12 * 3600000;
+      const hotReady = cand.last_hot_drop > 0
+        && now - cand.last_hot_drop >= 3600000
+        && cand.free_notified_at < cand.last_hot_drop + 3600000;
+      const challengeReady = String(cand.free_notify_day || '') !== day;
+
+      const parts = [];
+      if (dailyReady) parts.push('🎁 <b>Бесплатный кейс</b> снова доступен — от 1 до 6 ₽');
+      if (wheelReady) parts.push('🎡 <b>Бесплатный спин</b> в Колесе Фортуны готов');
+      if (hotReady) parts.push('🔥 <b>Hot Drop</b> снова можно забрать');
+      if (challengeReady) parts.push('🎯 <b>Челленджи и стрик</b> обновились');
+      if (!parts.length) continue;
+
+      const name = escHtml(String(cand.name || cand.username || 'друг').slice(0, 40));
+      const text = `<b>${name}, у вас есть бесплатное</b>\n\n`
+        + parts.map(p => '• ' + p).join('\n')
+        + '\n\nЗаберите в MoneyForUp, пока не сгорело.';
+      try {
+        await bot.api.sendMessage(cand.id, text, {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().webApp('🎁 Открыть MoneyForUp', APP_URL + '#casehub')
+        });
+      } catch (_) { /* бот заблокирован — не зацикливаемся на повторах */ }
+      db.setFreeNotified(cand.id, now, day);
+      const mem = users.get(cand.id);
+      if (mem) { mem.freeNotifiedAt = now; mem.freeNotifyDay = day; }
+      await new Promise(r => setTimeout(r, 160));
+    }
+  } catch (e) {
+    console.error('[Cooldowns] error:', e.message);
+  }
+}
+setTimeout(runCooldownNotifications, 180000);
+setInterval(runCooldownNotifications, 10 * 60 * 1000);
 
 let recoveryReady = false;
 async function initPersistence() {

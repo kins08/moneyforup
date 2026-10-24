@@ -148,18 +148,20 @@ async function run() {
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.canClaim, true);
   assert.strictEqual(res.data.item.price, 2400);
-  assert.strictEqual(res.data.item.upgradeOnly, 1);
-  console.log('✓ 4. Статус обновился: canClaim=true, скин Cyber-Dagger 2400 ⬦ (240 ₽)');
+  assert.strictEqual(res.data.item.collectible, 1);
+  assert.strictEqual(res.data.item.upgradeOnly, 0);
+  console.log('✓ 4. Статус обновился: canClaim=true, AWP | Blackout Gold 2400 ⬦ (240 ₽), коллекция');
 
   // 5. Открываем кейс
   res = await request('/api/5ref-case/open', { method: 'POST', initData: mainUserInitData, body: {} });
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.ok, true);
-  assert.strictEqual(res.data.drop.code, 'ref5_cyber_dagger');
+  assert.strictEqual(res.data.drop.code, 'ref5_awp_blackout');
   assert.strictEqual(res.data.drop.price, 2400);
-  assert.strictEqual(res.data.drop.upgradeOnly, 1);
+  assert.strictEqual(res.data.drop.collectible, true);
+  assert.strictEqual(res.data.drop.upgradeOnly, 0);
   const droppedItemId = res.data.drop.id;
-  console.log(`✓ 5. Кейс успешно открыт! Выпал скин id=${droppedItemId} (upgrade_only=1)`);
+  console.log(`✓ 5. Кейс успешно открыт! Выпал коллекционный предмет id=${droppedItemId}`);
 
   // 6. Повторное открытие должно быть отклонено
   res = await request('/api/5ref-case/open', { method: 'POST', initData: mainUserInitData, body: {} });
@@ -173,8 +175,8 @@ async function run() {
     body: { id: droppedItemId }
   });
   assert.strictEqual(res.status, 400);
-  assert.strictEqual(res.data.error.includes('только проапгрейдить'), true);
-  console.log('✓ 7. Продажа скина напрямую отклонена: ' + res.data.error);
+  assert.strictEqual(res.data.error.includes('Коллекционный'), true);
+  console.log('✓ 7. Продажа коллекционного предмета отклонена: ' + res.data.error);
 
   // 8. Попытка продать через /api/inventory/sell-all должна пропустить этот скин
   res = await request('/api/inventory/sell-all', {
@@ -183,7 +185,7 @@ async function run() {
     body: {}
   });
   assert.strictEqual(res.status, 400);
-  console.log('✓ 8. Продажа всего инвентаря защищает скин от списания в деньги');
+  console.log('✓ 8. Продажа всего инвентаря не трогает коллекционный предмет');
 
   // 9. Тестируем кастомные множители в Апгрейдере (до x100, ограничение шанса до 75%, возврат игроку 94%)
   const upgRound = await request('/api/play', {
@@ -195,7 +197,7 @@ async function run() {
   assert.strictEqual(upgRound.data.mult, 100);
   console.log('✓ 9. Апгрейдер успешно принял кастомную ставку с множителем ×100');
 
-  // 10. Симуляция 1,000 апгрейдов акционного скина Cyber-Dagger
+  // 10. Симуляция 1,000 апгрейдов акционного скина (upgrade_only, не коллекционного)
   console.log('10. Запуск симуляции 1,000 раундов апгрейда для upgrade_only скина...');
   let wins = 0;
   let nearMisses = 0;

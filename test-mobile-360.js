@@ -21,7 +21,7 @@ for (const v of ['--mfu-graphite-0', '--mfu-cyan', '--mfu-lime', '--mfu-orange',
 }
 
 // 2. Новые экраны не используют фиксированную ширину больше 360px.
-const newSelectors = ['.pm-shell', '.tr-shell', '.pm-dirs', '.tr-answers', '.pm-row', '.pm-chip', '.upg-frame'];
+const newSelectors = ['.pm-shell', '.tr-shell', '.pm-dirs', '.tr-answers', '.pm-row', '.pm-chip', '.upg-wheel', '.free-cases', '.free-case'];
 const block = (sel) => {
   const i = html.indexOf(sel + '{');
   if (i < 0) return '';
@@ -40,11 +40,10 @@ ok(/\.pm-shell,\.tr-shell\{[^}]*overflow-x:hidden/.test(html), 'экраны Pul
 // 4. Правила для узкого экрана (≤380px) есть.
 ok(/@media \(max-width:380px\)\{[^}]*\.pm-dirs/.test(html) || /max-width:380px[\s\S]{0,400}\.pm-dirs/.test(html),
   'для ширины ≤380px сетка направлений перестраивается в один столбец');
-ok(/max-width:380px\)\{\s*\.upg-frame/.test(html), 'для ≤380px лента апгрейда становится ниже');
+ok(/max-width:380px\)\{\s*\.free-cases/.test(html), 'для ≤380px сетка FREE-кейсов ужимается');
 
 // 5. Reduced motion: нефункциональные анимации отключаются.
 ok(/prefers-reduced-motion: reduce/.test(html), 'есть правила prefers-reduced-motion');
-ok(/@media \(prefers-reduced-motion: reduce\)\{\s*\.upg-strip/.test(html) || /reduce\)\{[^}]*\.upg-strip/.test(html),
-  'лента апгрейда отключает анимацию при reduced-motion');
+ok(/@media \(prefers-reduced-motion: reduce\)\{\s*\.upg-wheel__spinner/.test(html), 'кольцо апгрейдера отключает анимацию при reduced-motion');
 
 console.log(`\nИТОГ: ${passed} проверок пройдено.`);

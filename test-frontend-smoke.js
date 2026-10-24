@@ -81,7 +81,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       ok(names.includes(n), `кейс «${n}» отрисован`);
     }
     ok(!d.querySelector('.cards [data-nav="casehub"]'), 'кейсы не дублируются в сетке игр');
-    ok(Boolean(d.querySelector('.cases-promo .cp-fan img')), 'промо кейсов показывает реальные обложки');
+    ok(!d.querySelector('.cases-promo'), 'промо-кейсы убраны с экрана игр');
+    ok(!d.querySelector('#gamesRefPromoBanner'), 'реферальный баннер убран с экрана игр');
+    ok(Boolean(d.querySelector('#btnOpenWheel')), 'Колесо Фортуны осталось на экране игр');
+    ok(Boolean(d.querySelector('#navCasesFree')), 'у вкладки «Кейсы» есть FREE-метка');
+    eq(d.querySelectorAll('#caseHubArea .free-case').length, 3, 'в кейсах три FREE-кейса');
     eq(d.querySelectorAll('.casehub-case.is-active').length, 1, 'выбранный кейс подсвечен');
     eq(d.querySelectorAll('.casehub-case .ch-active-mark').length, 1, 'у выбранного кейса есть галочка');
     ok(d.querySelector('.casehub-grid').classList.contains('ch-anim'), 'у сетки кейсов есть анимация входа');

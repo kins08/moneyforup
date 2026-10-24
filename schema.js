@@ -39,7 +39,11 @@ CREATE TABLE IF NOT EXISTS users (
   last_reactivation_at INTEGER DEFAULT 0,
   last_hot_drop INTEGER DEFAULT 0,
   last_wheel_spin INTEGER DEFAULT 0,
-  last_streak_at INTEGER DEFAULT 0
+  last_streak_at INTEGER DEFAULT 0,
+  free_daily_at INTEGER DEFAULT 0,
+  free_case_3ref_claimed INTEGER DEFAULT 0,
+  free_notified_at INTEGER DEFAULT 0,
+  free_notify_day TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS challenge_claims (
@@ -281,7 +285,11 @@ const EXTRA_COLUMNS = {
     ['last_reactivation_at', 'INTEGER DEFAULT 0'],
     ['last_hot_drop', 'INTEGER DEFAULT 0'],
     ['last_wheel_spin', 'INTEGER DEFAULT 0'],
-    ['last_streak_at', 'INTEGER DEFAULT 0']
+    ['last_streak_at', 'INTEGER DEFAULT 0'],
+    ['free_daily_at', 'INTEGER DEFAULT 0'],
+    ['free_case_3ref_claimed', 'INTEGER DEFAULT 0'],
+    ['free_notified_at', 'INTEGER DEFAULT 0'],
+    ['free_notify_day', "TEXT DEFAULT ''"]
   ],
   orders: [
     ['bonus', "TEXT DEFAULT ''"],
@@ -290,7 +298,7 @@ const EXTRA_COLUMNS = {
     ['admin_chat_id', 'INTEGER DEFAULT 0']
   ],
   game_rounds: [['item_code', 'TEXT'], ['item_price', 'INTEGER'], ['seed', 'TEXT'], ['params', 'TEXT']],
-  user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0']]
+  user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0'], ['collectible', 'INTEGER DEFAULT 0']]
 };
 
 module.exports = { SCHEMA_SQL, EXTRA_COLUMNS };

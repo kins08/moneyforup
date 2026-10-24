@@ -96,8 +96,8 @@ const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
@@ -105,7 +105,8 @@ const stmts = {
       ref_id = ?, ref_earned = ?, ref_invited = ?, terms_at = ?, total_deposited_rub = ?,
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
       easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?,
-      first_deposit_bonus_claimed = ?, last_hot_drop = ?, last_wheel_spin = ?, last_streak_at = ?
+      first_deposit_bonus_claimed = ?, last_hot_drop = ?, last_wheel_spin = ?, last_streak_at = ?,
+      free_daily_at = ?, free_case_3ref_claimed = ?, free_notified_at = ?, free_notify_day = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -150,8 +151,8 @@ const stmts = {
   `),
   insertInventoryItem: db.prepare(`
     INSERT INTO user_inventory
-      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
+      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
   `),
   listInventory: db.prepare(`
     SELECT * FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
@@ -256,7 +257,11 @@ function getUser(id) {
     lastReactivationAt: Number(row.last_reactivation_at || 0),
     lastHotDrop: Number(row.last_hot_drop || 0),
     lastWheelSpin: Number(row.last_wheel_spin || 0),
-    lastStreakAt: Number(row.last_streak_at || 0)
+    lastStreakAt: Number(row.last_streak_at || 0),
+    freeDailyAt: Number(row.free_daily_at || 0),
+    freeCase3RefClaimed: Number(row.free_case_3ref_claimed || 0),
+    freeNotifiedAt: Number(row.free_notified_at || 0),
+    freeNotifyDay: row.free_notify_day || ''
   };
 }
 
@@ -307,6 +312,10 @@ function saveUser(u) {
       Number(u.lastHotDrop || 0),
       Number(u.lastWheelSpin || 0),
       Number(u.lastStreakAt || 0),
+      Number(u.freeDailyAt || 0),
+      Number(u.freeCase3RefClaimed || 0),
+      Number(u.freeNotifiedAt || 0),
+      String(u.freeNotifyDay || ''),
       u.id
     );
     turso.queueQuery(`
@@ -315,7 +324,8 @@ function saveUser(u) {
         ref_id=?, ref_earned=?, ref_invited=?, terms_at=?, total_deposited_rub=?,
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
         easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?,
-        first_deposit_bonus_claimed=?, last_hot_drop=?, last_wheel_spin=?, last_streak_at=?
+        first_deposit_bonus_claimed=?, last_hot_drop=?, last_wheel_spin=?, last_streak_at=?,
+        free_daily_at=?, free_case_3ref_claimed=?, free_notified_at=?, free_notify_day=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
@@ -323,7 +333,9 @@ function saveUser(u) {
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0),
       Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
-      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0), u.id
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0),
+      Number(u.freeDailyAt || 0), Number(u.freeCase3RefClaimed || 0), Number(u.freeNotifiedAt || 0),
+      String(u.freeNotifyDay || ''), u.id
     ]);
   } else {
     stmts.insertUser.run(
@@ -353,11 +365,15 @@ function saveUser(u) {
       Number(u.firstDepositBonusClaimed || 0),
       Number(u.lastHotDrop || 0),
       Number(u.lastWheelSpin || 0),
-      Number(u.lastStreakAt || 0)
+      Number(u.lastStreakAt || 0),
+      Number(u.freeDailyAt || 0),
+      Number(u.freeCase3RefClaimed || 0),
+      Number(u.freeNotifiedAt || 0),
+      String(u.freeNotifyDay || '')
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
@@ -366,7 +382,8 @@ function saveUser(u) {
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
       u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
       Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
-      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0)
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0),
+      Number(u.freeDailyAt || 0), Number(u.freeCase3RefClaimed || 0), Number(u.freeNotifiedAt || 0), String(u.freeNotifyDay || '')
     ]);
   }
 }
@@ -1746,6 +1763,81 @@ module.exports = {
     }
     return false;
   },
+  /* ── Бесплатные кейсы и уведомления о кулдаунах ──────────────────────── */
+  claimDailyFreeCase: (userId, at, cutoff) => {
+    const res = db.prepare('UPDATE users SET free_daily_at = ? WHERE id = ? AND COALESCE(free_daily_at, 0) <= ?')
+      .run(Number(at), Number(userId), Number(cutoff));
+    if (res.changes > 0) {
+      turso.queueQuery('UPDATE users SET free_daily_at = ? WHERE id = ? AND COALESCE(free_daily_at, 0) <= ?',
+        [Number(at), Number(userId), Number(cutoff)]);
+      return true;
+    }
+    return false;
+  },
+  releaseDailyFreeCase: (userId, prevAt) => {
+    try {
+      db.prepare('UPDATE users SET free_daily_at = ? WHERE id = ?').run(Number(prevAt || 0), Number(userId));
+      turso.queueQuery('UPDATE users SET free_daily_at = ? WHERE id = ?', [Number(prevAt || 0), Number(userId)]);
+    } catch (_) {}
+  },
+  claim3RefCase: (userId) => {
+    const res = db.prepare('UPDATE users SET free_case_3ref_claimed = 1 WHERE id = ? AND COALESCE(free_case_3ref_claimed, 0) = 0')
+      .run(Number(userId));
+    if (res.changes > 0) {
+      turso.queueQuery('UPDATE users SET free_case_3ref_claimed = 1 WHERE id = ?', [Number(userId)]);
+      return true;
+    }
+    return false;
+  },
+  release3RefCase: (userId) => {
+    try {
+      db.prepare('UPDATE users SET free_case_3ref_claimed = 0 WHERE id = ?').run(Number(userId));
+      turso.queueQuery('UPDATE users SET free_case_3ref_claimed = 0 WHERE id = ?', [Number(userId)]);
+    } catch (_) {}
+  },
+  setFreeNotified: (userId, at, day) => {
+    try {
+      db.prepare('UPDATE users SET free_notified_at = ?, free_notify_day = ? WHERE id = ?')
+        .run(Number(at), String(day || ''), Number(userId));
+      turso.queueQuery('UPDATE users SET free_notified_at = ?, free_notify_day = ? WHERE id = ?',
+        [Number(at), String(day || ''), Number(userId)]);
+    } catch (_) {}
+  },
+  listCooldownNotifyCandidates: (now, day, limit = 60) => {
+    try {
+      const idleBefore = Number(now) - 30 * 60 * 1000;
+      const activeSince = Number(now) - 14 * 86400000;
+      return db.prepare(`
+        SELECT u.id, u.name, u.username, u.last_seen_at,
+               COALESCE(u.free_daily_at, 0) AS free_daily_at,
+               COALESCE(u.last_wheel_spin, 0) AS last_wheel_spin,
+               COALESCE(u.last_hot_drop, 0) AS last_hot_drop,
+               COALESCE(u.free_notified_at, 0) AS free_notified_at,
+               COALESCE(u.free_notify_day, '') AS free_notify_day
+        FROM users u
+        WHERE u.last_seen_at >= ?
+          AND u.last_seen_at <= ?
+          AND (
+            (u.free_daily_at > 0 AND u.free_daily_at <= ? AND COALESCE(u.free_notified_at, 0) < u.free_daily_at + 86400000)
+            OR (u.last_wheel_spin > 0 AND u.last_wheel_spin <= ? AND COALESCE(u.free_notified_at, 0) < u.last_wheel_spin + 43200000)
+            OR (u.last_hot_drop > 0 AND u.last_hot_drop <= ? AND COALESCE(u.free_notified_at, 0) < u.last_hot_drop + 3600000)
+            OR (COALESCE(u.free_notify_day, '') <> ? AND u.created_at <= ?)
+          )
+        ORDER BY u.last_seen_at DESC
+        LIMIT ?
+      `).all(
+        activeSince, idleBefore,
+        Number(now) - 86400000,
+        Number(now) - 12 * 3600000,
+        Number(now) - 3600000,
+        String(day || ''), Number(now) - 86400000,
+        Number(limit) || 60
+      );
+    } catch (e) {
+      console.error('[DB] listCooldownNotifyCandidates:', e.message);
+      return [];
+    }
+  },
   release5RefCase: (userId) => {
     try {
       db.prepare('UPDATE users SET free_case_5ref_claimed = 0 WHERE id = ?').run(userId);
@@ -1774,6 +1866,7 @@ module.exports = {
   addInventoryItem: (r) => {
     const acAt = r.acquiredAt || Date.now();
     const upgOnly = (r.upgradeOnly || r.upgrade_only) ? 1 : 0;
+    const collectible = (r.collectible || r.isCollectible) ? 1 : 0;
     const res = stmts.insertInventoryItem.run(
       r.userId,
       String(r.itemCode),
@@ -1785,16 +1878,17 @@ module.exports = {
       String(r.caseName || ''),
       String(r.roundId || ''),
       acAt,
-      upgOnly
+      upgOnly,
+      collectible
     );
     const newId = Number(res.lastInsertRowid);
     turso.queueQuery(`
-      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
+      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
     `, [
       newId, r.userId, String(r.itemCode), String(r.name || ''), String(r.icon || ''),
       Math.floor(r.price || 0), String(r.tier || ''), String(r.caseId || ''),
-      String(r.caseName || ''), String(r.roundId || ''), acAt, upgOnly
+      String(r.caseName || ''), String(r.roundId || ''), acAt, upgOnly, collectible
     ]);
     return { ok: true, id: newId };
   },
