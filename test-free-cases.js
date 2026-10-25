@@ -44,6 +44,8 @@ function addFriend(srv, mainId, n) {
     eq(r.body.ref5.canClaim, false, 'кейс за 5 друзей закрыт');
     eq(r.body.ref3.item.collectible, 1, 'предмет за 3 друзей — коллекционный');
     eq(r.body.ref5.item.collectible, 1, 'предмет за 5 друзей — коллекционный');
+    eq(r.body.ref3.item.priceRub, 170, 'у кейса за 3 друзей цена 170 ₽');
+    eq(r.body.ref5.item.priceRub, 240, 'у кейса за 5 друзей цена 240 ₽');
 
     console.log('\n2) Ежедневный кейс: 1–6 ₽ и защита от двойного клика');
     const before = bal();
@@ -108,6 +110,10 @@ function addFriend(srv, mainId, n) {
     console.log('\n5) Уведомления о закончившихся кулдаунах');
     const now = Date.now();
     const day = new Date(now).toISOString().slice(0, 10);
+    srv.db.db.prepare('UPDATE users SET free_daily_at = 0, last_wheel_spin = 0, last_hot_drop = 0, last_seen_at = ?, free_notified_at = 0, free_notify_day = \'\' WHERE id = ?')
+      .run(now, UID);
+    const challengeOnly = srv.db.listCooldownNotifyCandidates(now, day, 100);
+    ok(!challengeOnly.some(x => Number(x.id) === UID), 'смена дня челленджей без реального кд не создаёт уведомление');
     srv.db.db.prepare('UPDATE users SET free_daily_at = ?, last_seen_at = ?, free_notified_at = 0, free_notify_day = \'\' WHERE id = ?')
       .run(now - 2 * 86400000, now - 3600000, UID);
     const cands = srv.db.listCooldownNotifyCandidates(now, day, 100);
@@ -131,6 +137,39 @@ function addFriend(srv, mainId, n) {
     eq(srv.db.listPromos(100).map(x => x.code).join(','), 'WEEK42', 'в базе остался только WEEK42');
     const markerUse = srv.db.atomicApplyPromo(UID, '__PURGE_20261025__');
     ok(!markerUse.ok, 'служебный маркер нельзя активировать');
+
+    console.log('\n6b) Squad 120: предмет 120 ₽ и разблокировка тремя друзьями');
+    let sq = await post('/api/free-case/status', {});
+    eq(sq.body.squad.spun, false, 'Squad 120 ещё не прокручен');
+    const sqSpin = await post('/api/free-case/squad/spin', {});
+    eq(sqSpin.status, 200, 'Squad 120 прокручен');
+    eq(sqSpin.body.item.code, 'squad120_keyboard_blackgold', 'выдана клавиатура Black Gold');
+    eq(sqSpin.body.item.price, 1200, 'цена предмета 120 ₽');
+    eq(sqSpin.body.locked, true, 'предмет заблокирован до 3 друзей');
+    const sqDup = await post('/api/free-case/squad/spin', {});
+    eq(sqDup.status, 200, 'повторный прокрут не создаёт второй предмет');
+    eq(sqDup.body.duplicate, true, 'повтор помечен duplicate');
+    let sqInv = await post('/api/inventory', {});
+    let sqItem = sqInv.body.items.find(x => x.code === 'squad120_keyboard_blackgold');
+    ok(Boolean(sqItem) && sqItem.locked === true, 'предмет лежит в инвентаре заблокированным');
+    eq((await post('/api/inventory/sell', { itemId: sqItem.id })).status, 400, 'заблокированный предмет нельзя продать');
+    eq((await post('/api/upgrade/run', {
+      mode: 'standard', sourceType: 'item', itemId: sqItem.id,
+      targets: ['case_500#0'], requestId: 'squad-lock-upg-' + Date.now()
+    })).status, 400, 'заблокированный предмет нельзя апгрейдить');
+    for (let i = 6; i <= 8; i++) {
+      addFriend(srv, UID, i);
+      const fr = await srv.post('/api/free-case/squad/spin', {}, UID * 10 + i);
+      eq(fr.status, 200, `друг ${i} прокрутил Squad 120`);
+    }
+    sq = await post('/api/free-case/status', {});
+    eq(sq.body.squad.friendsSpun, 3, 'три друга засчитаны');
+    eq(sq.body.squad.unlocked, true, 'предмет разблокирован после 3 друзей');
+    sqInv = await post('/api/inventory', {});
+    sqItem = sqInv.body.items.find(x => x.code === 'squad120_keyboard_blackgold');
+    ok(Boolean(sqItem) && sqItem.locked === false, 'в инвентаре предмет разблокирован');
+    const sqSold = await post('/api/inventory/sell', { itemId: sqItem.id });
+    eq(sqSold.status, 200, 'разблокированный предмет продаётся');
 
     console.log('\n7) Стрик и квесты: серверная проверка');
     let ch = await post('/api/challenge/status', {});

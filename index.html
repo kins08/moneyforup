@@ -425,7 +425,7 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .dice-roll-num{font-size:48px;font-weight:900;letter-spacing:1px;color:#fff;font-family:monospace;text-shadow:0 0 25px rgba(239,68,68,.5)}
 .dice-roll-num.win{color:#3ddc96;text-shadow:0 0 25px rgba(61,220,150,.6)}
 .dice-roll-num.lose{color:#ef4444;text-shadow:0 0 25px rgba(239,68,68,.6)}
-.dice-status-pill{font-size:11px;font-weight:800;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.08);color:#d1d5db;margin-top:4px}
+.dice-status-pill{font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.08);color:#d1d5db;margin-top:4px;max-width:calc(100% - 20px);line-height:1.3}
 .dice-slider-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .dice-range-slider{width:100%;-webkit-appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#3ddc96,#ef4444);outline:none;margin:12px 0}
 .dice-range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #ef4444;cursor:pointer;box-shadow:0 0 12px rgba(239,68,68,.6);transition:transform .1s}
@@ -939,7 +939,22 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .free-cases-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 8px}
 .free-cases-head b{font-size:12px;font-weight:950;letter-spacing:.08em;color:#fff}
 .free-cases-head span{font-size:9.5px;color:#9aa3b8}
-.free-cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:13px}
+.free-cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.squad-case{display:flex;align-items:stretch;gap:0;width:100%;padding:0;margin:0 0 13px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,rgba(255,207,107,.13),rgba(255,255,255,.02));border:1px solid rgba(255,207,107,.42);color:#fff;font-family:inherit;text-align:left;cursor:pointer;box-shadow:0 8px 24px -16px rgba(255,207,107,.65)}
+.squad-case:active{transform:scale(.985)}
+.squad-case__cover{position:relative;flex:0 0 108px;min-height:126px;overflow:hidden;background:#111}
+.squad-case__cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.squad-case__cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,8,8,.55))}
+.squad-case__cover .free-chip{position:absolute;top:6px;left:6px;z-index:2}
+.squad-case__price{position:absolute;top:6px;right:6px;z-index:2;font-size:9px;font-weight:950;color:#111;background:linear-gradient(135deg,#ffcf6b,#f59e0b);border-radius:6px;padding:2px 5px}
+.squad-case__body{flex:1;min-width:0;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.squad-case__eyebrow{font-size:8.5px;font-weight:950;letter-spacing:.13em;color:#ffcf6b}
+.squad-case__name{font-size:14px;font-weight:950;color:#fff;line-height:1.15}
+.squad-case__item{font-size:10px;font-weight:850;color:#e8d6b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.squad-case__status{font-size:9.5px;font-weight:850;color:#ffcf6b;line-height:1.3}
+.squad-case__bar{height:4px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:3px}
+.squad-case__bar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#3ddc96);border-radius:99px}
+@media (max-width:380px){.squad-case__cover{flex-basis:88px;min-height:112px}.squad-case__name{font-size:12px}.squad-case__item{font-size:9px}}
 .free-case{position:relative;display:block;padding:0;border-radius:16px;overflow:hidden;background:#0c0c0c;border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;cursor:pointer;min-width:0;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .free-case:active{transform:scale(.978)}
 .free-case.is-ready{border-color:rgba(255,207,107,.55);box-shadow:0 8px 24px -12px rgba(255,207,107,.55)}
@@ -948,9 +963,11 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .free-case__cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .free-case__cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 38%,rgba(8,8,8,.82) 100%);pointer-events:none}
 .free-case__free{position:absolute;top:6px;left:6px;z-index:3}
+.free-case__price{position:absolute;top:6px;right:6px;z-index:3;font-size:9px;font-weight:950;color:#111;background:linear-gradient(135deg,#ffcf6b,#f59e0b);border-radius:6px;padding:2px 5px;line-height:1.2;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .free-case__lock{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:rgba(0,0,0,.42);font-size:23px;color:#ffcf6b;text-shadow:0 2px 10px rgba(0,0,0,.8)}
 .free-case__body{position:relative;display:block;z-index:2;padding:7px 8px 9px}
 .free-case__name{display:block;font-size:10.5px;font-weight:950;line-height:1.2;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.free-case__item{display:block;font-size:8.5px;font-weight:850;color:#e8d6b0;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .free-case__status{display:block;font-size:9px;color:#ffcf6b;font-weight:800;margin-top:3px;line-height:1.25;min-height:23px}
 .free-case__bar{display:block;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}
 .free-case__bar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf6b,#f59e0b);border-radius:99px}
@@ -965,6 +982,11 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .fcm-badge{display:inline-flex;font-size:9px;font-weight:950;letter-spacing:.1em;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#101010;border-radius:6px;padding:3px 8px;margin-bottom:8px}
 .fcm-title{font-size:17px;font-weight:950;color:#fff;line-height:1.2;padding-right:24px}
 .fcm-sub{font-size:10.5px;color:#9aa3b8;line-height:1.45;margin-top:4px}
+.fcm-prize{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:9px;border:1px solid rgba(255,207,107,.28);border-radius:12px;background:linear-gradient(135deg,rgba(255,207,107,.1),rgba(255,255,255,.02))}
+.fcm-prize img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:0 0 auto}
+.fcm-prize b{display:block;font-size:11.5px;color:#fff;line-height:1.2}
+.fcm-prize span{display:block;font-size:10px;color:#ffcf6b;font-weight:900;margin-top:3px}
+.fcm-prize small{display:block;font-size:9px;color:#9aa3b8;margin-top:2px}
 .fcm-roulette{position:relative;overflow:hidden;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:#0a0a0a;padding:10px 0;margin:13px 0}
 .fcm-roulette:before,.fcm-roulette:after{content:'';position:absolute;top:0;bottom:0;width:28px;z-index:2;pointer-events:none}
 .fcm-roulette:before{left:0;background:linear-gradient(90deg,#0a0a0a,transparent)}
@@ -988,7 +1010,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .fcm-result b{display:block;font-size:13px;color:#fff;line-height:1.3}
 .fcm-result span{display:block;font-size:17px;font-weight:950;color:#ffcf6b;margin-top:3px}
 .fcm-result small{display:block;font-size:9.5px;color:#9aa3b8;margin-top:4px;line-height:1.35}
-@media (max-width:380px){.free-cases{gap:6px}.free-case__name{font-size:9.5px}.free-case__status{font-size:8px}.fcm-card{flex-basis:76px}}
+@media (max-width:380px){.free-cases{gap:6px}.free-case__name{font-size:9.5px}.free-case__item{font-size:7.5px}.free-case__price{font-size:8px}.free-case__status{font-size:8px}.fcm-card{flex-basis:76px}}
 .casehub-case-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .casehub-case-actions .control{margin:0;flex:1;min-width:120px;padding:11px 10px;font-size:12px}
 .casehub-warmup{margin-top:10px}
@@ -2095,7 +2117,7 @@ function tgInit(){
 /* ===================================================== */
 
 /* ---------- состояние ---------- */
-const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,freeCase5RefClaimed:0,freeCase3RefClaimed:0,freeDailyAt:0,refQualified:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,lastHotDrop:0,inventory:[],soundOn:true,lastBet:0,lastTrendBet:0,lastPulseBet:0,lastRacketBet1:0,lastRacketBet2:0};
+const S={balance:50,plays:0,wagered:0,net:0,bet:10,hist:[],rHist:[],autoX:1.50,autoOn:false,totalDeposited:0,lastDeposit:0,lastDepositAt:0,lastCashbackAt:0,cashbackClaimed:false,easycashClaimed:false,rakeback:0,freeCases:0,freeCase5RefClaimed:0,freeCase3RefClaimed:0,freeDailyAt:0,refQualified:0,termsAt:0,ref:'',refCode:'',refInvited:0,refEarned:0,username:'',name:'',numId:10000,channelCooldownUntil:0,lastWheelSpin:0,lastHotDrop:0,inventory:[],soundOn:true,lastBet:0,lastTrendBet:0,lastPulseBet:0,lastRacketBet1:0,lastRacketBet2:0,squad:null};
 /* уникальный реферальный код: MF + 6 символов; на сервере код выдаётся один раз и навсегда */
 function genRefCode(){
   let out='MF';
@@ -2109,6 +2131,14 @@ function ensureRefCode(){
   S.refCode=code;save();return code;
 }
 const refLinkFor=code=>'https://t.me/'+BOT_NAME+'?startapp='+(code||'');
+function shareSquadInvite(){
+  const link=refLinkFor(ensureRefCode());
+  const shareUrl='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Заходи в MoneyForUp — прокрути Squad 120 и помоги мне разблокировать предмет за 120 ₽!');
+  try{
+    if(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.openTelegramLink) window.Telegram.WebApp.openTelegramLink(shareUrl);
+    else window.open(shareUrl,'_blank','noopener');
+  }catch(_){}
+}
 try{
   const d=JSON.parse(localStorage.getItem('moneyforup')||'null');
   if(d){
@@ -2443,7 +2473,7 @@ function freeCasesReady(){
   const daily = !S.freeDailyAt || now - Number(S.freeDailyAt) >= 24*3600*1000;
   const ref3 = !S.freeCase3RefClaimed && Number(S.refQualified||0) >= 3;
   const ref5 = !S.freeCase5RefClaimed && Number(S.refQualified||0) >= 5;
-  return daily || ref3 || ref5 || Number(S.freeCases||0) > 0;
+  return daily || ref3 || ref5 || Number(S.freeCases||0) > 0 || Boolean(S.squad && S.squad.canSpin);
 }
 function updateFreeBadges(){
   const nav = q('#navCasesFree');
@@ -2982,6 +3012,10 @@ function sellInventoryItem(itemId){
     showAppNotification('Этот скин нельзя продать — только проапгрейдить в Upgrader!');
     return;
   }
+  if(item.locked){
+    showAppNotification('Squad 120 заблокирован: пригласите 3 друзей, чтобы они прокрутили этот кейс.');
+    return;
+  }
 
   // Демо-режим (нет сервера) — деньги ненастоящие, считаем локально
   if(!IS_TG||!API_BASE){
@@ -3008,7 +3042,7 @@ function sellInventoryItem(itemId){
 }
 
 function sellAllInventory(){
-  const list = (S.inventory || []).filter(it => !it.upgrade_only && !it.collectible);
+  const list = (S.inventory || []).filter(it => !it.upgrade_only && !it.collectible && !it.locked);
   if(!list.length){
     showAppNotification('В инвентаре нет предметов для продажи — коллекционные и акционные вещи не продаются.');
     return;
@@ -3018,7 +3052,7 @@ function sellAllInventory(){
   if(!IS_TG||!API_BASE){        // демо-режим
     if(confirm(`Продать все доступные ${list.length} предметов за +${fmtRub(totalVal)}?`)){
       S.balance += totalVal;
-      S.inventory = (S.inventory || []).filter(it => it.upgrade_only || it.collectible);
+      S.inventory = (S.inventory || []).filter(it => it.upgrade_only || it.collectible || it.locked);
       save(); syncUI(); tgHaptic('win');
     }
     return;
@@ -3030,7 +3064,7 @@ function sellAllInventory(){
       S.balance=r.tokens;
       try{sessionStorage.setItem('lastServerBalance',String(S.balance));}catch(_){}
     }
-    S.inventory=(S.inventory||[]).filter(it => it.upgrade_only || it.collectible);
+    S.inventory=(S.inventory||[]).filter(it => it.upgrade_only || it.collectible || it.locked);
     save(); syncUI(); tgHaptic('win');
     showAppNotification(`Продано ${r.count} предмет(ов) · +${fmt(r.total)} ₽`);
   }).catch(err=>{
@@ -3043,8 +3077,8 @@ function openItemDetailModal(it){
   const existing = q('.inv-modal-wrap');
   if(existing) existing.remove();
 
-  const col = it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff');
-  const tierName = it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий'));
+  const col = it.locked ? '#ffcf6b' : (it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff'));
+  const tierName = it.locked ? `SQUAD · ${Number(it.squadFriendsSpun||0)}/${Number(it.squadNeeded||3)}` : (it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий')));
   const rubVal = fmtRub(it.price);
   const modal = document.createElement('div');
   modal.className = 'inv-modal-wrap';
@@ -3067,7 +3101,14 @@ function openItemDetailModal(it){
       </div>
     </div>
 
-    ${it.collectible ? `
+    ${it.locked ? `
+      <div style="background:linear-gradient(135deg,rgba(255,207,107,.12),rgba(245,158,11,.04));border:1px solid rgba(255,207,107,.38);border-radius:14px;padding:14px 12px;margin-bottom:6px;text-align:center">
+        <div style="font-size:22px;margin-bottom:6px">🔒</div>
+        <div style="font-size:12.5px;font-weight:900;color:#ffcf6b;margin-bottom:4px">Squad 120 заблокирован</div>
+        <div style="font-size:11px;color:#b8c1d4;line-height:1.45">Пригласите 3 друзей — они должны прокрутить этот же кейс. Сейчас: ${Number(it.squadFriendsSpun||0)}/3. После этого предмет можно продать за 120 ₽ или отправить в апгрейдер.</div>
+        <button class="control" id="btnModalSquadShare" style="margin-top:10px;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#111;font-weight:950;font-size:12px">ПРИГЛАСИТЬ ДРУЗЕЙ</button>
+      </div>
+    ` : it.collectible ? `
       <div style="background:linear-gradient(135deg,rgba(255,207,107,.1),rgba(245,158,11,.04));border:1px solid rgba(255,207,107,.35);border-radius:14px;padding:14px 12px;margin-bottom:6px;text-align:center">
         <div style="font-size:22px;margin-bottom:6px">🔒</div>
         <div style="font-size:12.5px;font-weight:900;color:#ffcf6b;margin-bottom:4px">Коллекционный предмет</div>
@@ -3111,6 +3152,8 @@ function openItemDetailModal(it){
 
   const closeBtn = q('#btnInvModalClose', modal);
   if(closeBtn) closeBtn.onclick = () => modal.remove();
+  const sqShareBtn = q('#btnModalSquadShare', modal);
+  if(sqShareBtn) sqShareBtn.onclick = () => shareSquadInvite();
   modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
 
   const upBtn = q('#btnModalGoUpgrade', modal);
@@ -3134,7 +3177,7 @@ function renderProfileInventory(){
   if(!grid) return;
   S.inventory = S.inventory || [];
 
-  const sellable = S.inventory.filter(it => !it.upgrade_only && !it.collectible);
+  const sellable = S.inventory.filter(it => !it.upgrade_only && !it.collectible && !it.locked);
   const totalVal = sellable.reduce((sum, it) => sum + (it.price || 0), 0);
   if(countEl){
     countEl.textContent = `${S.inventory.length} шт. (к продаже: ${fmtRub(totalVal)})`;
@@ -3156,18 +3199,23 @@ function renderProfileInventory(){
   }
 
   grid.innerHTML = S.inventory.map(it => {
-    const col = it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff');
-    const tierName = it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий'));
+    const col = it.locked ? '#ffcf6b' : (it.collectible ? '#ffcf6b' : ((typeof TIER_COLS !== 'undefined' && TIER_COLS[it.tier]) || '#8f97ff'));
+    const tierName = it.locked ? `SQUAD · ${Number(it.squadFriendsSpun||0)}/${Number(it.squadNeeded||3)}` : (it.collectible ? 'КОЛЛЕКЦИЯ' : (it.upgrade_only ? 'ТОЛЬКО АПГРЕЙД' : ((typeof TIER_NAMES !== 'undefined' && TIER_NAMES[it.tier]) || 'Редкий')));
     return `
-    <div class="inv-card" style="--inv-tier-col:${it.collectible ? '#ffcf6b' : (it.upgrade_only ? '#f59e0b' : col)}" data-card-id="${it.id}">
-      <span class="inv-tier-tag" style="${it.collectible ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : '')}">${tierName}</span>
+    <div class="inv-card" style="--inv-tier-col:${it.locked ? '#ffcf6b' : (it.collectible ? '#ffcf6b' : (it.upgrade_only ? '#f59e0b' : col))}" data-card-id="${it.id}">
+      <span class="inv-tier-tag" style="${it.locked ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.collectible ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : ''))}">${tierName}</span>
       <div class="inv-icon-aura">
         <div class="inv-icon"><img class="inv-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'"></div>
       </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
       <div class="inv-val">${fmtRub(it.price)}</div>
       <div class="inv-acts">
-        ${it.collectible ? `
+        ${it.locked ? `
+          <div style="grid-column:1/-1;text-align:center;font-size:10px;font-weight:800;color:#ffcf6b;border:1px solid rgba(255,207,107,.28);border-radius:9px;padding:6px 4px;background:rgba(255,207,107,.07)">
+            🔒 ${Number(it.squadFriendsSpun||0)}/${Number(it.squadNeeded||3)} друзей
+            <button class="chip" data-squad-share="1" style="display:block;width:100%;margin-top:5px;padding:5px;font-size:10px;color:#111;background:linear-gradient(135deg,#ffcf6b,#f59e0b);border:0;font-weight:950">ПРИГЛАСИТЬ</button>
+          </div>
+        ` : it.collectible ? `
           <div style="grid-column:1/-1;text-align:center;font-size:10px;font-weight:800;color:#ffcf6b;border:1px solid rgba(255,207,107,.28);border-radius:9px;padding:7px 4px;background:rgba(255,207,107,.07)">🔒 НЕ ПРОДАЁТСЯ</div>
         ` : it.upgrade_only ? `
           <button class="inv-btn-up" data-up-id="${it.id}" style="grid-column:1/-1;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:900" title="Только апгрейд">⚡ В АПГРЕЙДЕР</button>
@@ -3192,6 +3240,10 @@ function renderProfileInventory(){
       e.stopPropagation();
       sellInventoryItem(b.dataset.sellId);
     };
+  });
+
+  qa('[data-squad-share]', grid).forEach(b => {
+    b.onclick = (e) => { e.stopPropagation(); shareSquadInvite(); };
   });
 
   qa('[data-up-id]', grid).forEach(b => {
@@ -9520,6 +9572,24 @@ function gameDice(){
     return Math.floor(1000000 * (1 - winChance / 100));
   }
 
+  function diceRangeText(targetUnder, targetOver){
+    return `Меньше 0–${targetUnder} · Больше ${targetOver}–999999`;
+  }
+
+  /* Цифры в анимации берём из победного/проигрышного диапазона с частотой,
+     равной выбранному проценту. Сам исход по-прежнему решает сервер. */
+  function diceTickNumber(side, chance, under, over){
+    const inWinRange = Math.random() * 100 < chance;
+    if(inWinRange){
+      return side === 'under'
+        ? Math.floor(Math.random() * (under + 1))
+        : over + Math.floor(Math.random() * (1000000 - over));
+    }
+    return side === 'under'
+      ? under + 1 + Math.floor(Math.random() * (1000000 - under - 1))
+      : Math.floor(Math.random() * over);
+  }
+
   function render(){
     const payout = getPayout();
     const targetUnder = getTargetUnder();
@@ -9530,7 +9600,7 @@ function gameDice(){
     <div class="dice-stage">
       <div class="dice-display">
         <div class="dice-roll-num" id="diceNum">${String(lastRoll).padStart(6, '0')}</div>
-        <div class="dice-status-pill" id="diceSub">000 000 — 999 999</div>
+        <div class="dice-status-pill" id="diceSub">${diceRangeText(targetUnder, targetOver)}</div>
       </div>
 
       <div class="dice-slider-card">
@@ -9613,6 +9683,7 @@ function gameDice(){
     const cVal = q('#diceChanceVal', a); if(cVal) cVal.textContent = winChance;
     const mVal = q('#diceMult', a); if(mVal) mVal.textContent = '×' + payout;
     const pwVal = q('#dicePotWin', a); if(pwVal) pwVal.textContent = `+${fmt(potWin)} ₽`;
+    const subVal = q('#diceSub', a); if(subVal) subVal.textContent = diceRangeText(targetUnder, targetOver);
 
     const btnUnder = q('#btnDiceUnder', a);
     if(btnUnder) btnUnder.innerHTML = `<span>МЕНЬШЕ</span><span class="dice-btn-sub">0 — ${targetUnder}</span>`;
@@ -9658,7 +9729,7 @@ function gameDice(){
     let rollsCount = 0;
     const rollInterval = setInterval(() => {
       rollsCount++;
-      const randN = Math.floor(Math.random() * 1000000);
+      const randN = diceTickNumber(side, lockedChance, lockedUnder, lockedOver);
       if(numEl) numEl.textContent = String(randN).padStart(6, '0');
     }, 45);
 
@@ -10894,14 +10965,27 @@ function gameCaseHubUnified(sel){
 
   /* ── FREE-кейсы ────────────────────────────────────────────────────────── */
   const FREE_DAILY_MS = 24*3600*1000;
+  const FREE_REF_FALLBACK = {
+    ref3:{ code:'ref3_tws_blackgold', name:'TWS-наушники Black Gold', priceRub:170, collectible:1 },
+    ref5:{ code:'ref5_watch_onyx', name:'Смарт-часы Onyx Gold', priceRub:240, collectible:1 }
+  };
+  const SQUAD_FALLBACK = {
+    code:'squad120_prize', name:'Приз',
+    icon:'🎁', price:0, priceRub:0, tier:'high'
+  };
+  const squadFallback = () => ({
+    spun:false, canSpin:true, friendsSpun:0, needed:3, unlocked:false, item:SQUAD_FALLBACK
+  });
+  let freeRefItems = { ref3:null, ref5:null };
   function freeMeta(){
     const now=Date.now();
     const dailyLeft=Math.max(0, Number(S.freeDailyAt||0)+FREE_DAILY_MS-now);
     const q=Number(S.refQualified||0);
     return {
       daily:{ready: !S.freeDailyAt || dailyLeft<=0, leftMs:dailyLeft},
-      ref3:{claimed:Boolean(S.freeCase3RefClaimed), qualified:q, needed:3, canClaim:!S.freeCase3RefClaimed && q>=3},
-      ref5:{claimed:Boolean(S.freeCase5RefClaimed), qualified:q, needed:5, canClaim:!S.freeCase5RefClaimed && q>=5}
+      ref3:{claimed:Boolean(S.freeCase3RefClaimed), qualified:q, needed:3, canClaim:!S.freeCase3RefClaimed && q>=3, item:freeRefItems.ref3||FREE_REF_FALLBACK.ref3},
+      ref5:{claimed:Boolean(S.freeCase5RefClaimed), qualified:q, needed:5, canClaim:!S.freeCase5RefClaimed && q>=5, item:freeRefItems.ref5||FREE_REF_FALLBACK.ref5},
+      squad: S.squad || squadFallback()
     };
   }
   function freeCasesHtml(){
@@ -10909,14 +10993,16 @@ function gameCaseHubUnified(sel){
     const card=(kind,cover,name,status,opt)=>{
       opt=opt||{};
       const lock=Boolean(opt.lock)&&!opt.claimed;
-      return `<button class="free-case${opt.ready?' is-ready':''}${opt.claimed?' is-claimed':''}" data-free="${kind}" aria-label="${esc(name)}">
+      return `<button class="free-case${opt.ready?' is-ready':''}${opt.claimed?' is-claimed':''}" data-free="${kind}" aria-label="${esc(name)}${opt.itemName?' · '+esc(opt.itemName):''}">
         <span class="free-case__cover">
           <img src="${cover}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
           <span class="free-case__free free-chip">FREE</span>
+          ${opt.priceLabel?`<span class="free-case__price">${esc(opt.priceLabel)}</span>`:''}
           ${lock?'<span class="free-case__lock">🔒</span>':''}
         </span>
         <span class="free-case__body">
           <span class="free-case__name">${esc(name)}</span>
+          ${opt.itemName?`<span class="free-case__item">${esc(opt.itemName)}</span>`:''}
           <span class="free-case__status">${status}</span>
           ${opt.progress!=null?`<span class="free-case__bar"><i style="width:${Math.round(Math.min(1,opt.progress)*100)}%"></i></span>`:''}
           ${opt.claimed?'<span class="free-case__done">ПОЛУЧЕНО</span>':''}
@@ -10927,12 +11013,34 @@ function gameCaseHubUnified(sel){
     const dStatus=d.ready?'<b style="color:#3ddc96">ГОТОВ · 1–6 ₽</b>':`через ${fmtHms(d.leftMs)}`;
     const r3Status=r3.claimed?'Предмет в коллекции':(r3.canClaim?'<b style="color:#3ddc96">ГОТОВ · открыть</b>':`${r3.qualified} из 3 друзей`);
     const r5Status=r5.claimed?'Предмет в коллекции':(r5.canClaim?'<b style="color:#3ddc96">ГОТОВ · открыть</b>':`${r5.qualified} из 5 друзей`);
-    return `<div class="free-cases-head"><b>FREE</b><span>бесплатно · без депозита</span></div>
+    return `${squadCaseHtml(fm.squad)}
+      <div class="free-cases-head"><b>FREE</b><span>бесплатно · без депозита</span></div>
       <div class="free-cases">
         ${card('daily','assets/cases/free_daily.jpg','Ежедневный',dStatus,{ready:d.ready})}
-        ${card('ref3','assets/cases/free_squad3.jpg','За 3 друзей',r3Status,{ready:r3.canClaim,claimed:r3.claimed,lock:!r3.canClaim,progress:r3.qualified/3})}
-        ${card('ref5','assets/cases/free_squad5.jpg','За 5 друзей',r5Status,{ready:r5.canClaim,claimed:r5.claimed,lock:!r5.canClaim,progress:r5.qualified/5})}
+        ${card('ref3','assets/cases/free_squad3.jpg','За 3 друзей',r3Status,{ready:r3.canClaim,claimed:r3.claimed,lock:!r3.canClaim,progress:r3.qualified/3,itemName:r3.item.name,priceLabel:`${r3.item.priceRub} ₽`})}
+        ${card('ref5','assets/cases/free_squad5.jpg','За 5 друзей',r5Status,{ready:r5.canClaim,claimed:r5.claimed,lock:!r5.canClaim,progress:r5.qualified/5,itemName:r5.item.name,priceLabel:`${r5.item.priceRub} ₽`})}
       </div>`;
+  }
+  function squadCaseHtml(sq){
+    sq=sq||freeMeta().squad;
+    const item=sq.item||SQUAD_FALLBACK;
+    const locked=sq.spun&&!sq.unlocked;
+    const status=!sq.spun
+      ? ''
+      : sq.unlocked
+        ? '<b style="color:#3ddc96">РАЗБЛОКИРОВАН · ПРОДАЖА / АПГРЕЙД</b>'
+        : `🔒 Друзей прокрутили: ${sq.friendsSpun}/${sq.needed}`;
+    return `<button class="squad-case" id="squadCaseCard" aria-label="Squad Case">
+      <span class="squad-case__cover">
+        <img src="assets/cases/free_squad120.jpg" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
+        <span class="free-chip">FREE</span>
+      </span>
+      <span class="squad-case__body">
+        <span class="squad-case__name">Squad Case</span>
+        ${status?`<span class="squad-case__status">${status}</span>`:''}
+        ${sq.spun?`<span class="squad-case__bar"><i style="width:${Math.round(Math.min(1,(sq.friendsSpun||0)/(sq.needed||3))*100)}%"></i></span>`:''}
+      </span>
+    </button>`;
   }
 
   let freeModal=null;
@@ -10945,22 +11053,13 @@ function gameCaseHubUnified(sel){
       : `<div class="fci">${icon||'📦'}</div>`;
     return `${head}<div class="fcn">${esc(name||'')}</div><div class="fcv">${val||''}</div>`;
   }
-  function freePool(kind,winner){
+  function freePool(kind,item){
     if(kind==='daily'){
       return [1,2,3,4,5,6].map(n=>({icon:'💸',name:`+${n} ₽`,val:`${n} ₽`}));
     }
-    if(kind==='ref3') return [
-      {icon:'assets/items/earbuds.jpg',name:'TWS-наушники Black Gold',val:'170 ₽'},
-      {icon:'assets/items/headphones.jpg',name:'Over-Ear Black Gold',val:'КОЛЛЕКЦИЯ'},
-      {icon:'assets/items/speaker.jpg',name:'Колонка Black Gold',val:'КОЛЛЕКЦИЯ'},
-      {icon:'assets/items/smartwatch.jpg',name:'Смарт-часы Onyx',val:'КОЛЛЕКЦИЯ'}
-    ];
-    return [
-      {icon:'assets/items/smartwatch.jpg',name:'Смарт-часы Onyx Gold',val:'240 ₽'},
-      {icon:'assets/items/headphones.jpg',name:'Over-Ear Black Gold',val:'КОЛЛЕКЦИЯ'},
-      {icon:'assets/items/speaker.jpg',name:'Колонка Black Gold',val:'КОЛЛЕКЦИЯ'},
-      {icon:'assets/items/tablet.jpg',name:'Планшет Black Gold',val:'КОЛЛЕКЦИЯ'}
-    ];
+    // В рулетке только реальный предмет, который выдаёт сервер.
+    const actual=item||FREE_REF_FALLBACK[kind==='ref5'?'ref5':'ref3'];
+    return [{icon:itemArt(actual),name:actual.name,val:`${actual.priceRub} ₽`}];
   }
   function openFreeModal(kind){
     closeFreeModal();
@@ -10972,7 +11071,7 @@ function gameCaseHubUnified(sel){
       : {title:kind==='ref3'?'FREE-кейс за 3 друзей':'FREE-кейс за 5 друзей', sub:kind==='ref3'?'Одноразовый коллекционный предмет за 3 активных друга':'Одноразовый коллекционный предмет за 5 активных друзей', ready:ref.canClaim, claimed:ref.claimed};
     const need=isDaily?0:ref.needed;
     const q=isDaily?0:ref.qualified;
-    const pool=freePool(kind);
+    const pool=freePool(kind,isDaily?null:ref.item);
     const previewCards=Array.from({length:16},(_,i)=>pool[i%pool.length]);
     let status='';
     if(meta.claimed) status='Этот кейс уже открыт. Второй раз его получить нельзя.';
@@ -10986,13 +11085,17 @@ function gameCaseHubUnified(sel){
       <div class="fcm-badge">FREE</div>
       <div class="fcm-title">${esc(meta.title)}</div>
       <div class="fcm-sub">${esc(meta.sub)}</div>
+      ${!isDaily?`<div class="fcm-prize">
+        <img src="${itemArt(ref.item)}" alt="" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
+        <div><b>${esc(ref.item.name)}</b><span>${ref.item.priceRub} ₽</span><small>Коллекционный предмет · не продаётся</small></div>
+      </div>`:''}
       <div class="fcm-roulette">
         <div class="fcm-pointer"></div>
         <div class="fcm-strip" id="fcmStrip">${previewCards.map(c=>`<div class="fcm-card">${freeCardLabel(c.icon,c.name,c.val)}</div>`).join('')}</div>
       </div>
       <div class="fcm-progress">
         <div class="fcm-bar"><i style="width:${isDaily?(fm.daily.ready?100:0):Math.round(Math.min(1,q/need)*100)}%"></i></div>
-        <small><span>${isDaily?'Обновление раз в 24 часа':`Активных друзей: ${q}/${need}`}</span><span>${isDaily?'1–6 ₽':(kind==='ref3'?'170 ₽':'240 ₽')}</span></small>
+        <small><span>${isDaily?'Обновление раз в 24 часа':`Активных друзей: ${q}/${need}`}</span><span>${isDaily?'1–6 ₽':`${ref.item.priceRub} ₽`}</span></small>
       </div>
       <div class="fcm-result" id="fcmResult"></div>
       <div class="fcm-status small" id="fcmStatus" style="margin:8px 2px 0;color:#fca5a5;min-height:14px;font-size:10px">${esc(status)}</div>
@@ -11066,7 +11169,8 @@ function gameCaseHubUnified(sel){
       : {icon:itemArt(drop),name:drop.name||'Коллекционный предмет',val:fmt(drop.price||0)+' ₽'};
     const strip=modal.querySelector('#fcmStrip');
     if(strip){
-      const basePool=freePool(kind).filter(c=>c.name!==winCard.name);
+      const itemForPool=kind==='daily'?null:freeMeta()[kind].item;
+      const basePool=freePool(kind,itemForPool).filter(c=>c.name!==winCard.name);
       const cards=Array.from({length:52},(_,i)=>i===40?winCard:(basePool[i%basePool.length]||winCard));
       strip.innerHTML=cards.map(c=>`<div class="fcm-card">${freeCardLabel(c.icon,c.name,c.val)}</div>`).join('');
       strip.style.transition='none'; strip.style.transform='translateX(0px)';
@@ -11241,6 +11345,7 @@ function gameCaseHubUnified(sel){
     if(repeatBtn) repeatBtn.onclick=()=>openCase();
     const freeBtn=q('#chFreeOpen',a); if(freeBtn) freeBtn.onclick=openFreeCase;
     a.querySelectorAll('[data-free]').forEach(b=>b.onclick=()=>{ if(busy) return; openFreeModal(b.dataset.free); });
+    const squadBtn=q('#squadCaseCard',a); if(squadBtn) squadBtn.onclick=openSquadModal;
     const warmBtn=q('#chWarmup',a); if(warmBtn) warmBtn.onclick=openWarmup;
     const upBtn=q('#chUpgrade',a);
     if(upBtn) upBtn.onclick=()=>{
@@ -11354,6 +11459,131 @@ function gameCaseHubUnified(sel){
     animate(m,drop);
   }
 
+  function squadState(){
+    return (S.squad && typeof S.squad==='object') ? S.squad : squadFallback();
+  }
+  function squadPool(){
+    const out=[], seen=new Set();
+    for(const c of (catalog||[])){
+      for(const it of (c.items||[])){
+        if(!it||!it.code||seen.has(it.code)) continue;
+        if(/клавиатур/i.test(String(it.name||''))) continue; // не спойлерим приз
+        seen.add(it.code); out.push(it);
+        if(out.length>=20) break;
+      }
+      if(out.length>=20) break;
+    }
+    while(out.length<20) out.push(out[0]||SQUAD_FALLBACK);
+    return out.slice(0,20);
+  }
+  function squadCard(it){
+    return `<div class="fcm-card">${freeCardLabel(itemArt(it), it.name, `${fmt(it.price||0)} ₽`)}</div>`;
+  }
+  function squadShare(){ shareSquadInvite(); }
+  function openSquadModal(){
+    closeFreeModal();
+    const sq=squadState();
+    const item=sq.item||SQUAD_FALLBACK;
+    const preview=squadPool().map(squadCard).join('');
+    const pct=sq.spun?Math.round(Math.min(1,(sq.friendsSpun||0)/(sq.needed||3))*100):0;
+    const status=!sq.spun
+      ? 'Крутите бесплатно — один предмет из прокрута попадёт в инвентарь.'
+      : sq.unlocked
+        ? 'Предмет разблокирован: его можно продать или отправить в апгрейдер.'
+        : `Чтобы продать или апгрейдить, пригласите 3 друзей — они должны прокрутить этот же кейс. Сейчас ${sq.friendsSpun}/3.`;
+    const action=!sq.spun?'КРУТИТЬ БЕСПЛАТНО':(sq.unlocked?'ЗАКРЫТЬ':'ПРИГЛАСИТЬ ДРУЗЕЙ');
+    const modal=document.createElement('div');
+    modal.className='free-modal';
+    modal.innerHTML=`<div class="fcm-box" role="dialog" aria-modal="true" aria-label="Squad Case">
+      <button class="fcm-close" id="squadClose" aria-label="Закрыть">✕</button>
+      <div class="fcm-badge">FREE · SQUAD</div>
+      <div class="fcm-title">Squad Case</div>
+      <div class="fcm-sub">20 предметов · бесплатный прокрут</div>
+      ${sq.spun?`<div class="fcm-prize">
+        <img src="${itemArt(item)}" alt="" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
+        <div><b>${esc(item.name)}</b><span>120 ₽</span><small>${sq.unlocked?'Разблокирован · можно продать или апгрейдить':'Коллекционный приз · продажа/апгрейд после 3 друзей'}</small></div>
+      </div>`:''}
+      <div class="fcm-progress">
+        <div class="fcm-bar"><i style="width:${pct}%"></i></div>
+        <small><span>Друзей прокрутили: ${sq.friendsSpun||0}/${sq.needed||3}</span><span>${sq.spun?'ПРОКРУЧЕНО':'20 предметов'}</span></small>
+      </div>
+      <div class="fcm-roulette"><div class="fcm-pointer"></div><div class="fcm-strip" id="squadStrip">${preview}</div></div>
+      <div class="fcm-result" id="squadResult"></div>
+      <div class="fcm-status small" id="squadStatus" style="margin:8px 2px 0;color:#fca5a5;min-height:14px;font-size:10px">${esc(status)}</div>
+      <button class="fcm-open" id="squadAction">${action}</button>
+      <button class="fcm-open ghost" id="squadShare" style="margin-top:6px">ПРИГЛАСИТЬ ДРУЗЕЙ</button>
+    </div>`;
+    document.body.appendChild(modal);
+    freeModal=modal;
+    const closeBtn=modal.querySelector('#squadClose');
+    const actionBtn=modal.querySelector('#squadAction');
+    const shareBtn=modal.querySelector('#squadShare');
+    if(closeBtn) closeBtn.onclick=closeFreeModal;
+    if(shareBtn) shareBtn.onclick=squadShare;
+    modal.onclick=e=>{ if(e.target===modal) closeFreeModal(); };
+    if(actionBtn){
+      if(!sq.spun) actionBtn.onclick=()=>spinSquad(modal,item);
+      else if(sq.unlocked) actionBtn.onclick=closeFreeModal;
+      else actionBtn.onclick=squadShare;
+    }
+  }
+  async function spinSquad(modal, fallbackItem){
+    const action=modal.querySelector('#squadAction');
+    const statusEl=modal.querySelector('#squadStatus');
+    const resultEl=modal.querySelector('#squadResult');
+    if(action){ action.disabled=true; action.textContent='КРУТИМ…'; }
+    let res=null, err=null;
+    try{
+      if(IS_TG&&API_BASE) res=await tgCall('/api/free-case/squad/spin',{});
+      else res={ok:true,duplicate:false,item:fallbackItem,squad:{spun:true,canSpin:false,friendsSpun:0,needed:3,unlocked:false,item:fallbackItem}};
+    }catch(e){ err=e; }
+    if(!res||!res.ok){
+      if(action){ action.disabled=false; action.textContent='КРУТИТЬ БЕСПЛАТНО'; }
+      if(statusEl) statusEl.textContent=(err&&err.message)||(res&&res.error)||'Не удалось прокрутить кейс.';
+      return;
+    }
+    const sq=res.squad||squadState();
+    S.squad=sq;
+    const won=sq.item||res.item||fallbackItem;
+    const pool=squadPool();
+    const strip=modal.querySelector('#squadStrip');
+    if(strip){
+      const cards=Array.from({length:60},(_,i)=>i===40?won:pool[i%pool.length]);
+      strip.innerHTML=cards.map(squadCard).join('');
+      strip.style.transition='none'; strip.style.transform='translateX(0px)';
+      const winnerEl=strip.children[40];
+      const box=modal.querySelector('.fcm-roulette');
+      const left=winnerEl?winnerEl.offsetLeft:40*92;
+      const width=winnerEl?(winnerEl.offsetWidth||84):84;
+      const boxW=box?box.clientWidth:320;
+      const targetX=Math.round(left+width/2-boxW/2);
+      void strip.offsetWidth;
+      requestAnimationFrame(()=>{
+        strip.style.transition='transform 4.15s cubic-bezier(.08,.86,.1,1)';
+        strip.style.transform=`translateX(-${targetX}px)`;
+      });
+      [180,360,600,900,1280,1700,2200,2800,3400].forEach(t=>setTimeout(()=>{ if(freeModal===modal) tgHaptic('light'); },t));
+      await sleep(4250);
+      if(winnerEl) winnerEl.classList.add('is-win');
+      tgHaptic('win');
+    }
+    if(resultEl){
+      resultEl.className='fcm-result show';
+      resultEl.innerHTML=`<b>Выпала «${esc(won.name)}»</b><span>120 ₽</span><small>${sq.unlocked?'Предмет разблокирован — можно продать или апгрейдить.':'Предмет в инвентаре. Пригласите 3 друзей, которые прокрутят этот же кейс.'}</small>`;
+    }
+    if(statusEl) statusEl.textContent=sq.unlocked
+      ? 'Предмет разблокирован: продажа за 120 ₽ или апгрейд доступны.'
+      : `Заблокирован. Друзей прокрутили: ${sq.friendsSpun||0}/${sq.needed||3}. Пригласите ещё ${Math.max(0,(sq.needed||3)-(sq.friendsSpun||0))}.`;
+    if(action){
+      action.disabled=false;
+      action.textContent=sq.unlocked?'ЗАКРЫТЬ':'ПРИГЛАСИТЬ ДРУЗЕЙ';
+      action.onclick=sq.unlocked?closeFreeModal:squadShare;
+    }
+    S.inventory=S.inventory||[];
+    if(typeof loadInventory==='function') loadInventory().then(()=>{ if(typeof renderProfileInventory==='function') renderProfileInventory(); }).catch(()=>{});
+    save(); render();
+  }
+
   async function openFreeCase(){
     if(freeBusy||busy)return;
     if(Number(S.freeCases||0)<=0)return;
@@ -11448,6 +11678,9 @@ function gameCaseHubUnified(sel){
       S.refQualified=Number((d.ref3&&d.ref3.qualified)||S.refQualified||0);
       S.freeCase3RefClaimed=(d.ref3&&d.ref3.claimed)?1:0;
       S.freeCase5RefClaimed=(d.ref5&&d.ref5.claimed)?1:0;
+      if(d.ref3&&d.ref3.item) freeRefItems.ref3=d.ref3.item;
+      if(d.ref5&&d.ref5.item) freeRefItems.ref5=d.ref5.item;
+      if(d.squad) S.squad=d.squad;
       S.freeDailyAt=(d.daily&&d.daily.ready)?0:Math.max(0,Number(d.daily&&d.daily.nextAt||0)-24*3600*1000);
       save(); updateFreeBadges();
     }catch(_){}

@@ -99,6 +99,15 @@ function rollCaseDrop(userId, caseId, classic) {
 
 /* Два одноразовых FREE-кейса за друзей. Предметы коллекционные:
    их нельзя продать, апгрейднуть или обменять — только хранить. */
+const SQUAD_CASE = {
+  caseId: 'case_squad120',
+  code: 'squad120_keyboard_blackgold',
+  name: 'Механическая клавиатура Black Gold',
+  icon: '⌨️',
+  price: 1200,
+  priceRub: 120,
+  tier: 'high'
+};
 const FREE_REF_CASES = {
   3: {
     level: 3, needed: 3, caseId: 'case_free3', caseName: 'FREE · Кейс за 3 друзей',
@@ -116,6 +125,23 @@ function publicFreeRefItem(def) {
     code: def.code, name: def.name, icon: def.icon, price: def.price,
     priceRub: Math.round(def.price / TOKENS_PER_RUB),
     tier: def.tier, needed: def.needed, collectible: 1, upgradeOnly: 0
+  };
+}
+function squadStatus(u) {
+  const st = db.getSquadCaseStatus(u.id);
+  return {
+    spun: st.spun,
+    canSpin: !st.spun,
+    friendsSpun: st.friendsSpun,
+    needed: st.needed,
+    unlocked: st.unlocked,
+    inventoryId: st.item ? st.item.id : null,
+    // До прокрута не отдаём клиенту название/цену приза — без спойлеров.
+    item: st.spun ? {
+      code: SQUAD_CASE.code, name: SQUAD_CASE.name, icon: SQUAD_CASE.icon,
+      price: SQUAD_CASE.price, priceRub: SQUAD_CASE.priceRub,
+      tier: SQUAD_CASE.tier, collectible: 0, upgradeOnly: 0
+    } : null
   };
 }
 function grantReferralFreeCase(u, level) {
@@ -874,6 +900,9 @@ function playRound(u, rawGame, rawBet, rawMult, rawRoundId, rawItemId) {
       }
       if (it.collectible) {
         return { ok: false, error: 'Коллекционный предмет нельзя использовать в игре — он остаётся на память' };
+      }
+      if (it.locked) {
+        return { ok: false, error: 'Squad 120 заблокирован: пригласите 3 друзей, чтобы они прокрутили этот кейс.' };
       }
       invItem = it;
     }
@@ -2620,8 +2649,42 @@ const server = http.createServer(async (req, res) => {
           canClaim: !u.freeCase5RefClaimed && qualified >= 5,
           item: publicFreeRefItem(FREE_REF_CASES[5])
         },
+        squad: squadStatus(u),
         refCode: u.code,
         refLink: refLink(u.code)
+      });
+    }
+
+    /* Squad 120: один бесплатный предмет 120 ₽. Продажа/апгрейд — только
+       после того, как 3 приглашённых друга прокрутили этот же кейс. */
+    if (url.pathname === '/api/free-case/squad/status' && req.method === 'POST') {
+      if (!checkRateLimit(`squad-status:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      return send(200, { ok: true, squad: squadStatus(u) });
+    }
+    if (url.pathname === '/api/free-case/squad/spin' && req.method === 'POST') {
+      if (!checkRateLimit(`squad-spin:${u.id}`, 5, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      const before = db.getSquadCaseStatus(u.id);
+      if (before.spun) {
+        return send(200, { ok: true, duplicate: true, squad: squadStatus(u) });
+      }
+      const res = db.claimSquadCase(u.id, SQUAD_CASE);
+      if (!res.ok) {
+        if (res.duplicate) return send(200, { ok: true, duplicate: true, squad: squadStatus(u) });
+        return send(500, { error: res.error || 'Не удалось прокрутить Squad 120' });
+      }
+      if (res.inviterUnlocked && res.inviterId) {
+        bot.api.sendMessage(
+          res.inviterId,
+          `🔓 <b>Squad 120 разблокирован!</b>\n\nТри друга прокрутили кейс. Предмет «${SQUAD_CASE.name}» теперь можно продать или апгрейдить.`,
+          { parse_mode: 'HTML', reply_markup: new InlineKeyboard().webApp('🎁 Открыть инвентарь', APP_URL + '#profile') }
+        ).catch(() => {});
+      }
+      return send(200, {
+        ok: true, duplicate: false, locked: res.locked,
+        inventoryId: res.itemId,
+        inviterUnlocked: Boolean(res.inviterUnlocked),
+        item: { ...SQUAD_CASE },
+        squad: squadStatus(u)
       });
     }
 
@@ -3260,13 +3323,17 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/inventory') {
       const list = db.listInventory(u.id);
       const tot = db.inventoryTotals(u.id);
+      const squad = db.getSquadCaseStatus(u.id);
       return send(200, {
         ok: true,
         items: list.map(it => ({
           id: it.id, code: it.item_code, name: it.name, icon: it.icon,
           price: it.price, tier: it.tier, caseName: it.case_name, wonAt: it.acquired_at,
           upgrade_only: Boolean(it.upgrade_only),
-          collectible: Boolean(it.collectible)
+          collectible: Boolean(it.collectible),
+          locked: Boolean(it.locked),
+          squadFriendsSpun: it.locked ? squad.friendsSpun : 0,
+          squadNeeded: it.locked ? squad.needed : 0
         })),
         count: tot.count,
         value: tot.value,
@@ -3291,6 +3358,9 @@ const server = http.createServer(async (req, res) => {
       }
       if (it.upgrade_only) {
         return send(400, { error: 'Этот предмет нельзя продать — его можно только проапгрейдить в Upgrader!' });
+      }
+      if (it.locked) {
+        return send(400, { error: 'Squad 120 заблокирован: пригласите 3 друзей, чтобы они прокрутили этот кейс.' });
       }
 
       // Сначала помечаем проданным (атомарно, с условием sold_at IS NULL) —
@@ -3317,6 +3387,7 @@ const server = http.createServer(async (req, res) => {
       for (const it of list) {
         if (it.collectible) continue;   // коллекционные предметы не продаются и не апгрейдятся
         if (it.upgrade_only) continue;   // акционные предметы только для апгрейда, не продаются
+        if (it.locked) continue;         // Squad 120 до 3 друзей
         if (!db.markInventorySold(it.id, u.id, it.price)) continue;   // продали параллельно — пропускаем
         total += it.price;
         sold.push({ id: it.id, name: it.name, price: it.price });
@@ -3500,10 +3571,11 @@ const server = http.createServer(async (req, res) => {
           10: upgrade.ladderPreview(upgrade.MODES.standard, 10, 1000)
         },
         ladderTables: upgrade.LADDER_MULTS,
-        inventory: db.listInventory(u.id).filter(it => !it.collectible).map(it => ({
+        inventory: db.listInventory(u.id).filter(it => !it.collectible && !it.locked).map(it => ({
           id: it.id, code: it.item_code, name: it.name, icon: it.icon,
           price: it.price, tier: it.tier, caseName: it.case_name,
-          upgrade_only: Boolean(it.upgrade_only)
+          upgrade_only: Boolean(it.upgrade_only),
+          locked: Boolean(it.locked)
         })),
         history: db.getUpgradeHistory(u.id, 12),
         tokens: u.tokens
@@ -3553,6 +3625,9 @@ const server = http.createServer(async (req, res) => {
         }
         if (it.collectible) {
           return send(400, { error: 'Коллекционный предмет нельзя апгрейдить — он остаётся на память.' });
+        }
+        if (it.locked) {
+          return send(400, { error: 'Squad 120 заблокирован: пригласите 3 друзей, чтобы они прокрутили этот кейс.' });
         }
         sourceValue = Math.floor(Number(it.price) || 0);
       } else {
@@ -3664,6 +3739,9 @@ const server = http.createServer(async (req, res) => {
         }
         if (it.collectible) {
           return send(400, { error: 'Коллекционный предмет нельзя апгрейдить — он остаётся на память.' });
+        }
+        if (it.locked) {
+          return send(400, { error: 'Squad 120 заблокирован: пригласите 3 друзей, чтобы они прокрутили этот кейс.' });
         }
         sourceValue = Math.floor(Number(it.price) || 0);
       } else {
@@ -4906,6 +4984,33 @@ setInterval(runReactivation, 6 * 3600 * 1000);
 /* ── Уведомления о закончившихся кулдаунах ────────────────────────────────
    Пишем всем, у кого кд действительно истёк, даже если игрок сейчас в
    приложении. Дедупликация — по конкретному событию в БД. */
+const COOLDOWN_IMAGES = {
+  case: 'cooldown_case.jpg',
+  wheel: 'cooldown_wheel.jpg',
+  hot: 'cooldown_hotdrop.jpg'
+};
+/* 8 состояний: 0 — ничего не откатилось (не отправляем), 1 — кейс,
+   2 — колесо, 3 — кейс+колесо, 4 — Hot Drop, 5 — кейс+Hot Drop,
+   6 — колесо+Hot Drop, 7 — все три. */
+function cooldownVariant(name, f) {
+  if (!f || (!f.case && !f.wheel && !f.hot)) return null;
+  const lines = [];
+  if (f.case) lines.push('🎁 <b>Бесплатный кейс</b> снова доступен — 1–6 ₽ на баланс');
+  if (f.wheel) lines.push('🎡 <b>Бесплатный спин</b> в Колесе Фортуны готов');
+  if (f.hot) lines.push('🔥 <b>Hot Drop</b> снова можно забрать');
+  let lead = '';
+  if (f.case && f.wheel && f.hot) lead = 'Всё бесплатное снова готово';
+  else if (f.case && f.wheel) lead = 'Кейс и колесо снова готовы';
+  else if (f.case && f.hot) lead = 'Кейс и Hot Drop снова готовы';
+  else if (f.wheel && f.hot) lead = 'Колесо и Hot Drop снова готовы';
+  else if (f.case) lead = 'Бесплатный кейс снова готов';
+  else if (f.wheel) lead = 'Колесо Фортуны снова готово';
+  else if (f.hot) lead = 'Hot Drop снова готов';
+  const text = `<b>${name}, ${lead}</b>\n\n`
+    + lines.map(p => '• ' + p).join('\n')
+    + '\n\nЗаберите в MoneyForUp — бесплатно.';
+  return { text, image: f.case ? 'case' : (f.wheel ? 'wheel' : 'hot') };
+}
 async function runCooldownNotifications() {
   try {
     const now = Date.now();
@@ -4921,29 +5026,33 @@ async function runCooldownNotifications() {
       const hotReady = cand.last_hot_drop > 0
         && now - cand.last_hot_drop >= 3600000
         && cand.free_notified_at < cand.last_hot_drop + 3600000;
-      const challengeReady = String(cand.free_notify_day || '') !== day;
-
-      const parts = [];
-      if (dailyReady) parts.push('🎁 <b>Бесплатный кейс</b> снова доступен — от 1 до 6 ₽');
-      if (wheelReady) parts.push('🎡 <b>Бесплатный спин</b> в Колесе Фортуны готов');
-      if (hotReady) parts.push('🔥 <b>Hot Drop</b> снова можно забрать');
-      if (challengeReady) parts.push('🎯 <b>Челленджи и стрик</b> обновились');
-      if (!parts.length) continue;
+      const flags = { case: dailyReady, wheel: wheelReady, hot: hotReady };
+      if (!flags.case && !flags.wheel && !flags.hot) continue;
 
       const name = escHtml(String(cand.name || cand.username || 'друг').slice(0, 40));
-      const text = `<b>${name}, у вас есть бесплатное</b>\n\n`
-        + parts.map(p => '• ' + p).join('\n')
-        + '\n\nЗаберите в MoneyForUp, пока не сгорело.';
+      const variant = cooldownVariant(name, flags);
+      if (!variant) continue;
       const kb = new InlineKeyboard();
-      if (dailyReady) kb.webApp('🎁 Бесплатный кейс', APP_URL + '#casehub');
-      if (wheelReady) kb.webApp('🎡 Колесо Фортуны', APP_URL + '#games');
-      if (!dailyReady && !wheelReady) kb.webApp('🎁 Открыть MoneyForUp', APP_URL + '#casehub');
+      if (flags.case) kb.webApp('🎁 Бесплатный кейс', APP_URL + '#casehub');
+      if (flags.wheel) kb.webApp('🎡 Колесо Фортуны', APP_URL + '#games');
+      if (flags.hot) kb.webApp('🔥 Hot Drop', APP_URL + '#games');
+
+      const photoPath = require('path').join(__dirname, 'assets', COOLDOWN_IMAGES[variant.image]);
       try {
-        await bot.api.sendMessage(cand.id, text, {
+        const { InputFile } = require('grammy');
+        await bot.api.sendPhoto(cand.id, new InputFile(photoPath), {
+          caption: variant.text,
           parse_mode: 'HTML',
           reply_markup: kb
         });
-      } catch (_) { /* бот заблокирован — не зацикливаемся на повторах */ }
+      } catch (_) {
+        try {
+          await bot.api.sendMessage(cand.id, variant.text, {
+            parse_mode: 'HTML',
+            reply_markup: kb
+          });
+        } catch (_) { /* бот заблокирован — не зацикливаемся на повторах */ }
+      }
       db.setFreeNotified(cand.id, now, day);
       const mem = users.get(cand.id);
       if (mem) { mem.freeNotifiedAt = now; mem.freeNotifyDay = day; }

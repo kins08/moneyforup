@@ -140,7 +140,8 @@ CREATE TABLE IF NOT EXISTS user_inventory (
   acquired_at INTEGER,
   sold_at INTEGER,
   sold_for INTEGER,
-  upgrade_only INTEGER DEFAULT 0
+  upgrade_only INTEGER DEFAULT 0,
+  locked INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_inv_user_unsold ON user_inventory(user_id, sold_at);
 
@@ -300,7 +301,7 @@ const EXTRA_COLUMNS = {
     ['admin_chat_id', 'INTEGER DEFAULT 0']
   ],
   game_rounds: [['item_code', 'TEXT'], ['item_price', 'INTEGER'], ['seed', 'TEXT'], ['params', 'TEXT']],
-  user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0'], ['collectible', 'INTEGER DEFAULT 0']]
+  user_inventory: [['upgrade_only', 'INTEGER DEFAULT 0'], ['collectible', 'INTEGER DEFAULT 0'], ['locked', 'INTEGER DEFAULT 0']]
 };
 
 module.exports = { SCHEMA_SQL, EXTRA_COLUMNS };

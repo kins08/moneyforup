@@ -234,14 +234,14 @@ async function pullFromTurso(dbSync) {
     const invRes = await client.execute('SELECT * FROM user_inventory ORDER BY id ASC');
     if (invRes.rows.length > 0) {
       const insInv = dbSync.prepare(`
-        INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible, locked)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       for (const r of invRes.rows) {
         insInv.run(
           r.id, r.user_id, r.item_code, r.name, r.icon, r.price, r.tier,
           r.case_id, r.case_name, r.round_id, r.acquired_at, r.sold_at, r.sold_for,
-          Number(r.upgrade_only || 0), Number(r.collectible || 0)
+          Number(r.upgrade_only || 0), Number(r.collectible || 0), Number(r.locked || 0)
         );
       }
     }

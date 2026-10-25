@@ -152,8 +152,8 @@ const stmts = {
   `),
   insertInventoryItem: db.prepare(`
     INSERT INTO user_inventory
-      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
+      (user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible, locked)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
   `),
   listInventory: db.prepare(`
     SELECT * FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
@@ -161,11 +161,11 @@ const stmts = {
   `),
   getInventoryItem: db.prepare('SELECT * FROM user_inventory WHERE id = ?'),
   markInventorySold: db.prepare(
-    'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL'
+    'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL AND locked = 0'
   ),
   inventoryTotals: db.prepare(`
     SELECT COUNT(*) AS count, COALESCE(SUM(price), 0) AS value
-    FROM user_inventory WHERE user_id = ? AND sold_at IS NULL
+    FROM user_inventory WHERE user_id = ? AND sold_at IS NULL AND locked = 0
   `),
   insertChallengeClaim: db.prepare(
     'INSERT OR IGNORE INTO challenge_claims (user_id, quest_id, claim_date, created_at) VALUES (?, ?, ?, ?)'
@@ -622,7 +622,7 @@ function atomicOpenCase(args) {
     const inv = stmts.insertInventoryItem.run(
       userId, String(chosen.code), String(chosen.name), String(chosen.icon || ''),
       Math.floor(chosen.price), String(chosen.tier || ''), String(modeId), String(modeName),
-      String(roundId), at, 0
+      String(roundId), at, 0, 0, 0
     );
     const inventoryId = Number(inv.lastInsertRowid);
     __q(`INSERT INTO case_opens
@@ -714,7 +714,7 @@ function atomicUpgradeRun(args) {
       const inv = stmts.insertInventoryItem.run(
         userId, String(target.code), String(target.name), String(target.icon || ''),
         Math.floor(target.price), String(target.tier || ''), 'upgrade', 'Апгрейд',
-        String(requestId), at, 0
+        String(requestId), at, 0, 0, 0
       );
       inventoryId = Number(inv.lastInsertRowid);
     }
@@ -1816,7 +1816,6 @@ module.exports = {
             (u.free_daily_at > 0 AND u.free_daily_at <= ? AND COALESCE(u.free_notified_at, 0) < u.free_daily_at + 86400000)
             OR (u.last_wheel_spin > 0 AND u.last_wheel_spin <= ? AND COALESCE(u.free_notified_at, 0) < u.last_wheel_spin + 43200000)
             OR (u.last_hot_drop > 0 AND u.last_hot_drop <= ? AND COALESCE(u.free_notified_at, 0) < u.last_hot_drop + 3600000)
-            OR (COALESCE(u.free_notify_day, '') <> ? AND u.created_at <= ?)
           )
         ORDER BY u.last_seen_at DESC
         LIMIT ?
@@ -1825,7 +1824,6 @@ module.exports = {
         Number(now) - 86400000,
         Number(now) - 12 * 3600000,
         Number(now) - 3600000,
-        String(day || ''), Number(now) - 86400000,
         Number(limit) || 60
       );
     } catch (e) {
@@ -1862,6 +1860,7 @@ module.exports = {
     const acAt = r.acquiredAt || Date.now();
     const upgOnly = (r.upgradeOnly || r.upgrade_only) ? 1 : 0;
     const collectible = (r.collectible || r.isCollectible) ? 1 : 0;
+    const locked = r.locked ? 1 : 0;
     const res = stmts.insertInventoryItem.run(
       r.userId,
       String(r.itemCode),
@@ -1874,16 +1873,17 @@ module.exports = {
       String(r.roundId || ''),
       acAt,
       upgOnly,
-      collectible
+      collectible,
+      locked
     );
     const newId = Number(res.lastInsertRowid);
     turso.queueQuery(`
-      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
+      INSERT OR IGNORE INTO user_inventory (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible, locked)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
     `, [
       newId, r.userId, String(r.itemCode), String(r.name || ''), String(r.icon || ''),
       Math.floor(r.price || 0), String(r.tier || ''), String(r.caseId || ''),
-      String(r.caseName || ''), String(r.roundId || ''), acAt, upgOnly, collectible
+      String(r.caseName || ''), String(r.roundId || ''), acAt, upgOnly, collectible, locked
     ]);
     return { ok: true, id: newId };
   },
@@ -1915,7 +1915,7 @@ module.exports = {
     const res = stmts.markInventorySold.run(soldAt, soldTokens, id, userId);
     if (res.changes === 1) {
       turso.queueQuery(
-        'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL',
+        'UPDATE user_inventory SET sold_at = ?, sold_for = ? WHERE id = ? AND user_id = ? AND sold_at IS NULL AND locked = 0',
         [soldAt, soldTokens, id, userId]
       );
       return true;
@@ -1925,6 +1925,104 @@ module.exports = {
   inventoryTotals: (userId) => {
     const r = stmts.inventoryTotals.get(userId);
     return r || { count: 0, value: 0 };
+  },
+  /* ── Squad 120: один бесплатный предмет 120 ₽, продажа/апгрейд только
+     после того, как 3 приглашённых друга прокрутили тот же кейс. ──────── */
+  getSquadCaseStatus: (userId) => {
+    try {
+      const item = db.prepare(`
+        SELECT * FROM user_inventory
+        WHERE user_id = ? AND case_id = 'case_squad120'
+        ORDER BY id DESC LIMIT 1
+      `).get(userId) || null;
+      const friends = db.prepare(`
+        SELECT COUNT(DISTINCT u.id) AS count
+        FROM users u
+        JOIN user_inventory i ON i.user_id = u.id AND i.case_id = 'case_squad120'
+        WHERE u.ref_id = ? AND u.id <> ?
+      `).get(userId, userId);
+      return {
+        spun: Boolean(item),
+        item,
+        friendsSpun: Math.min(3, Number((friends && friends.count) || 0)),
+        needed: 3,
+        unlocked: Boolean(item) && !Number(item.locked || 0)
+      };
+    } catch (e) {
+      console.error('[DB] getSquadCaseStatus error:', e.message);
+      return { spun: false, item: null, friendsSpun: 0, needed: 3, unlocked: false };
+    }
+  },
+  claimSquadCase: (userId, item) => {
+    const countReferred = (id) => {
+      const row = db.prepare(`
+        SELECT COUNT(DISTINCT u.id) AS count
+        FROM users u
+        JOIN user_inventory i ON i.user_id = u.id AND i.case_id = 'case_squad120'
+        WHERE u.ref_id = ? AND u.id <> ?
+      `).get(id, id);
+      return Number((row && row.count) || 0);
+    };
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const existing = db.prepare(`
+        SELECT * FROM user_inventory WHERE user_id = ? AND case_id = 'case_squad120' LIMIT 1
+      `).get(userId);
+      if (existing) {
+        db.exec('ROLLBACK');
+        return { ok: false, duplicate: true };
+      }
+      const inviterRow = db.prepare('SELECT ref_id FROM users WHERE id = ?').get(userId);
+      const inviterId = Number((inviterRow && inviterRow.ref_id) || 0);
+      const friendsBefore = countReferred(userId);
+      const locked = friendsBefore >= 3 ? 0 : 1;
+      const roundId = 'SQUAD120_' + userId + '_' + Date.now().toString(36);
+      const acAt = Date.now();
+      const res = stmts.insertInventoryItem.run(
+        userId, String(item.code), String(item.name), String(item.icon || '⌨️'),
+        Math.floor(item.price || 1200), String(item.tier || 'high'),
+        'case_squad120', 'FREE · Squad Case', roundId, acAt, 0, 0, locked
+      );
+      const itemId = Number(res.lastInsertRowid);
+      let inviterUnlocked = false;
+      if (inviterId && inviterId !== Number(userId)) {
+        const inviterFriends = countReferred(inviterId);
+        if (inviterFriends >= 3) {
+          const upd = db.prepare(`
+            UPDATE user_inventory SET locked = 0
+            WHERE user_id = ? AND case_id = 'case_squad120' AND locked = 1
+          `).run(inviterId);
+          inviterUnlocked = upd.changes > 0;
+        }
+      }
+      db.exec('COMMIT');
+      turso.queueQuery(`
+        INSERT OR IGNORE INTO user_inventory
+          (id, user_id, item_code, name, icon, price, tier, case_id, case_name, round_id, acquired_at, sold_at, sold_for, upgrade_only, collectible, locked)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)
+      `, [
+        itemId, userId, String(item.code), String(item.name), String(item.icon || '⌨️'),
+        Math.floor(item.price || 1200), String(item.tier || 'high'),
+        'case_squad120', 'FREE · Squad Case', roundId, acAt, locked
+      ]);
+      if (inviterUnlocked) {
+        turso.queueQuery(
+          "UPDATE user_inventory SET locked = 0 WHERE user_id = ? AND case_id = 'case_squad120' AND locked = 1",
+          [inviterId]
+        );
+      }
+      try {
+        db.saveRound({
+          roundId, userId, game: 'Squad 120', bet: 0, mult: 1, win: 0,
+          status: 'settled', itemCode: item.code, itemPrice: Math.floor(item.price || 1200)
+        });
+      } catch (e) { console.error('[Squad] round not saved:', e.message); }
+      return { ok: true, itemId, locked: Boolean(locked), inviterUnlocked, inviterId, friendsSpun: Math.min(3, friendsBefore) };
+    } catch (e) {
+      try { db.exec('ROLLBACK'); } catch (_) {}
+      console.error('[DB] claimSquadCase error:', e.message);
+      return { ok: false, error: e.message };
+    }
   },
   /** Ставки и выигрыши игрока за период — для лимитов и детекта аномалий */
   userRoundsSince: (userId, sinceMs) => {
