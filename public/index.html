@@ -851,14 +851,16 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-card .ch-name{font-size:13.5px;font-weight:950;letter-spacing:.04em;color:#fff}
 .casehub-card .ch-tag{font-size:10px;color:var(--cm-accent,#ffcf6b);font-weight:800;margin-top:2px;letter-spacing:.02em}
 .casehub-card .ch-price{margin-top:9px;font-size:12px;font-weight:900;color:#fff}
-.casehub-card .ch-price small{display:block;font-size:9.5px;color:#9aa3b8;font-weight:600;margin-top:1px}
+.casehub-card .ch-price small{display:block;font-size:9.5px;color:#d9cabd;font-weight:600;margin-top:1px}
+.casehub-meta{color:#e9ded4}
+.casehub-meta b{color:#fff}
 .casehub-hero{border-radius:22px;padding:17px;border:1px solid var(--cm-border,rgba(255,255,255,.15));background:linear-gradient(145deg,var(--cm-panel,#1a1216),#0c0c0c);position:relative;overflow:hidden;margin-bottom:12px;scroll-margin-top:14px}
 .casehub-hero:before{content:'';position:absolute;right:-40px;top:-50px;width:170px;height:170px;background:radial-gradient(circle,var(--cm-glow,rgba(239,68,68,.3)),transparent 70%);pointer-events:none}
 .casehub-hero .chh-top{display:flex;align-items:center;gap:10px}
 .casehub-hero .chh-icon{font-size:42px;line-height:1;filter:drop-shadow(0 8px 18px var(--cm-glow,rgba(239,68,68,.4)))}
 .casehub-hero .chh-name{font-size:20px;font-weight:950;letter-spacing:.05em}
 .casehub-hero .chh-sub{font-size:11px;color:var(--cm-accent,#ffcf6b);font-weight:800;margin-top:2px}
-.casehub-hero p{font-size:11.5px;color:#9aa3b8;line-height:1.5;margin:9px 0 0}
+.casehub-hero p{font-size:12px;color:#e9ded4;line-height:1.5;margin:9px 0 0}
 .casehub-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .casehub-meta span{font-size:10px;font-weight:800;border-radius:9px;padding:5px 8px;background:rgba(255,255,255,.06);border:1px solid var(--cm-border,rgba(255,255,255,.12));color:#dbe2f0}
 .casehub-meta b{color:var(--cm-accent,#ffcf6b)}
@@ -868,15 +870,15 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-roulette:after{right:0;background:linear-gradient(270deg,#0b0b0b,rgba(12,10,14,0))}
 .casehub-pointer{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid var(--cm-accent,#ffcf6b);z-index:3;filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))}
 .casehub-strip{display:flex;gap:8px;will-change:transform;padding:8px 0}
-.casehub-itemcard{flex:0 0 96px;border-radius:13px;padding:9px 6px;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid var(--tier-col,#39415a);box-shadow:inset 0 -2px 0 var(--tier-col,#39415a)}
+.casehub-itemcard{flex:0 0 96px;border-radius:13px;padding:9px 6px;text-align:center;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid rgba(255,207,107,.34);box-shadow:inset 0 -2px 0 var(--tier-col,#39415a)}
 .casehub-itemcard.win-picked{box-shadow:0 0 0 2px var(--tier-col,#fff),0 0 26px var(--tier-col,#fff)}
 .casehub-itemcard .ci-i{font-size:24px;line-height:1.1}
 .casehub-itemcard .ci-n{font-size:9.5px;font-weight:800;color:#fff;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.casehub-itemcard .ci-p{font-size:9.5px;color:var(--tier-col,#ffcf6b);font-weight:900;margin-top:2px}
+.casehub-itemcard .ci-p{font-size:9.5px;color:#ffcf6b;font-weight:900;margin-top:2px}
 .casehub-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
 .casehub-list .cli{display:flex;align-items:center;gap:7px;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);min-width:0}
 .casehub-list .cli b{display:block;font-size:10.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.casehub-list .cli small{font-size:9px;color:#9aa3b8}
+.casehub-list .cli small{font-size:9px;color:#d9cabd}
 .casehub-history{margin-top:14px;display:flex;flex-direction:column;gap:6px}
 .casehub-history .chr{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);font-size:11px}
 .casehub-history .chr b{color:#fff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -887,7 +889,6 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 /* Карточки с полноценными обложками вместо эмодзи */
 .casehub-case{padding:0!important;display:flex;flex-direction:column;overflow:hidden;min-height:0!important}
 .casehub-case .ch-cover-wrap{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#0a0a0a}
-.cover-tone{position:absolute;inset:0;z-index:1;background:linear-gradient(145deg,#a8482b 0%,#d99a63 52%,#efd4ae 100%);mix-blend-mode:color;opacity:.72;pointer-events:none}
 .casehub-hero .chh-sub,.casehub-card .ch-tag{color:#ffcf6b}
 .casehub-case .ch-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--mfu-t-reveal) var(--mfu-ease-out);z-index:1}
 @media (hover:hover) and (pointer:fine){
@@ -908,12 +909,12 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .casehub-hero.hero-in{animation:mfuHeroIn 300ms var(--mfu-ease-out)}
 .casehub-hero .chh-cover{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#0a0a0a}
 .casehub-hero .chh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;display:block;z-index:1}
-.casehub-hero .chh-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 30%,rgba(14,10,13,.78) 70%,#0e0a0d 100%)}
+.casehub-hero .chh-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 72%,rgba(14,10,13,.28) 100%)}
 .casehub-hero .chh-name{text-shadow:0 2px 14px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.9)}
 .casehub-hero .chh-sub{text-shadow:0 1px 8px rgba(0,0,0,.9)}
 .casehub-hero .chh-cover-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:64px;background:radial-gradient(circle at 50% 40%,var(--cm-glow,rgba(255,207,107,.25)),#0a0a0a 72%);z-index:2}
 .casehub-hero .chh-cover.img-missing .chh-cover-fallback{display:grid}
-.casehub-hero .chh-content{position:relative;z-index:2;padding:0 16px 16px;margin-top:-58px}
+.casehub-hero .chh-content{position:relative;z-index:2;padding:14px 16px 16px;margin-top:0}
 .casehub-hero .chh-top{position:relative}
 @keyframes mfuCaseIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes mfuHeroIn{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:none}}
@@ -1766,41 +1767,36 @@ function betRubLine(){
 /* BOT_NAME объявлен в базовом файле (сборщик подставляет имя бота) */
 const API_BASE=((typeof window.MONEYFORUP_API==='string'?window.MONEYFORUP_API:(typeof window.MATHPLAY_API==='string'?window.MATHPLAY_API:''))||'');   // ← URL бэкенда, '' = демо-режим
 
-/* Единая библиотека арта предметов: одна тёплая 3D-подача на все 255 позиций. */
-const ITEM_ART_RULES=[
-  [/автомобильн|прикуривател|видеорегистратор|манометр|компрессор|джамп|carplay|парковочн|fm-модулятор|козырек|щетка-скребок|магнитола|авто/i,'auto'],
-  [/камер|видеозахват|микрофон|аудиоинтерфейс|микшер|стрим-контроллер|хромакей|стедикам/i,'camera_mic'],
-  [/\bssd\b|nvme|жесткий диск|роутер|mesh|радиатор|свитч|отвертк|система водяного|сжо/i,'pc_parts'],
-  [/дрон|квадрокоптер/i,'camera_mic'],
-  [/клинок|меч|нож|шлем|броня|перчатка|ранец|кольцо|нашивка|брелок|медаль|сапфир|обсидиан|кристалл|артефакт|амулет|очки/i,'artifact'],
-  [/подарочн|бокс|коробк/i,'default'],
-  [/держатель зубных щеток|зубная|ирригатор|электробритва|бритва|фен|массажер|грелка|триммер/i,'personal_care'],
-  [/подставка|органайзер|держатель|кронштейн|пантограф|штатив|трипод|крепление|шокмаунт|паук|поп-фильтр|стойка|крючок/i,'stand'],
-  [/tws|вкладыш|внутриканальн|арматурн|air mini|спортивные наушники/i,'earbuds'],
-  [/наушник|накладн|полноразмерн|мониторн|студийн|hi-?fi|hi-?res|anc|гарнитур/i,'headphones'],
-  [/умная розетка|умная колонка|умный датчик|датчик|термостат|трекер|протечк|дым|wi-?fi/i,'smart_home'],
-  [/колонк|саундбар|акустик|сабвуфер|marshall|partyboom|мониторы пара|усилитель|ресивер|цап|динамик/i,'speaker'],
-  [/смарт-час|умные час|фитнес-браслет|apple watch|ремешок/i,'smartwatch'],
-  [/планшет|электронная книга|графический планшет|стилус/i,'tablet'],
-  [/смартфон|телефон|iphone|чехол/i,'phone'],
-  [/ноутбук|ультрабук|мини-пк|чехол-клавиатура/i,'laptop'],
-  [/ночник|лампа|подсветка|светильник|rgb|свеча|фонар|скринбар|световая панель|sunset|гексагон|свет|астронавт|звездного/i,'lighting'],
-  [/монитор|smart tv|телевизор|проектор|\btv\b/i,'monitor'],
-  [/консоль|геймпад|контроллер/i,'console'],
-  [/мышь|клавиатура|коврик|кейкап|свитч|глайд|кресло/i,'gaming'],
-  [/кабель|заряд|блок питания|повербанк|адаптер|переходник|хаб|док-станция|картридер|стяжк|сетевой фильтр|type-?c|lightning|hdmi|displayport|otg|провод|usb/i,'power'],
-  [/настольные часы|напольные.*весы/i,'smart_home'],
-  [/кофе|чайник|блендер|гриль|аэрогриль|сушилк|упаковщик|измельчитель|капучинатор|штопор|весы|термометр|мельница|формы|дуршлаг|запайщик|сэндвичниц|молока|мультипечь|тостер|кухонн|помпа/i,'kitchen'],
-  [/зубная|ирригатор|бритва|фен|массажер|грелка|триммер/i,'personal_care'],
-  [/пылесос|мойщик окон|увлажнитель|аромадиффузор|очиститель воздуха|ионизатор|климатический|вентилятор|отпариватель|катышков/i,'home']
+/* 3D-фото оставляем только там, где объект совпадает с названием.
+   Для остальных предметов — отдельная карточка по коду, без повторов. */
+const ITEM_ART_EXACT=[
+  [/tws|air mini|спортивные наушники/i,'earbuds'],
+  [/накладн|полноразмерн|мониторн|студийн|hi-?fi|hi-?res|anc/i,'headphones'],
+  [/колонк|динамик/i,'speaker'],
+  [/смарт-час|умные час|фитнес-браслет|apple watch/i,'smartwatch'],
+  [/смартфон|iphone/i,'phone'],
+  [/планшет|электронная книга/i,'tablet'],
+  [/ноутбук|ультрабук/i,'laptop'],
+  [/монитор/i,'monitor'],
+  [/консоль/i,'console'],
+  [/робот-пылесос/i,'home'],
+  [/электрическая зубная|зубная щетка/i,'personal_care'],
+  [/подставка для (ноутбука|смартфона|планшета)/i,'stand']
 ];
+const ITEM_ART_EMBLEM_ONLY=/кронштейн|крепление|органайзер|держатель|скринбар|лампа|ночник|светильник|подсветка|кабель|переходник|адаптер|заряд|повербанк|хаб|док-станция|картридер|мышь|клавиатура|коврик|геймпад|проектор|телевизор|\btv\b|саундбар|акустик|чехол/i;
+function itemSlug(it){
+  const s=String((it&&it.code)||(it&&it.name)||'item').toLowerCase();
+  return s.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'item';
+}
 function itemArt(it){
-  const s=String(it&&it.name||'');
-  for(const [re,f] of ITEM_ART_RULES){ if(re.test(s)) return 'assets/items/'+f+'.jpg'; }
-  return 'assets/items/artifact.jpg';
+  const name=String(it&&it.name||'');
+  if(!ITEM_ART_EMBLEM_ONLY.test(name)){
+    for(const [re,f] of ITEM_ART_EXACT){ if(re.test(name)) return 'assets/items/'+f+'.jpg'; }
+  }
+  return 'assets/items/u_'+itemSlug(it)+'.jpg';
 }
 function artImg(it,cls,alt){
-  return `<img class="${cls||'item-art'}" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">`;
+  return `<img class="${cls||'item-art'}" src="${itemArt(it)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">`;
 }
 const TG=(window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;
 const IS_TG=!!(TG&&TG.initData);
@@ -3075,7 +3071,7 @@ function openItemDetailModal(it){
       ${tierName}
     </div>
 
-    <img src="${itemArt(it)}" alt="" style="width:132px;height:132px;border-radius:18px;object-fit:cover;margin:6px 0;box-shadow:0 12px 28px ${col}55;display:inline-block">
+    <img src="${itemArt(it)}" alt="" style="width:132px;height:132px;border-radius:18px;object-fit:cover;margin:6px 0;box-shadow:0 12px 28px ${col}55;display:inline-block" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
     <b style="font-size:18px;color:#fff;display:block;margin-bottom:4px">${it.name}</b>
     <div class="muted small">${it.caseName ? `Выпал из кейса «${it.caseName}»` : 'Предмет из инвентаря'}</div>
 
@@ -3181,7 +3177,7 @@ function renderProfileInventory(){
     <div class="inv-card" style="--inv-tier-col:${it.collectible ? '#ffcf6b' : (it.upgrade_only ? '#f59e0b' : col)}" data-card-id="${it.id}">
       <span class="inv-tier-tag" style="${it.collectible ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : '')}">${tierName}</span>
       <div class="inv-icon-aura">
-        <div class="inv-icon"><img class="inv-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async"></div>
+        <div class="inv-icon"><img class="inv-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'"></div>
       </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
       <div class="inv-val">${fmtRub(it.price)}</div>
@@ -8188,7 +8184,7 @@ function gameCases(){
           const col = TIER_COLS[it.tier] || '#8f97ff';
           return `<div class="case-grid-item" style="--tier-col:${col}">
             <div class="cgi-col"></div>
-            <img class="cgi-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">
+            <img class="cgi-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
             <div style="flex:1;min-width:0">
               <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
               <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px">
@@ -10855,7 +10851,6 @@ function gameCaseHubUnified(sel){
     const imgCls = isHero ? 'chh-cover-img' : 'ch-cover';
     return `<div class="${cls}">
       <img class="${imgCls}" src="${esc(src)}" alt="${esc(m.name)}" loading="${isHero?'eager':'lazy'}" decoding="async"${isHero?' fetchpriority="high"':''} onerror="this.style.display='none';this.parentElement.classList.add('img-missing')">
-      <span class="cover-tone" aria-hidden="true"></span>
       <div class="${isHero?'chh-cover-fallback':'ch-cover-fallback'}">${m.icon||'📦'}</div>
     </div>`;
   }
@@ -10909,7 +10904,7 @@ function gameCaseHubUnified(sel){
   }
   function freeCardLabel(icon,name,val){
     const head = icon && String(icon).startsWith('assets/')
-      ? `<img class="fci-art" src="${icon}" alt="">`
+      ? `<img class="fci-art" src="${icon}" alt="" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">`
       : `<div class="fci">${icon||'📦'}</div>`;
     return `${head}<div class="fcn">${esc(name||'')}</div><div class="fcv">${val||''}</div>`;
   }
@@ -11164,7 +11159,7 @@ function gameCaseHubUnified(sel){
     <div class="casehub-list">
       ${m.items.map(it=>`
         <div class="cli">
-          <img class="cli-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">
+          <img class="cli-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
           <div style="min-width:0;flex:1">
             <b>${esc(it.name)}</b>
             <small>${fmt(it.price)} ₽ · ${esc(it.tier||'')}</small>
@@ -11176,7 +11171,7 @@ function gameCaseHubUnified(sel){
     <div class="casehub-history">
       ${hist.map(h=>`
         <div class="chr">
-          <img class="chr-art" src="${itemArt(h.item||{})}" alt="" loading="lazy" decoding="async">
+          <img class="chr-art" src="${itemArt(h.item||{})}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
           <b>${esc(h.item?h.item.name:(h.name||'Предмет'))}</b>
           <span>${fmt((h.item&&h.item.price)||h.price||0)} ₽</span>
         </div>`).join('')}
@@ -11399,7 +11394,7 @@ function gameCaseHubUnified(sel){
       const profit=(drop.price||0)>=Number(m.price||0);
       tgHaptic(profit?'win':'light');
       lastDrop=drop;
-      statusText=`<div style="text-align:center"><img src="${itemArt(drop)}" alt="" style="width:104px;height:104px;border-radius:14px;object-fit:cover;margin:0 auto 6px;display:block">
+      statusText=`<div style="text-align:center"><img src="${itemArt(drop)}" alt="" style="width:104px;height:104px;border-radius:14px;object-fit:cover;margin:0 auto 6px;display:block" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">
         <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
         <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ₽</span>
         <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`;
