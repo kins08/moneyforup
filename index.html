@@ -189,14 +189,16 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .case-card.tease-flash{box-shadow:inset 0 0 32px #ffcf6b, 0 0 24px rgba(255,207,107,.7) !important;border:1px solid #ffcf6b !important;animation:pulseTease .35s ease-in-out infinite alternate}
 .case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
 .case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px;display:flex;align-items:center;justify-content:center}
-.case-card .ci-art{width:46px;height:46px;border-radius:9px;object-fit:cover;display:block}
-.casehub-itemcard .ci-art{width:64px;height:64px;border-radius:10px;object-fit:cover;display:block;margin:0 auto 4px}
-.casehub-list .cli-art{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:0 0 auto}
-.casehub-history .chr-art{width:24px;height:24px;border-radius:6px;object-fit:cover;flex:0 0 auto}
-.case-grid-item .cgi-art{width:38px;height:38px;border-radius:9px;object-fit:cover;flex:0 0 auto}
-.upg-target .ut-art{width:38px;height:38px;border-radius:9px;object-fit:cover;flex:0 0 auto}
-.inv-icon .inv-art{width:100%;height:100%;object-fit:cover;border-radius:15px;display:block}
-.fci-art{width:44px;height:44px;border-radius:9px;object-fit:cover;display:block;margin:0 auto 4px}
+.case-card .ci-art{width:56px;height:56px;border-radius:10px;object-fit:contain;display:block}
+.casehub-itemcard .ci-art{width:78px;height:78px;border-radius:12px;object-fit:contain;display:block;margin:0 auto 4px}
+.casehub-list .cli-art{width:54px;height:54px;border-radius:11px;object-fit:contain;flex:0 0 auto}
+.casehub-history .chr-art{width:34px;height:34px;border-radius:8px;object-fit:contain;flex:0 0 auto}
+.case-grid-item .cgi-art{width:50px;height:50px;border-radius:10px;object-fit:contain;flex:0 0 auto}
+.upg-target .ut-art{width:56px;height:56px;border-radius:11px;object-fit:contain;flex:0 0 auto}
+.inv-icon-aura{width:64px;height:64px;border-radius:17px}
+.inv-icon{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:15px}
+.inv-icon .inv-art{width:100%;height:100%;object-fit:contain;border-radius:15px;display:block}
+.fci-art{width:54px;height:54px;border-radius:10px;object-fit:contain;display:block;margin:0 auto 4px}
 .case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .case-card .ci-val{font-size:10px;color:var(--tier-col,#8f97ff);font-weight:700;margin-top:2px}
 .case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:240px;overflow-y:auto;padding-right:4px;margin-top:10px}
@@ -496,9 +498,9 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
   text-transform:uppercase;
 }
 .inv-icon-aura{
-  width:56px;
-  height:56px;
-  border-radius:16px;
+  width:64px;
+  height:64px;
+  border-radius:17px;
   background:radial-gradient(circle, rgba(255,255,255,.1) 0%, rgba(0,0,0,.45) 80%);
   display:flex;
   align-items:center;
@@ -1143,9 +1145,12 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-wheel__arrow{pointer-events:none;will-change:transform}
 .upg-wheel__arrow path{fill:url(#upgArrowGrad);stroke:rgba(255,255,255,.55);stroke-width:1;filter:drop-shadow(0 0 8px rgba(255,207,107,.85))}
 .upg-wheel.is-spinning .upg-wheel__arrow path{filter:drop-shadow(0 0 14px rgba(255,207,107,1))}
-.upg-wheel__center{position:absolute;inset:23%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1411,#080808 74%);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 38px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.5);transition:box-shadow .25s ease,border-color .25s ease}
+.upg-wheel__center{position:absolute;inset:18%;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1b1411,#080808 74%);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:inset 0 0 38px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.5);transition:box-shadow .25s ease,border-color .25s ease}
 .upg-wheel__src{font-size:13px;line-height:1;opacity:.72;filter:grayscale(.1)}
-.upg-wheel__target{font-size:35px;line-height:1.05;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
+.upg-wheel__target{display:flex;align-items:center;justify-content:center;width:74px;height:74px;line-height:1;filter:drop-shadow(0 0 12px rgba(255,207,107,.3))}
+.upg-wheel__item{width:74px;height:74px;object-fit:contain;border-radius:14px;display:block}
+.upg-wheel__items{display:grid;grid-template-columns:1fr 1fr;gap:3px;place-items:center}
+.upg-wheel__items img{width:34px;height:34px;object-fit:contain;border-radius:8px;display:block}
 .upg-wheel__pct{font-size:19px;font-weight:950;letter-spacing:-.03em;color:#fff;margin-top:1px}
 .upg-wheel__hint{font-size:8px;text-transform:uppercase;letter-spacing:.17em;color:#8b94ab;font-weight:800}
 .upg-wheel.is-win .upg-wheel__arc{stroke:#3ddc96;filter:drop-shadow(0 0 12px rgba(61,220,150,.65))}
@@ -1174,7 +1179,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-target-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .upg-target-tools button{border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aeb8ce;font-family:inherit;font-size:10px;font-weight:700;padding:6px 8px;cursor:pointer}
 .upg-target-tools button.on{border-color:#8b92ff;color:#cfd3ff;background:rgba(139,146,255,.12)}
-.upg-target-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:168px;overflow-y:auto;padding-right:2px}
+.upg-target-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:224px;overflow-y:auto;padding-right:2px}
 .upg-target{position:relative;display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-width:0;font-family:inherit;text-align:left;color:#fff}
 .upg-target.on{border-color:#ffcf6b;background:rgba(255,207,107,.09)}
 .upg-target .ut-i{font-size:20px;flex-shrink:0}
@@ -1209,7 +1214,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:250px;overflow-y:auto;margin-top:7px}
 .upg-inv{display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);cursor:pointer;font-family:inherit;text-align:left;color:#fff;min-width:0}
 .upg-inv.on{border-color:#f59e0b;background:rgba(245,158,11,.1)}
-.upg-inv .ui{font-size:20px;display:flex;align-items:center}.upg-inv .ut-art{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:0 0 auto}.upg-inv .ub{min-width:0;flex:1}
+.upg-inv .ui{font-size:20px;display:flex;align-items:center}.upg-inv .ut-art{width:46px;height:46px;border-radius:9px;object-fit:contain;flex:0 0 auto}.upg-inv .ub{min-width:0;flex:1}
 .upg-inv b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .upg-inv small{font-size:9px;color:#ffcf6b}
 .upg-empty{font-size:11px;color:#7f8aa3;text-align:center;padding:12px}
@@ -1767,32 +1772,12 @@ function betRubLine(){
 /* BOT_NAME объявлен в базовом файле (сборщик подставляет имя бота) */
 const API_BASE=((typeof window.MONEYFORUP_API==='string'?window.MONEYFORUP_API:(typeof window.MATHPLAY_API==='string'?window.MATHPLAY_API:''))||'');   // ← URL бэкенда, '' = демо-режим
 
-/* 3D-фото оставляем только там, где объект совпадает с названием.
-   Для остальных предметов — отдельная карточка по коду, без повторов. */
-const ITEM_ART_EXACT=[
-  [/tws|air mini|спортивные наушники/i,'earbuds'],
-  [/накладн|полноразмерн|мониторн|студийн|hi-?fi|hi-?res|anc/i,'headphones'],
-  [/колонк|динамик/i,'speaker'],
-  [/смарт-час|умные час|фитнес-браслет|apple watch/i,'smartwatch'],
-  [/смартфон|iphone/i,'phone'],
-  [/планшет|электронная книга/i,'tablet'],
-  [/ноутбук|ультрабук/i,'laptop'],
-  [/монитор/i,'monitor'],
-  [/консоль/i,'console'],
-  [/робот-пылесос/i,'home'],
-  [/электрическая зубная|зубная щетка/i,'personal_care'],
-  [/подставка для (ноутбука|смартфона|планшета)/i,'stand']
-];
-const ITEM_ART_EMBLEM_ONLY=/кронштейн|крепление|органайзер|держатель|скринбар|лампа|ночник|светильник|подсветка|кабель|переходник|адаптер|заряд|повербанк|хаб|док-станция|картридер|мышь|клавиатура|коврик|геймпад|проектор|телевизор|\btv\b|саундбар|акустик|чехол/i;
+/* У каждого предмета своя карточка по коду: ни общих фото, ни подмены объектов. */
 function itemSlug(it){
   const s=String((it&&it.code)||(it&&it.name)||'item').toLowerCase();
   return s.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'item';
 }
 function itemArt(it){
-  const name=String(it&&it.name||'');
-  if(!ITEM_ART_EMBLEM_ONLY.test(name)){
-    for(const [re,f] of ITEM_ART_EXACT){ if(re.test(name)) return 'assets/items/'+f+'.jpg'; }
-  }
   return 'assets/items/u_'+itemSlug(it)+'.jpg';
 }
 function artImg(it,cls,alt){
@@ -11842,6 +11827,25 @@ function gameUpgradeArena(){
     animateWheel();
   }
 
+  function wheelTargetHtml(){
+    const list=selectedList();
+    if(list.length===1){
+      return `<img class="upg-wheel__item" src="${itemArt(list[0])}" alt="" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">`;
+    }
+    if(list.length>1){
+      return `<span class="upg-wheel__items">${list.slice(0,4).map(t=>`<img src="${itemArt(t)}" alt="" onerror="this.onerror=null;this.src='assets/items/artifact.jpg'">`).join('')}</span>`;
+    }
+    return '⚡';
+  }
+
+  function wheelCapHtml(){
+    const list=selectedList();
+    const pct=(Math.round(aggregateChance()*10000)/100).toFixed(2)+'%';
+    if(list.length===1) return `Цель: <b>${esc(list[0].name)}</b> · шанс ${pct}`;
+    if(list.length>1) return `Целей: <b>${list.length}</b> · общий шанс ${pct}`;
+    return 'Шанс до 70% · стрелка идёт по кольцу · серверный расчёт';
+  }
+
   function refreshPreview(){
     result=null;
     const list=selectedList();
@@ -11853,7 +11857,9 @@ function gameUpgradeArena(){
     const sc=q('#upgSelCount',a); if(sc) sc.textContent=`${selectedTargets.size}/${tab==='multi'?(cat.maxTargets||5):1}`;
     const wp=q('.upg-wheel__pct',a); if(wp) wp.textContent=pct;
     const wt=q('.upg-wheel__target',a);
-    if(wt) wt.textContent=list.length===1?(list[0].icon||'📦'):(list.length>1?'🎯':'⚡');
+    if(wt) wt.innerHTML=wheelTargetHtml();
+    const cap=q('#upgWheelCap',a);
+    if(cap) cap.innerHTML=wheelCapHtml();
     const ws=q('.upg-wheel__src',a);
     if(ws) ws.textContent=(sourceType==='item'?((sourceItem()||{}).icon||'📦'):'🪙')+' →';
     animateWheel();
@@ -12051,12 +12057,12 @@ function gameUpgradeArena(){
         </svg>
         <div class="upg-wheel__center">
           <div class="upg-wheel__src">${srcIcon} →</div>
-          <div class="upg-wheel__target">${targetIcon}</div>
+          <div class="upg-wheel__target">${wheelTargetHtml()}</div>
           <div class="upg-wheel__pct">${(Math.round(chance*10000)/100).toFixed(2)}%</div>
           <div class="upg-wheel__hint">шанс</div>
         </div>
       </div>
-      <div class="upg-wheel__cap">Шанс до 70% · стрелка идёт по кольцу · серверный расчёт</div>
+      <div class="upg-wheel__cap" id="upgWheelCap">${wheelCapHtml()}</div>
     </div>`;
   }
 
