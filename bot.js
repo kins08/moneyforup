@@ -188,6 +188,19 @@ function clientIp(req) {
   }
   return (req.socket && req.socket.remoteAddress) || 'unknown';
 }
+/* CORS: по умолчанию разрешаем origin из APP_URL. Дополнительные origin
+   (например, web.telegram.org) можно перечислить в CORS_ORIGINS через запятую. */
+const CORS_ORIGINS = String(process.env.CORS_ORIGINS || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+function corsOrigin(req) {
+  const origin = String((req.headers && req.headers.origin) || '');
+  if (!origin) return '';
+  if (CORS_ORIGINS.length) return CORS_ORIGINS.includes(origin) ? origin : '';
+  try {
+    const appOrigin = new URL(APP_URL).origin;
+    return (origin === appOrigin || origin === 'https://web.telegram.org') ? origin : '';
+  } catch (_) { return ''; }
+}
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
@@ -219,6 +232,9 @@ const START_TOKENS    = 50;
 const STAKE_RATE      = 0.01;   // 1 % в сутки
 const DAY_MS          = 86400000;
 const REF_PERCENT     = 15;     // 15 % от пополнений приглашённых
+/* Ежедневные награды. Суммы всегда берутся отсюда, а не из тела запроса. */
+const STREAK_REWARDS = [25, 45, 70, 100, 140, 180, 250];
+const QUEST_REWARDS = { q1: 30, q2: 25, q3: 20 };
 /* Заявка на пополнение живёт ровно час: это окно оплаты. По истечении
    она отменяется автоматически и в мини-аппе, и в чате админа. */
 const DEPOSIT_TTL_MS   = Math.max(5000, Number(process.env.DEPOSIT_TTL_MS) || 60 * 60 * 1000);
@@ -508,6 +524,7 @@ function user(id, name, username) {
         cashbackClaimedDepositId: 0, lastCashbackAt: 0,
         easycashClaimed: false, rakeback: 0, freeCases: 0, freeCase5RefClaimed: 0,
         freeCase3RefClaimed: 0, freeDailyAt: 0, freeNotifiedAt: 0, freeNotifyDay: '',
+        lastHotDrop: 0, lastWheelSpin: 0, lastStreakAt: 0, streakDay: 1,
         notifications: []
       };
       users.set(id, u);
@@ -2153,9 +2170,20 @@ bot.on('message:successful_payment', async ctx => {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let b = '';
-    req.on('data', c => { b += c; if (b.length > 1e6) req.destroy(); });
-    req.on('end', () => resolve(b));
-    req.on('error', reject);
+    let done = false;
+    req.on('data', c => {
+      if (done) return;
+      b += c;
+      if (b.length > 1e6) {
+        done = true;
+        const err = new Error('Слишком большой запрос');
+        err.statusCode = 413;
+        req.resume();          // дочитываем и закрываем поток, но отвечаем 413
+        reject(err);
+      }
+    });
+    req.on('end', () => { if (!done) { done = true; resolve(b); } });
+    req.on('error', e => { if (!done) { done = true; reject(e); } });
   });
 }
 function readJson(req) { return readBody(req).then(b => { try { return JSON.parse(b || '{}'); } catch { return {}; } }); }
@@ -2163,15 +2191,35 @@ function readJson(req) { return readBody(req).then(b => { try { return JSON.pars
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const send = (code, obj) => {
-    res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*',
-                          'Access-Control-Allow-Headers': 'Content-Type' });
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'no-referrer',
+      'X-Frame-Options': 'DENY',
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'"
+    };
+    const origin = corsOrigin(req);
+    if (origin) {
+      headers['Access-Control-Allow-Origin'] = origin;
+      headers['Vary'] = 'Origin';
+    }
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, X-Telegram-Init-Data';
+    headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS';
+    res.writeHead(code, headers);
     res.end(JSON.stringify(obj));
   };
   if (req.method === 'OPTIONS') return send(204, {});
 
   // Если открыли адрес в обычном браузере — отдаём красивую страницу статуса
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '')) {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'no-referrer',
+      'X-Frame-Options': 'DENY'
+    });
     return res.end(`<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -2202,7 +2250,9 @@ const server = http.createServer(async (req, res) => {
   try {
     const raw = req.method === 'POST' ? await readBody(req) : '';
     const body = raw ? (() => { try { return JSON.parse(raw); } catch { return {}; } })() : {};
-    const tgUser = checkInitData(body.initData || url.searchParams.get('initData'));
+    // initData — bearer-секрет. Принимаем только тело или заголовок, но не query:
+    // URL попадает в логи прокси/хостинга и историю браузера.
+    const tgUser = checkInitData(body.initData || req.headers['x-telegram-init-data']);
 
 
     /* вебхук Platega: приходит с заголовками X-MerchantId и X-Secret */
@@ -2427,8 +2477,37 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/balance') return send(200, { ...who });
     if (url.pathname === '/api/user-stats') return send(200, { ok: true, stats: userStats });
 
+    /* Статус стрика и ежедневных квестов: прогресс считает сервер. */
+    if (url.pathname === '/api/challenge/status' && req.method === 'POST') {
+      if (!checkRateLimit(`challenge-status:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
+      const now = Date.now();
+      const day = new Date(now).toISOString().slice(0, 10);
+      const dayStart = Date.parse(day + 'T00:00:00.000Z');
+      const st = db.getChallengeStatus(u.id, day, dayStart);
+      const last = Number(u.lastStreakAt || 0);
+      const storedDay = Math.max(1, Math.min(7, Number(u.streakDay || 1)));
+      const available = !last || now - last >= 20 * 3600 * 1000;
+      const displayDay = available
+        ? (last && now - last <= 48 * 3600 * 1000 ? Math.min(7, storedDay + 1) : 1)
+        : storedDay;
+      const hotDropToday = Number(u.lastHotDrop || 0) >= dayStart;
+      return send(200, {
+        ok: true,
+        streakDay: displayDay,
+        streakReward: STREAK_REWARDS[displayDay - 1],
+        streakAvailable: available,
+        streakNextAt: available ? 0 : last + 20 * 3600 * 1000,
+        quests: {
+          q1: { progress: Math.min(3, st.racketWins), target: 3, claimed: st.claims.includes('q1') },
+          q2: { progress: Math.min(1, st.bets), target: 1, claimed: st.claims.includes('q2') },
+          q3: { progress: hotDropToday ? 1 : 0, target: 1, claimed: st.claims.includes('q3') }
+        }
+      });
+    }
+
     /* Реальные выигрыши за последние 24 часа — для лайв-тикера без фейков. */
     if (url.pathname === '/api/live-wins' && req.method === 'POST') {
+      if (!checkRateLimit(`wins:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
       const wins = db.listRecentWins(30, Date.now() - 86400000);
       return send(200, { ok: true, wins });
     }
@@ -2929,7 +3008,10 @@ const server = http.createServer(async (req, res) => {
       if (Date.now() > racketBustAt(rIdx, round.crash)) {
         return send(400, { error: 'Раунд уже завершился, подождите следующий' });
       }
-      const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex')));
+      const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex'))).trim();
+      if (!/^[A-Za-z0-9_-]{8,80}$/.test(roundId)) {
+        return send(400, { error: 'Некорректный идентификатор раунда' });
+      }
 
       // Claim ДО списания: повтор того же roundId (потерянный ответ, ретрай)
       // не спишет ставку второй раз.
@@ -3270,6 +3352,7 @@ const server = http.createServer(async (req, res) => {
        идёт через один эндпоинт и одну атомарную транзакцию.
        ══════════════════════════════════════════════════════════════════════ */
     if (url.pathname === '/api/cases/catalog' && req.method === 'POST') {
+      if (!checkRateLimit(`catalog:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов каталога. Подождите минуту.' });
       const classic = Object.values(items.CASES).map(c => {
         const totalW = c.items.reduce((s, it) => s + it.w, 0);
         return {
@@ -3413,6 +3496,7 @@ const server = http.createServer(async (req, res) => {
        UPGRADE ARENA — серверная модель апгрейда.
        ══════════════════════════════════════════════════════════════════════ */
     if (url.pathname === '/api/upgrade/catalog' && req.method === 'POST') {
+      if (!checkRateLimit(`upg-catalog:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов каталога. Подождите минуту.' });
       return send(200, {
         ok: true,
         modes: Object.values(upgrade.MODES).map(m => ({
@@ -3979,7 +4063,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* ── Взлом Сейфа: Crack the Safe ────────────────────────────────────────── */
-    if (url.pathname === '/api/safe/status') {
+    if (url.pathname === '/api/safe/status' && req.method === 'POST') {
+      if (!checkRateLimit(`safe-status:${u.id}`, 60, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
       const data = db.getSafeData(u.id);
       return send(200, { ok: true, ...data, cost: 25, balance: u.tokens });
     }
@@ -4374,7 +4459,8 @@ const server = http.createServer(async (req, res) => {
       return send(r.error ? 400 : 200, { ...r, accrued: stakeAccrued(u) });
     }
     if (url.pathname === '/api/refs') {
-      const invited = [...users.values()].filter(x => Number(x.ref) === u.id).map(x => ({ name: x.name, tokens: Math.round(x.tokens) }));
+      // Баланс приглашённых рефереру не показываем — только имена.
+      const invited = [...users.values()].filter(x => Number(x.ref) === u.id).map(x => ({ name: x.name }));
       const qualified = db.getQualifiedFriendsCount ? db.getQualifiedFriendsCount(u.id) : 0;
       return send(200, {
         code: u.code, link: refLink(u.code), invited: countInvited(u.id),
@@ -4459,37 +4545,48 @@ const server = http.createServer(async (req, res) => {
       if (!checkRateLimit(`claim-ch:${u.id}`, 20, 60000)) return send(429, { error: 'Слишком много запросов. Подождите минуту.' });
       const type = String(body.type || 'quest');
       const now = Date.now();
-      const day = new Date(now).toISOString().slice(0, 10); // UTC-сутки, как сбрасывает клиент
+      const day = new Date(now).toISOString().slice(0, 10); // UTC-сутки
+      const dayStart = Date.parse(day + 'T00:00:00.000Z');
 
       if (type === 'streak') {
-        const ONE_DAY = 20 * 3600 * 1000;
-        u.lastStreakAt = u.lastStreakAt || 0;
-        if (now - u.lastStreakAt < ONE_DAY) {
-          return send(400, { error: 'Стрик-бонус уже получен сегодня' });
+        const last = Number(u.lastStreakAt || 0);
+        if (last && now - last < 20 * 3600 * 1000) {
+          return send(400, { error: 'Стрик-бонус уже получен. Возвращайтесь позже.' });
         }
-        // Сумма стрика тоже серверная: принимаем только значения из лестницы наград.
-        const STREAK_REWARDS = [25, 45, 70, 100, 140, 180, 250];
-        const reqAmt = Math.floor(Number(body.amount) || 0);
-        const amt = STREAK_REWARDS.includes(reqAmt) ? reqAmt : STREAK_REWARDS[0];
-        u.lastStreakAt = now;
-        const r = applyBalance(u, amt, 'bonus_challenge', 'Ежедневный стрик');
+        // Номер дня и сумма — только серверные. Клиентский amount игнорируется.
+        const dayNo = last && now - last <= 48 * 3600 * 1000
+          ? Math.min(7, Math.max(1, Number(u.streakDay || 1)) + 1)
+          : 1;
+        const amt = STREAK_REWARDS[dayNo - 1];
+        const r = applyBalance(u, amt, 'bonus_challenge', `Ежедневный стрик · день ${dayNo}`);
         if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
+        u.lastStreakAt = now;
+        u.streakDay = dayNo;
         try { db.saveUser(u); } catch (_) {}
-        return send(200, { ok: true, amount: amt, balance: u.tokens });
+        return send(200, { ok: true, amount: amt, streakDay: dayNo, balance: u.tokens });
       }
 
-      // Квесты: фиксированные награды на сервере, одна выплата на (квест, сутки).
-      const QUEST_REWARDS = { q1: 30, q2: 25, q3: 20 };
+      // Квесты: сервер проверяет, что действие реально было сегодня.
       const questId = String(body.questId || '');
       const amt = QUEST_REWARDS[questId];
       if (!amt) return send(400, { error: 'Неизвестный квест' });
+      const st = db.getChallengeStatus(u.id, day, dayStart);
+      if (questId === 'q1' && st.racketWins < 3) {
+        return send(400, { error: 'Сначала сделайте 3 успешных кэшаута в Ракетке.' });
+      }
+      if (questId === 'q2' && st.bets < 1) {
+        return send(400, { error: 'Сначала сделайте хотя бы одну ставку в игре.' });
+      }
+      if (questId === 'q3' && Number(u.lastHotDrop || 0) < dayStart) {
+        return send(400, { error: 'Сначала заберите Hot Drop.' });
+      }
       if (!db.tryClaimChallenge(u.id, questId, day)) {
         return send(400, { error: 'Награда за этот квест уже получена' });
       }
-      const r = applyBalance(u, amt, 'bonus_challenge', 'Челлендж 24ч');
+      const r = applyBalance(u, amt, 'bonus_challenge', `Челлендж 24ч · ${questId}`);
       if (!r.ok) return send(500, { error: 'Не удалось начислить награду' });
       try { db.saveUser(u); } catch (_) {}
-      return send(200, { ok: true, amount: amt, balance: u.tokens });
+      return send(200, { ok: true, amount: amt, questId, balance: u.tokens });
     }
 
     /* оплата: требуется принятое соглашение */
@@ -4661,6 +4758,7 @@ const server = http.createServer(async (req, res) => {
 
     /* Уведомления пользователю в бот (ежедневный кейс / шкала челленджа) */
     if (url.pathname === '/api/notify-event' && req.method === 'POST') {
+      if (!checkRateLimit(`notify:${u.id}`, 5, 60000)) return send(429, { error: 'Слишком много уведомлений. Подождите минуту.' });
       const type = String(body.type || '');
       let text = '';
       if (type === 'daily_ready') {
@@ -4681,6 +4779,7 @@ const server = http.createServer(async (req, res) => {
 
     send(404, { error: 'not found' });
   } catch (e) {
+    if (e && e.statusCode === 413) return send(413, { error: 'Слишком большой запрос' });
     send(500, { error: String(e.message || e) });
   }
 });

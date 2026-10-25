@@ -3686,7 +3686,7 @@ async function startWithdrawal(){
 function checkAdminVisibility(){
   const wrap = q('#adminExclusiveWrap');
   if(!wrap) return;
-  const isOwner = !!(S.isAdmin || (TGU && TGU.username && String(TGU.username).toLowerCase() === 'lev_god'));
+  const isOwner = !!S.isAdmin;
   wrap.style.display = isOwner ? 'block' : 'none';
   if(isOwner && IS_TG && API_BASE && !window.__adminLoadedOnce){
     window.__adminLoadedOnce = true;
@@ -3973,13 +3973,15 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
       </div>
     `;
 
-    // Выводы и пополнения (заявки)
+    // Выводы и пополнения (заявки). Имена и реквизиты приходят от игроков:
+    // в innerHTML они попадают только через cmEsc.
     const wds = res.withdrawals || [];
     if(!wds.length){
       wList.innerHTML = '<div class="muted small">Заявок на вывод пока нет</div>';
     } else {
       wList.innerHTML = wds.map(w => {
         const hasDep = (w.userDepositedRub || 0) > 0;
+        const wid = cmEsc(w.id);
         const depTag = hasDep
           ? `<span style="background:rgba(34,197,94,.2);color:#86efac;padding:2px 6px;border-radius:6px;font-size:10.5px;font-weight:800">💳 Пополнял: ${w.userDepositedRub} ₽</span>`
           : `<span style="background:rgba(239,68,68,.25);color:#fca5a5;padding:2px 6px;border-radius:6px;font-size:10.5px;font-weight:800">🚨 0 ₽ ДЕПОЗИТОВ (БЕЗ ПОПОЛНЕНИЙ!)</span>`;
@@ -3988,19 +3990,19 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <b style="font-size:13px;color:#fff">#${w.id} · ${w.rub} ₽</b>
+                <b style="font-size:13px;color:#fff">#${wid} · ${w.rub} ₽</b>
                 ${depTag}
               </div>
-              <div class="muted small" style="margin-top:2px">${w.userName} (ID: ${w.userId}) · ${w.method}</div>
-              <div style="font-size:12px;color:#fcd34d;margin-top:2px">Реквизиты: <code>${w.details}</code></div>
+              <div class="muted small" style="margin-top:2px">${cmEsc(w.userName)} (ID: ${w.userId}) · ${cmEsc(w.method)}</div>
+              <div style="font-size:12px;color:#fcd34d;margin-top:2px">Реквизиты: <code>${cmEsc(w.details)}</code></div>
             </div>
             <div>
               ${w.status === 'pending' ? `
                 <label style="display:inline-flex;align-items:center;gap:6px;background:rgba(61,220,150,.15);border:1px solid #3ddc96;color:#3ddc96;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800">
-                  <input type="checkbox" data-adm-act="wd_ok" data-adm-id="${w.id}" style="width:16px;height:16px;accent-color:#22c55e;cursor:pointer">
+                  <input type="checkbox" data-adm-act="wd_ok" data-adm-id="${wid}" style="width:16px;height:16px;accent-color:#22c55e;cursor:pointer">
                   <span>Выплачено</span>
                 </label>
-                <button class="chip" data-adm-act="wd_no" data-adm-id="${w.id}" style="padding:6px 8px;color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
+                <button class="chip" data-adm-act="wd_no" data-adm-id="${wid}" style="padding:6px 8px;color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
               ` : `<span class="pill" style="background:${w.status==='paid'?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};color:${w.status==='paid'?'#86efac':'#fca5a5'}">${w.status==='paid'?'☑️ Выплачено':'❌ Отклонено'}</span>`}
             </div>
           </div>
@@ -4013,6 +4015,7 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
       dList.innerHTML = '<div class="muted small">Заявок на пополнение пока нет</div>';
     } else {
       dList.innerHTML = deps.map(d => {
+        const did = cmEsc(d.id);
         const bonusTag = d.bonus === '25'
           ? `<span style="background:rgba(239,68,68,.25);color:#fca5a5;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800">🔥 +25% БОНУС</span>`
           : '';
@@ -4032,16 +4035,16 @@ async function loadAdminOverview(period = window.__adminCurPeriod || 'all'){
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <b style="font-size:13px;color:#fff">№${d.id} · +${d.rub} ₽ → зачислится +${fmt(d.tokens)} ₽</b>
+                <b style="font-size:13px;color:#fff">№${did} · +${d.rub} ₽ → зачислится +${fmt(d.tokens)} ₽</b>
                 ${bonusTag}${expTag}
               </div>
-              <div class="muted small">${d.userName} · ${d.method}</div>
+              <div class="muted small">${cmEsc(d.userName)} · ${cmEsc(d.method)}</div>
               ${exp ? `<div class="muted small" style="font-size:10px">До ${new Date(exp).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>` : ''}
             </div>
             <div>
               ${d.status === 'pending' ? `
-                <button class="chip" data-adm-act="ok" data-adm-id="${d.id}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Подтвердить</button>
-                <button class="chip" data-adm-act="no" data-adm-id="${d.id}" style="color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
+                <button class="chip" data-adm-act="ok" data-adm-id="${did}" style="background:rgba(34,197,94,.2);border-color:#22c55e;color:#86efac;font-weight:800">✅ Подтвердить</button>
+                <button class="chip" data-adm-act="no" data-adm-id="${did}" style="color:#fca5a5;border-color:rgba(239,68,68,.4);margin-left:4px">✕</button>
               ` : `<span class="pill" style="background:${statusBg};color:${statusColor}">${statusLabel}</span>`}
             </div>
           </div>
@@ -4086,8 +4089,8 @@ function renderAdminLog(tab){
     rows=(res.ledger||[]).map(l=>`
       <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
         <div style="min-width:0">
-          <b>${l.username?'@'+l.username:(l.name||'ID '+l.userId)}</b>
-          <div class="muted small">${new Date(l.createdAt).toLocaleString('ru-RU')} · ${l.type}</div>
+          <b>${cmEsc(l.username?'@'+l.username:(l.name||'ID '+l.userId))}</b>
+          <div class="muted small">${new Date(l.createdAt).toLocaleString('ru-RU')} · ${cmEsc(l.type)}</div>
           <div class="muted small" style="word-break:break-word">${cmEsc(l.reason||'')}</div>
         </div>
         <div style="text-align:right;white-space:nowrap">
@@ -4098,7 +4101,7 @@ function renderAdminLog(tab){
   }else if(tab==='rounds'){
     rows=(res.rounds||[]).map(r=>`
       <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
-        <div><b>${cmEsc(r.game)}</b><div class="muted small">${new Date(r.createdAt).toLocaleString('ru-RU')} · ${r.username?'@'+r.username:(r.name||'ID '+r.userId)}</div></div>
+        <div><b>${cmEsc(r.game)}</b><div class="muted small">${new Date(r.createdAt).toLocaleString('ru-RU')} · ${cmEsc(r.username?'@'+r.username:(r.name||'ID '+r.userId))}</div></div>
         <div style="text-align:right;white-space:nowrap">
           <b style="color:${r.win>0?'#3ddc96':'#ef4444'}">${r.win>0?'+'+fmt(r.win):'−'+fmt(r.bet)} ₽</b>
           <div class="muted small">×${r.mult||0} · ${cmEsc(r.status)}</div>
@@ -9031,7 +9034,7 @@ function gameChallenge(targetSel){
     // Сброс ежедневных квестов на новые сутки
     S.challengeQuests = [
       { id: 'q1', name: 'Гонка на Ракете', desc: 'Сделать 3 успешных кэшаута в Ракетке', target: 3, prog: 0, reward: 30, claimed: false },
-      { id: 'q2', name: 'Тайный Аукционер', desc: 'Сделать хотя бы одну ставку в Аукционе', target: 1, prog: 0, reward: 25, claimed: false },
+      { id: 'q2', name: 'Первая ставка', desc: 'Сделать хотя бы одну ставку в любой игре', target: 1, prog: 0, reward: 25, claimed: false },
       { id: 'q3', name: 'Горячий Трофей', desc: 'Забрать ежечасный Hot Drop', target: 1, prog: 0, reward: 20, claimed: false }
     ];
     save();
@@ -9041,10 +9044,12 @@ function gameChallenge(targetSel){
   if(!S.challengeQuests || !S.challengeQuests.length){
     S.challengeQuests = [
       { id: 'q1', name: 'Гонка на Ракете', desc: 'Сделать 3 успешных кэшаута в Ракетке', target: 3, prog: 0, reward: 30, claimed: false },
-      { id: 'q2', name: 'Тайный Аукционер', desc: 'Сделать хотя бы одну ставку в Аукционе', target: 1, prog: 0, reward: 25, claimed: false },
+      { id: 'q2', name: 'Первая ставка', desc: 'Сделать хотя бы одну ставку в любой игре', target: 1, prog: 0, reward: 25, claimed: false },
       { id: 'q3', name: 'Горячий Трофей', desc: 'Забрать ежечасный Hot Drop', target: 1, prog: 0, reward: 20, claimed: false }
     ];
   }
+  const q2state = S.challengeQuests.find(q => q && q.id === 'q2');
+  if(q2state){ q2state.name = 'Первая ставка'; q2state.desc = 'Сделать хотя бы одну ставку в любой игре'; }
 
   function render(){
     const days = [
@@ -9140,59 +9145,106 @@ function gameChallenge(targetSel){
 
     const streakBtn = q('#btnClaimDailyStreak', a);
     if(streakBtn){
-      streakBtn.onclick = () => {
+      streakBtn.onclick = async () => {
         if(S.streakClaimedToday) return;
-        S.streakClaimedToday = true;
+        streakBtn.disabled = true;
         if(IS_TG && API_BASE){
-          tgCall('/api/claim-challenge', { type: 'streak', amount: currReward }).then(res => {
-            if(res && res.balance != null) S.balance = res.balance;
-            syncUI(); save();
-          }).catch(()=>{});
-        } else {
-          S.balance += currReward;
+          try {
+            const res = await tgCall('/api/claim-challenge', { type: 'streak' });
+            if(!res || !res.ok) throw new Error((res && res.error) || 'Не удалось получить награду');
+            const amt = Number(res.amount) || 0;
+            const day = Math.max(1, Math.min(7, Number(res.streakDay) || S.challengeStreak));
+            if(res.balance != null) S.balance = res.balance;
+            S.streakClaimedToday = true;
+            S.challengeStreak = day;
+            addHist(`Стрик (День ${day})`, amt);
+            tgHaptic('win');
+            syncUI(); save(); render();
+            const m = q('#chMsg');
+            if(m){ m.className='result good'; m.innerHTML=`🔥 Награда за стрик (<b>+${fmt(amt)} ₽</b>) успешно начислена!`; }
+          } catch(e) {
+            streakBtn.disabled = false;
+            const m = q('#chMsg');
+            if(m){ m.className='result bad'; m.textContent = (e && e.message) || 'Не удалось получить награду'; }
+          }
+          return;
         }
+        S.streakClaimedToday = true;
+        S.balance += currReward;
         addHist(`Стрик (День ${S.challengeStreak})`, currReward);
         if(S.challengeStreak < 7) S.challengeStreak++;
         tgHaptic('win');
-        syncUI(); save();
-        render();
+        syncUI(); save(); render();
         const m = q('#chMsg');
         if(m){ m.className='result good'; m.innerHTML=`🔥 Награда за стрик (<b>+${fmt(currReward)} ₽</b>) успешно начислена!`; }
       };
     }
 
     qa('.q-claim-btn').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const idx = +btn.dataset.qid;
         const qObj = S.challengeQuests[idx];
         if(!qObj || qObj.claimed || qObj.prog < qObj.target) return;
-        qObj.claimed = true;
+        btn.disabled = true;
         if(IS_TG && API_BASE){
-          tgCall('/api/claim-challenge', { type: 'quest', amount: qObj.reward, questId: qObj.id }).then(res => {
-            if(res && res.balance != null) S.balance = res.balance;
-            syncUI(); save();
-          }).catch(()=>{});
-        } else {
-          S.balance += qObj.reward;
+          try {
+            const res = await tgCall('/api/claim-challenge', { type: 'quest', questId: qObj.id });
+            if(!res || !res.ok) throw new Error((res && res.error) || 'Награда недоступна');
+            const amt = Number(res.amount) || qObj.reward;
+            if(res.balance != null) S.balance = res.balance;
+            qObj.claimed = true;
+            addHist(`Квест: ${qObj.name}`, amt);
+            tgHaptic('win');
+            const allClaimed = S.challengeQuests && S.challengeQuests.every(x => x.claimed);
+            if(allClaimed && !S.challengeNotified){
+              S.challengeNotified = true;
+              tgCall('/api/notify-event', { type: 'challenge_completed' }).catch(()=>{});
+            }
+            syncUI(); save(); render();
+            const m = q('#chMsg');
+            if(m){ m.className='result good'; m.innerHTML=`🎉 Забрано <b>+${fmt(amt)} ₽</b> за задание «${qObj.name}»!`; }
+          } catch(e) {
+            btn.disabled = false;
+            const m = q('#chMsg');
+            if(m){ m.className='result bad'; m.textContent = (e && e.message) || 'Награда недоступна'; }
+          }
+          return;
         }
+        qObj.claimed = true;
+        S.balance += qObj.reward;
         addHist(`Квест: ${qObj.name}`, qObj.reward);
         tgHaptic('win');
-        const allClaimed = S.challengeQuests && S.challengeQuests.every(q => q.claimed);
-        if(allClaimed && !S.challengeNotified){
-          S.challengeNotified = true;
-          if(IS_TG && API_BASE){
-            tgCall('/api/notify-event', { type: 'challenge_completed' }).catch(()=>{});
-          }
-        }
-        syncUI();save();
-        render();
+        const allClaimed = S.challengeQuests && S.challengeQuests.every(x => x.claimed);
+        if(allClaimed && !S.challengeNotified) S.challengeNotified = true;
+        syncUI(); save(); render();
         const m = q('#chMsg');
         if(m){ m.className='result good'; m.innerHTML=`🎉 Забрано <b>+${fmt(qObj.reward)} ₽</b> за задание «${qObj.name}»!`; }
       };
     });
   }
 
+  async function loadServerStatus(){
+    if(!(IS_TG && API_BASE)) return;
+    try {
+      const d = await tgCall('/api/challenge/status', {});
+      if(!d || !d.ok) return;
+      if(d.streakDay) S.challengeStreak = Math.max(1, Math.min(7, Number(d.streakDay) || 1));
+      S.streakClaimedToday = !d.streakAvailable;
+      if(d.quests){
+        for(const qObj of S.challengeQuests){
+          const s = d.quests[qObj.id];
+          if(!s) continue;
+          qObj.prog = Math.max(0, Number(s.progress) || 0);
+          qObj.target = Math.max(1, Number(s.target) || qObj.target);
+          qObj.claimed = Boolean(s.claimed);
+        }
+      }
+      save(); render();
+    } catch(_) {}
+  }
+
   render();
+  loadServerStatus();
   function getChallengeTimeLeftOuter(){
     const now = new Date();
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
@@ -10531,7 +10583,7 @@ function gameSafe(){
   async function loadStatus(){
     try {
       if(IS_TG && API_BASE){
-        const r = await fetch(API_BASE + '/api/safe/status?initData=' + encodeURIComponent(tgInitData())).then(x => x.json()).catch(() => null);
+        const r = await tgCall('/api/safe/status', {}).catch(() => null);
         if(r && r.ok){
           jackpot = r.jackpot;
           guessesCount = r.guessesCount;

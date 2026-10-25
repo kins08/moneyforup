@@ -60,6 +60,16 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(Boolean(d.querySelector('#mupSplash svg.mup-splash-badge')), 'логотип — векторный SVG без картинки');
     ok(/MONEYFORUP/i.test(d.querySelector('#mupSplash').textContent), 'на загрузочном экране есть название бренда');
 
+    console.log('\n0b) Админ-панель и initData в URL');
+    ok(html.includes('cmEsc(w.details)'), 'реквизиты вывода экранируются');
+    ok(html.includes('cmEsc(w.method)'), 'способ вывода экранируется');
+    ok(html.includes('cmEsc(d.method)'), 'способ пополнения экранируется');
+    ok(html.includes('cmEsc(w.userName)') && html.includes('cmEsc(d.userName)'), 'имена игроков экранируются');
+    ok(html.includes('cmEsc(l.username') && html.includes('cmEsc(r.username'), 'имена в журналах экранируются');
+    ok(!/Реквизиты: <code>\$\{w\.details\}/.test(html), 'нет сырой вставки w.details в innerHTML');
+    ok(!/\/api\/safe\/status\?initData=/.test(html), 'initData больше не передаётся в query');
+    ok(!html.includes("String(TGU.username).toLowerCase() === 'lev_god'"), 'админка не открывается по username');
+
     console.log('\n1) Навигация и раздел кейсов');
     const nav = [...d.querySelectorAll('.nav button')].map(b => b.dataset.nav);
     ok(nav.length === 4, 'в нижней навигации 4 раздела');

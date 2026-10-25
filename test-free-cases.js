@@ -132,7 +132,49 @@ function addFriend(srv, mainId, n) {
     const markerUse = srv.db.atomicApplyPromo(UID, '__PURGE_20261025__');
     ok(!markerUse.ok, 'служебный маркер нельзя активировать');
 
-    console.log('\n7) Инвариант ledger');
+    console.log('\n7) Стрик и квесты: серверная проверка');
+    let ch = await post('/api/challenge/status', {});
+    eq(ch.status, 200, 'статус челленджей доступен');
+    eq(ch.body.quests.q1.progress, 0, 'q1 начинается с нуля');
+    eq(ch.body.quests.q2.progress, 0, 'q2 начинается с нуля');
+    eq(ch.body.quests.q3.progress, 0, 'q3 начинается с нуля');
+    eq(ch.body.streakAvailable, true, 'первый стрик доступен');
+
+    let streak = await post('/api/claim-challenge', { type: 'streak', amount: 250 });
+    eq(streak.status, 200, 'первый стрик начислен');
+    eq(streak.body.amount, 25, 'клиентская сумма 250 проигнорирована, начислено 25 ₽');
+    eq(streak.body.streakDay, 1, 'сервер вернул день 1');
+    eq((await post('/api/claim-challenge', { type: 'streak', amount: 250 })).status, 400, 'повторный стрик отклонён');
+
+    for (const qid of ['q1', 'q2', 'q3']) {
+      const bad = await post('/api/claim-challenge', { type: 'quest', questId: qid });
+      eq(bad.status, 400, `${qid} без выполнения отклонён`);
+    }
+    for (let i = 1; i <= 3; i++) {
+      srv.db.saveRound({
+        roundId: `CH_RK_${i}_${Date.now()}`,
+        userId: UID, game: 'Ракетка', bet: 100, mult: 2, win: 200, status: 'settled'
+      });
+    }
+    ch = await post('/api/challenge/status', {});
+    eq(ch.body.quests.q1.progress, 3, 'q1 видит 3 успешных кэшаута');
+    eq(ch.body.quests.q2.progress, 1, 'q2 видит ставку');
+    const q1 = await post('/api/claim-challenge', { type: 'quest', questId: 'q1' });
+    eq(q1.status, 200, 'q1 начислен после выполнения');
+    eq(q1.body.amount, 30, 'q1 начисляет 30 ₽');
+    eq((await post('/api/claim-challenge', { type: 'quest', questId: 'q1' })).status, 400, 'q1 повторно не начисляется');
+    const q2 = await post('/api/claim-challenge', { type: 'quest', questId: 'q2' });
+    eq(q2.status, 200, 'q2 начислен после ставки');
+    eq(q2.body.amount, 25, 'q2 начисляет 25 ₽');
+    eq((await post('/api/claim-hotdrop', {})).status, 200, 'Hot Drop получен для q3');
+    const q3 = await post('/api/claim-challenge', { type: 'quest', questId: 'q3' });
+    eq(q3.status, 200, 'q3 начислен после Hot Drop');
+    eq(q3.body.amount, 20, 'q3 начисляет 20 ₽');
+    ch = await post('/api/challenge/status', {});
+    eq(ch.body.quests.q1.claimed && ch.body.quests.q2.claimed && ch.body.quests.q3.claimed, true, 'статус отмечает все квесты полученными');
+    eq(ch.body.streakAvailable, false, 'статус видит кулдаун стрика');
+
+    console.log('\n8) Инвариант ledger');
     eq(OPENING + ledger(), bal(), 'opening + ledger == баланс');
 
     console.log(`\nИТОГ: ${passed} проверок пройдено.`);

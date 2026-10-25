@@ -97,8 +97,8 @@ const stmts = {
   getUser: db.prepare('SELECT * FROM users WHERE id = ?'),
   getUserByCode: db.prepare('SELECT * FROM users WHERE code = ?'),
   insertUser: db.prepare(`
-    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, streak_day, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   updateUser: db.prepare(`
     UPDATE users SET
@@ -107,7 +107,7 @@ const stmts = {
       last_deposit_rub = ?, last_deposit_id = ?, last_cashback_at = ?, cashback_claimed_dep_id = ?,
       easycash_claimed = ?, code = ?, rakeback = ?, free_cases = ?, free_case_5ref_claimed = ?,
       first_deposit_bonus_claimed = ?, last_hot_drop = ?, last_wheel_spin = ?, last_streak_at = ?,
-      free_daily_at = ?, free_case_3ref_claimed = ?, free_notified_at = ?, free_notify_day = ?
+      streak_day = ?, free_daily_at = ?, free_case_3ref_claimed = ?, free_notified_at = ?, free_notify_day = ?
     WHERE id = ?
   `),
   countInvited: db.prepare('SELECT COUNT(*) AS count FROM users WHERE ref_id = ?'),
@@ -251,6 +251,7 @@ function getUser(id) {
     lastHotDrop: Number(row.last_hot_drop || 0),
     lastWheelSpin: Number(row.last_wheel_spin || 0),
     lastStreakAt: Number(row.last_streak_at || 0),
+    streakDay: Math.max(1, Number(row.streak_day || 1)),
     freeDailyAt: Number(row.free_daily_at || 0),
     freeCase3RefClaimed: Number(row.free_case_3ref_claimed || 0),
     freeNotifiedAt: Number(row.free_notified_at || 0),
@@ -305,6 +306,7 @@ function saveUser(u) {
       Number(u.lastHotDrop || 0),
       Number(u.lastWheelSpin || 0),
       Number(u.lastStreakAt || 0),
+      Number(u.streakDay || 1),
       Number(u.freeDailyAt || 0),
       Number(u.freeCase3RefClaimed || 0),
       Number(u.freeNotifiedAt || 0),
@@ -318,7 +320,7 @@ function saveUser(u) {
         last_deposit_rub=?, last_deposit_id=?, last_cashback_at=?, cashback_claimed_dep_id=?,
         easycash_claimed=?, code=?, rakeback=?, free_cases=?, free_case_5ref_claimed=?,
         first_deposit_bonus_claimed=?, last_hot_drop=?, last_wheel_spin=?, last_streak_at=?,
-        free_daily_at=?, free_case_3ref_claimed=?, free_notified_at=?, free_notify_day=?
+        streak_day=?, free_daily_at=?, free_case_3ref_claimed=?, free_notified_at=?, free_notify_day=?
       WHERE id=?
     `, [
       u.numId || 0, u.name || '', u.username || '', u.staked || 0, u.stakeSince || 0, u.accruedBase || 0,
@@ -326,7 +328,7 @@ function saveUser(u) {
       u.lastDeposit || 0, u.lastDepositId || 0, u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0,
       u.easycashClaimed ? 1 : 0, u.code || null, Number(u.rakeback || 0), Number(u.freeCases || 0),
       Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
-      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0),
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0), Number(u.streakDay || 1),
       Number(u.freeDailyAt || 0), Number(u.freeCase3RefClaimed || 0), Number(u.freeNotifiedAt || 0),
       String(u.freeNotifyDay || ''), u.id
     ]);
@@ -359,14 +361,15 @@ function saveUser(u) {
       Number(u.lastHotDrop || 0),
       Number(u.lastWheelSpin || 0),
       Number(u.lastStreakAt || 0),
+      Number(u.streakDay || 1),
       Number(u.freeDailyAt || 0),
       Number(u.freeCase3RefClaimed || 0),
       Number(u.freeNotifiedAt || 0),
       String(u.freeNotifyDay || '')
     );
     turso.queueQuery(`
-      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, num_id, name, username, tokens, staked, stake_since, accrued_base, ref_id, ref_earned, ref_invited, terms_at, total_deposited_rub, last_deposit_rub, last_deposit_id, last_cashback_at, cashback_claimed_dep_id, easycash_claimed, code, created_at, rakeback, free_cases, free_case_5ref_claimed, first_deposit_bonus_claimed, last_hot_drop, last_wheel_spin, last_streak_at, streak_day, free_daily_at, free_case_3ref_claimed, free_notified_at, free_notify_day)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name, username=excluded.username, staked=excluded.staked
     `, [
@@ -375,7 +378,7 @@ function saveUser(u) {
       u.termsAt || 0, u.totalDepositedRub || 0, u.lastDeposit || 0, u.lastDepositId || 0,
       u.lastCashbackAt || 0, u.cashbackClaimedDepositId || 0, u.easycashClaimed ? 1 : 0, u.code || null, Date.now(),
       Number(u.rakeback || 0), Number(u.freeCases || 0), Number(u.freeCase5RefClaimed || 0), Number(u.firstDepositBonusClaimed || 0),
-      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0),
+      Number(u.lastHotDrop || 0), Number(u.lastWheelSpin || 0), Number(u.lastStreakAt || 0), Number(u.streakDay || 1),
       Number(u.freeDailyAt || 0), Number(u.freeCase3RefClaimed || 0), Number(u.freeNotifiedAt || 0), String(u.freeNotifyDay || '')
     ]);
   }
@@ -2539,6 +2542,29 @@ module.exports = {
     } catch (e) {
       console.error('[DB] cancelDuel error:', e.message);
       return { ok: false, error: e.message };
+    }
+  },
+  /* Прогресс ежедневных квестов и уже полученные награды за UTC-дату. */
+  getChallengeStatus: (userId, claimDate, dayStart) => {
+    try {
+      const row = db.prepare(`
+        SELECT
+          COALESCE(SUM(CASE WHEN game = 'Ракетка' AND win_tokens > 0 THEN 1 ELSE 0 END), 0) AS racket_wins,
+          COALESCE(SUM(CASE WHEN bet_tokens > 0 THEN 1 ELSE 0 END), 0) AS bets
+        FROM game_rounds
+        WHERE user_id = ? AND created_at >= ? AND status = 'settled'
+      `).get(userId, Number(dayStart) || 0);
+      const claims = db.prepare(
+        'SELECT quest_id FROM challenge_claims WHERE user_id = ? AND claim_date = ?'
+      ).all(userId, String(claimDate)).map(x => String(x.quest_id));
+      return {
+        racketWins: Number((row && row.racket_wins) || 0),
+        bets: Number((row && row.bets) || 0),
+        claims
+      };
+    } catch (e) {
+      console.error('[DB] getChallengeStatus error:', e.message);
+      return { racketWins: 0, bets: 0, claims: [] };
     }
   },
   /* Идемпотентный клейм челленджа: одна выплата на (игрок, квест, дата).
