@@ -116,7 +116,23 @@ function addFriend(srv, mainId, n) {
     const again = srv.db.listCooldownNotifyCandidates(now, day, 100);
     ok(!again.some(x => Number(x.id) === UID && x.free_notify_day === day), 'после уведомления повторно не выбирается');
 
-    console.log('\n6) Инвариант ledger');
+    srv.db.db.prepare('UPDATE users SET free_daily_at = 0, last_wheel_spin = ?, last_seen_at = ?, free_notified_at = 0, free_notify_day = ? WHERE id = ?')
+      .run(now - 13 * 3600000, now, day, UID);
+    const activeWheel = srv.db.listCooldownNotifyCandidates(now, day, 100);
+    ok(activeWheel.some(x => Number(x.id) === UID), 'активный игрок с готовым колесом попал в выборку');
+
+    console.log('\n6) Промокоды');
+    srv.db.db.prepare('DELETE FROM promo_codes WHERE code = ?').run('__PURGE_20261025__');
+    srv.db.upsertPromo('MONEYUP', 500, 100);
+    srv.db.upsertPromo('START', 250, 50);
+    srv.db.upsertPromo('WEEK42', 100, 200);
+    const purge = srv.db.purgePromosExcept('WEEK42');
+    ok(purge.ok, 'одноразовая очистка промокодов выполнена');
+    eq(srv.db.listPromos(100).map(x => x.code).join(','), 'WEEK42', 'в базе остался только WEEK42');
+    const markerUse = srv.db.atomicApplyPromo(UID, '__PURGE_20261025__');
+    ok(!markerUse.ok, 'служебный маркер нельзя активировать');
+
+    console.log('\n7) Инвариант ledger');
     eq(OPENING + ledger(), bal(), 'opening + ledger == баланс');
 
     console.log(`\nИТОГ: ${passed} проверок пройдено.`);

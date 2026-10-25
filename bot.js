@@ -1496,7 +1496,7 @@ bot.command('promo', async ctx => {
     return ctx.reply(
       '🎟 <b>Активация промокода</b>\n\n' +
       'Используйте: <code>/promo КОД</code>\n' +
-      'Пример: <code>/promo MONEYUP</code>\n\n' +
+      'Пример: <code>/promo WEEK42</code>\n\n' +
       '<i>Также промокод можно ввести прямо в приложении на вкладке Пополнение.</i>',
       { parse_mode: 'HTML' }
     );
@@ -1522,9 +1522,8 @@ bot.command('addpromo', async ctx => {
     return ctx.reply(
       'ℹ️ <b>Как создать промокод:</b>\n\n' +
       '<code>/addpromo КОД СУММА_₽ [МАКС_АКТИВАЦИЙ]</code>\n\n' +
-      '<b>Примеры:</b>\n' +
-      '<code>/addpromo BONUS100 100 50</code> — 100 ₽ первым 50 игрокам\n' +
-      '<code>/addpromo START 5</code> — 5 ₽, лимит по умолчанию 100\n\n' +
+      '<b>Пример:</b>\n' +
+      '<code>/addpromo WEEK42 10 200</code> — 10 ₽ на 200 активаций\n\n' +
       '<i>Код: латиница/цифры/_- от 3 до 24 символов. Один игрок может активировать код один раз. ' +
       'Повторная команда с тем же кодом обновит сумму и лимит.</i>',
       { parse_mode: 'HTML' }
@@ -4819,16 +4818,14 @@ setTimeout(runReactivation, 120000);
 setInterval(runReactivation, 6 * 3600 * 1000);
 
 /* ── Уведомления о закончившихся кулдаунах ────────────────────────────────
-   Пишем только тем, кто не был в приложении последние 30 минут и чей кд
-   действительно истёк. Одно сообщение на игрока, дедупликация в БД. */
+   Пишем всем, у кого кд действительно истёк, даже если игрок сейчас в
+   приложении. Дедупликация — по конкретному событию в БД. */
 async function runCooldownNotifications() {
   try {
     const now = Date.now();
     const day = new Date(now).toISOString().slice(0, 10);
-    const list = db.listCooldownNotifyCandidates(now, day, 50);
+    const list = db.listCooldownNotifyCandidates(now, day, 200);
     for (const cand of list) {
-      // Не чаще одного сообщения в 3 часа: кулдауны не сгорают, а спам не нужен.
-      if (cand.free_notified_at && now - cand.free_notified_at < 3 * 3600 * 1000) continue;
       const dailyReady = cand.free_daily_at > 0
         && now - cand.free_daily_at >= 86400000
         && cand.free_notified_at < cand.free_daily_at + 86400000;
@@ -4851,10 +4848,14 @@ async function runCooldownNotifications() {
       const text = `<b>${name}, у вас есть бесплатное</b>\n\n`
         + parts.map(p => '• ' + p).join('\n')
         + '\n\nЗаберите в MoneyForUp, пока не сгорело.';
+      const kb = new InlineKeyboard();
+      if (dailyReady) kb.webApp('🎁 Бесплатный кейс', APP_URL + '#casehub');
+      if (wheelReady) kb.webApp('🎡 Колесо Фортуны', APP_URL + '#games');
+      if (!dailyReady && !wheelReady) kb.webApp('🎁 Открыть MoneyForUp', APP_URL + '#casehub');
       try {
         await bot.api.sendMessage(cand.id, text, {
           parse_mode: 'HTML',
-          reply_markup: new InlineKeyboard().webApp('🎁 Открыть MoneyForUp', APP_URL + '#casehub')
+          reply_markup: kb
         });
       } catch (_) { /* бот заблокирован — не зацикливаемся на повторах */ }
       db.setFreeNotified(cand.id, now, day);
@@ -4871,14 +4872,26 @@ setInterval(runCooldownNotifications, 10 * 60 * 1000);
 
 let recoveryReady = false;
 async function initPersistence() {
+  let pulled = false;
   if (db.tursoOn && db.tursoOn()) {
     try {
       const res = await db.pullFromTurso();
       if (res && res.ok) {
+        pulled = true;
         reloadOrdersFromDb();
       }
     } catch (e) {
       console.error('[Turso] Ошибка восстановления данных при старте:', e.message);
+    }
+  }
+  if (!db.tursoOn || !db.tursoOn() || pulled) {
+    try {
+      const purged = db.purgePromosExcept('WEEK42');
+      if (purged && purged.removed && purged.removed.length) {
+        console.log('[Promo] удалены лишние коды:', purged.removed.join(', '));
+      }
+    } catch (e) {
+      console.error('[Promo] cleanup error:', e.message);
     }
   }
   recoverPendingGameRounds();

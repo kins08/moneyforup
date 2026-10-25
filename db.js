@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const turso = require('./turso');
+const PROMO_PURGE_MARKER = '__PURGE_20261025__';
 
 const TOKENS_PER_RUB = 10;
 const rub = tk => (Number(tk) / TOKENS_PER_RUB)
@@ -214,16 +215,8 @@ const stmts = {
   `)
 };
 
-// Предустановленные промокоды
-stmts.upsertPromo.run('MONEYUP', 500, 100, Date.now());
-stmts.upsertPromo.run('START', 250, 50, Date.now());
-stmts.upsertPromo.run('SKUF', 300, 30, Date.now());
-for (const [c, t, m] of [['MONEYUP', 500, 100], ['START', 250, 50], ['SKUF', 300, 30]]) {
-  turso.queueQuery(
-    'INSERT INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(code) DO UPDATE SET tokens=excluded.tokens, max_uses=excluded.max_uses',
-    [c, t, m, Date.now()]
-  );
-}
+/* Стартовые промокоды больше не создаются автоматически.
+   Одноразовая очистка ниже оставляет только WEEK42. */
 
 function getUser(id) {
   const row = stmts.getUser.get(id);
@@ -438,6 +431,7 @@ function atomicBalanceChange(userId, deltaTokens, type, reason, referenceId = ''
  */
 function atomicApplyPromo(userId, code) {
   const normCode = String(code || '').trim().toUpperCase();
+  if (normCode.startsWith('__')) return { ok: false, error: 'Промокод не найден' };
   db.exec('BEGIN TRANSACTION');
   try {
     const promo = stmts.getPromo.get(normCode);
@@ -1805,7 +1799,6 @@ module.exports = {
   },
   listCooldownNotifyCandidates: (now, day, limit = 60) => {
     try {
-      const idleBefore = Number(now) - 30 * 60 * 1000;
       const activeSince = Number(now) - 14 * 86400000;
       return db.prepare(`
         SELECT u.id, u.name, u.username, u.last_seen_at,
@@ -1816,7 +1809,6 @@ module.exports = {
                COALESCE(u.free_notify_day, '') AS free_notify_day
         FROM users u
         WHERE u.last_seen_at >= ?
-          AND u.last_seen_at <= ?
           AND (
             (u.free_daily_at > 0 AND u.free_daily_at <= ? AND COALESCE(u.free_notified_at, 0) < u.free_daily_at + 86400000)
             OR (u.last_wheel_spin > 0 AND u.last_wheel_spin <= ? AND COALESCE(u.free_notified_at, 0) < u.last_wheel_spin + 43200000)
@@ -1826,7 +1818,7 @@ module.exports = {
         ORDER BY u.last_seen_at DESC
         LIMIT ?
       `).all(
-        activeSince, idleBefore,
+        activeSince,
         Number(now) - 86400000,
         Number(now) - 12 * 3600000,
         Number(now) - 3600000,
@@ -1951,9 +1943,10 @@ module.exports = {
         SELECT p.code, p.tokens, p.max_uses, p.created_at,
                (SELECT COUNT(*) FROM promo_activations a WHERE a.promo_code = p.code) AS used
         FROM promo_codes p
+        WHERE p.code <> ?
         ORDER BY p.created_at DESC
         LIMIT ?
-      `).all(n).map(r => ({
+      `).all(PROMO_PURGE_MARKER, n).map(r => ({
         code: r.code,
         tokens: Number(r.tokens || 0),
         maxUses: Number(r.max_uses || 0),
@@ -1968,14 +1961,44 @@ module.exports = {
   deletePromo: (code) => {
     try {
       const norm = String(code || '').trim().toUpperCase();
+      if (norm === PROMO_PURGE_MARKER) return { ok: false, error: 'Служебный код защищён' };
       const r = db.prepare('DELETE FROM promo_codes WHERE code = ?').run(norm);
       if (Number(r && r.changes) > 0) {
+        db.prepare('DELETE FROM promo_activations WHERE promo_code = ?').run(norm);
+        turso.queueQuery('DELETE FROM promo_activations WHERE promo_code = ?', [norm]);
         turso.queueQuery('DELETE FROM promo_codes WHERE code = ?', [norm]);
       }
       return { ok: Number(r && r.changes) > 0 };
     } catch (e) {
       console.error('[DB] deletePromo error:', e.message);
       return { ok: false, error: 'Не удалось удалить промокод' };
+    }
+  },
+  purgePromosExcept: (keepCode = 'WEEK42') => {
+    try {
+      if (stmts.getPromo.get(PROMO_PURGE_MARKER)) return { ok: true, skipped: true, removed: [] };
+      const keep = String(keepCode || '').trim().toUpperCase();
+      const rows = db.prepare('SELECT code FROM promo_codes WHERE code <> ? AND code <> ?').all(keep, PROMO_PURGE_MARKER);
+      const removed = [];
+      for (const row of rows) {
+        const code = String(row.code || '').toUpperCase();
+        if (!code || code === keep || code === PROMO_PURGE_MARKER) continue;
+        db.prepare('DELETE FROM promo_activations WHERE promo_code = ?').run(code);
+        db.prepare('DELETE FROM promo_codes WHERE code = ?').run(code);
+        turso.queueQuery('DELETE FROM promo_activations WHERE promo_code = ?', [code]);
+        turso.queueQuery('DELETE FROM promo_codes WHERE code = ?', [code]);
+        removed.push(code);
+      }
+      db.prepare('INSERT OR REPLACE INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)')
+        .run(PROMO_PURGE_MARKER, 0, 0, Date.now());
+      turso.queueQuery(
+        'INSERT OR REPLACE INTO promo_codes (code, tokens, max_uses, created_at) VALUES (?, ?, ?, ?)',
+        [PROMO_PURGE_MARKER, 0, 0, Date.now()]
+      );
+      return { ok: true, removed, kept: keep };
+    } catch (e) {
+      console.error('[DB] purgePromosExcept error:', e.message);
+      return { ok: false, error: e.message };
     }
   },
   /** Полная аналитика по раундам конкретного пользователя */
