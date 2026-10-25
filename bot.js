@@ -188,19 +188,10 @@ function clientIp(req) {
   }
   return (req.socket && req.socket.remoteAddress) || 'unknown';
 }
-/* CORS: по умолчанию разрешаем origin из APP_URL. Дополнительные origin
-   (например, web.telegram.org) можно перечислить в CORS_ORIGINS через запятую. */
-const CORS_ORIGINS = String(process.env.CORS_ORIGINS || '')
-  .split(',').map(s => s.trim()).filter(Boolean);
-function corsOrigin(req) {
-  const origin = String((req.headers && req.headers.origin) || '');
-  if (!origin) return '';
-  if (CORS_ORIGINS.length) return CORS_ORIGINS.includes(origin) ? origin : '';
-  try {
-    const appOrigin = new URL(APP_URL).origin;
-    return (origin === appOrigin || origin === 'https://web.telegram.org') ? origin : '';
-  } catch (_) { return ''; }
-}
+/* CORS: API авторизуется initData в теле, а не cookie, поэтому CORS не является
+   границей безопасности. Не блокируем Mini App из-за неизвестного origin:
+   иначе Telegram/Cloudflare-домены получают пустые ответы. */
+function corsOrigin() { return '*'; }
 
 /* Platega (карты РФ и СБП). Кабинет: platega.io → Настройки → API
    В ЛК укажите Callback URL: https://<бэкенд>/platega-webhook (только HTTPS, самоподписанные сертификаты не принимаются) */
@@ -2199,11 +2190,7 @@ const server = http.createServer(async (req, res) => {
       'X-Frame-Options': 'DENY',
       'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'"
     };
-    const origin = corsOrigin(req);
-    if (origin) {
-      headers['Access-Control-Allow-Origin'] = origin;
-      headers['Vary'] = 'Origin';
-    }
+    headers['Access-Control-Allow-Origin'] = corsOrigin();
     headers['Access-Control-Allow-Headers'] = 'Content-Type, X-Telegram-Init-Data';
     headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS';
     res.writeHead(code, headers);
