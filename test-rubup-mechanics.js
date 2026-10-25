@@ -150,13 +150,13 @@ async function run() {
   assert.strictEqual(res.data.item.price, 2400);
   assert.strictEqual(res.data.item.collectible, 1);
   assert.strictEqual(res.data.item.upgradeOnly, 0);
-  console.log('✓ 4. Статус обновился: canClaim=true, AWP | Blackout Gold 2400 ⬦ (240 ₽), коллекция');
+  console.log('✓ 4. Статус обновился: canClaim=true, Смарт-часы Onyx Gold 2400 ⬦ (240 ₽), коллекция');
 
   // 5. Открываем кейс
   res = await request('/api/5ref-case/open', { method: 'POST', initData: mainUserInitData, body: {} });
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.ok, true);
-  assert.strictEqual(res.data.drop.code, 'ref5_awp_blackout');
+  assert.strictEqual(res.data.drop.code, 'ref5_watch_onyx');
   assert.strictEqual(res.data.drop.price, 2400);
   assert.strictEqual(res.data.drop.collectible, true);
   assert.strictEqual(res.data.drop.upgradeOnly, 0);

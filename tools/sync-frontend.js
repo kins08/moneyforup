@@ -50,7 +50,7 @@ for (const [srcRel, dstRel] of PAIRS) {
    Раньше синхронизировались только обложки кейсов, из-за чего новые обложки
    игр (game_pulse.jpg, game_trend.jpg) не попадали в public/ и в проде
    карточки были с битой картинкой. */
-for (const sub of ['', 'cases']) {
+for (const sub of ['', 'cases', 'items']) {
   const srcDir = path.join(ROOT, 'assets', sub);
   const dstDir = path.join(ROOT, 'public', 'assets', sub);
   if (!fs.existsSync(srcDir)) continue;

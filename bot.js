@@ -102,12 +102,12 @@ function rollCaseDrop(userId, caseId, classic) {
 const FREE_REF_CASES = {
   3: {
     level: 3, needed: 3, caseId: 'case_free3', caseName: 'FREE · Кейс за 3 друзей',
-    code: 'ref3_ak_crimson', name: 'AK-47 | Crimson Circuit', icon: '🔫',
+    code: 'ref3_tws_blackgold', name: 'TWS-наушники Black Gold', icon: '🎧',
     price: 1700, tier: 'secret'
   },
   5: {
     level: 5, needed: 5, caseId: 'case_free5', caseName: 'FREE · Кейс за 5 друзей',
-    code: 'ref5_awp_blackout', name: 'AWP | Blackout Gold', icon: '🎯',
+    code: 'ref5_watch_onyx', name: 'Смарт-часы Onyx Gold', icon: '⌚',
     price: 2400, tier: 'secret'
   }
 };

@@ -26,7 +26,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,sans-serif}
 .app{max-width:736px;min-height:100vh;margin:auto;padding:16px 15px calc(108px + var(--tgSafe,0px));background:radial-gradient(circle at 85% 0%,rgba(239,68,68,.12),transparent 36%),var(--bg);position:relative}
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px;position:sticky;top:0;z-index:40;background:var(--bg);padding:10px 0 8px;margin-top:-10px}
 .brand{display:flex;gap:10px;align-items:center;background:none;border:0;padding:0;color:#fff;cursor:pointer;text-align:left;font-family:inherit}
 .logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ef4444,#dc2626);display:grid;place-items:center;font-weight:900;font-size:15px;letter-spacing:.06em;color:#ffffff;box-shadow:0 4px 14px rgba(220,38,38,.4)}
 .brand b{font-size:17px}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
@@ -57,11 +57,12 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#dc2626);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.04em;color:#ffffff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.profileHead{display:flex;gap:13px;align-items:center}
 .pill{padding:6px 9px;border-radius:9px;background:rgba(239,68,68,.16);color:#fca5a5;font-size:11px;font-weight:700}
-.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:rgba(22,17,20,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(4,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.nav{position:fixed;max-width:712px;left:50%;transform:translateX(-50%);right:auto;bottom:calc(12px + var(--tgSafe,0px));width:calc(100% - 24px);background:#161114;border:1px solid var(--line);border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(4,1fr);z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.6)}
 .nav button{background:transparent;border:0;border-radius:16px;padding:8px 3px;color:var(--muted);font-size:10px;min-height:55px;cursor:pointer;font-family:inherit;transition:all .2s}
 .nav button .ni{font-size:20px;display:block;margin-bottom:3px}
 .nav button.active{background:#352026;color:#ffffff;box-shadow:inset 0 0 12px rgba(239,68,68,.25)}
 .nav button{position:relative}
+.nav-scrim{position:fixed;left:0;right:0;bottom:0;height:calc(112px + var(--tgSafe,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,#000 28%,#000 100%);z-index:19;pointer-events:none}
 .free-chip{display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:950;letter-spacing:.07em;padding:2px 5px;border-radius:5px;background:linear-gradient(135deg,#ffcf6b,#f59e0b);color:#15100a;box-shadow:0 2px 8px rgba(255,207,107,.35);line-height:1.15;vertical-align:middle}
 .free-chip[hidden]{display:none}
 .nav .nav-free{position:absolute;top:3px;left:50%;transform:translateX(10px);font-size:7.5px;padding:1.5px 4px}
@@ -187,7 +188,15 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .case-card.case-card-teaser::before{content:'★ ТОП';position:absolute;top:4px;right:4px;font-size:8px;font-weight:800;color:#ffcf6b;background:rgba(255,207,107,.18);border:1px solid rgba(255,207,107,.45);padding:1px 4px;border-radius:4px;z-index:2}
 .case-card.tease-flash{box-shadow:inset 0 0 32px #ffcf6b, 0 0 24px rgba(255,207,107,.7) !important;border:1px solid #ffcf6b !important;animation:pulseTease .35s ease-in-out infinite alternate}
 .case-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--tier-col,#8f97ff);box-shadow:0 0 8px var(--tier-col,#8f97ff)}
-.case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px}
+.case-card .ci-icon{font-size:34px;line-height:1;margin-bottom:4px;display:flex;align-items:center;justify-content:center}
+.case-card .ci-art{width:46px;height:46px;border-radius:9px;object-fit:cover;display:block}
+.casehub-itemcard .ci-art{width:64px;height:64px;border-radius:10px;object-fit:cover;display:block;margin:0 auto 4px}
+.casehub-list .cli-art{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:0 0 auto}
+.casehub-history .chr-art{width:24px;height:24px;border-radius:6px;object-fit:cover;flex:0 0 auto}
+.case-grid-item .cgi-art{width:38px;height:38px;border-radius:9px;object-fit:cover;flex:0 0 auto}
+.upg-target .ut-art{width:38px;height:38px;border-radius:9px;object-fit:cover;flex:0 0 auto}
+.inv-icon .inv-art{width:100%;height:100%;object-fit:cover;border-radius:15px;display:block}
+.fci-art{width:44px;height:44px;border-radius:9px;object-fit:cover;display:block;margin:0 auto 4px}
 .case-card .ci-name{font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .case-card .ci-val{font-size:10px;color:var(--tier-col,#8f97ff);font-weight:700;margin-top:2px}
 .case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:240px;overflow-y:auto;padding-right:4px;margin-top:10px}
@@ -878,6 +887,8 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 /* Карточки с полноценными обложками вместо эмодзи */
 .casehub-case{padding:0!important;display:flex;flex-direction:column;overflow:hidden;min-height:0!important}
 .casehub-case .ch-cover-wrap{position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;background:#0a0a0a}
+.cover-tone{position:absolute;inset:0;z-index:1;background:linear-gradient(145deg,#a8482b 0%,#d99a63 52%,#efd4ae 100%);mix-blend-mode:color;opacity:.72;pointer-events:none}
+.casehub-hero .chh-sub,.casehub-card .ch-tag{color:#ffcf6b}
 .casehub-case .ch-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--mfu-t-reveal) var(--mfu-ease-out);z-index:1}
 @media (hover:hover) and (pointer:fine){
   .casehub-case:hover .ch-cover{transform:scale(1.045)}
@@ -1197,7 +1208,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 .upg-inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:250px;overflow-y:auto;margin-top:7px}
 .upg-inv{display:flex;gap:7px;align-items:center;padding:8px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);cursor:pointer;font-family:inherit;text-align:left;color:#fff;min-width:0}
 .upg-inv.on{border-color:#f59e0b;background:rgba(245,158,11,.1)}
-.upg-inv .ui{font-size:20px}.upg-inv .ub{min-width:0;flex:1}
+.upg-inv .ui{font-size:20px;display:flex;align-items:center}.upg-inv .ut-art{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:0 0 auto}.upg-inv .ub{min-width:0;flex:1}
 .upg-inv b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .upg-inv small{font-size:9px;color:#ffcf6b}
 .upg-empty{font-size:11px;color:#7f8aa3;text-align:center;padding:12px}
@@ -1708,6 +1719,7 @@ button:active:not(:disabled), .control:active:not(:disabled), .chip:active:not(:
 <button data-nav="casehub"><span class="ni">📦</span>Кейсы<span class="free-chip nav-free" id="navCasesFree" hidden>FREE</span></button>
 <button data-nav="challenge"><span class="ni">🎯</span>Челлендж</button>
 </div>
+<div class="nav-scrim" aria-hidden="true"></div>
 
 <script src="assets/case-modes.js"></script>
 <script>
@@ -1753,6 +1765,43 @@ function betRubLine(){
 /* ================= Telegram Mini App ================= */
 /* BOT_NAME объявлен в базовом файле (сборщик подставляет имя бота) */
 const API_BASE=((typeof window.MONEYFORUP_API==='string'?window.MONEYFORUP_API:(typeof window.MATHPLAY_API==='string'?window.MATHPLAY_API:''))||'');   // ← URL бэкенда, '' = демо-режим
+
+/* Единая библиотека арта предметов: одна тёплая 3D-подача на все 255 позиций. */
+const ITEM_ART_RULES=[
+  [/автомобильн|прикуривател|видеорегистратор|манометр|компрессор|джамп|carplay|парковочн|fm-модулятор|козырек|щетка-скребок|магнитола|авто/i,'auto'],
+  [/камер|видеозахват|микрофон|аудиоинтерфейс|микшер|стрим-контроллер|хромакей|стедикам/i,'camera_mic'],
+  [/\bssd\b|nvme|жесткий диск|роутер|mesh|радиатор|свитч|отвертк|система водяного|сжо/i,'pc_parts'],
+  [/дрон|квадрокоптер/i,'camera_mic'],
+  [/клинок|меч|нож|шлем|броня|перчатка|ранец|кольцо|нашивка|брелок|медаль|сапфир|обсидиан|кристалл|артефакт|амулет|очки/i,'artifact'],
+  [/подарочн|бокс|коробк/i,'default'],
+  [/держатель зубных щеток|зубная|ирригатор|электробритва|бритва|фен|массажер|грелка|триммер/i,'personal_care'],
+  [/подставка|органайзер|держатель|кронштейн|пантограф|штатив|трипод|крепление|шокмаунт|паук|поп-фильтр|стойка|крючок/i,'stand'],
+  [/tws|вкладыш|внутриканальн|арматурн|air mini|спортивные наушники/i,'earbuds'],
+  [/наушник|накладн|полноразмерн|мониторн|студийн|hi-?fi|hi-?res|anc|гарнитур/i,'headphones'],
+  [/умная розетка|умная колонка|умный датчик|датчик|термостат|трекер|протечк|дым|wi-?fi/i,'smart_home'],
+  [/колонк|саундбар|акустик|сабвуфер|marshall|partyboom|мониторы пара|усилитель|ресивер|цап|динамик/i,'speaker'],
+  [/смарт-час|умные час|фитнес-браслет|apple watch|ремешок/i,'smartwatch'],
+  [/планшет|электронная книга|графический планшет|стилус/i,'tablet'],
+  [/смартфон|телефон|iphone|чехол/i,'phone'],
+  [/ноутбук|ультрабук|мини-пк|чехол-клавиатура/i,'laptop'],
+  [/ночник|лампа|подсветка|светильник|rgb|свеча|фонар|скринбар|световая панель|sunset|гексагон|свет|астронавт|звездного/i,'lighting'],
+  [/монитор|smart tv|телевизор|проектор|\btv\b/i,'monitor'],
+  [/консоль|геймпад|контроллер/i,'console'],
+  [/мышь|клавиатура|коврик|кейкап|свитч|глайд|кресло/i,'gaming'],
+  [/кабель|заряд|блок питания|повербанк|адаптер|переходник|хаб|док-станция|картридер|стяжк|сетевой фильтр|type-?c|lightning|hdmi|displayport|otg|провод|usb/i,'power'],
+  [/настольные часы|напольные.*весы/i,'smart_home'],
+  [/кофе|чайник|блендер|гриль|аэрогриль|сушилк|упаковщик|измельчитель|капучинатор|штопор|весы|термометр|мельница|формы|дуршлаг|запайщик|сэндвичниц|молока|мультипечь|тостер|кухонн|помпа/i,'kitchen'],
+  [/зубная|ирригатор|бритва|фен|массажер|грелка|триммер/i,'personal_care'],
+  [/пылесос|мойщик окон|увлажнитель|аромадиффузор|очиститель воздуха|ионизатор|климатический|вентилятор|отпариватель|катышков/i,'home']
+];
+function itemArt(it){
+  const s=String(it&&it.name||'');
+  for(const [re,f] of ITEM_ART_RULES){ if(re.test(s)) return 'assets/items/'+f+'.jpg'; }
+  return 'assets/items/artifact.jpg';
+}
+function artImg(it,cls,alt){
+  return `<img class="${cls||'item-art'}" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">`;
+}
 const TG=(window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;
 const IS_TG=!!(TG&&TG.initData);
 const TGU=(IS_TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user)?TG.initDataUnsafe.user:null;
@@ -3026,7 +3075,7 @@ function openItemDetailModal(it){
       ${tierName}
     </div>
 
-    <div style="font-size:54px;margin:6px 0;filter:drop-shadow(0 6px 16px ${col}66)">${it.icon || '📦'}</div>
+    <img src="${itemArt(it)}" alt="" style="width:132px;height:132px;border-radius:18px;object-fit:cover;margin:6px 0;box-shadow:0 12px 28px ${col}55;display:inline-block">
     <b style="font-size:18px;color:#fff;display:block;margin-bottom:4px">${it.name}</b>
     <div class="muted small">${it.caseName ? `Выпал из кейса «${it.caseName}»` : 'Предмет из инвентаря'}</div>
 
@@ -3132,7 +3181,7 @@ function renderProfileInventory(){
     <div class="inv-card" style="--inv-tier-col:${it.collectible ? '#ffcf6b' : (it.upgrade_only ? '#f59e0b' : col)}" data-card-id="${it.id}">
       <span class="inv-tier-tag" style="${it.collectible ? 'background:#ffcf6b;color:#111;font-weight:950' : (it.upgrade_only ? 'background:#f59e0b;color:#111;font-weight:900' : '')}">${tierName}</span>
       <div class="inv-icon-aura">
-        <div class="inv-icon">${it.icon || '📦'}</div>
+        <div class="inv-icon"><img class="inv-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async"></div>
       </div>
       <div class="inv-name" title="${it.name}">${it.name}</div>
       <div class="inv-val">${fmtRub(it.price)}</div>
@@ -8113,7 +8162,7 @@ function gameCases(){
         ${curCase.items.slice(0, 15).map(it => {
           const col = TIER_COLS[it.tier] || '#8f97ff';
           return `<div class="case-card" style="--tier-col:${col}">
-            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-icon">${artImg(it,'ci-art',it.name)}</div>
             <div class="ci-name">${it.name}</div>
             <div class="ci-val">${fmt(it.price)} ₽</div>
           </div>`;
@@ -8139,7 +8188,7 @@ function gameCases(){
           const col = TIER_COLS[it.tier] || '#8f97ff';
           return `<div class="case-grid-item" style="--tier-col:${col}">
             <div class="cgi-col"></div>
-            <div style="font-size:20px">${it.icon}</div>
+            <img class="cgi-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">
             <div style="flex:1;min-width:0">
               <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
               <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px">
@@ -8197,7 +8246,7 @@ function gameCases(){
         strip.innerHTML = stripItems.map(it => {
           const col = TIER_COLS[it.tier] || '#8f97ff';
           return `<div class="case-card" style="--tier-col:${col}">
-            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-icon">${artImg(it,'ci-art',it.name)}</div>
             <div class="ci-name">${it.name}</div>
             <div class="ci-val">${fmt(it.price)} ₽</div>
           </div>`;
@@ -8305,7 +8354,7 @@ function gameCases(){
         strip.innerHTML = stripItems.map((it) => {
           const col = TIER_COLS[it.tier] || '#8f97ff';
           return `<div class="case-card" style="--tier-col:${col}">
-            <div class="ci-icon">${it.icon}</div>
+            <div class="ci-icon">${artImg(it,'ci-art',it.name)}</div>
             <div class="ci-name">${it.name}</div>
             <div class="ci-val">${fmt(it.price)} ₽</div>
           </div>`;
@@ -8490,7 +8539,7 @@ function gameCases(){
           strip.innerHTML = stripItems.map(it => {
             const col = TIER_COLS[it.tier] || '#8f97ff';
             return `<div class="case-card" style="--tier-col:${col}">
-              <div class="ci-icon">${it.icon}</div>
+              <div class="ci-icon">${artImg(it,'ci-art',it.name)}</div>
               <div class="ci-name">${it.name}</div>
               <div class="ci-val">${fmt(it.price)} ₽</div>
             </div>`;
@@ -10795,7 +10844,7 @@ function gameCaseHubUnified(sel){
   function itemCard(it){
     const col = (typeof TIER_COLS!=='undefined' && TIER_COLS[it.tier]) || '#8f97ff';
     return `<div class="casehub-itemcard" style="--tier-col:${col}">
-      <div class="ci-i">${it.icon||'📦'}</div>
+      <div class="ci-i">${artImg(it,'ci-art',it.name)}</div>
       <div class="ci-n">${esc(it.name)}</div>
       <div class="ci-p">${fmt(it.price)} ₽</div>
     </div>`;
@@ -10806,6 +10855,7 @@ function gameCaseHubUnified(sel){
     const imgCls = isHero ? 'chh-cover-img' : 'ch-cover';
     return `<div class="${cls}">
       <img class="${imgCls}" src="${esc(src)}" alt="${esc(m.name)}" loading="${isHero?'eager':'lazy'}" decoding="async"${isHero?' fetchpriority="high"':''} onerror="this.style.display='none';this.parentElement.classList.add('img-missing')">
+      <span class="cover-tone" aria-hidden="true"></span>
       <div class="${isHero?'chh-cover-fallback':'ch-cover-fallback'}">${m.icon||'📦'}</div>
     </div>`;
   }
@@ -10858,23 +10908,26 @@ function gameCaseHubUnified(sel){
     if(freeModal){ freeModal.remove(); freeModal=null; }
   }
   function freeCardLabel(icon,name,val){
-    return `<div class="fci">${icon||'📦'}</div><div class="fcn">${esc(name||'')}</div><div class="fcv">${val||''}</div>`;
+    const head = icon && String(icon).startsWith('assets/')
+      ? `<img class="fci-art" src="${icon}" alt="">`
+      : `<div class="fci">${icon||'📦'}</div>`;
+    return `${head}<div class="fcn">${esc(name||'')}</div><div class="fcv">${val||''}</div>`;
   }
   function freePool(kind,winner){
     if(kind==='daily'){
       return [1,2,3,4,5,6].map(n=>({icon:'💸',name:`+${n} ₽`,val:`${n} ₽`}));
     }
     if(kind==='ref3') return [
-      {icon:'🔫',name:'AK-47 | Crimson',val:'170 ₽'},
-      {icon:'🎖️',name:'Squad Badge',val:'КОЛЛЕКЦИЯ'},
-      {icon:'🧿',name:'Charm | Red',val:'КОЛЛЕКЦИЯ'},
-      {icon:'🪙',name:'Gold Token',val:'КОЛЛЕКЦИЯ'}
+      {icon:'assets/items/earbuds.jpg',name:'TWS-наушники Black Gold',val:'170 ₽'},
+      {icon:'assets/items/headphones.jpg',name:'Over-Ear Black Gold',val:'КОЛЛЕКЦИЯ'},
+      {icon:'assets/items/speaker.jpg',name:'Колонка Black Gold',val:'КОЛЛЕКЦИЯ'},
+      {icon:'assets/items/smartwatch.jpg',name:'Смарт-часы Onyx',val:'КОЛЛЕКЦИЯ'}
     ];
     return [
-      {icon:'🎯',name:'AWP | Gold',val:'240 ₽'},
-      {icon:'🗡️',name:'Night Dagger',val:'КОЛЛЕКЦИЯ'},
-      {icon:'🥇',name:'Gold Medal',val:'КОЛЛЕКЦИЯ'},
-      {icon:'🪙',name:'Gold Token',val:'КОЛЛЕКЦИЯ'}
+      {icon:'assets/items/smartwatch.jpg',name:'Смарт-часы Onyx Gold',val:'240 ₽'},
+      {icon:'assets/items/headphones.jpg',name:'Over-Ear Black Gold',val:'КОЛЛЕКЦИЯ'},
+      {icon:'assets/items/speaker.jpg',name:'Колонка Black Gold',val:'КОЛЛЕКЦИЯ'},
+      {icon:'assets/items/tablet.jpg',name:'Планшет Black Gold',val:'КОЛЛЕКЦИЯ'}
     ];
   }
   function openFreeModal(kind){
@@ -10962,8 +11015,8 @@ function gameCaseHubUnified(sel){
           res={ok:true,prize:n*10,prizeRub:n,tokens:(S.balance||0)+n*10,drop:{name:`+${n} ₽`,icon:'💸',price:n*10,cash:true}};
         } else {
           const price=kind==='ref3'?1700:2400;
-          const name=kind==='ref3'?'AK-47 | Crimson Circuit':'AWP | Blackout Gold';
-          res={ok:true,drop:{id:'free_'+Date.now(),name,icon:kind==='ref3'?'🔫':'🎯',price,collectible:true,caseName:'FREE'}};
+          const name=kind==='ref3'?'TWS-наушники Black Gold':'Смарт-часы Onyx Gold';
+          res={ok:true,drop:{id:'free_'+Date.now(),name,icon:'',price,collectible:true,caseName:'FREE'}};
         }
       }
     }catch(e){ err=e; }
@@ -10978,7 +11031,7 @@ function gameCaseHubUnified(sel){
     const isCash=Boolean(drop.cash)||kind==='daily';
     const winCard=isCash
       ? {icon:'💸',name:(drop.name||`+${res.prizeRub||1} ₽`),val:`${res.prizeRub||Math.round((res.prize||10)/10)} ₽`}
-      : {icon:drop.icon||'🗡️',name:drop.name||'Коллекционный предмет',val:fmt(drop.price||0)+' ₽'};
+      : {icon:itemArt(drop),name:drop.name||'Коллекционный предмет',val:fmt(drop.price||0)+' ₽'};
     const strip=modal.querySelector('#fcmStrip');
     if(strip){
       const basePool=freePool(kind).filter(c=>c.name!==winCard.name);
@@ -11111,7 +11164,7 @@ function gameCaseHubUnified(sel){
     <div class="casehub-list">
       ${m.items.map(it=>`
         <div class="cli">
-          <div style="font-size:19px">${it.icon||'📦'}</div>
+          <img class="cli-art" src="${itemArt(it)}" alt="" loading="lazy" decoding="async">
           <div style="min-width:0;flex:1">
             <b>${esc(it.name)}</b>
             <small>${fmt(it.price)} ₽ · ${esc(it.tier||'')}</small>
@@ -11123,11 +11176,12 @@ function gameCaseHubUnified(sel){
     <div class="casehub-history">
       ${hist.map(h=>`
         <div class="chr">
-          <span style="font-size:16px">${h.item&&h.item.icon?h.item.icon:'📦'}</span>
+          <img class="chr-art" src="${itemArt(h.item||{})}" alt="" loading="lazy" decoding="async">
           <b>${esc(h.item?h.item.name:(h.name||'Предмет'))}</b>
           <span>${fmt((h.item&&h.item.price)||h.price||0)} ₽</span>
         </div>`).join('')}
-    </div>`:''}`;
+    </div>`:''}
+    <div style="height:96px" aria-hidden="true"></div>`;
 
     a.querySelectorAll('[data-chm]').forEach(b=>{
       b.onclick=()=>{
@@ -11345,7 +11399,7 @@ function gameCaseHubUnified(sel){
       const profit=(drop.price||0)>=Number(m.price||0);
       tgHaptic(profit?'win':'light');
       lastDrop=drop;
-      statusText=`<div style="text-align:center"><div style="font-size:30px">${drop.icon||'📦'}</div>
+      statusText=`<div style="text-align:center"><img src="${itemArt(drop)}" alt="" style="width:104px;height:104px;border-radius:14px;object-fit:cover;margin:0 auto 6px;display:block">
         <b style="color:#fff;font-size:15px">${esc(drop.name||'Предмет')}</b><br>
         <span style="color:${profit?'#3ddc96':'#fca5a5'};font-weight:900">${fmt(drop.price||0)} ₽</span>
         <div class="muted small" style="margin-top:4px">${profit?'Предмет окупил кейс ✓':'Предмет добавлен в инвентарь'}</div></div>`;
@@ -11589,7 +11643,7 @@ function gameUpgradeArena(){
     const ch=chanceFor(t);
     const col=(typeof TIER_COLS!=='undefined'&&TIER_COLS[t.tier])||'#8f97ff';
     return `<button class="upg-target ${on?'on':''} ${ok?'':'disabled'}" data-ut="${esc(t.code)}" ${(!ok||busy)?'disabled':''}>
-      <span class="ut-i">${t.icon||'📦'}</span>
+      <span class="ut-i">${artImg(t,'ut-art',t.name)}</span>
       <span class="ut-b">
         <span class="ut-n">${esc(t.name)}</span>
         <span class="ut-v">${fmt(t.value)} ₽ · ${esc(t.tier||'')}</span>
@@ -11651,7 +11705,7 @@ function gameUpgradeArena(){
       <div class="upg-label">Предмет-источник <span>${list.length} в инвентаре</span></div>
       <div class="upg-inv-grid">
         ${list.length?list.map(it=>`<button class="upg-inv ${String(selectedItemId)===String(it.id)?'on':''}" data-uinv="${it.id}">
-          <span class="ui">${it.icon||'📦'}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ₽${it.upgrade_only?' · только апгрейд':''}</small></span>
+          <span class="ui">${artImg(it,'ut-art',it.name)}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ₽${it.upgrade_only?' · только апгрейд':''}</small></span>
         </button>`).join(''):'<div class="upg-empty">Инвентарь пуст — откройте кейс.</div>'}
       </div>
       <div class="muted small" style="margin-top:6px;font-size:10px">Предмет списывается при запуске.</div>
@@ -11736,7 +11790,7 @@ function gameUpgradeArena(){
       ${sourceType==='item'?`
         <div class="upg-inv-grid">
           ${list.length?list.map(it=>`<button class="upg-inv ${serialSelected.includes(it.id)?'on':''}" data-userial="${it.id}" ${serialRunning?'disabled':''}>
-            <span class="ui">${it.icon||'📦'}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ₽</small></span>
+            <span class="ui">${artImg(it,'ut-art',it.name)}</span><span class="ub"><b>${esc(it.name)}</b><small>${fmt(it.price)} ₽</small></span>
           </button>`).join(''):'<div class="upg-empty">Инвентарь пуст</div>'}
         </div>
       `:`<div class="upg-summary"><div class="upg-stat"><small>Ставка за попытку</small><b>${fmt(sourceValue())} ₽</b></div><div class="upg-stat"><small>Всего попыток</small><b>${serialCount}</b></div></div>`}
