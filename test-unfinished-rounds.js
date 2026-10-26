@@ -43,11 +43,11 @@ function patchRoundParams(tmp, roundId, patch) {
   }
 }
 
-/* Ставка в Ракетке принимается только в первые 15 с раунда. Ждём начало
+/* Ставка в Ракетке принимается только в первые 3 с раунда. Ждём начало
    раунда, чтобы после рестарта оставалось время на кэшаут. */
-async function alignToRoundStart(maxInto = 10000) {
-  const into = Date.now() % 30000;
-  if (into > maxInto) await sleep(30000 - into + 300);
+async function alignToRoundStart(maxInto = 2000) {
+  const into = Date.now() % 12000;
+  if (into > maxInto) await sleep(12000 - into + 300);
 }
 
 (async () => {

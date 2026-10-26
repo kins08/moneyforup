@@ -26,7 +26,7 @@ vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
 const unhandled = [];
 process.on('unhandledRejection', e => unhandled.push((e && e.message) || String(e)));
 
-const ROUND_MS = 30000, WAIT_MS = 10000;
+const ROUND_MS = 12000, WAIT_MS = 3000;
 const RK_MULT = 1.7;                                  // defaultMult Ракетки на сервере
 let FAKE_NOW = 0;                                     // управляемые часы для фаз раунда
 
@@ -147,12 +147,12 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
       'в шапке режима виден зелёный индикатор «онлайн»: «' + (mo ? mo.textContent.trim() : 'нет') + '»');
   }
   check(showBal() === 100, 'стартовый баланс пришёл с сервера: ' + showBal() + ' ⬦');
-  type($('#b1Inp'), '6'); type($('#b2Inp'), '6');
+  type($('#b1Inp'), '6');
   const tgl = el => { if (el.checked) { el.checked = false; el.dispatchEvent(new window.Event('change', { bubbles: true })); } };
-  tgl($('#b1AutoChk')); tgl($('#b2AutoChk'));         // авто-кэшаут не должен стрелять раньше нас
+  tgl($('#b1AutoChk'));                                // авто-кэшаут не должен стрелять раньше нас
   // клик по кнопке ставит/снимает ставку в очереди; приводим состояние к нужному
   const setQueue = (btn, on) => { if (/ОТМЕНИТЬ/.test(btn.textContent) !== on) click(btn); };
-  const b1Btn = $('#b1Btn'), b2Btn = $('#b2Btn');
+  const b1Btn = $('#b1Btn');
 
   /* ── 1. ставка уходит на сервер не по клику, а на старте полёта ───────────── */
   setQueue(b1Btn, true);
@@ -177,16 +177,15 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
   check(/не принята/i.test($('#rr').textContent), 'игроку показан отказ сервера, а не успех: ' + $('#rr').textContent.slice(0, 90));
   check(unhandled.length === 0, 'нет необработанных отказов промисов (было Uncaught in promise): ' + JSON.stringify(unhandled));
 
-  /* ── 4. две ставки: вторая сверяется с балансом ПОСЛЕ первой ──────────────── */
+  /* ── 4. одна ставка: пред-ставка уходит на сервер на старте следующего раунда ─ */
   srv.tokens = 100; S.balance = 200;                   // клиент снова «богаче» сервера
-  setQueue(b1Btn, true); setQueue(b2Btn, true);        // в полёте это пред-ставки на след. раунд
+  setQueue(b1Btn, true);                               // в полёте это пред-ставка на след. раунд
   const a1 = srv.attempts;
-  FAKE_NOW = tBet(R2);                                 // переход: пред-ставки срабатывают
+  FAKE_NOW = tBet(R2);                                 // переход: пред-ставка срабатывает
   await sleep(150);
-  check(srv.tokens === 40, 'списана ровно одна ставка из двух: ' + srv.tokens + ' ⬦ (100 − 60)');
-  check(srv.attempts === a1 + 1, 'на сервер ушла только одна ставка — вторая не прошла по балансу после первой: attempts=' + (srv.attempts - a1));
-  check(!/В игре|ПРИНЯТА/.test($('#b2Status').textContent), 'вторая ставка не фантом: «' + $('#b2Status').textContent + '»');
-  check(/не принята/i.test($('#rr').textContent), 'игроку сказано про отказ: ' + $('#rr').textContent.slice(0, 90));
+  check(srv.tokens === 40, 'пред-ставка на новый раунд списана один раз: ' + srv.tokens + ' ⬦ (100 − 60)');
+  check(srv.attempts === a1 + 1, 'на сервер ушла ровно одна ставка: attempts=' + (srv.attempts - a1));
+  check(/Принята сервером|ПРИНЯТА|В игре/.test($('#b1Status').textContent), 'ставка показана как принятая: «' + $('#b1Status').textContent + '»');
 
   /* ── 5. кэшаут показывает НАЧИСЛЕННОЕ сервером, а не bet×кэшаут ───────────── */
   const tk = [];

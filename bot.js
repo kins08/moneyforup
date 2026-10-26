@@ -638,9 +638,15 @@ const GAMES = {
    Теперь r берётся из CSPRNG на сервере, раунд фиксируется по серверным часам,
    а точка взрыва раскрывается клиенту только когда полёт до неё уже дошёл. */
 const RK = { tcap: 12, k: 0.18 };
-const RACKET_ROUND_MS = 30000;
-const RACKET_WAIT_MS = 10000;
-const RACKET_SPEED = 0.58;
+const RACKET_ROUND_MS = 12000;
+const RACKET_WAIT_MS = 3000;
+const RACKET_SPEED = 0.82;          // базовый полёт: чуть медленнее на низких иксах
+const RACKET_BOOST_SPEED = 1.75;    // после ×5 ракета летит быстрее
+const RACKET_BOOST_FROM = 5;
+/* Допуск на пинг: если игрок нажал «Забрать» до взрыва, а запрос дошёл
+   на сервер чуть позже момента краха — кэшаут всё равно засчитывается.
+   Небольшое окно: не даёт выиграть тем, кто узнал крах постфактум. */
+const RACKET_CASHOUT_GRACE_MS = 350;
 
 /* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте). */
 function crashFromRBase(r) {
@@ -675,11 +681,21 @@ function getRacketRound(rIdx) {
   }
   return r;
 }
+/* Секунда полёта (внутренний s), на которой достигается множитель m. */
+function racketSAtMult(m) {
+  const L = Math.log(Math.max(1, Number(m) || 1)) / RK.k;
+  return (-1 + Math.sqrt(1 + 0.24 * L)) / 0.12;
+}
+const RACKET_S_BOOST = racketSAtMult(RACKET_BOOST_FROM);
+const RACKET_T_BOOST = RACKET_S_BOOST / RACKET_SPEED;
+/* Секунда полёта до множителя m с ускорением после ×5 — та же кривая, что на клиенте. */
+function racketTimeAtMult(m) {
+  const s = racketSAtMult(m);
+  return s <= RACKET_S_BOOST ? s / RACKET_SPEED : RACKET_T_BOOST + (s - RACKET_S_BOOST) / RACKET_BOOST_SPEED;
+}
 /* Момент времени (мс от начала раунда), когда множитель полёта достигает crash. */
 function racketBustMs(crash) {
-  const L = Math.log(Math.max(1, crash)) / RK.k;      // tau(s)*k = ln(crash)
-  const s = (-1 + Math.sqrt(1 + 0.24 * L)) / 0.12;     // 0.06 s^2 + s - L = 0
-  return RACKET_WAIT_MS + (s / RACKET_SPEED) * 1000;
+  return RACKET_WAIT_MS + racketTimeAtMult(crash) * 1000;
 }
 /* Момент краха в абсолютном времени. После полуночи rIdx*ROUND_MS — это
    начало раунда, поэтому условие «уже взорвалась» не зависит от часов клиента. */
@@ -3137,24 +3153,30 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Выигрыш уже забран или ставка сгорела' });
       }
 
-      // Кэшаут возможен только в живом раунде. Просроченную ставку закрываем
-      // проигрышем, а будущий индекс из подделанного roundId выплату не открывает.
-      if (!racketRoundIsLive(saved.rIdx)) {
-        const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
-        if (saved.rIdx < nowIdx) {
-          settleRacketLoss(roundId, saved, true);
-          return send(400, { error: 'Раунд уже завершился. Ставка сгорела.' });
-        }
-        return send(400, { error: 'Раунд ещё не начался' });
-      }
-
       const serverCrash = rememberRacketRound(saved.rIdx, saved.crash).crash;
       saved.crash = serverCrash;
       const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
+      const bustAt = racketBustAt(saved.rIdx, serverCrash);
+      const lateBy = Date.now() - bustAt;
+      const multOk = serverCrash > 1.00 && clientMult <= serverCrash;
+      const graceOk = lateBy <= RACKET_CASHOUT_GRACE_MS;
 
-      // Ракета разбилась до того, как игрок нажал кэшаут (в том числе если
-      // запрос пришёл уже после момента краха).
-      if (serverCrash <= 1.00 || clientMult > serverCrash || Date.now() > racketBustAt(saved.rIdx, serverCrash)) {
+      // Кэшаут возможен в живом раунде или в пределах допуска на пинг.
+      if (!racketRoundIsLive(saved.rIdx)) {
+        const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
+        if (saved.rIdx < nowIdx) {
+          if (!(multOk && graceOk)) {
+            settleRacketLoss(roundId, saved, true);
+            return send(400, { error: 'Раунд уже завершился. Ставка сгорела.' });
+          }
+        } else {
+          return send(400, { error: 'Раунд ещё не начался' });
+        }
+      }
+
+      // Ракета уже разбилась: принимаем, если игрок успел нажать до краха,
+      // а запрос дошёл с задержкой из-за пинга в пределах допуска.
+      if (!multOk || !graceOk) {
         settleRacketLoss(roundId, saved);
         return send(400, { error: `Ракета уже взорвалась на ×${serverCrash}. Ставка сгорела.` });
       }
