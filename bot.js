@@ -3130,6 +3130,9 @@ const server = http.createServer(async (req, res) => {
 
     /* ── Ракетка: кэшаут (забрать выигрыш на текущем множителе) ─────────────── */
     if (url.pathname === '/api/racket/cashout' && req.method === 'POST') {
+      if (process.env.BOT_DRY_RUN !== '1' && !checkRateLimit(`racket-cashout:${u.id}`, 60, 60000)) {
+        return send(429, { error: 'Слишком много запросов. Пожалуйста, подождите.' });
+      }
       const roundId = String(body.roundId || '');
       let saved = activeRacketBets.get(roundId);
       if (!saved) {

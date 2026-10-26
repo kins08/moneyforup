@@ -77,11 +77,10 @@ async function run() {
   assert.strictEqual(html, pubHtml, 'index.html and public/index.html must be 100% byte identical');
   console.log('✓ 1. Файлы index.html и public/index.html побайтово идентичны');
 
-  // Проверка реферального баннера на главном экране
-  assert.strictEqual(html.includes('id="gamesRefPromoBanner"'), true, 'gamesRefPromoBanner must be present');
-  assert.strictEqual(html.includes('Приглашай друзей'), true, 'Promo text must be present');
-  assert.strictEqual(html.includes('15%'), true, '15% must be mentioned in referral promo');
-  console.log('✓ 2. Акция приглашения друзей размещена на главном экране (15% + кейс за 5 друзей)');
+  // Реферальный баннер убран с экрана игр по решению продукта:
+  // приглашение живёт в профиле, а не на главном экране.
+  assert.strictEqual(html.includes('id="gamesRefPromoBanner"'), false, 'Referral promo banner must be removed from games');
+  console.log('✓ 2. Реферальный баннер убран с экрана игр (приглашение — в профиле)');
 
   // Проверка упрощения аналитики
   assert.strictEqual(html.includes('id="uStatWinRate"'), false, 'Winrate stat must be removed from user profile');

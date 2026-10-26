@@ -5316,6 +5316,8 @@ function gameRacket(){
     cashed: false,
     cashX: 0,
     cashAmt: 0,
+    cashPending: false, // запрос кэшаута уже в полёте — не плодим параллельные
+    cashFailed: false,  // сервер отказал: авто-кэшаут не повторяем до конца раунда
     autoOn: !!S.autoOn,
     autoX: Math.min(RKMAX, Math.max(MINCASH, +S.autoX || 1.30))
   };
@@ -6285,7 +6287,7 @@ function gameRacket(){
       if(B.inRound) continue;
       B.inRound=true; B.queued=false; B.nextRound=false;
       B.lockedBet=rec.bet; B.roundId=rec.roundId; B.rIdx=rec.rIdx;
-      B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0;
+      B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0; B.cashPending=false; B.cashFailed=false;
       applied++;
     }
     if(applied){
@@ -6320,11 +6322,13 @@ function gameRacket(){
   }
 
   async function cashBet(B, num, target){
-    if(phase!=='flight'||!B.inRound||B.cashed)return;
+    if(phase!=='flight'||!B.inRound||B.cashed||B.cashPending)return;
     if(cur<MINCASH)return;
+    if(target==null)B.cashFailed=false;   // ручное нажатие снова разрешает попытку
     B.cashX=+((target!=null?target:cur).toFixed(2));
     if(target!=null)cur=Math.max(cur,target);
     B.cashed=true;
+    B.cashPending=true;
     const winAmt = Math.floor((B.lockedBet || B.bet) * B.cashX);
     B.cashAmt = winAmt;
 
@@ -6335,6 +6339,7 @@ function gameRacket(){
           mult: B.cashX,
           rIdx: B.rIdx != null ? B.rIdx : curRound
         });
+        B.cashPending=false;
         if(res && res.ok){
           B.paid = res.win != null ? res.win : winAmt;
           if(res.tokens != null){
@@ -6355,18 +6360,15 @@ function gameRacket(){
             window.pushLiveTickerWin(pr.name || 'Вы', 'Ракетка', B.paid, svMult);
           }
         } else {
-          B.paid = 0;
+          // Сервер не подтвердил кэшаут: снимаем локальный «выигрыш», чтобы
+          // игрок не видел фальшивое начисление, и разрешаем нажать ещё раз.
+          B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0; B.cashPending=false; B.cashFailed=true;
           const err = (res && res.error) || '';
-          // Не подтвердилось из-за пинга/сети — возвращаем возможность нажать ещё раз,
-          // если ракета ещё в полёте.
-          if(!/уже забран|сгорела/i.test(err)){
-            B.cashed=false; B.cashX=0; B.cashAmt=0;
-          }
           rr.className = 'result bad';
           rr.textContent = err || `Не удалось подтвердить кэшаут ставки #${num}.`;
         }
       } catch(e) {
-        B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0;
+        B.cashed=false; B.cashX=0; B.cashAmt=0; B.paid=0; B.cashPending=false; B.cashFailed=true;
         rr.className = 'result bad';
         rr.textContent = `Ошибка подтверждения кэшаута: ${e.message || e}. Попробуйте нажать ещё раз.`;
       }
@@ -6381,6 +6383,7 @@ function gameRacket(){
       roundVerdict(true, B.paid, 'Ракетка · ставка #' + num + ' · ×' + fx(B.cashX));
     }
 
+    B.cashPending=false;
     render(Date.now()%ROUND_MS);
   }
 
@@ -6431,6 +6434,8 @@ function gameRacket(){
         B.cashX=0;
         B.cashAmt=0;
         B.paid=0;
+        B.cashPending=false;
+        B.cashFailed=false;
         B.inRound=false;
         B.lockedBet=0;
         B.rnd=null;
@@ -6473,7 +6478,7 @@ function gameRacket(){
         phase='flight';
         cur=potX;
         tStop=0;
-        if(B1.inRound && !B1.cashed && B1.autoOn && cur>=B1.autoX && B1.autoX<=crash){
+        if(B1.inRound && !B1.cashed && B1.autoOn && !B1.cashFailed && cur>=B1.autoX && B1.autoX<=crash){
           cashBet(B1, 1, B1.autoX);
         }
       }else{
@@ -6512,7 +6517,7 @@ function gameRacket(){
           cur=1.00; tStop=0;
           if(!postCrashBetting){
             postCrashBetting=true;
-            B1.inRound=false; B1.lockedBet=0; B1.cashed=false; B1.cashX=0; B1.cashAmt=0; B1.paid=0; B1.rnd=null; B1.roundId=null; B1.rIdx=null;
+            B1.inRound=false; B1.lockedBet=0; B1.cashed=false; B1.cashX=0; B1.cashAmt=0; B1.paid=0; B1.cashPending=false; B1.cashFailed=false; B1.rnd=null; B1.roundId=null; B1.rIdx=null;
           }
         }
       }

@@ -32,21 +32,20 @@ async function request(path, opts = {}) {
   return new Promise((resolve, reject) => {
     let p = path;
     const bodyObj = opts.body || {};
+    const headers = { 'content-type': 'application/json', ...(opts.headers || {}) };
     if (opts.initData) {
       if (opts.method === 'POST') {
         bodyObj.initData = opts.initData;
       } else {
-        p += (p.includes('?') ? '&' : '?') + 'initData=' + encodeURIComponent(opts.initData);
+        // initData в query больше не принимается: только body или заголовок.
+        headers['X-Telegram-Init-Data'] = opts.initData;
       }
     }
 
     const u = new URL(p, 'http://127.0.0.1:3099');
     const req = http.request(u, {
       method: opts.method || 'GET',
-      headers: {
-        'content-type': 'application/json',
-        ...(opts.headers || {})
-      }
+      headers
     }, res => {
       let body = '';
       res.on('data', c => body += c);
