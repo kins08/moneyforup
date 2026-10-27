@@ -369,6 +369,10 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .rrt-val.done{color:#ff8a8a;text-shadow:0 0 14px rgba(255,115,134,.25)}
 .rrt-unit{font-size:11px;margin-left:1px;font-weight:800;opacity:.85}
 .rrt-sub{font-size:10px;color:#e0c9a8;font-weight:700}
+.racket-round-timer-box.rrt-prep{border-color:rgba(61,220,150,.58);box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 20px rgba(61,220,150,.14),inset 0 1px 0 rgba(210,255,232,.10)}
+.rrt-prep .rrt-label{color:#3ddc96;text-shadow:0 0 10px rgba(61,220,150,.25)}
+.rrt-prep .rrt-val{color:#e8fff3;text-shadow:0 0 18px rgba(61,220,150,.40),0 2px 4px rgba(0,0,0,.7)}
+.rrt-prep .rrt-sub{color:#bfe6d2}
 .racket-bet-box{background:linear-gradient(180deg,rgba(27,19,14,.98),rgba(11,7,5,.98));border:1px solid rgba(255,207,107,.20);box-shadow:0 10px 26px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,241,205,.05)}
 .racket-scene{height:350px;background:radial-gradient(ellipse at 52% 38%,rgba(255,170,80,.13),transparent 56%),linear-gradient(180deg,#120d0b,#0a0706 62%,#030202);border-color:rgba(255,207,107,.16);box-shadow:inset 0 0 70px rgba(0,0,0,.55)}
 .racket-scene .overlay{left:0;right:0;top:12px;text-align:center}
@@ -5379,6 +5383,7 @@ function gameRacket(){
 
   const cvs=q('#rcv'),rr=q('#rr'),rp=q('#rphase'),rx=q('#rx');
   const rHistEl=q('#rHist');
+  const rRoundTimerBox=q('#rRoundTimerBox', a);
   const rrtLabel=q('#rrtLabel', a), rrtVal=q('#rrtVal', a), rrtSub=q('#rrtSub', a);
 
   const b1Inp=q('#b1Inp', a), b1Rub=q('#b1Rub', a), b1Btn=q('#b1Btn', a), b1St=q('#b1Status', a);
@@ -5389,12 +5394,17 @@ function gameRacket(){
   let currentRoundBank=0;
   let lastBotsRenderTime=0;
 
+  const HIST_LEVELS=[[30,'#fff0b0'],[12,'#ffe08a'],[7,'#ff2450'],[4.5,'#ff365e'],[3,'#ff4d6d'],[2.3,'#ff6b6b'],[1.95,'#ff8a5c'],[1.7,'#ffb45c'],[1.5,'#ffd166'],[1.35,'#c7e05a'],[1.15,'#7fd6a2'],[0,'#f2e4c8']];
+  function histColor(v){
+    const x=Number(v)||1;
+    for(const [t,c] of HIST_LEVELS) if(x>=t) return c;
+    return '#c4b8a5';
+  }
   function renderRHist(fresh){
     if(!rHistEl)return;
     const list=(S.rHist||[]).slice(0,20);
-    const colOf=v=>v>=5?'#ffcf6b':(v>=2.5?'#ff9f8b':'#dcc7a3');
     rHistEl.innerHTML=list.length
-      ? list.map((v,i)=>{const col=colOf(v);return `<span class="hitem${fresh&&i===0?' new':''}" style="color:${col};border-color:${hexA(col,.55)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`;}).join('')
+      ? list.map((v,i)=>{const col=histColor(v);return `<span class="hitem${fresh&&i===0?' new':''}" style="color:${col};border-color:${hexA(col,.72)};background:linear-gradient(180deg,${hexA(col,.32)},${hexA(col,.10)} 55%,rgba(22,15,10,.97));box-shadow:0 3px 10px rgba(0,0,0,.42),inset 0 1px 0 ${hexA(col,.18)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`;}).join('')
       : '<span class="muted small">Синхронизация раундов...</span>';
   }
   function pushRHist(x){
@@ -5992,7 +6002,7 @@ function gameRacket(){
     }
     const lift=smoothLift*smoothLift*(3-2*smoothLift);
     const high=smoothHigh*smoothHigh*(3-2*smoothHigh);
-    const baseY=H*0.66, apexY=H*0.39, peakY=H*0.27;
+    const baseY=H*0.66, apexY=H*0.36, peakY=H*0.23;
     const cy=baseY-(baseY-apexY)*lift-(apexY-peakY)*high;
     const prog=Math.min(1,seconds/28);
     const launchX=W*0.28;
@@ -6052,35 +6062,6 @@ function gameRacket(){
       }
       g.restore();
     }
-
-    const chips=[];
-    currentRoundBots.forEach(b=>{
-      if(phase!=='betting' && b.targetX<=cur) chips.push({name:b.name,amt:Math.floor(b.bet*b.targetX),hit:b.targetX});
-    });
-    if(B1.cashed && (B1.paid||B1.cashAmt)) chips.push({name:'Вы',amt:Math.floor(B1.paid||B1.cashAmt),hit:B1.cashX,me:true});
-    chips.slice(-4).forEach((c,i,arr)=>{
-      const d=(58+(arr.length-1-i)*48)*zoom;
-      const side=(i%2?1:-1);
-      const x=cx-Math.cos(tilt)*d+Math.sin(tilt)*side*18*zoom;
-      const y=cy+Math.sin(tilt)*d+Math.cos(tilt)*side*18*zoom+Math.sin(ambient*1.6+i*1.7)*2;
-      if(x<12||y<20||y>H-16)return;
-      const label=fmtRub(c.amt);
-      g.save();
-      g.font='800 '+Math.max(10,Math.round(11*zoom))+'px Inter,system-ui,sans-serif';
-      const tw=g.measureText(label).width;
-      const padX=7*zoom, hgt=20*zoom;
-      const bx=x-tw-padX*2, by=y-hgt/2;
-      g.fillStyle=c.me?'rgba(46,32,16,.94)':'rgba(22,16,13,.9)';
-      g.strokeStyle=c.me?'rgba(255,207,107,.65)':'rgba(255,207,107,.28)';
-      g.lineWidth=1;
-      g.beginPath();
-      if(g.roundRect)g.roundRect(bx,by,tw+padX*2,hgt,7*zoom); else g.rect(bx,by,tw+padX*2,hgt);
-      g.fill(); g.stroke();
-      g.fillStyle=c.me?'#ffe9b8':'#dcc7a3';
-      g.textAlign='left'; g.textBaseline='middle';
-      g.fillText(label,bx+padX,y+0.5);
-      g.restore();
-    });
 
     if(!tStop){
       if(B1.autoOn && !B1.cashed && phase==='flight'){
@@ -6192,10 +6173,15 @@ function gameRacket(){
     const now=clockNow();
     const leftSec=Math.max(0,(betEndsAt-now)/1000);
     const hasActive=(B1.inRound&&!B1.cashed);
+    if(rRoundTimerBox) rRoundTimerBox.classList.toggle('rrt-prep', phase==='betting');
+    const setXColor=c=>{
+      rx.style.color=c;
+      rx.style.textShadow='0 0 24px '+hexA(c,.35)+',0 8px 26px rgba(0,0,0,.65)';
+    };
     if(!roundInfo && IS_TG && API_BASE){
       rx.textContent='×1.00';
       rx.className='xbig';
-      rx.style.color='#fff3d6';
+      setXColor(histColor(1));
       rp.textContent='СИНХРОНИЗАЦИЯ';
       if(rrtLabel) rrtLabel.textContent='ПОДКЛЮЧЕНИЕ';
       if(rrtVal) rrtVal.textContent='—';
@@ -6203,7 +6189,7 @@ function gameRacket(){
     }else if(phase==='betting'){
       rx.textContent='×1.00';
       rx.className='xbig';
-      rx.style.color='#fff3d6';
+      setXColor(histColor(1));
       rp.textContent='ПРИЁМ СТАВОК';
 
       if(rrtLabel) rrtLabel.textContent='ДО СТАРТА';
@@ -6215,7 +6201,7 @@ function gameRacket(){
     }else if(phase==='flight'){
       rx.textContent='×'+fx(cur);
       rx.className='xbig';
-      rx.style.color='#fff3d6';
+      setXColor(histColor(cur));
       rp.textContent='РАКЕТКА В ПОЛЁТЕ';
 
       if(rrtLabel) rrtLabel.textContent='ПОЛЁТ';
@@ -6228,7 +6214,7 @@ function gameRacket(){
       // phase === 'done'
       rx.textContent='×'+fx(crash);
       rx.className='xbig bad';
-      rx.style.color='#ff8a8a';
+      setXColor(histColor(crash));
       const toNext=Math.max(1,Math.ceil(((nextRoundAt||now+1000)-now)/1000));
       rp.textContent=`ОСТАНОВКА ×${fx(crash)} · СЛЕД. РАУНД ${toNext}с`;
 
@@ -6474,7 +6460,7 @@ function gameRacket(){
           tgHaptic('win');
           snd('cash');
           rr.className = 'result good';
-          rr.innerHTML = `Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmtRub(B.paid)}</b>.`
+          rr.innerHTML = `Ставка #${num} забрана на <b style="color:${histColor(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmtRub(B.paid)}</b>.`
             + (res.capped ? ` Сработал лимит выигрыша за раунд — 20 000 ₽.` : '');
           roundVerdict(true, B.paid, 'Ракетка · ставка #' + num + ' · ×' + fx(B.cashX));
           if(window.pushLiveTickerWin){
@@ -6504,7 +6490,7 @@ function gameRacket(){
       tgHaptic('win');
       snd('cash');
       rr.className = 'result good';
-      rr.innerHTML = `Ставка #${num} забрана на <b style="color:${band(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmtRub(B.paid)}</b>.`;
+      rr.innerHTML = `Ставка #${num} забрана на <b style="color:${histColor(B.cashX)}">×${fx(B.cashX)}</b>: начислено <b>+${fmtRub(B.paid)}</b>.`;
       roundVerdict(true, B.paid, 'Ракетка · ставка #' + num + ' · ×' + fx(B.cashX));
     }
 
@@ -6529,11 +6515,11 @@ function gameRacket(){
       snd('lose');
       rr.className='result bad';
       const nearMissText = (crash >= 1.75 && crash <= 2.25)
-        ? ` Ракета долетела до <b style="color:${band(crash)}">×${fx(crash)}</b> — немного не хватило до солидного куша! В следующем раунде шансы на высокий полёт растут.`
+        ? ` Ракета долетела до <b style="color:${histColor(crash)}">×${fx(crash)}</b> — немного не хватило до солидного куша! В следующем раунде шансы на высокий полёт растут.`
         : '';
       rr.innerHTML=crash<=1
-        ?`Ракета взорвалась мгновенно — <b style="color:${band(crash)}">×1.00</b>. Не забранные ставки сгорели.`
-        :`Ракета взорвалась на <b style="color:${band(crash)}">×${fx(crash)}</b>.${nearMissText} Не забранные ставки сгорели.`;
+        ?`Ракета взорвалась мгновенно — <b style="color:${histColor(crash)}">×1.00</b>. Не забранные ставки сгорели.`
+        :`Ракета взорвалась на <b style="color:${histColor(crash)}">×${fx(crash)}</b>.${nearMissText} Не забранные ставки сгорели.`;
       const totalLost = (B1.inRound && !B1.cashed ? (B1.lockedBet || B1.bet || 0) : 0);
       if(totalLost > 0) roundVerdict(false, totalLost, 'Ракетка · ×' + fx(crash) + ' · ставка сгорела');
       if(crash >= 1.5 && totalLost > 0){
