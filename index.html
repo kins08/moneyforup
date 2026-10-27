@@ -358,23 +358,24 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 
 /* Крупный таймер раунда Ракетки */
 .racket-history{margin:0 0 8px}
-.racket-history-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8c7a63;margin:0 0 4px 4px}
+.racket-history-label{font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#d8b979;margin:0 0 5px 4px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 .racket-history .hstrip{flex-wrap:nowrap;overflow-x:auto;gap:5px;margin:0;padding-bottom:2px;scrollbar-width:none}
 .racket-history .hstrip::-webkit-scrollbar{display:none}
-.racket-history .hitem{font-size:11px;font-weight:800;padding:5px 8px;border-radius:8px;white-space:nowrap;background:rgba(255,255,255,.04)}
-.racket-round-timer-box{margin:0 0 8px;padding:6px 12px;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(28,20,15,.92),rgba(14,10,8,.92));border:1px solid rgba(255,207,107,.22);border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.35);position:relative;top:0;z-index:1}
-.rrt-label{font-size:10px;font-weight:800;color:#d8b979;letter-spacing:.08em;text-transform:uppercase}
-.rrt-val{font-size:18px;font-weight:900;color:#ffe9b8;letter-spacing:-.01em;line-height:1.1;margin:0;text-shadow:0 0 14px rgba(255,207,107,.25)}
+.racket-history .hitem{font-size:12px;font-weight:900;padding:6px 9px;border-radius:9px;white-space:nowrap;background:linear-gradient(180deg,rgba(52,38,26,.96),rgba(25,17,12,.96));border:1px solid rgba(255,207,107,.38);box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,241,205,.08);text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.racket-round-timer-box{margin:0 0 8px;padding:7px 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(24,16,11,.98),rgba(9,6,4,.98));border:1px solid rgba(255,207,107,.52);border-radius:999px;box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 18px rgba(255,207,107,.10),inset 0 1px 0 rgba(255,241,205,.10);position:relative;top:0;z-index:1}
+.rrt-label{font-size:10px;font-weight:900;color:#ffcf6b;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.rrt-val{font-size:22px;font-weight:900;color:#fff3d6;letter-spacing:-.01em;line-height:1.05;margin:0;text-shadow:0 0 18px rgba(255,207,107,.45),0 2px 4px rgba(0,0,0,.7)}
 .rrt-val.flight{color:#ffcf6b;text-shadow:0 0 14px rgba(255,207,107,.3)}
 .rrt-val.done{color:#ff8a8a;text-shadow:0 0 14px rgba(255,115,134,.25)}
 .rrt-unit{font-size:11px;margin-left:1px;font-weight:800;opacity:.85}
-.rrt-sub{font-size:10px;color:#a9977c;font-weight:600}
-.racket-scene{height:380px;background:radial-gradient(ellipse at 52% 38%,rgba(255,170,80,.13),transparent 56%),linear-gradient(180deg,#120d0b,#0a0706 62%,#030202);border-color:rgba(255,207,107,.16);box-shadow:inset 0 0 70px rgba(0,0,0,.55)}
+.rrt-sub{font-size:10px;color:#e0c9a8;font-weight:700}
+.racket-bet-box{background:linear-gradient(180deg,rgba(27,19,14,.98),rgba(11,7,5,.98));border:1px solid rgba(255,207,107,.20);box-shadow:0 10px 26px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,241,205,.05)}
+.racket-scene{height:350px;background:radial-gradient(ellipse at 52% 38%,rgba(255,170,80,.13),transparent 56%),linear-gradient(180deg,#120d0b,#0a0706 62%,#030202);border-color:rgba(255,207,107,.16);box-shadow:inset 0 0 70px rgba(0,0,0,.55)}
 .racket-scene .overlay{left:0;right:0;top:12px;text-align:center}
 .racket-hud{pointer-events:none}
 .racket-phase{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d8b979;opacity:.9}
 .racket-scene .xbig{font-size:48px;font-weight:900;color:#fff3d6;margin-top:1px;text-shadow:0 0 24px rgba(255,190,95,.32),0 8px 26px rgba(0,0,0,.65)}
-@media(max-width:430px){.racket-scene{height:350px}.racket-scene .xbig{font-size:42px}.rrt-val{font-size:17px}}
+@media(max-width:430px){.racket-scene{height:330px}.racket-scene .xbig{font-size:42px}.rrt-val{font-size:20px}}
 
 /* Живые ставки в Ракетке */
 .bot-bets-box{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
@@ -5348,7 +5349,7 @@ function gameRacket(){
   </div>
   <div class="dual-bet-container" style="grid-template-columns:1fr">
     <!-- ОДНА СТАВКА -->
-    <div class="dual-bet-box" id="b1Box">
+    <div class="dual-bet-box racket-bet-box" id="b1Box">
       <div class="dual-bet-title"><span>СТАВКА</span><span id="b1Status">Ожидание</span></div>
       <div class="dual-bet-chips" id="b1Chips">
         <button data-b1="50">${fmt(50)}</button><button data-b1="100">${fmt(100)}</button><button data-b1="250">${fmt(250)}</button><button data-b1="500">${fmt(500)}</button><button data-b1="1000">${fmt(1000)}</button><button data-b1="2000">${fmt(2000)}</button>
@@ -5393,7 +5394,7 @@ function gameRacket(){
     const list=(S.rHist||[]).slice(0,20);
     const colOf=v=>v>=5?'#ffcf6b':(v>=2.5?'#ff9f8b':'#dcc7a3');
     rHistEl.innerHTML=list.length
-      ? list.map((v,i)=>{const col=colOf(v);return `<span class="hitem${fresh&&i===0?' new':''}" style="color:${col};border-color:${hexA(col,.35)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`;}).join('')
+      ? list.map((v,i)=>{const col=colOf(v);return `<span class="hitem${fresh&&i===0?' new':''}" style="color:${col};border-color:${hexA(col,.55)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`;}).join('')
       : '<span class="muted small">Синхронизация раундов...</span>';
   }
   function pushRHist(x){
@@ -5422,6 +5423,8 @@ function gameRacket(){
 
   let smoothSp = 0.1;
   let sceneZoom = 1.14;
+  let smoothLift = 0;
+  let smoothHigh = 0;
   const ZOOM_TIERS=[6,10,20,50,100,200];
   const ZOOM_VALUES=[1.14,1.0,0.88,0.76,0.68,0.60];
 
@@ -5433,7 +5436,7 @@ function gameRacket(){
 
     g.save();
     g.translate(cx, cy);
-    g.rotate(ang);
+    g.rotate(ang + Math.sin(t * 2.1) * 0.012);
     // На старте ракета чуть компактнее, к высоким множителям — крупнее.
     const rocketScale = (2.1 + Math.min(0.5, sp * 0.22)) * Math.max(0.45, Number(sizeScale)||1);
     g.scale(rocketScale, rocketScale);
@@ -5447,6 +5450,17 @@ function gameRacket(){
     halo.addColorStop(1, 'rgba(239,68,68,0)');
     g.fillStyle = halo;
     g.beginPath(); g.arc(2, -6, 27, 0, Math.PI * 2); g.fill();
+
+    // Сопло светится сильнее на высоких множителях.
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const eng = g.createRadialGradient(-20, 4.2, 0, -20, 4.2, 16);
+    eng.addColorStop(0, 'rgba(255,246,205,.9)');
+    eng.addColorStop(.35, 'rgba(255,180,80,.45)');
+    eng.addColorStop(1, 'rgba(255,120,60,0)');
+    g.fillStyle = eng;
+    g.beginPath(); g.arc(-20, 4.2, 16, 0, Math.PI * 2); g.fill();
+    g.restore();
 
     // Дымный след и скоростные штрихи позади сопла.
     g.save();
@@ -5846,6 +5860,9 @@ function gameRacket(){
     // Холодный контровой свет по силуэту.
     g.strokeStyle = 'rgba(125,211,252,.38)'; g.lineWidth = 0.7;
     g.beginPath(); g.arc(0, 0, 9.7, -2.55, -1.2); g.stroke();
+    // Тёплый блик снизу от двигателя.
+    g.strokeStyle = 'rgba(255,215,140,.24)'; g.lineWidth = 1.1;
+    g.beginPath(); g.arc(0, 0, 9.7, 1.15, 2.35); g.stroke();
     g.restore();
 
     g.restore();
@@ -5951,38 +5968,89 @@ function gameRacket(){
       });
     }
     const rim=g.createLinearGradient(0,cloudBase-30,0,cloudBase+10);
-    rim.addColorStop(0,'rgba(255,170,90,0)'); rim.addColorStop(0.7,'rgba(255,170,90,.05)'); rim.addColorStop(1,'rgba(0,0,0,0)');
+    rim.addColorStop(0,'rgba(255,170,90,0)'); rim.addColorStop(0.7,'rgba(255,170,90,.08)'); rim.addColorStop(1,'rgba(0,0,0,0)');
     g.fillStyle=rim; g.fillRect(0,cloudBase-30,W,40);
-
-    const prog=Math.min(1,seconds/26);
-    const cx=W*(0.30+0.36*prog);
-    const cy=H*0.54;
-    const bob=phase==='betting'?Math.sin(ambient*3.2)*2.2:Math.sin(ambient*1.8)*1.5;
-
-    if(phase!=='betting'){
-    const aura=g.createRadialGradient(cx,cy,4,cx,cy,120*zoom);
-    aura.addColorStop(0,'rgba(255,190,95,.16)'); aura.addColorStop(.5,'rgba(255,120,60,.06)'); aura.addColorStop(1,'rgba(255,120,60,0)');
-    g.fillStyle=aura; g.beginPath(); g.arc(cx,cy,120*zoom,0,7); g.fill();
-    const trailGrad=g.createLinearGradient(0,cy,cx,cy);
-    trailGrad.addColorStop(0,'rgba(255,190,100,0)');
-    trailGrad.addColorStop(.55,'rgba(255,190,100,.06)');
-    trailGrad.addColorStop(1,'rgba(255,225,160,.34)');
+    const horizonY=cloudBase-26;
+    const hg=g.createLinearGradient(0,horizonY-16,0,horizonY+16);
+    hg.addColorStop(0,'rgba(255,180,95,0)'); hg.addColorStop(.5,'rgba(255,170,80,.12)'); hg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=hg; g.fillRect(0,horizonY-16,W,32);
     g.save(); g.globalCompositeOperation='lighter';
-    g.strokeStyle=trailGrad; g.lineWidth=8; g.globalAlpha=.18;
-    g.beginPath(); g.moveTo(12,cy); g.lineTo(Math.max(12,cx-38),cy); g.stroke();
-    g.globalAlpha=1; g.lineWidth=1.4;
-    g.beginPath(); g.moveTo(12,cy); g.lineTo(Math.max(12,cx-38),cy); g.stroke();
-    g.restore();
-    g.save(); g.globalCompositeOperation='lighter';
-    for(let i=0;i<10;i++){
-      const p=(ambient*0.5+i*0.11)%1;
-      const tx=cx-55-p*Math.max(80,cx-70);
-      if(tx<8)continue;
-      const ty=cy+(i%4-1.5)*3.4;
-      g.fillStyle='rgba(255,205,120,'+(0.18*(1-p)).toFixed(3)+')';
-      g.beginPath(); g.arc(tx,ty,0.9+p*1.6,0,7); g.fill();
+    g.strokeStyle='rgba(255,205,125,.14)'; g.lineWidth=1;
+    g.beginPath();
+    for(let x=0;x<=W;x+=14){const y=horizonY+Math.sin(x*0.035+ambient*0.7)*2.2;x?g.lineTo(x,y):g.moveTo(x,y);}
+    g.stroke(); g.restore();
+
+    const mStart=1.45, mFull=6;
+    const liftTarget=phase==='betting'?0:Math.max(0,Math.min(1,(mm-mStart)/(mFull-mStart)));
+    const highTarget=phase==='betting'?0:(mm>6?Math.max(0,Math.min(1,Math.log(mm/6)/Math.log(200/6))):0);
+    if(phase==='betting'){
+      smoothLift=0;
+      smoothHigh=0;
+    }else{
+      smoothLift+=(liftTarget-smoothLift)*(1-Math.exp(-frameDt/0.55));
+      smoothHigh+=(highTarget-smoothHigh)*(1-Math.exp(-frameDt/0.75));
     }
-    g.restore();
+    const lift=smoothLift*smoothLift*(3-2*smoothLift);
+    const high=smoothHigh*smoothHigh*(3-2*smoothHigh);
+    const baseY=H*0.66, apexY=H*0.39, peakY=H*0.27;
+    const cy=baseY-(baseY-apexY)*lift-(apexY-peakY)*high;
+    const prog=Math.min(1,seconds/28);
+    const launchX=W*0.28;
+    const cx=W*(0.28+0.34*prog);
+    const tilt=0.46*Math.min(1,smoothLift)+0.22*smoothHigh;
+    const ang=-tilt;
+    const bob=phase==='betting'?Math.sin(ambient*3.0)*2.0:Math.sin(ambient*1.65)*1.35;
+
+    // контрастный низ: площадка/тень старта, гаснет по мере взлёта
+    const padA=Math.max(0,1-lift*1.4);
+    if(padA>0.02){
+      const py=Math.min(H-18,baseY+34);
+      const pg=g.createRadialGradient(launchX,py,2,launchX,py,58*zoom);
+      pg.addColorStop(0,'rgba(255,190,110,'+(0.16*padA).toFixed(3)+')');
+      pg.addColorStop(.55,'rgba(120,70,40,'+(0.10*padA).toFixed(3)+')');
+      pg.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle=pg; g.beginPath(); g.ellipse(launchX,py,58*zoom,14*zoom,0,0,7); g.fill();
+      g.strokeStyle='rgba(255,207,107,'+(0.22*padA).toFixed(2)+')'; g.lineWidth=1;
+      g.beginPath(); g.ellipse(launchX,py,38*zoom,7*zoom,0,0,7); g.stroke();
+    }
+
+    // плавный взлёт: кубический след от площадки к льву
+    const dx=cx-launchX, dy=cy-baseY;
+    const dist=Math.hypot(dx,dy);
+    const c1={x:launchX+dx*0.55,y:baseY};
+    const L=Math.min(100*zoom,dist*0.42);
+    const p2={x:cx-L*Math.cos(tilt), y:cy+L*Math.sin(tilt)};
+    const pathPt=t=>{
+      const u=1-t;
+      return {
+        x:u*u*u*launchX+3*u*u*t*c1.x+3*u*t*t*p2.x+t*t*t*cx,
+        y:u*u*u*baseY+3*u*u*t*c1.y+3*u*t*t*p2.y+t*t*t*cy
+      };
+    };
+    if(phase!=='betting' && dist>5){
+      const aura=g.createRadialGradient(cx,cy,4,cx,cy,120*zoom);
+      aura.addColorStop(0,'rgba(255,190,95,.16)'); aura.addColorStop(.5,'rgba(255,120,60,.06)'); aura.addColorStop(1,'rgba(255,120,60,0)');
+      g.fillStyle=aura; g.beginPath(); g.arc(cx,cy,120*zoom,0,7); g.fill();
+      g.save(); g.globalCompositeOperation='lighter';
+      for(let i=0;i<18;i++){
+        const t=(i/17)*0.94;
+        const q=pathPt(t);
+        const a=(1-t)*0.24*(0.4+0.6*lift);
+        const r=(2.4+t*10)*zoom;
+        const sm=g.createRadialGradient(q.x,q.y,0,q.x,q.y,r);
+        sm.addColorStop(0,'rgba(255,232,180,'+a.toFixed(3)+')');
+        sm.addColorStop(.45,'rgba(255,165,85,'+(a*0.6).toFixed(3)+')');
+        sm.addColorStop(1,'rgba(255,120,60,0)');
+        g.fillStyle=sm; g.beginPath(); g.arc(q.x,q.y,r,0,7); g.fill();
+      }
+      for(let i=0;i<12;i++){
+        const t=((ambient*0.35+i*0.083)%0.92);
+        const q=pathPt(t);
+        const jitter=Math.sin(ambient*2.2+i*1.7)*(3+i%3)*0.5;
+        g.fillStyle='rgba(255,215,140,'+(0.22*(1-t)*(0.5+0.5*lift)).toFixed(3)+')';
+        g.beginPath(); g.arc(q.x+jitter,q.y+(i%3-1)*2.2,0.8+(1-t)*1.4,0,7); g.fill();
+      }
+      g.restore();
     }
 
     const chips=[];
@@ -5991,17 +6059,19 @@ function gameRacket(){
     });
     if(B1.cashed && (B1.paid||B1.cashAmt)) chips.push({name:'Вы',amt:Math.floor(B1.paid||B1.cashAmt),hit:B1.cashX,me:true});
     chips.slice(-4).forEach((c,i,arr)=>{
-      const x=cx-(74+(arr.length-1-i)*54)*zoom;
-      if(x<16)return;
-      const y=cy+(i%2?26:-28)*zoom+Math.sin(ambient*1.6+i*1.7)*2;
+      const d=(58+(arr.length-1-i)*48)*zoom;
+      const side=(i%2?1:-1);
+      const x=cx-Math.cos(tilt)*d+Math.sin(tilt)*side*18*zoom;
+      const y=cy+Math.sin(tilt)*d+Math.cos(tilt)*side*18*zoom+Math.sin(ambient*1.6+i*1.7)*2;
+      if(x<12||y<20||y>H-16)return;
       const label=fmtRub(c.amt);
       g.save();
       g.font='800 '+Math.max(10,Math.round(11*zoom))+'px Inter,system-ui,sans-serif';
       const tw=g.measureText(label).width;
       const padX=7*zoom, hgt=20*zoom;
       const bx=x-tw-padX*2, by=y-hgt/2;
-      g.fillStyle=c.me?'rgba(46,32,16,.92)':'rgba(24,18,15,.88)';
-      g.strokeStyle=c.me?'rgba(255,207,107,.55)':'rgba(255,207,107,.22)';
+      g.fillStyle=c.me?'rgba(46,32,16,.94)':'rgba(22,16,13,.9)';
+      g.strokeStyle=c.me?'rgba(255,207,107,.65)':'rgba(255,207,107,.28)';
       g.lineWidth=1;
       g.beginPath();
       if(g.roundRect)g.roundRect(bx,by,tw+padX*2,hgt,7*zoom); else g.rect(bx,by,tw+padX*2,hgt);
@@ -6034,15 +6104,16 @@ function gameRacket(){
         g.save(); g.globalCompositeOperation='lighter';
         for(let i=0;i<9;i++){
           const a=(ambient*0.9+i*0.7)%1;
-          const px=cx-(22+a*96)*zoom;
-          const py=cy+((i%3)-1)*4.2;
+          const d=(22+a*96)*zoom;
+          const px=cx-Math.cos(ang)*d;
+          const py=cy-Math.sin(ang)*d+((i%3)-1)*4.2*zoom;
           g.fillStyle='rgba(255,207,107,'+(0.42*(1-a)).toFixed(3)+')';
           g.beginPath(); g.arc(px,py,1.4+a*2.1,0,7); g.fill();
         }
         g.restore();
       }
       g.save(); g.shadowColor=hexA(fxCol,.7); g.shadowBlur=18;
-      drawRocket(g,cx,cy+bob,0,fxCol,sp,zoom);
+      drawRocket(g,cx,cy+bob,ang,fxCol,sp,zoom);
       g.restore();
     }else{
       const bk=(performance.now()-boomT)/1000;
