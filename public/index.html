@@ -10956,6 +10956,7 @@ function gameCaseHubUnified(sel){
 
   /* ── FREE-кейсы ────────────────────────────────────────────────────────── */
   const FREE_DAILY_MS = 24*3600*1000;
+  const FREE_CASH_ART = 'assets/items/free_cash.jpg';
   const FREE_REF_FALLBACK = {
     ref3:{ code:'ref3_tws_blackgold', name:'TWS-наушники Black Gold', priceRub:170, collectible:1 },
     ref5:{ code:'ref5_watch_onyx', name:'Смарт-часы Onyx Gold', priceRub:240, collectible:1 }
@@ -11046,7 +11047,7 @@ function gameCaseHubUnified(sel){
   }
   function freePool(kind,item){
     if(kind==='daily'){
-      return [1,2,3,4,5,6].map(n=>({icon:'💸',name:`+${n} ₽`,val:`${n} ₽`}));
+      return [1,2,3,4,5,6].map(n=>({icon:FREE_CASH_ART,name:`+${n} ₽`,val:`${n} ₽`}));
     }
     // В рулетке только реальный предмет, который выдаёт сервер.
     const actual=item||FREE_REF_FALLBACK[kind==='ref5'?'ref5':'ref3'];
@@ -11138,7 +11139,7 @@ function gameCaseHubUnified(sel){
       } else {
         if(kind==='daily'){
           const n=1+Math.floor(Math.random()*6);
-          res={ok:true,prize:n*10,prizeRub:n,tokens:(S.balance||0)+n*10,drop:{name:`+${n} ₽`,icon:'💸',price:n*10,cash:true}};
+          res={ok:true,prize:n*10,prizeRub:n,tokens:(S.balance||0)+n*10,drop:{name:`+${n} ₽`,icon:FREE_CASH_ART,price:n*10,cash:true}};
         } else {
           const price=kind==='ref3'?1700:2400;
           const name=kind==='ref3'?'TWS-наушники Black Gold':'Смарт-часы Onyx Gold';
@@ -11156,7 +11157,7 @@ function gameCaseHubUnified(sel){
     const drop=res.drop||{};
     const isCash=Boolean(drop.cash)||kind==='daily';
     const winCard=isCash
-      ? {icon:'💸',name:(drop.name||`+${res.prizeRub||1} ₽`),val:`${res.prizeRub||Math.round((res.prize||10)/10)} ₽`}
+      ? {icon:FREE_CASH_ART,name:(drop.name||`+${res.prizeRub||1} ₽`),val:`${res.prizeRub||Math.round((res.prize||10)/10)} ₽`}
       : {icon:itemArt(drop),name:drop.name||'Коллекционный предмет',val:fmt(drop.price||0)+' ₽'};
     const strip=modal.querySelector('#fcmStrip');
     if(strip){
