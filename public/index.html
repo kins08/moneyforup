@@ -357,13 +357,24 @@ body{margin:0;background:#000000;color:var(--text);font-family:Inter,system-ui,s
 .wfc-status.wait{color:#ffcf6b;background:rgba(255,207,107,.15);border-color:rgba(255,207,107,.35)}
 
 /* Крупный таймер раунда Ракетки */
-.racket-round-timer-box{margin:0 auto 10px;padding:10px 16px;text-align:center;background:linear-gradient(135deg,#181818,#111111);border:1.5px solid rgba(168,85,247,.45);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.5),inset 0 0 16px rgba(168,85,247,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;position:sticky;top:6px;z-index:6}
-.rrt-label{font-size:11px;font-weight:800;color:#c084fc;letter-spacing:.06em;text-transform:uppercase}
-.rrt-val{font-size:34px;font-weight:900;color:#3ddc96;letter-spacing:-.02em;text-shadow:0 0 20px rgba(61,220,150,.45);line-height:1.15;margin:3px 0}
-.rrt-val.flight{color:#a175ff;text-shadow:0 0 20px rgba(161,117,255,.45)}
-.rrt-val.done{color:#ff7386;text-shadow:0 0 20px rgba(255,115,134,.45)}
-.rrt-unit{font-size:18px;margin-left:2px;font-weight:800;opacity:.85}
-.rrt-sub{font-size:11px;color:var(--muted);font-weight:600}
+.racket-history{margin:0 0 8px}
+.racket-history-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8c7a63;margin:0 0 4px 4px}
+.racket-history .hstrip{flex-wrap:nowrap;overflow-x:auto;gap:5px;margin:0;padding-bottom:2px;scrollbar-width:none}
+.racket-history .hstrip::-webkit-scrollbar{display:none}
+.racket-history .hitem{font-size:11px;font-weight:800;padding:5px 8px;border-radius:8px;white-space:nowrap;background:rgba(255,255,255,.04)}
+.racket-round-timer-box{margin:0 0 8px;padding:6px 12px;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(28,20,15,.92),rgba(14,10,8,.92));border:1px solid rgba(255,207,107,.22);border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.35);position:relative;top:0;z-index:1}
+.rrt-label{font-size:10px;font-weight:800;color:#d8b979;letter-spacing:.08em;text-transform:uppercase}
+.rrt-val{font-size:18px;font-weight:900;color:#ffe9b8;letter-spacing:-.01em;line-height:1.1;margin:0;text-shadow:0 0 14px rgba(255,207,107,.25)}
+.rrt-val.flight{color:#ffcf6b;text-shadow:0 0 14px rgba(255,207,107,.3)}
+.rrt-val.done{color:#ff8a8a;text-shadow:0 0 14px rgba(255,115,134,.25)}
+.rrt-unit{font-size:11px;margin-left:1px;font-weight:800;opacity:.85}
+.rrt-sub{font-size:10px;color:#a9977c;font-weight:600}
+.racket-scene{height:380px;background:radial-gradient(ellipse at 52% 38%,rgba(255,170,80,.13),transparent 56%),linear-gradient(180deg,#120d0b,#0a0706 62%,#030202);border-color:rgba(255,207,107,.16);box-shadow:inset 0 0 70px rgba(0,0,0,.55)}
+.racket-scene .overlay{left:0;right:0;top:12px;text-align:center}
+.racket-hud{pointer-events:none}
+.racket-phase{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d8b979;opacity:.9}
+.racket-scene .xbig{font-size:48px;font-weight:900;color:#fff3d6;margin-top:1px;text-shadow:0 0 24px rgba(255,190,95,.32),0 8px 26px rgba(0,0,0,.65)}
+@media(max-width:430px){.racket-scene{height:350px}.racket-scene .xbig{font-size:42px}.rrt-val{font-size:17px}}
 
 /* Живые ставки в Ракетке */
 .bot-bets-box{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
@@ -5323,13 +5334,17 @@ function gameRacket(){
   };
 
   a.innerHTML=`
+  <div class="racket-history">
+    <div class="racket-history-label">История</div>
+    <div class="hstrip" id="rHist"></div>
+  </div>
   <div class="racket-round-timer-box" id="rRoundTimerBox">
     <div class="rrt-label" id="rrtLabel">ДО СТАРТА РАУНДА</div>
     <div class="rrt-val" id="rrtVal">12.0<span class="rrt-unit">с</span></div>
     <div class="rrt-sub" id="rrtSub">Приём ставок открыт</div>
   </div>
-  <div class="crashbox"><canvas id="rcv"></canvas>
-    <div class="overlay"><div class="muted small" id="rphase">приём ставок</div><div class="xbig" id="rx">×1.00</div></div>
+  <div class="crashbox racket-scene"><canvas id="rcv"></canvas>
+    <div class="overlay racket-hud"><div class="racket-phase" id="rphase">приём ставок</div><div class="xbig" id="rx">×1.00</div></div>
   </div>
   <div class="dual-bet-container" style="grid-template-columns:1fr">
     <!-- ОДНА СТАВКА -->
@@ -5352,8 +5367,6 @@ function gameRacket(){
     </div>
   </div>
 
-  <div class="muted small" style="margin:12px 0 6px">Последние 20</div>
-  <div class="hstrip" id="rHist"></div>
   <div class="result" id="rr" style="margin-top:10px">Приём ставок — 12 секунд, полёт — до 40 секунд. Ставку можно ставить заранее.</div>
   <div class="bot-bets-box">
     <div class="bot-bets-header">
@@ -5378,8 +5391,9 @@ function gameRacket(){
   function renderRHist(fresh){
     if(!rHistEl)return;
     const list=(S.rHist||[]).slice(0,20);
+    const colOf=v=>v>=5?'#ffcf6b':(v>=2.5?'#ff9f8b':'#dcc7a3');
     rHistEl.innerHTML=list.length
-      ? list.map((v,i)=>`<span class="hitem${fresh&&i===0?' new':''}" style="color:${band(v)};border-color:${hexA(band(v),.45)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`).join('')
+      ? list.map((v,i)=>{const col=colOf(v);return `<span class="hitem${fresh&&i===0?' new':''}" style="color:${col};border-color:${hexA(col,.35)}">×${fx(v,(v%1||v<=1.005)?2:0)}</span>`;}).join('')
       : '<span class="muted small">Синхронизация раундов...</span>';
   }
   function pushRHist(x){
@@ -5407,12 +5421,11 @@ function gameRacket(){
   }
 
   let smoothSp = 0.1;
-  let smoothYMax = 6;
-  let smoothViewSec = 15;
-  const Y_TIERS=[6,10,20,50,100,200];
-  const X_TIERS=[15,20,25,32,40,40];
+  let sceneZoom = 1.14;
+  const ZOOM_TIERS=[6,10,20,50,100,200];
+  const ZOOM_VALUES=[1.14,1.0,0.88,0.76,0.68,0.60];
 
-  function drawRocket(g,cx,cy,ang,bc,sp){
+  function drawRocket(g,cx,cy,ang,bc,sp,sizeScale){
     const t = performance.now() * 0.0025;
     const flameBase = 17 + Math.min(34, sp * 13);
     const flame = flameBase * (0.92 + Math.sin(t * 5) * 0.08);
@@ -5422,7 +5435,7 @@ function gameRacket(){
     g.translate(cx, cy);
     g.rotate(ang);
     // На старте ракета чуть компактнее, к высоким множителям — крупнее.
-    const rocketScale = 2.1 + Math.min(0.5, sp * 0.22);
+    const rocketScale = (2.1 + Math.min(0.5, sp * 0.22)) * Math.max(0.45, Number(sizeScale)||1);
     g.scale(rocketScale, rocketScale);
     g.shadowBlur = 0;
     g.shadowColor = 'transparent';
@@ -5841,6 +5854,22 @@ function gameRacket(){
   function drawBoom(g,cx,cy,age){
     const k=Math.min(1,age/0.8),R=9+52*k;
     g.save();g.globalCompositeOperation='lighter';
+    const flash=Math.max(0,1-age/0.42);
+    if(flash>0){
+      const fr=18+62*(1-flash);
+      const fg=g.createRadialGradient(cx,cy,0,cx,cy,fr);
+      fg.addColorStop(0,'rgba(255,255,252,'+flash.toFixed(2)+')');
+      fg.addColorStop(.35,'rgba(255,245,205,'+(flash*0.8).toFixed(2)+')');
+      fg.addColorStop(.7,'rgba(255,190,100,'+(flash*0.35).toFixed(2)+')');
+      fg.addColorStop(1,'rgba(255,120,60,0)');
+      g.fillStyle=fg;g.beginPath();g.arc(cx,cy,fr,0,7);g.fill();
+      g.strokeStyle='rgba(255,248,220,'+(flash*0.75).toFixed(2)+')';
+      g.lineWidth=1.4+2.2*flash;
+      for(let i=0;i<8;i++){
+        const a=(i/8)*6.2832+age*0.5, inner=10+24*(1-flash), outer=inner+30+70*flash;
+        g.beginPath();g.moveTo(cx+Math.cos(a)*inner,cy+Math.sin(a)*inner);g.lineTo(cx+Math.cos(a)*outer,cy+Math.sin(a)*outer);g.stroke();
+      }
+    }
     g.strokeStyle='rgba(255,'+Math.round(205-130*k)+',125,'+(1-k).toFixed(2)+')';
     g.lineWidth=3.2*(1-k)+0.8;
     g.beginPath();g.arc(cx,cy,R,0,7);g.stroke();
@@ -5859,148 +5888,161 @@ function gameRacket(){
   }
 
   const warpStars=[];
-  for(let i=0;i<32;i++){warpStars.push({x:Math.random()*400, y:16+Math.random()*260, sp:0.5+Math.random()*1.5, r:0.6+Math.random()*1.2});}
+  for(let i=0;i<76;i++){warpStars.push({x:Math.random()*600, y:0.04+Math.random()*0.84, sp:0.5+Math.random()*1.6, r:0.7+Math.random()*1.7, ph:Math.random()*6.28});}
+  const cloudPuffs=[];
+  for(let i=0;i<16;i++){cloudPuffs.push({x:Math.random(), y:Math.random(), r:0.06+Math.random()*0.11, sp:0.35+Math.random()*0.9, a:0.5+Math.random()*0.35, ph:Math.random()*6.28});}
 
   function draw(){
     const {g,W,H}=fitCanvas(cvs);
-    const pad={l:W<420?128:136,r:66,t:56,b:54};
     const now=clockNow();
+    const ambient=performance.now()*0.001;
     const seconds=phase==='betting'?0
       :phase==='done'?Math.max(0,crashSec)
       :Math.max(0,(now-flightStartsAt)/1000);
-    const mAt=x=>multAtSec(Math.max(0,x));
-    const mm=phase==='done'?Math.max(1,crash):mAt(seconds);
-    // Фиксированное окно расширяется вместе со шкалой: сначала 15 с / ×6,
-    // затем — до 40 с / ×200 на больших кэфах.
+    const mm=phase==='done'?Math.max(1,crash):multAtSec(seconds);
     if(phase==='betting'){
-      smoothYMax=6;
-      smoothViewSec=15;
+      sceneZoom=1.14;
     }else{
-      let tier=Y_TIERS.length-1;
-      for(let i=0;i<Y_TIERS.length;i++){ if(Y_TIERS[i]>=mm*1.005){ tier=i; break; } }
-      const target=Y_TIERS[tier];
-      const targetView=X_TIERS[tier];
-      if(target>smoothYMax) smoothYMax+=(target-smoothYMax)*(1-Math.exp(-frameDt/0.28));
-      else smoothYMax=target;
-      if(targetView>smoothViewSec) smoothViewSec+=(targetView-smoothViewSec)*(1-Math.exp(-frameDt/0.34));
+      let tier=ZOOM_TIERS.length-1;
+      for(let i=0;i<ZOOM_TIERS.length;i++){ if(ZOOM_TIERS[i]>=mm*1.005){ tier=i; break; } }
+      sceneZoom+=(ZOOM_VALUES[tier]-sceneZoom)*(1-Math.exp(-frameDt/0.5));
     }
-    const Y_MAX=Math.max(6,smoothYMax);
-    const VIEW_SEC=Math.max(15,smoothViewSec);
-    const X=x=>pad.l+(Math.min(VIEW_SEC,Math.max(0,x))/VIEW_SEC)*(W-pad.l-pad.r);
-    const Y=m=>{
-      const c=Math.max(1,Math.min(m,Y_MAX));
-      return H-pad.b-(Math.log(c)/Math.log(Y_MAX))*(H-pad.t-pad.b);
-    };
+    const zoom=Math.max(0.58,Math.min(1.2,sceneZoom));
+    const fxCol=mm>=5?'#ffcf6b':(mm>=2.5?'#ff9a72':'#ffe3b0');
 
-    // Космические звёзды и варп-полосы
-    g.save();
-    const starSp = phase==='flight' ? Math.min(6, 1 + (cur-1)*2.5) : (phase==='betting'?0.3:0.6);
-    const starStep = Math.min(3, 60 * frameDt);
-    warpStars.forEach(st => {
-      st.x -= st.sp * starSp * starStep;
-      if(st.x < pad.l) st.x = W - pad.r;
-      g.fillStyle = 'rgba(255,255,255,' + (0.2 + 0.45 * (st.sp / 2)).toFixed(2) + ')';
+    const bg=g.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#140d0a'); bg.addColorStop(.55,'#0b0706'); bg.addColorStop(1,'#020101');
+    g.fillStyle=bg; g.fillRect(0,0,W,H);
+    const neb=g.createRadialGradient(W*.55,H*.35,8,W*.55,H*.35,W*.7);
+    neb.addColorStop(0,'rgba(255,150,70,.11)'); neb.addColorStop(.55,'rgba(170,45,35,.05)'); neb.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=neb; g.fillRect(0,0,W,H);
+
+    const starSp=phase==='flight'?Math.min(5.5,1+(mm-1)*2.0):(phase==='betting'?0.35:0.7);
+    const starStep=Math.min(3,60*frameDt);
+    warpStars.forEach(st=>{
+      st.x-=st.sp*starSp*starStep*2.2;
+      if(st.x<-12)st.x=W+12;
+      const sx=((st.x%(W+24))+W+24)%(W+24)-12;
+      const sy=st.y*H;
+      const tw=0.55+0.45*Math.sin(ambient*2.2+st.ph);
+      g.fillStyle=st.sp>1.45?'rgba(255,220,150,'+(0.7*tw).toFixed(2)+')':'rgba(255,245,225,'+(0.62*tw).toFixed(2)+')';
       g.beginPath();
-      if(phase==='flight' && cur > 1.8){
-        const len = Math.min(16, (cur-1)*3.2);
-        g.moveTo(st.x, st.y); g.lineTo(st.x + len, st.y);
-        g.strokeStyle = 'rgba(165,180,252,.35)'; g.lineWidth = st.r; g.stroke();
-      } else {
-        g.arc(st.x, st.y, st.r, 0, 7); g.fill();
-      }
+      if(phase==='flight' && mm>1.35){
+        const len=Math.min(24,(mm-1)*2.4);
+        g.moveTo(sx,sy); g.lineTo(sx+len,sy);
+        g.strokeStyle=st.sp>1.45?'rgba(255,210,130,.38)':'rgba(220,225,255,.26)';
+        g.lineWidth=st.r; g.stroke();
+      } else { g.arc(sx,sy,st.r,0,7); g.fill(); }
     });
+
+    const cloudBase=H-42;
+    for(let layer=0;layer<3;layer++){
+      const drift=ambient*(5+layer*4);
+      cloudPuffs.forEach(c=>{
+        const span=W+180;
+        const x=((c.x*W - drift*c.sp)%span+span)%span-90;
+        const y=cloudBase-layer*24 + Math.sin(ambient*0.8+c.ph)*2.2;
+        const rx=c.r*W*0.55, ry=c.r*H*0.16;
+        const gr=g.createRadialGradient(x,y-ry*0.3,1,x,y,Math.max(rx,ry));
+        gr.addColorStop(0,'rgba(92,58,40,'+(c.a*(0.9-layer*0.16)).toFixed(2)+')');
+        gr.addColorStop(.5,'rgba(34,21,16,'+(c.a*(0.8-layer*0.14)).toFixed(2)+')');
+        gr.addColorStop(1,'rgba(0,0,0,0)');
+        g.fillStyle=gr; g.beginPath(); g.ellipse(x,y,rx,ry,0,0,7); g.fill();
+      });
+    }
+    const rim=g.createLinearGradient(0,cloudBase-30,0,cloudBase+10);
+    rim.addColorStop(0,'rgba(255,170,90,0)'); rim.addColorStop(0.7,'rgba(255,170,90,.05)'); rim.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=rim; g.fillRect(0,cloudBase-30,W,40);
+
+    const prog=Math.min(1,seconds/26);
+    const cx=W*(0.30+0.36*prog);
+    const cy=H*0.54;
+    const bob=phase==='betting'?Math.sin(ambient*3.2)*2.2:Math.sin(ambient*1.8)*1.5;
+
+    if(phase!=='betting'){
+    const aura=g.createRadialGradient(cx,cy,4,cx,cy,120*zoom);
+    aura.addColorStop(0,'rgba(255,190,95,.16)'); aura.addColorStop(.5,'rgba(255,120,60,.06)'); aura.addColorStop(1,'rgba(255,120,60,0)');
+    g.fillStyle=aura; g.beginPath(); g.arc(cx,cy,120*zoom,0,7); g.fill();
+    const trailGrad=g.createLinearGradient(0,cy,cx,cy);
+    trailGrad.addColorStop(0,'rgba(255,190,100,0)');
+    trailGrad.addColorStop(.55,'rgba(255,190,100,.06)');
+    trailGrad.addColorStop(1,'rgba(255,225,160,.34)');
+    g.save(); g.globalCompositeOperation='lighter';
+    g.strokeStyle=trailGrad; g.lineWidth=8; g.globalAlpha=.18;
+    g.beginPath(); g.moveTo(12,cy); g.lineTo(Math.max(12,cx-38),cy); g.stroke();
+    g.globalAlpha=1; g.lineWidth=1.4;
+    g.beginPath(); g.moveTo(12,cy); g.lineTo(Math.max(12,cx-38),cy); g.stroke();
     g.restore();
-
-    g.font='11px Inter,system-ui,sans-serif';g.textAlign='right';g.textBaseline='middle';
-    const tierTicks = Y_MAX<=6.001 ? [1,1.2,1.4,1.6,2,3,4,5,6]
-      : Y_MAX<=10.001 ? [1,1.5,2,3,5,10]
-      : Y_MAX<=20.001 ? [1,2,5,10,20]
-      : Y_MAX<=50.001 ? [1,2,5,10,20,50]
-      : Y_MAX<=100.001 ? [1,2,5,10,20,50,100]
-      : [1,2,5,10,20,50,100,200];
-    const ticks=tierTicks.filter(v=>v<=Y_MAX*1.001);
-    if(ticks[ticks.length-1] < Y_MAX*0.92) ticks.push(+Y_MAX.toFixed(1));
-    ticks.forEach(v=>{const y=Y(v);
-      g.strokeStyle='rgba(255,255,255,.07)';g.beginPath();g.moveTo(pad.l,y);g.lineTo(W-pad.r,y);g.stroke();
-      const lbl=(v<10 && Math.abs(v-Math.round(v))>0.01)?v.toFixed(1):v.toFixed(0);
-      g.fillStyle='#8b95ad';g.fillText('×'+lbl,pad.l-7,y);});
-    g.textAlign='center';
-    for(let s=0;s<=VIEW_SEC;s+=5){const x=X(s);
-      g.strokeStyle='rgba(255,255,255,.05)';g.beginPath();g.moveTo(x,pad.t);g.lineTo(x,H-pad.b);g.stroke();
-      g.fillStyle='#8b95ad';g.fillText(s+'с',x,H-11);}
-
-    g.setLineDash([3,4]);g.strokeStyle='rgba(152,160,255,.30)';g.beginPath();
-    for(let i=0;i<=160;i++){
-      const x=seconds+(VIEW_SEC-seconds)*i/160,m=mAt(x);
-      if(m>Y_MAX)break;
-      i?g.lineTo(X(x),Y(m)):g.moveTo(X(x),Y(m));
+    g.save(); g.globalCompositeOperation='lighter';
+    for(let i=0;i<10;i++){
+      const p=(ambient*0.5+i*0.11)%1;
+      const tx=cx-55-p*Math.max(80,cx-70);
+      if(tx<8)continue;
+      const ty=cy+(i%4-1.5)*3.4;
+      g.fillStyle='rgba(255,205,120,'+(0.18*(1-p)).toFixed(3)+')';
+      g.beginPath(); g.arc(tx,ty,0.9+p*1.6,0,7); g.fill();
     }
-    g.stroke();g.setLineDash([]);
-    const bc=band(cur);
-    const grad=g.createLinearGradient(0,pad.t,0,H-pad.b);
-    grad.addColorStop(0,hexA(bc,.36));grad.addColorStop(1,hexA(bc,0));
-    g.fillStyle=grad;g.beginPath();g.moveTo(X(0),Y(1));
-    for(let i=0;i<=180;i++){const x=seconds*i/180;g.lineTo(X(x),Y(mAt(x)));}
-    g.lineTo(X(seconds),Y(1));g.closePath();g.fill();
-    g.strokeStyle=bc;g.lineWidth=2;g.beginPath();g.moveTo(X(0),Y(1));
-    for(let i=1;i<=180;i++){const x=seconds*i/180;g.lineTo(X(x),Y(mAt(x)));}
-    g.stroke();g.lineWidth=1;
-    const cx=X(seconds),cy=Y(Math.min(mm,Y_MAX));
+    g.restore();
+    }
 
-    [B1].forEach((B, idx) => {
-      if(B.cashed && B.cashX < Y_MAX){
-        const ky=Y(Math.min(B.cashX, Y_MAX));
-        g.setLineDash([3,3]);g.strokeStyle=idx===0?'rgba(61,220,150,.8)':'rgba(96,165,250,.8)';g.beginPath();g.moveTo(pad.l,ky);g.lineTo(W-pad.r,ky);g.stroke();g.setLineDash([]);
-        g.fillStyle=idx===0?'#3ddc96':'#60a5fa';g.textAlign='left';g.font='10px Inter,system-ui,sans-serif';
-        g.fillText(`#${idx+1} забрано ×`+fx(B.cashX),pad.l+2,ky-4);
-      }
-      if(B.autoOn && !tStop && !B.cashed){
-        const ay=Y(Math.min(B.autoX, Y_MAX));
-        g.setLineDash([5,4]);g.strokeStyle=idx===0?'rgba(255,207,107,.7)':'rgba(147,197,253,.7)';g.beginPath();g.moveTo(pad.l,ay);g.lineTo(W-pad.r,ay);g.stroke();g.setLineDash([]);
-        g.fillStyle=idx===0?'#ffcf6b':'#93c5fd';g.textAlign='right';g.font='10px Inter,system-ui,sans-serif';
-        g.fillText(`#${idx+1} авто ×`+fx(B.autoX),W-pad.r-2,ay-6);
-      }
+    const chips=[];
+    currentRoundBots.forEach(b=>{
+      if(phase!=='betting' && b.targetX<=cur) chips.push({name:b.name,amt:Math.floor(b.bet*b.targetX),hit:b.targetX});
     });
-    g.setLineDash([2,4]);g.strokeStyle='rgba(255,255,255,.24)';g.beginPath();g.moveTo(pad.l,cy);g.lineTo(cx,cy);g.stroke();g.setLineDash([]);
-    if(tStop){
-      g.setLineDash([4,4]);g.strokeStyle='rgba(255,107,139,.75)';g.beginPath();g.moveTo(cx,pad.t);g.lineTo(cx,H-pad.b);g.stroke();g.setLineDash([]);
-      const right=cx>W-72;g.fillStyle='#ff9db1';g.textAlign=right?'right':'left';g.font='11px Inter,system-ui,sans-serif';
-      g.fillText('стоп ×'+fx(crash),cx+(right?-6:6),pad.t+10);
-    }
+    if(B1.cashed && (B1.paid||B1.cashAmt)) chips.push({name:'Вы',amt:Math.floor(B1.paid||B1.cashAmt),hit:B1.cashX,me:true});
+    chips.slice(-4).forEach((c,i,arr)=>{
+      const x=cx-(74+(arr.length-1-i)*54)*zoom;
+      if(x<16)return;
+      const y=cy+(i%2?26:-28)*zoom+Math.sin(ambient*1.6+i*1.7)*2;
+      const label=fmtRub(c.amt);
+      g.save();
+      g.font='800 '+Math.max(10,Math.round(11*zoom))+'px Inter,system-ui,sans-serif';
+      const tw=g.measureText(label).width;
+      const padX=7*zoom, hgt=20*zoom;
+      const bx=x-tw-padX*2, by=y-hgt/2;
+      g.fillStyle=c.me?'rgba(46,32,16,.92)':'rgba(24,18,15,.88)';
+      g.strokeStyle=c.me?'rgba(255,207,107,.55)':'rgba(255,207,107,.22)';
+      g.lineWidth=1;
+      g.beginPath();
+      if(g.roundRect)g.roundRect(bx,by,tw+padX*2,hgt,7*zoom); else g.rect(bx,by,tw+padX*2,hgt);
+      g.fill(); g.stroke();
+      g.fillStyle=c.me?'#ffe9b8':'#dcc7a3';
+      g.textAlign='left'; g.textBaseline='middle';
+      g.fillText(label,bx+padX,y+0.5);
+      g.restore();
+    });
 
     if(!tStop){
-      // Шлейф
-      const seg=0.3,steps=9;
-      g.save();g.globalCompositeOperation='lighter';
-      for(let i=0;i<steps;i++){
-        const a=(i+1)/steps,t1=Math.max(0,seconds-seg*(1-a)),t2=Math.max(0,t1+seg/steps);
-        g.strokeStyle=hexA(bc,.04+0.22*a);g.lineWidth=0.6+3.2*a;
-        g.beginPath();
-        g.moveTo(X(t1),Y(mAt(t1)));
-        g.lineTo(X(t2),Y(mAt(t2)));
-        g.stroke();
+      if(B1.autoOn && !B1.cashed && phase==='flight'){
+        const label='АВТО ×'+fx(B1.autoX);
+        g.save();
+        g.font='800 10px Inter,system-ui,sans-serif';
+        const tw=g.measureText(label).width;
+        const bx=cx-tw/2-7, by=cy-52*zoom;
+        g.fillStyle='rgba(30,21,12,.9)';
+        g.strokeStyle='rgba(255,207,107,.35)'; g.lineWidth=1;
+        g.beginPath(); if(g.roundRect)g.roundRect(bx,by,tw+14,17,6); else g.rect(bx,by,tw+14,17); g.fill(); g.stroke();
+        g.fillStyle='#ffd98b'; g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(label,cx,by+9);
+        g.restore();
       }
-      g.restore();
-
       const spRaw=phase==='betting'?0.1:Math.min(2.4,(mm-1)/1.2);
       if(phase==='betting') smoothSp=0.1;
       else smoothSp+=(spRaw-smoothSp)*(1-Math.exp(-frameDt/0.18));
       const sp=smoothSp;
       if(phase==='flight' && sp>0.7){
-        g.save();g.globalCompositeOperation='lighter';
-        const tk=performance.now()*0.001;
+        g.save(); g.globalCompositeOperation='lighter';
         for(let i=0;i<9;i++){
-          const a=(tk*0.9+i*0.7)%1;
-          const px=cx-(22+a*96);
-          const py=cy+(i%3-1)*4.2;
+          const a=(ambient*0.9+i*0.7)%1;
+          const px=cx-(22+a*96)*zoom;
+          const py=cy+((i%3)-1)*4.2;
           g.fillStyle='rgba(255,207,107,'+(0.42*(1-a)).toFixed(3)+')';
-          g.beginPath();g.arc(px,py,1.4+a*2.1,0,7);g.fill();
+          g.beginPath(); g.arc(px,py,1.4+a*2.1,0,7); g.fill();
         }
         g.restore();
       }
-      const bob=phase==='betting'?Math.sin(performance.now()*0.0032)*2.2:0;
-      g.save();g.shadowColor=hexA(bc,.85);g.shadowBlur=16;
-      drawRocket(g,cx,cy+bob,0,bc,sp);
+      g.save(); g.shadowColor=hexA(fxCol,.7); g.shadowBlur=18;
+      drawRocket(g,cx,cy+bob,0,fxCol,sp,zoom);
       g.restore();
     }else{
       const bk=(performance.now()-boomT)/1000;
@@ -6082,18 +6124,18 @@ function gameRacket(){
     if(!roundInfo && IS_TG && API_BASE){
       rx.textContent='×1.00';
       rx.className='xbig';
-      rx.style.color='#3ddc96';
-      rp.textContent='СИНХРОНИЗАЦИЯ С СЕРВЕРОМ';
+      rx.style.color='#fff3d6';
+      rp.textContent='СИНХРОНИЗАЦИЯ';
       if(rrtLabel) rrtLabel.textContent='ПОДКЛЮЧЕНИЕ';
       if(rrtVal) rrtVal.textContent='—';
       if(rrtSub) rrtSub.textContent='Получаем текущий раунд';
     }else if(phase==='betting'){
       rx.textContent='×1.00';
       rx.className='xbig';
-      rx.style.color='#3ddc96';
-      rp.textContent='ПРИЁМ СТАВОК · '+leftSec.toFixed(1)+'с';
+      rx.style.color='#fff3d6';
+      rp.textContent='ПРИЁМ СТАВОК';
 
-      if(rrtLabel) rrtLabel.textContent='ДО СТАРТА РАУНДА';
+      if(rrtLabel) rrtLabel.textContent='ДО СТАРТА';
       if(rrtVal){
         rrtVal.className='rrt-val';
         rrtVal.innerHTML=`${leftSec<10?'0':''}${leftSec.toFixed(1)}<span class="rrt-unit">с</span>`;
@@ -6102,20 +6144,20 @@ function gameRacket(){
     }else if(phase==='flight'){
       rx.textContent='×'+fx(cur);
       rx.className='xbig';
-      rx.style.color=band(cur);
-      rp.textContent='ПОЛЁТ РАКЕТКИ';
+      rx.style.color='#fff3d6';
+      rp.textContent='РАКЕТКА В ПОЛЁТЕ';
 
-      if(rrtLabel) rrtLabel.textContent='РАКЕТКА В ПОЛЁТЕ';
+      if(rrtLabel) rrtLabel.textContent='ПОЛЁТ';
       if(rrtVal){
         rrtVal.className='rrt-val flight';
-        rrtVal.textContent='×'+fx(cur);
+        rrtVal.textContent='ИДЁТ';
       }
-      if(rrtSub) rrtSub.textContent=hasActive?'Нажмите «ЗАБРАТЬ» до взрыва':'Раунд в процессе';
+      if(rrtSub) rrtSub.textContent=hasActive?'Забери до взрыва':'Полёт идёт';
     }else{
       // phase === 'done'
       rx.textContent='×'+fx(crash);
       rx.className='xbig bad';
-      rx.style.color='';
+      rx.style.color='#ff8a8a';
       const toNext=Math.max(1,Math.ceil(((nextRoundAt||now+1000)-now)/1000));
       rp.textContent=`ОСТАНОВКА ×${fx(crash)} · СЛЕД. РАУНД ${toNext}с`;
 
