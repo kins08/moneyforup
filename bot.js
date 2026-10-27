@@ -620,7 +620,7 @@ const GAMES = {
   cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('cases'),  defaultMult: 2.0 },
   upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 100,  edge: rtp.edgeOf('upgrader'),  defaultMult: 2.0 },
   auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('auction'),  defaultMult: 1.8 },
-  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 200,  edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
   hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('hotdrop'),  defaultMult: 2.0 },
   wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('wheel'),  defaultMult: 2.0 },
   challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('challenge'),  defaultMult: 1.8 },
@@ -637,19 +637,25 @@ const GAMES = {
    заранее и ставил только на «хорошие» раунды — гарантированный плюс.
    Теперь r берётся из CSPRNG на сервере, раунд фиксируется по серверным часам,
    а точка взрыва раскрывается клиенту только когда полёт до неё уже дошёл. */
-const RK = { tcap: 12, k: 0.18 };
-const RACKET_ROUND_MS = 12000;
-const RACKET_WAIT_MS = 3000;
-const RACKET_SPEED = 0.82;          // базовый полёт: чуть медленнее на низких иксах
-const RACKET_BOOST_SPEED = 1.75;    // после ×5 ракета летит быстрее
-const RACKET_BOOST_FROM = 5;
+const RACKET_MAX_MULT = 200;
+const RACKET_MAX_WIN_TOKENS = 200000;    // лимит выплаты за раунд — 20 000 ₽
+const RACKET_RAW_MAX = RACKET_MAX_MULT / rtp.CRASH_POINT_SCALE;
+const RACKET_FLIGHT_MS = 40000;          // время полёта до ×200
+/* Плавный экспоненциальный рост без буста: на лог-оси линия строго прямая.
+   k=ln(200)/40 даёт ×1.2 за ~1.4 с, ×3 за ~8.3 с, ×20 за ~22.6 с, ×200 за 40 с. */
+const RK = { k: Math.log(RACKET_MAX_MULT) / (RACKET_FLIGHT_MS / 1000) };
+RK.tcap = Math.log(RACKET_RAW_MAX) / RK.k;
+const RACKET_BET_MS = 12000;             // интервал приёма ставок между раундами
+const RACKET_BET_GRACE_MS = 500;         // добор ставок после старта полёта (пинг)
+const RACKET_RESULT_MS = 1200;           // показ взрыва перед приёмом следующего раунда
 /* Допуск на пинг: если игрок нажал «Забрать» до взрыва, а запрос дошёл
    на сервер чуть позже момента краха — кэшаут всё равно засчитывается.
    Узкое окно 250 мс: помогает при пинге, но почти не оставляет шансов тем,
    кто узнал крах постфактум. */
 const RACKET_CASHOUT_GRACE_MS = 250;
 
-/* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте). */
+/* Раскладка точки взрыва по равномерному r∈[0,1) (та же математика, что была на клиенте).
+   До ×8.67 раскладка прежняя; 0.1 % раундов — длинный хвост до ×200. */
 function crashFromRBase(r) {
   if (r < 0.08) return 1.00;                                   // мгновенный взрыв
   if (r < 0.14) return +(1.01 + ((r - 0.08) / 0.06) * 0.09).toFixed(2);
@@ -659,9 +665,12 @@ function crashFromRBase(r) {
   if (r < 0.79) return +(1.75 + ((r - 0.73) / 0.06) * 0.25).toFixed(2);
   if (r < 0.89) return +(2.00 + ((r - 0.79) / 0.10) * 0.30).toFixed(2);
   if (r < 0.98) return +(2.30 + ((r - 0.89) / 0.09) * 0.69).toFixed(2);
-  const t0 = Math.log(3.5) / RK.k;
-  const rLong = (r - 0.98) / 0.02;
-  return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
+  if (r < 0.999) {                                             // 3.50-8.67 — 1.9 %
+    const t0 = Math.log(3.5) / RK.k, t1 = Math.log(8.67) / RK.k;
+    return +Math.exp(RK.k * (t0 + ((r - 0.98) / 0.019) * (t1 - t0))).toFixed(2);
+  }
+  const t1 = Math.log(8.67) / RK.k;                            // 8.67-200 — 0.1 %
+  return Math.min(RACKET_RAW_MAX, +Math.exp(RK.k * (t1 + ((r - 0.999) / 0.001) * (RK.tcap - t1))).toFixed(2));
 }
 
 /* Снижение RTP Crash: точки взрыва чуть ниже, минимальный множитель остаётся 1.00.
@@ -669,67 +678,62 @@ function crashFromRBase(r) {
 function crashFromR(r) {
   const base = crashFromRBase(r);
   if (base <= 1) return 1.00;
-  return Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100);
+  return Math.min(RACKET_MAX_MULT, Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100));
 }
 
-/* Точка взрыва раунда живёт только на сервере и раскрывается по факту (см. /api/racket/state). */
-const racketRounds = new Map(); // rIdx -> { crash, createdAt }
-function getRacketRound(rIdx) {
-  let r = racketRounds.get(rIdx);
-  if (!r) {
-    r = { crash: crashFromR(rnd01()), createdAt: Date.now() };
-    racketRounds.set(rIdx, r);
-  }
-  return r;
-}
-/* Секунда полёта (внутренний s), на которой достигается множитель m. */
-function racketSAtMult(m) {
-  const L = Math.log(Math.max(1, Number(m) || 1)) / RK.k;
-  return (-1 + Math.sqrt(1 + 0.24 * L)) / 0.12;
-}
-const RACKET_S_BOOST = racketSAtMult(RACKET_BOOST_FROM);
-const RACKET_T_BOOST = RACKET_S_BOOST / RACKET_SPEED;
-/* Секунда полёта до множителя m с ускорением после ×5 — та же кривая, что на клиенте. */
+/* Живой раунд: 12 с приёма ставок, затем полёт до 40 с. Раунды идут
+   последовательно, а не по сетке часов, потому что длительность полёта
+   зависит от секретной точки взрыва. */
+let racketRoundSeq = Date.now();   // не пересекается с индексами прошлого процесса
+let racketLive = null;
 function racketTimeAtMult(m) {
-  const s = racketSAtMult(m);
-  return s <= RACKET_S_BOOST ? s / RACKET_SPEED : RACKET_T_BOOST + (s - RACKET_S_BOOST) / RACKET_BOOST_SPEED;
+  return Math.log(Math.max(1, Number(m) || 1)) / RK.k;
 }
-/* Момент времени (мс от начала раунда), когда множитель полёта достигает crash. */
-function racketBustMs(crash) {
-  return RACKET_WAIT_MS + racketTimeAtMult(crash) * 1000;
+function makeRacketRound(startAt) {
+  const started = Number.isFinite(startAt) ? startAt : Date.now();
+  const idx = ++racketRoundSeq;
+  const crash = crashFromR(rnd01());
+  const flightStartsAt = started + RACKET_BET_MS;
+  const bustAt = flightStartsAt + racketTimeAtMult(crash) * 1000;
+  return {
+    idx, crash,
+    bettingStartsAt: started,
+    betEndsAt: flightStartsAt,
+    flightStartsAt,
+    bustAt,
+    nextRoundAt: bustAt + RACKET_RESULT_MS,
+    createdAt: started
+  };
 }
-/* Момент краха в абсолютном времени. После полуночи rIdx*ROUND_MS — это
-   начало раунда, поэтому условие «уже взорвалась» не зависит от часов клиента. */
-function racketBustAt(rIdx, crash) {
-  return rIdx * RACKET_ROUND_MS + racketBustMs(crash);
-}
-/* Точка краха переживает перезапуск: сохраняем её в params ставки и
-   восстанавливаем в память, чтобы кэшаут после рестарта считался по тому же
-   секрету, а не по новому случайному. */
-function rememberRacketRound(rIdx, crash) {
-  if (Number.isFinite(crash) && crash >= 1) {
-    let r = racketRounds.get(rIdx);
-    if (!r) {
-      r = { crash: Number(crash), createdAt: Date.now() };
-      racketRounds.set(rIdx, r);
-    }
-    return r;
+function ensureRacketRound(now = Date.now()) {
+  if (!racketLive) {
+    racketLive = makeRacketRound(now);
+    return racketLive;
   }
-  return getRacketRound(rIdx);
+  if (now >= racketLive.nextRoundAt) {
+    for (const [id, bet] of activeRacketBets.entries()) {
+      if (bet.rIdx === racketLive.idx && !bet.cashed && !bet.settled) settleRacketLoss(id, bet);
+    }
+    // Не уходим в прошлое, если процесс был на паузе дольше 5 с.
+    const start = now - racketLive.nextRoundAt > 5000 ? now : racketLive.nextRoundAt;
+    racketLive = makeRacketRound(start);
+  }
+  return racketLive;
 }
 function racketRIdxFromRoundId(roundId) {
   const m = /^RK_(\d+)_/.exec(String(roundId || ''));
   return m ? Number(m[1]) : null;
 }
-/* Живым может быть только текущий раунд (или предыдущий — на границе 30 с).
-   Будущий индекс из подделанного roundId не должен открывать кэшаут. */
-function racketRoundIsLive(rIdx) {
-  if (!Number.isFinite(rIdx)) return false;
-  const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
-  return rIdx === nowIdx || rIdx === nowIdx - 1;
+function racketBustAtFromSaved(saved) {
+  if (!saved) return null;
+  if (Number.isFinite(Number(saved.bustAt))) return Number(saved.bustAt);
+  if (Number.isFinite(Number(saved.flightStartsAt)) && Number.isFinite(Number(saved.crash))) {
+    return Number(saved.flightStartsAt) + racketTimeAtMult(saved.crash) * 1000;
+  }
+  return null;
 }
 
-const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, crash, createdAt, cashed, settled }
+const activeRacketBets = new Map(); // roundId -> { userId, bet, rIdx, crash, flightStartsAt, bustAt, createdAt, cashed, settled }
 // Pulse Market: серверный seed и параметры открытых раундов (до раскрытия результата).
 const pulseRounds = new Map();     // roundId -> { userId, seed, startedAt, dueAt, direction, leverage, duration, bet, settled }
 // Trend Hunter: открытые сценарии (с правильным ответом на сервере) и комбо игрока.
@@ -739,14 +743,19 @@ function trendCombo(userId) { return trendComboState.get(userId) || 0; }
 const activeRevolvers = new Map();  // userId -> { bet, bullet, step, insurance, createdAt }
 
 setInterval(() => {
+  try { ensureRacketRound(); } catch (e) { console.error('[Racket] round loop:', e.message); }
+}, 1000).unref();
+
+setInterval(() => {
   const now = Date.now();
   for (const [id, bet] of activeRacketBets.entries()) {
-    // Незакрытую ставку не выбрасываем: свип должен сначала записать проигрыш.
-    if (now - bet.createdAt > 300000 && (bet.cashed || bet.settled)) activeRacketBets.delete(id);
-  }
-  for (const [rIdx, round] of racketRounds.entries()) {
-    // держим только текущий и пару прошлых раундов (нужно для истории/поздних кэшаутов)
-    if (now - rIdx * RACKET_ROUND_MS > 300000) racketRounds.delete(rIdx);
+    if (bet.cashed || bet.settled) {
+      if (now - bet.createdAt > 300000) activeRacketBets.delete(id);
+      continue;
+    }
+    const bustAt = racketBustAtFromSaved(bet);
+    if (Number.isFinite(bustAt) && now > bustAt) settleRacketLoss(id, bet);
+    else if (!Number.isFinite(bustAt) && now - bet.createdAt > 300000) settleRacketLoss(id, bet, true);
   }
   for (const [uid, rev] of activeRevolvers.entries()) {
     if (now - rev.createdAt > 300000) activeRevolvers.delete(uid);
@@ -759,9 +768,8 @@ setInterval(() => {
    ставка уже списана при приёме. */
 function settleRacketLoss(roundId, saved, force = false) {
   if (!saved || saved.cashed || saved.settled) return false;
-  const r = rememberRacketRound(saved.rIdx, saved.crash);
-  saved.crash = r.crash;
-  if (!force && Date.now() <= racketBustAt(saved.rIdx, r.crash)) return false;
+  const bustAt = racketBustAtFromSaved(saved);
+  if (!force && (!Number.isFinite(bustAt) || Date.now() <= bustAt)) return false;
   const closed = db.settleRoundOnce({
     roundId, userId: saved.userId, game: 'Ракетка', bet: saved.bet,
     mult: 0, win: 0, status: 'settled', settledAt: Date.now()
@@ -772,7 +780,8 @@ function settleRacketLoss(roundId, saved, force = false) {
     const row = db.getRoundParams(roundId, saved.userId);
     const p = (row && row.params) || {};
     db.setRoundParams(roundId, saved.userId, null, {
-      ...p, rIdx: saved.rIdx, crash: r.crash, autoClosed: true, settledAt: Date.now()
+      ...p, rIdx: saved.rIdx, crash: saved.crash, flightStartsAt: saved.flightStartsAt,
+      bustAt: saved.bustAt, autoClosed: true, settledAt: Date.now()
     });
   } catch (e) { console.error('[Racket] loss params:', e.message); }
   return true;
@@ -3068,16 +3077,22 @@ const server = http.createServer(async (req, res) => {
       if (bet < 10 || bet > 100000) return send(400, { error: `Ставка должна быть от ${rub(10)} до ${rub(100000)}` });
       if (bet > Math.floor(u.tokens || 0)) return send(400, { error: 'Недостаточно средств' });
 
-      const rIdx = Math.floor(Date.now() / RACKET_ROUND_MS);   // раунд решает сервер, не клиент
-      const round = getRacketRound(rIdx);                      // фиксируем (секретную) точку взрыва раунда
-      // Очень ранний крах мог случиться прямо на границе окна ставок —
-      // в мёртвый раунд ставку не принимаем.
-      if (Date.now() > racketBustAt(rIdx, round.crash)) {
+      const now = Date.now();
+      const round = ensureRacketRound(now);                      // раунд и секретную точку взрыва решает сервер
+      if (now > round.betEndsAt + RACKET_BET_GRACE_MS) {
+        return send(400, { error: 'Приём ставок закрыт, подождите следующий раунд' });
+      }
+      if (now >= round.bustAt) {
         return send(400, { error: 'Раунд уже завершился, подождите следующий' });
       }
+      const rIdx = round.idx;
       const roundId = String(body.roundId || ('RK_' + rIdx + '_' + u.id + '_' + crypto.randomBytes(4).toString('hex'))).trim();
       if (!/^[A-Za-z0-9_-]{8,80}$/.test(roundId)) {
         return send(400, { error: 'Некорректный идентификатор раунда' });
+      }
+      const parsedIdx = racketRIdxFromRoundId(roundId);
+      if (parsedIdx != null && parsedIdx !== rIdx) {
+        return send(400, { error: 'Раунд изменился, обновите экран' });
       }
 
       // Claim ДО списания: повтор того же roundId (потерянный ответ, ретрай)
@@ -3097,8 +3112,8 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      const r = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${rub(bet)})`, roundId);
-      if (!r.ok) {
+      const bal = applyBalance(u, -bet, 'racket_bet', `Ракетка · ставка в раунде #${rIdx} (${rub(bet)})`, roundId);
+      if (!bal.ok) {
         db.releaseRoundClaim(roundId, u.id);
         return send(400, { error: 'Не удалось списать ставку' });
       }
@@ -3112,20 +3127,26 @@ const server = http.createServer(async (req, res) => {
         bet,
         rIdx,
         crash: round.crash,
-        createdAt: Date.now(),
+        flightStartsAt: round.flightStartsAt,
+        bustAt: round.bustAt,
+        createdAt: now,
         cashed: false,
         settled: false
       });
 
-      // rIdx и точка взрыва — в БД: после перезапуска сервера раунд
-      // восстанавливается по тому же секрету, а не по новому случайному.
+      // Точка взрыва, старт полёта и дедлайн краха — в БД: после перезапуска
+      // ставка восстанавливается по тому же секрету и тому же времени.
       try {
         db.setRoundParams(roundId, u.id, null, {
-          rIdx, crash: round.crash, startedAt: rIdx * RACKET_ROUND_MS
+          rIdx, crash: round.crash, flightStartsAt: round.flightStartsAt, bustAt: round.bustAt,
+          startedAt: round.bettingStartsAt
         });
       } catch (e) { console.error('[Racket] params:', e.message); }
 
-      return send(200, { ok: true, roundId, bet, rIdx, tokens: u.tokens });
+      return send(200, {
+        ok: true, roundId, bet, rIdx, tokens: u.tokens,
+        betEndsAt: round.betEndsAt, flightStartsAt: round.flightStartsAt
+      });
     }
 
     /* ── Ракетка: кэшаут (забрать выигрыш на текущем множителе) ─────────────── */
@@ -3144,7 +3165,8 @@ const server = http.createServer(async (req, res) => {
           if (rIdx != null) {
             saved = {
               userId: u.id, bet: Number(row.bet_tokens) || 0, rIdx,
-              crash: p.crash, createdAt: row.created_at, cashed: false, settled: false
+              crash: Number(p.crash), flightStartsAt: Number(p.flightStartsAt), bustAt: Number(p.bustAt),
+              createdAt: row.created_at, cashed: false, settled: false
             };
             activeRacketBets.set(roundId, saved);
           }
@@ -3157,26 +3179,22 @@ const server = http.createServer(async (req, res) => {
         return send(400, { error: 'Выигрыш уже забран или ставка сгорела' });
       }
 
-      const serverCrash = rememberRacketRound(saved.rIdx, saved.crash).crash;
-      saved.crash = serverCrash;
+      const now = Date.now();
+      const serverCrash = Number(saved.crash);
+      const flightStartsAt = Number(saved.flightStartsAt);
+      const bustAt = racketBustAtFromSaved(saved);
+      saved.bustAt = bustAt;
+      if (!Number.isFinite(serverCrash) || !Number.isFinite(flightStartsAt) || !Number.isFinite(bustAt)) {
+        settleRacketLoss(roundId, saved, true);
+        return send(400, { error: 'Раунд не найден. Ставка сгорела.' });
+      }
+      if (now < flightStartsAt) {
+        return send(400, { error: 'Раунд ещё не начался' });
+      }
       const clientMult = Math.round((Number(body.mult) || 1.01) * 100) / 100;
-      const bustAt = racketBustAt(saved.rIdx, serverCrash);
-      const lateBy = Date.now() - bustAt;
+      const lateBy = now - bustAt;
       const multOk = serverCrash > 1.00 && clientMult <= serverCrash;
       const graceOk = lateBy <= RACKET_CASHOUT_GRACE_MS;
-
-      // Кэшаут возможен в живом раунде или в пределах допуска на пинг.
-      if (!racketRoundIsLive(saved.rIdx)) {
-        const nowIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
-        if (saved.rIdx < nowIdx) {
-          if (!(multOk && graceOk)) {
-            settleRacketLoss(roundId, saved, true);
-            return send(400, { error: 'Раунд уже завершился. Ставка сгорела.' });
-          }
-        } else {
-          return send(400, { error: 'Раунд ещё не начался' });
-        }
-      }
 
       // Ракета уже разбилась: принимаем, если игрок успел нажать до краха,
       // а запрос дошёл с задержкой из-за пинга в пределах допуска.
@@ -3190,7 +3208,9 @@ const server = http.createServer(async (req, res) => {
       // выплату при кэшауте: с шансом удачи игрок забирает +50%.
       const cashout = boost.cashoutBonus(
         Math.floor(saved.bet * realMult), playerLuck(u.id), rnd01());
-      const win = cashout.win;
+      const rawWin = cashout.win;
+      const win = Math.min(RACKET_MAX_WIN_TOKENS, rawWin);
+      const capped = win < rawWin;
 
       const r = applyBalance(u, win, 'racket_cashout', `Ракетка · выигрыш ×${realMult} (+${rub(win)})`, roundId);
       if (!r.ok) return send(500, { error: 'Не удалось начислить выигрыш' });
@@ -3207,8 +3227,8 @@ const server = http.createServer(async (req, res) => {
           const row = db.getRoundParams(roundId, u.id);
           const p = (row && row.params) || {};
           db.setRoundParams(roundId, u.id, null, {
-            ...p, rIdx: saved.rIdx, crash: serverCrash, cashedOut: true, mult: realMult,
-            win, boosted: cashout.boosted, settledAt: Date.now()
+            ...p, rIdx: saved.rIdx, crash: serverCrash, flightStartsAt, bustAt, cashedOut: true, mult: realMult,
+            win, rawWin, capped, boosted: cashout.boosted, settledAt: Date.now()
           });
         }
       } catch (e) { console.error('[Racket] cashout settle not saved:', e.message); }
@@ -3223,24 +3243,31 @@ const server = http.createServer(async (req, res) => {
         totalDepositedRub: u.totalDepositedRub || u.lastDeposit || 0
       });
 
-      return send(200, { ok: true, verdict: 'win', win, mult: realMult, tokens: u.tokens });
+      return send(200, {
+        ok: true, verdict: 'win', win, mult: realMult, tokens: u.tokens,
+        capped, rawWin, cap: RACKET_MAX_WIN_TOKENS
+      });
     }
 
     /* ── Ракетка: состояние раунда. Точку взрыва отдаём ТОЛЬКО когда полёт до неё
        уже дошёл — иначе модифицированный клиент узнал бы её заранее и забрал выигрыш. */
     if (url.pathname === '/api/racket/state' && req.method === 'POST') {
-      const serverIdx = Math.floor(Date.now() / RACKET_ROUND_MS);
-      const reqIdx = Number(body.rIdx);
-      // Принимаем клиентский индекс только в пределах ±1 раунда (защита от перебора
-      // будущих/произвольных раундов); иначе берём серверный.
-      const rIdx = (Number.isFinite(reqIdx) && Math.abs(reqIdx - serverIdx) <= 1) ? reqIdx : serverIdx;
-      const round = getRacketRound(rIdx);
-      const busted = (Date.now() - rIdx * RACKET_ROUND_MS) >= racketBustMs(round.crash);
+      const now = Date.now();
+      const round = ensureRacketRound(now);
+      const busted = now >= round.bustAt;
+      const phase = now < round.betEndsAt ? 'betting' : (busted ? 'done' : 'flight');
       return send(200, {
         ok: true,
-        rIdx,
+        rIdx: round.idx,
+        phase,
+        bettingStartsAt: round.bettingStartsAt,
+        betEndsAt: round.betEndsAt,
+        flightStartsAt: round.flightStartsAt,
+        serverNow: now,
         crashed: busted,
-        crash: busted ? round.crash : null
+        crash: busted ? round.crash : null,
+        nextRoundAt: busted ? round.nextRoundAt : null,
+        maxWinTokens: RACKET_MAX_WIN_TOKENS
       });
     }
 
@@ -3263,7 +3290,13 @@ const server = http.createServer(async (req, res) => {
         const parsedIdx = Number(p.rIdx);
         const rIdx = Number.isFinite(parsedIdx) ? parsedIdx : racketRIdxFromRoundId(row.round_id);
         const bet = Number(row.bet_tokens) || 0;
-        if (rIdx == null) {
+        const crash = Number(p.crash);
+        const flightStartsAt = Number(p.flightStartsAt);
+        let bustAt = Number(p.bustAt);
+        if (!Number.isFinite(bustAt) && Number.isFinite(flightStartsAt) && Number.isFinite(crash)) {
+          bustAt = flightStartsAt + racketTimeAtMult(crash) * 1000;
+        }
+        if (rIdx == null || !Number.isFinite(crash) || !Number.isFinite(bustAt)) {
           const closed = db.settleRoundOnce({
             roundId: row.round_id, userId: u.id, game: 'Ракетка', bet,
             mult: 0, win: 0, status: 'settled', settledAt: now
@@ -3271,11 +3304,10 @@ const server = http.createServer(async (req, res) => {
           if (closed) db.setRoundParams(row.round_id, u.id, null, { autoClosed: true, settledAt: now, crash: null });
           continue;
         }
-        const round = rememberRacketRound(rIdx, p.crash);
         let saved = activeRacketBets.get(row.round_id);
         if (!saved) {
           saved = {
-            userId: u.id, bet, rIdx, crash: round.crash,
+            userId: u.id, bet, rIdx, crash, flightStartsAt, bustAt,
             createdAt: row.created_at, cashed: false, settled: false
           };
           activeRacketBets.set(row.round_id, saved);
@@ -3284,12 +3316,11 @@ const server = http.createServer(async (req, res) => {
         // даже если в памяти остался устаревший объект.
         saved.rIdx = rIdx;
         saved.bet = bet;
-        saved.crash = round.crash;
-        const nowIdx = Math.floor(now / RACKET_ROUND_MS);
-        if (now > racketBustAt(rIdx, round.crash) || rIdx !== nowIdx) {
-          // Взорвалась, закончилась или ещё не началась (битый индекс
-          // из подделанного roundId) — кэшаут уже невозможен.
-          settleRacketLoss(row.round_id, saved, true);
+        saved.crash = crash;
+        saved.flightStartsAt = flightStartsAt;
+        saved.bustAt = bustAt;
+        if (now > bustAt) {
+          settleRacketLoss(row.round_id, saved);
         } else {
           active.push({ roundId: row.round_id, bet, rIdx });
         }
@@ -5277,9 +5308,25 @@ function recoverPendingGameRounds() {
         }
         continue;
       }
-      const round = rememberRacketRound(rIdx, p.crash);
+      const crash = Number(p.crash);
+      const flightStartsAt = Number(p.flightStartsAt);
+      let bustAt = Number(p.bustAt);
+      if (!Number.isFinite(bustAt) && Number.isFinite(flightStartsAt) && Number.isFinite(crash)) {
+        bustAt = flightStartsAt + racketTimeAtMult(crash) * 1000;
+      }
+      if (!Number.isFinite(crash) || !Number.isFinite(bustAt)) {
+        const closed = db.settleRoundOnce({
+          roundId: row.round_id, userId: uid, game: 'Ракетка', bet,
+          mult: 0, win: 0, status: 'settled', settledAt: Date.now()
+        });
+        if (closed) {
+          db.setRoundParams(row.round_id, uid, null, { autoClosed: true, settledAt: Date.now(), crash: null });
+          fixed++;
+        }
+        continue;
+      }
       const saved = {
-        userId: uid, bet, rIdx, crash: round.crash,
+        userId: uid, bet, rIdx, crash, flightStartsAt, bustAt,
         createdAt: row.created_at, cashed: false, settled: false
       };
       activeRacketBets.set(row.round_id, saved);

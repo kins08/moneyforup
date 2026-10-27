@@ -26,9 +26,18 @@ vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
 const unhandled = [];
 process.on('unhandledRejection', e => unhandled.push((e && e.message) || String(e)));
 
-const ROUND_MS = 12000, WAIT_MS = 3000;
+const BET_MS = 12000;
+const FLIGHT_K = Math.log(200) / 40;
 const RK_MULT = 1.7;                                  // defaultMult Ракетки на сервере
 let FAKE_NOW = 0;                                     // управляемые часы для фаз раунда
+let srvRound = null;                                  // текущий раунд мок-сервера
+
+function makeSrvRound(startAt, idx, crash = 50) {
+  const betEndsAt = startAt + BET_MS;
+  const flightStartsAt = betEndsAt;
+  const bustAt = flightStartsAt + Math.log(crash) / FLIGHT_K * 1000;
+  return { idx, crash, bettingStartsAt: startAt, betEndsAt, flightStartsAt, bustAt, nextRoundAt: bustAt + 1200 };
+}
 
 /* ── мок-сервер: правила те же, что в bot.js playRound ─────────────────────── */
 const srv = { tokens: 100, verdict: 'lose', attempts: 0, plays: [], balanceCalls: 0 };
@@ -72,7 +81,16 @@ async function apiHandle(url, opts) {
   }
   if (u.includes('/api/racket/state')) {
     srv.stateCalls = (srv.stateCalls || 0) + 1;
-    return ok_({ ok: true, crashed: false, crash: null });
+    if (!srvRound) srvRound = makeSrvRound(FAKE_NOW, 1, 50);
+    const r = srvRound;
+    const busted = FAKE_NOW >= r.bustAt;
+    return ok_({
+      ok: true, rIdx: r.idx,
+      phase: FAKE_NOW < r.betEndsAt ? 'betting' : (busted ? 'done' : 'flight'),
+      bettingStartsAt: r.bettingStartsAt, betEndsAt: r.betEndsAt, flightStartsAt: r.flightStartsAt,
+      serverNow: FAKE_NOW, crashed: busted, crash: busted ? r.crash : null,
+      nextRoundAt: busted ? r.nextRoundAt : null, maxWinTokens: 200000
+    });
   }
   if (u.includes('/api/balance')) { srv.balanceCalls++; return ok_({ tokens: srv.tokens, totalDeposited: 1000, refCode: 'RKTEST01' }); }
   if (u.includes('/api/register')) return ok_({ refCode: 'RKTEST01', tokens: srv.tokens, totalDeposited: 1000 });
@@ -128,16 +146,22 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
      sampleCrash берём из исходника страницы: тест не разойдётся с игрой. */
   const src = fs.readFileSync(HTML, 'utf8');
   const sampleCrash = new Function(
-    src.slice(src.indexOf('const RK={tcap:12'), src.indexOf('function gameRacket()')) + '\n; return sampleCrash;'
+    src.slice(src.indexOf('const RK_MAX_MULT'), src.indexOf('function gameRacket()')) + '\n; return sampleCrash;'
   )();
   const RIDXES = [];
-  for (let i = 1; i < 2000 && RIDXES.length < 3; i++) if (sampleCrash(i) > 3) RIDXES.push(i);
+  let maxCrash = 0, longTail = 0;
+  for (let i = 1; i < 20000; i++) {
+    const v = sampleCrash(i);
+    if (v > maxCrash) maxCrash = v;
+    if (v > 8.67) longTail++;
+    if (v > 3 && RIDXES.length < 3) RIDXES.push(i);
+  }
   check(RIDXES.length === 3, 'найдены 3 раунда с полётом > ×3: ' + RIDXES.join(', '));
-  const tBet = r => r * ROUND_MS + 1000;              // окно приёма ставок раунда r
-  const tFly = r => r * ROUND_MS + WAIT_MS + 1000;    // полёт раунда r (cur ≈ ×1.11)
-  const [R1, R2, R3] = RIDXES;
+  check(maxCrash <= 200 && maxCrash > 0, 'потолок раунда — ×200, максимум в выборке: ×' + maxCrash);
+  check(longTail > 0, 'хвост до ×200 достижим: ' + longTail + ' раундов >×8.67 из 20 000');
 
-  FAKE_NOW = tBet(R1);
+  FAKE_NOW = 1000;
+  srvRound = makeSrvRound(FAKE_NOW, 1, 50);
   click($('[data-game="racket"]'));
   await sleep(60);
   check($('#gameTitle').textContent === 'Ракетка', 'экран Ракетки открыт');
@@ -147,6 +171,11 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
       'в шапке режима виден зелёный индикатор «онлайн»: «' + (mo ? mo.textContent.trim() : 'нет') + '»');
   }
   check(showBal() === 100, 'стартовый баланс пришёл с сервера: ' + showBal() + ' ⬦');
+  check(D.RKMAX === 200, 'клиент знает потолок ×200: ' + D.RKMAX);
+  check($('#b1AutoX').getAttribute('max') === '200', 'авто-кэшаут ограничен ×200');
+  await sleep(220);                                    // ждём первый /state с окном приёма
+  check(/12\.0/.test($('#rrtVal').textContent), 'приём ставок длится 12 секунд: ' + $('#rrtVal').textContent);
+  check(/20 000/.test($('#gameArea').textContent), 'игроку виден лимит 20 000 ₽ за раунд');
   type($('#b1Inp'), '6');
   const tgl = el => { if (el.checked) { el.checked = false; el.dispatchEvent(new window.Event('change', { bubbles: true })); } };
   tgl($('#b1AutoChk'));                                // авто-кэшаут не должен стрелять раньше нас
@@ -169,8 +198,8 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
   srv.tokens = 40; S.balance = 200;                    // клиент «помнит» 200, на сервере 40
   setQueue(b1Btn, true);
   const a0 = srv.attempts;
-  FAKE_NOW = tFly(R1);                                 // старт полёта: ставка уходит на сервер
-  await sleep(150);
+  FAKE_NOW = srvRound.flightStartsAt + 1000;           // старт полёта: ставка уходит на сервер
+  await sleep(180);
   check(srv.attempts === a0 + 1, 'ставка дошла до сервера и была им рассмотрена');
   check(srv.tokens === 40, 'сервер отказал — баланс не тронут: ' + srv.tokens + ' ⬦');
   check(!/В игре|ПРИНЯТА/.test($('#b1Status').textContent), 'отклонённая ставка НЕ показана как принятая: «' + $('#b1Status').textContent + '»');
@@ -181,8 +210,10 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
   srv.tokens = 100; S.balance = 200;                   // клиент снова «богаче» сервера
   setQueue(b1Btn, true);                               // в полёте это пред-ставка на след. раунд
   const a1 = srv.attempts;
-  FAKE_NOW = tBet(R2);                                 // переход: пред-ставка срабатывает
-  await sleep(150);
+  const start2 = FAKE_NOW + 1000;
+  srvRound = makeSrvRound(start2, 2, 50);              // новый раунд мок-сервера
+  FAKE_NOW = start2 + 1000;
+  await sleep(220);
   check(srv.tokens === 40, 'пред-ставка на новый раунд списана один раз: ' + srv.tokens + ' ⬦ (100 − 60)');
   check(srv.attempts === a1 + 1, 'на сервер ушла ровно одна ставка: attempts=' + (srv.attempts - a1));
   check(/Принята сервером|ПРИНЯТА|В игре/.test($('#b1Status').textContent), 'ставка показана как принятая: «' + $('#b1Status').textContent + '»');
@@ -194,16 +225,19 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
 
   srv.tokens = 300; srv.verdict = 'win';
   S.balance = 300;                                     // как после авто-refresh баланса
-  FAKE_NOW = tBet(R3);                                 // новый чистый раунд
-  await sleep(80);
+  const start3 = FAKE_NOW + 1000;
+  srvRound = makeSrvRound(start3, 3, 50);              // новый чистый раунд
+  FAKE_NOW = start3 + 1000;
+  await sleep(220);
   check(!/ЗАБРАТЬ/.test(b1Btn.textContent), 'новый раунд начался с чистых ставок: ' + b1Btn.textContent.slice(0, 30));
   type($('#b1Inp'), '6');
   setQueue(b1Btn, true);
   const p2 = srv.plays.length;
-  FAKE_NOW = tFly(R3);                                 // старт полёта: ставка уходит серверу и выигрывает 102 ⬦
-  await sleep(150);
+  FAKE_NOW = srvRound.flightStartsAt + 1000;           // старт полёта: ставка уходит серверу и выигрывает 102 ⬦
+  await sleep(180);
   check(srv.plays.length === p2 + 1, 'ставка #1 ушла на сервер ровно один раз');
   check(/ЗАБРАТЬ/.test(b1Btn.textContent), 'кнопка предлагает забрать: ' + b1Btn.textContent.slice(0, 40));
+  check(/×1\.14/.test(b1Btn.textContent), 'за 1 с полёта множитель плавный ×1.14, а не ×1.36: ' + b1Btn.textContent.slice(0, 40));
   click(b1Btn);                                        // кэшаут на ×1.11
   await sleep(60);
   const rr = $('#rr').textContent;
@@ -226,7 +260,7 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
     const vc2 = new VirtualConsole();
     vc2.on('jsdomError', e => demoErrors.push('jsdomError: ' + (e.detail ? e.detail.detail || e.detail : e.message)));
     vc2.on('error', (...a) => demoErrors.push('console.error: ' + a.join(' ')));
-    let DEMO_NOW = tBet(R1);
+    let DEMO_NOW = RIDXES[0] * 1000 + 1000;             // idx демо-раунда = floor(now/1000), краш > ×3
     const demo = new JSDOM(fs.readFileSync(HTML, 'utf8'), {
       runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc2, url: 'http://localhost/',
       beforeParse(w) {
@@ -247,7 +281,8 @@ const showBal = () => Number((window.MONEYFORUP_DEBUG && window.MONEYFORUP_DEBUG
         'демо-режим: индикатор серый («оффлайн»), сервер не подключён: «' + (dmo ? dmo.textContent.trim() : 'нет') + '»');
     }
     dclick(dq('#b1Btn'));                               // ставка в очередь (локальный баланс)
-    DEMO_NOW = tFly(R1);                                // старт полёта: демо-ставка списывается локально
+    const demoStart = DEMO_NOW;
+    DEMO_NOW = demoStart + BET_MS + 1000;               // старт полёта: демо-ставка списывается локально
     await sleep(150);
     check(/ЗАБРАТЬ/.test(dq('#b1Btn').textContent), 'демо-режим: кнопка предлагает забрать: ' + dq('#b1Btn').textContent.slice(0, 32));
     dclick(dq('#b1Btn'));                               // кэшаут

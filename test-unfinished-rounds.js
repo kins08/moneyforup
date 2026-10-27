@@ -28,7 +28,9 @@ const roundRow = (srv, roundId) => srv.db.db
   .get(roundId);
 
 /* Подменяем params.crash в БД, пока сервер остановлен: после рестарта
-   раунд восстановится именно с этой точкой взрыва. */
+   раунд восстановится именно с этой точкой взрыва. bustAt пересчитываем
+   по сохранённому flightStartsAt, иначе старый дедлайн не совпадёт с крашем. */
+const RACKET_K = Math.log(200) / 40;
 function patchRoundParams(tmp, roundId, patch) {
   const file = path.join(tmp, 'data', 'moneyforup.db');
   const raw = new DatabaseSync(file);
@@ -36,18 +38,21 @@ function patchRoundParams(tmp, roundId, patch) {
     const row = raw.prepare('SELECT params FROM game_rounds WHERE round_id = ?').get(roundId);
     assert.ok(row, 'раунд найден в БД для патча');
     const p = row.params ? JSON.parse(row.params) : {};
+    const next = { ...p, ...patch };
+    if (patch.crash != null && Number.isFinite(Number(next.flightStartsAt))) {
+      next.bustAt = Number(next.flightStartsAt) + Math.log(Math.max(1, patch.crash)) / RACKET_K * 1000;
+    }
     raw.prepare('UPDATE game_rounds SET params = ? WHERE round_id = ?')
-      .run(JSON.stringify({ ...p, ...patch }), roundId);
+      .run(JSON.stringify(next), roundId);
+    return next;
   } finally {
     raw.close();
   }
 }
 
-/* Ставка в Ракетке принимается только в первые 3 с раунда. Ждём начало
-   раунда, чтобы после рестарта оставалось время на кэшаут. */
-async function alignToRoundStart(maxInto = 2000) {
-  const into = Date.now() % 12000;
-  if (into > maxInto) await sleep(12000 - into + 300);
+async function sleepUntil(ts) {
+  const delta = Number(ts) - Date.now();
+  if (delta > 0) await sleep(delta + 120);
 }
 
 (async () => {
@@ -120,7 +125,6 @@ async function alignToRoundStart(maxInto = 2000) {
   });
   let abandoned = null;
   try {
-    await alignToRoundStart();
     abandoned = await srvR1.post('/api/racket/bet', { bet: 250 }, UR);
     eq(abandoned.status, 200, 'Ракетка: ставка принята');
     eq(abandoned.body.tokens, 9750, 'Ракетка: ставка списана один раз');
@@ -170,7 +174,6 @@ async function alignToRoundStart(maxInto = 2000) {
   });
   let cashBet = null;
   try {
-    await alignToRoundStart();
     cashBet = await srvC1.post('/api/racket/bet', { bet: 200 }, UC);
     eq(cashBet.status, 200, 'Ракетка: вторая ставка принята');
     eq(cashBet.body.tokens, 5800, 'Ракетка: вторая ставка списана');
@@ -179,7 +182,7 @@ async function alignToRoundStart(maxInto = 2000) {
   }
 
   // Реалистичный поздний взрыв: после рестарта кэшаут ещё успевает.
-  patchRoundParams(tmpCash, cashBet.body.roundId, { crash: 8 });
+  const patched = patchRoundParams(tmpCash, cashBet.body.roundId, { crash: 8 });
   const srvC2 = await startServer({ users: [], port: 34780, reuseTmp: tmpCash });
   try {
     const pend = await srvC2.post('/api/racket/pending', {}, UC);
@@ -188,6 +191,8 @@ async function alignToRoundStart(maxInto = 2000) {
     eq(Number(active.bet), 200, 'Ракетка: ставка восстановлена из БД');
     eq(Number(active.rIdx), Number(cashBet.body.rIdx), 'Ракетка: индекс раунда восстановлен');
 
+    // Сервер перезапустился до старта полёта — ждём flightStartsAt из params.
+    await sleepUntil(patched.flightStartsAt);
     const co = await srvC2.post('/api/racket/cashout', { roundId: cashBet.body.roundId, mult: 1.5 }, UC);
     eq(co.status, 200, 'Ракетка: кэшаут после рестарта принят');
     eq(co.body.win, 300, 'Ракетка: выигрыш посчитан по множителю 1.5');
@@ -208,6 +213,51 @@ async function alignToRoundStart(maxInto = 2000) {
     await srvC2.stop();
     fs.rmSync(tmpCash, { recursive: true, force: true });
     fs.rmSync(tmpRacket, { recursive: true, force: true });
+  }
+
+  console.log('\n=== РАКЕТКА: ЛИМИТ ВЫИГРЫША 20 000 ₽ ===');
+  const tmpCap = fs.mkdtempSync(path.join(os.tmpdir(), 'mfu-racket-cap-'));
+  const UX = 880515;
+  const srvX1 = await startServer({
+    users: [{ id: UX, tokens: 1000000, depositedRub: 10000, name: 'RacketCap' }],
+    port: 34782,
+    reuseTmp: tmpCap
+  });
+  let bigBet = null;
+  try {
+    bigBet = await srvX1.post('/api/racket/bet', { bet: 100000 }, UX);
+    eq(bigBet.status, 200, 'Ракетка: крупная ставка принята');
+    eq(bigBet.body.tokens, 900000, 'Ракетка: крупная ставка списана');
+  } finally {
+    await srvX1.stop();
+  }
+
+  // Ставим крах ×200 и переносим старт полёта в прошлое, чтобы кэшаут был доступен сразу.
+  patchRoundParams(tmpCap, bigBet.body.roundId, { crash: 200, flightStartsAt: Date.now() - 1000 });
+  const srvX2 = await startServer({ users: [], port: 34784, reuseTmp: tmpCap });
+  try {
+    const pend = await srvX2.post('/api/racket/pending', {}, UX);
+    const active = (pend.body.active || []).find(x => x.roundId === bigBet.body.roundId);
+    ok(active, 'Ракетка: крупная ставка активна после рестарта');
+
+    const co = await srvX2.post('/api/racket/cashout', { roundId: bigBet.body.roundId, mult: 200 }, UX);
+    eq(co.status, 200, 'Ракетка: кэшаут ×200 принят');
+    eq(co.body.win, 200000, 'Ракетка: выплата ограничена 20 000 ₽ (200 000 токенов)');
+    eq(co.body.capped, true, 'Ракетка: сервер пометил срабатывание лимита');
+    ok(Number(co.body.rawWin) > 200000, 'Ракетка: до лимита выплата была больше: ' + co.body.rawWin);
+    eq(co.body.tokens, 1100000, 'Ракетка: начислен ровно лимит');
+    eq(srvX2.bal(UX), 1100000, 'Ракетка: баланс в БД сходится с лимитом');
+
+    const row = roundRow(srvX2, bigBet.body.roundId);
+    eq(Number(row.win_tokens), 200000, 'Ракетка: в истории записан лимит');
+    eq(JSON.parse(row.params || '{}').capped, true, 'Ракетка: в params отмечен лимит');
+
+    const co2 = await srvX2.post('/api/racket/cashout', { roundId: bigBet.body.roundId, mult: 200 }, UX);
+    eq(co2.status, 400, 'Ракетка: повторный кэшаут после лимита отклонён');
+    eq(1000000 + srvX2.ledgerSum(UX), srvX2.bal(UX), 'Ракетка: инвариант ledger сохранён');
+  } finally {
+    await srvX2.stop();
+    fs.rmSync(tmpCap, { recursive: true, force: true });
   }
 
   console.log(`\nИТОГ: ${passed} проверок пройдено.`);

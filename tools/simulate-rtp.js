@@ -39,13 +39,16 @@ const GAMES = {
   cases:         { label: 'Апгрейд кейса',     minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('cases'),  defaultMult: 2.0 },
   upgrader:      { label: 'Апгрейдер',         minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('upgrader'),  defaultMult: 2.0 },
   auction:       { label: 'Тайный аукцион',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('auction'),  defaultMult: 1.8 },
-  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 30,   edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
+  racket:        { label: 'Ракетка',           minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 200,  edge: rtp.edgeOf('racket'),  defaultMult: 1.7 },
   hotdrop:       { label: 'Hot Drop',          minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('hotdrop'),  defaultMult: 2.0 },
   wheel:         { label: 'Колесо Фортуны',    minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('wheel'),  defaultMult: 2.0 },
   challenge:     { label: 'Челлендж 24ч',      minBet: 10, maxBet: 100000, minMult: 1.1, maxMult: 20,   edge: rtp.edgeOf('challenge'),  defaultMult: 1.8 }
 };
 
-const RK = { tcap: 12, k: 0.18 };
+const RK_MAX_MULT = 200;
+const RK_RAW_MAX = RK_MAX_MULT / rtp.CRASH_POINT_SCALE;
+const RK = { k: Math.log(RK_MAX_MULT) / 40 };
+RK.tcap = Math.log(RK_RAW_MAX) / RK.k;
 function sampleCrashBase(seedIdx) {
   let r;
   if (seedIdx != null) {
@@ -64,16 +67,19 @@ function sampleCrashBase(seedIdx) {
   if (r < 0.79) return +(1.75 + ((r - 0.73) / 0.06) * 0.25).toFixed(2);
   if (r < 0.89) return +(2.00 + ((r - 0.79) / 0.10) * 0.30).toFixed(2);
   if (r < 0.98) return +(2.30 + ((r - 0.89) / 0.09) * 0.69).toFixed(2);
-  const t0 = Math.log(3.5) / RK.k;
-  const rLong = (r - 0.98) / 0.02;
-  return +Math.exp(RK.k * (t0 + rLong * (RK.tcap - t0))).toFixed(2);
+  if (r < 0.999) {
+    const t0 = Math.log(3.5) / RK.k, t1 = Math.log(8.67) / RK.k;
+    return +Math.exp(RK.k * (t0 + ((r - 0.98) / 0.019) * (t1 - t0))).toFixed(2);
+  }
+  const t1 = Math.log(8.67) / RK.k;
+  return Math.min(RK_RAW_MAX, +Math.exp(RK.k * (t1 + ((r - 0.999) / 0.001) * (RK.tcap - t1))).toFixed(2));
 }
 
 /* Та же поправка, что в bot.js: RTP Crash снижен на CRASH_POINT_SCALE. */
 function sampleCrash(seedIdx) {
   const base = sampleCrashBase(seedIdx);
   if (base <= 1) return 1.00;
-  return Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100);
+  return Math.min(RK_MAX_MULT, Math.max(1.00, Math.round(base * rtp.CRASH_POINT_SCALE * 100) / 100));
 }
 
 function simulateStandardGame(gameKey, rounds = 100000) {
